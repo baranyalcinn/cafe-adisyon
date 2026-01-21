@@ -1,0 +1,59 @@
+appId: com.caffio.cafeadisyon
+productName: Cafe Adisyon
+compression: store
+
+directories:
+  buildResources: build
+  output: dist
+
+files:
+  - out/**/*
+  - package.json
+  - node_modules/**/*
+  # --- PROJENİN ÇALIŞMASINI BOZMAYAN SİLİNEBİLİR DOSYALAR ---
+  - '!**/*.{ts,tsx,map,md,txt}' # Kaynak kodlar, map dosyaları ve dökümanlar setup'ta olmasın
+  - '!**/node_modules/@types' # TypeScript tanımları çalışma anında gerekmez
+  - '!**/node_modules/.bin' # Çalıştırılabilir scriptler gerekmez
+  - '!**/node_modules/*/{test,__tests__,tests,example,examples,docs}' # Test ve örnekler
+  # --- DİĞER İŞLETİM SİSTEMİ DOSYALARINI AT (Boyutu çok düşürür) ---
+  - '!**/node_modules/@libsql/linux-*'
+  - '!**/node_modules/@libsql/darwin-*'
+  - '!**/node_modules/prisma/libquery_engine-debian-*'
+  - '!**/node_modules/prisma/libquery_engine-rhel-*'
+  - '!**/node_modules/prisma/libquery_engine-darwin-*'
+  # --- GELİŞTİRİCİ ARAÇLARINI AT ---
+  - '!**/node_modules/.cache' # NPM ve Prisma önbelleklerini atar
+  - '!**/node_modules/{typescript,vite,electron,electron-builder,electron-vite,eslint,prettier}'
+  - '!**/node_modules/prisma/libquery_engine-*' # Tüm motorları dışla
+  - 'node_modules/prisma/libquery_engine-windows.dll.node' # Sadece Windows motorunu dahil et
+
+asar: false
+asarUnpack:
+  - '**/node_modules/@libsql/**'
+  - '**/node_modules/.prisma/**'
+  - '**/node_modules/prisma/**'
+  - 'resources/**'
+
+win:
+  executableName: cafe-adisyon
+  icon: build/icon.ico
+  target:
+    - target: nsis
+      arch:
+        - x64
+  requestedExecutionLevel: asInvoker
+
+nsis:
+  artifactName: ${productName}-Setup-${version}.${ext}
+  shortcutName: ${productName}
+  uninstallDisplayName: ${productName}
+  createDesktopShortcut: always
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+  installerHeaderIcon: build/icon.ico
+  differentialPackage: false
+
+npmRebuild: false

@@ -1,0 +1,110 @@
+datasource db {
+  provider = "sqlite"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  price       Int
+  categoryId  String
+  isFavorite  Boolean  @default(false)
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  orderItems  OrderItem[]
+
+  @@index([categoryId])
+  @@index([isFavorite])
+}
+
+model Category {
+  id       String    @id @default(cuid())
+  name     String
+  icon     String    @default("utensils")
+  products Product[]
+}
+
+model Table {
+  id     String  @id @default(cuid())
+  name   String  @unique
+  orders Order[]
+}
+
+model Order {
+  id          String        @id @default(cuid())
+  tableId     String
+  status      String        @default("OPEN") // OPEN, CLOSED
+  totalAmount Int           @default(0)
+  isLocked    Boolean       @default(false)
+  table       Table         @relation(fields: [tableId], references: [id])
+  items       OrderItem[]
+  payments    Transaction[]
+  createdAt   DateTime      @default(now())
+
+  @@index([tableId, status])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Int
+  unitPrice Int
+  isPaid    Boolean @default(false)
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+model Transaction {
+  id            String   @id @default(cuid())
+  orderId       String
+  amount        Int
+  paymentMethod String   // CASH, CARD
+  createdAt     DateTime @default(now())
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([createdAt])
+  @@index([paymentMethod])
+}
+
+model DailySummary {
+  id           String   @id @default(cuid())
+  date         DateTime @unique
+  totalCash    Int      @default(0)
+  totalCard    Int      @default(0)
+  cancelCount  Int      @default(0)
+  totalVat     Int      @default(0)
+  orderCount   Int      @default(0)
+  totalRevenue Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  @@index([date])
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  action    String   // OPEN_TABLE, CLOSE_ORDER, CANCEL_ITEM, CHANGE_PRICE, etc.
+  tableName String?
+  userName  String?
+  details   String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([action])
+}
+
+model AppSettings {
+  id       String @id @default("app-settings")
+  adminPin        String  @default("1234")
+  securityQuestion String?
+  securityAnswer   String?
+}
