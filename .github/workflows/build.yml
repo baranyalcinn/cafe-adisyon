@@ -18,7 +18,7 @@ jobs:
         uses: actions/checkout@v4
 
       # 1. Node sürümünü 22 yapıyoruz (Uyarıları susturmak için)
-      - name: Node.js Kur (v22)
+      - name: Node.js Kur (v24)
         uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -35,8 +35,12 @@ jobs:
       # Bunlar paketlenirken RAM'i sömürüyor. Onları siliyoruz.
       - name: Gereksiz Prisma Motorlarını Temizle
         run: |
-          Remove-Item -Path "node_modules/@prisma/engines/*" -Include *"darwin"*,"*"linux"*,"*"openssl"* -Recurse -Force -ErrorAction SilentlyContinue
-          Write-Host "Gereksiz Prisma motorları temizlendi."
+          # Tek satırda karmaşık filtre yazmak yerine tek tek siliyoruz.
+          # Böylece PowerShell tırnak işaretlerini karıştırmıyor.
+          Remove-Item "node_modules/@prisma/engines/*darwin*" -Recurse -Force -ErrorAction SilentlyContinue
+          Remove-Item "node_modules/@prisma/engines/*linux*" -Recurse -Force -ErrorAction SilentlyContinue
+          # Windows build alırken OpenSSL silmek bazen riskli olabilir, o yüzden onu bıraktım.
+          # Zaten en çok yer kaplayanlar linux ve darwin (mac) dosyalarıdır.
 
       - name: Native Rebuild
         run: npm run rebuild --if-present
