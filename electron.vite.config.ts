@@ -5,7 +5,7 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin()],
+    plugins: [externalizeDepsPlugin({ exclude: ['@electron-toolkit/utils'] })],
     build: {
       rollupOptions: {
         external: ['better-sqlite3']
@@ -13,7 +13,7 @@ export default defineConfig({
     }
   },
   preload: {
-    plugins: [externalizeDepsPlugin()]
+    plugins: [externalizeDepsPlugin({ exclude: ['@electron-toolkit/preload'] })]
   },
   renderer: {
     resolve: {
