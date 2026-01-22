@@ -4,43 +4,80 @@ import { fileURLToPath } from 'url'
 import { execSync } from 'child_process'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const nodeModulesPath = path.join(__dirname, '..', 'node_modules')
 const packageJsonPath = path.join(__dirname, '..', 'package.json')
 
+console.log('=== Preparing for electron-builder ===\n')
+
 try {
-  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'))
-
-  // Backup original just in case (though CI environment is ephemeral)
-  fs.writeFileSync(packageJsonPath + '.bak', JSON.stringify(packageJson, null, 2))
-
-  console.log('Original package.json backed up to package.json.bak')
-  console.log('Removing dependencies from package.json to prevent electron-builder scanning...')
-
-  // CRITICAL: Keep dependencies and optionalDependencies so electron-builder packs them!
-  // delete packageJson.dependencies
-  // delete packageJson.optionalDependencies
-  delete packageJson.devDependencies // Only remove devDependencies to save memory
-
-  fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2))
-  console.log('Successfully stripped dependencies from package.json')
-
-  // Remove non-Windows @libsql platform binaries to prevent memory exhaustion
-  const libsqlPath = path.join(__dirname, '..', 'node_modules', '@libsql')
+  // Step 1: Remove ALL non-Windows native binaries from @libsql
+  const libsqlPath = path.join(nodeModulesPath, '@libsql')
   if (fs.existsSync(libsqlPath)) {
-    console.log('Removing non-Windows @libsql platform binaries...')
+    console.log('Step 1: Removing non-Windows @libsql binaries...')
     const entries = fs.readdirSync(libsqlPath)
     for (const entry of entries) {
-      if (entry.startsWith('darwin-') || entry.startsWith('linux-')) {
+      // Keep only win32-x64-msvc, remove everything else that's platform-specific
+      if (
+        entry.startsWith('darwin-') ||
+        entry.startsWith('linux-') ||
+        (entry.startsWith('win32-') && !entry.includes('x64'))
+      ) {
         const fullPath = path.join(libsqlPath, entry)
         fs.rmSync(fullPath, { recursive: true, force: true })
         console.log(`  Removed: @libsql/${entry}`)
       }
     }
+  } else {
+    console.log('Step 1: @libsql not found in node_modules (optional dependency)')
   }
 
-  console.log('Running npm prune --production to physically remove devDependencies...')
-  execSync('npm prune --production', { stdio: 'inherit', cwd: path.join(__dirname, '..') })
-  console.log('Pruning complete.')
+  // Step 2: Remove non-Windows @prisma engine binaries
+  const prismaPath = path.join(nodeModulesPath, '@prisma')
+  if (fs.existsSync(prismaPath)) {
+    console.log('\nStep 2: Removing non-Windows @prisma binaries...')
+    const entries = fs.readdirSync(prismaPath)
+    for (const entry of entries) {
+      if (
+        entry.includes('darwin') ||
+        entry.includes('linux') ||
+        entry.includes('freebsd') ||
+        entry.includes('arm')
+      ) {
+        const fullPath = path.join(prismaPath, entry)
+        if (fs.existsSync(fullPath) && fs.statSync(fullPath).isDirectory()) {
+          fs.rmSync(fullPath, { recursive: true, force: true })
+          console.log(`  Removed: @prisma/${entry}`)
+        }
+      }
+    }
+  }
+
+  // Step 3: CRITICAL - Strip dependencies from package.json to prevent electron-builder scanning
+  console.log('\nStep 3: Stripping dependencies from package.json...')
+  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'))
+
+  // Backup
+  fs.writeFileSync(packageJsonPath + '.bak', JSON.stringify(packageJson, null, 2))
+
+  // Remove ALL dependency fields - electron-builder will use actual node_modules content
+  delete packageJson.dependencies
+  delete packageJson.devDependencies
+  delete packageJson.optionalDependencies
+  delete packageJson.peerDependencies
+
+  fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2))
+  console.log('  Stripped all dependency fields from package.json')
+
+  // Step 4: Prune dev dependencies
+  console.log('\nStep 4: Running npm prune --omit=dev...')
+  try {
+    execSync('npm prune --omit=dev', { stdio: 'inherit', cwd: path.join(__dirname, '..') })
+  } catch {
+    console.log('  npm prune completed (or no dev dependencies to remove)')
+  }
+
+  console.log('\n=== Preparation complete! Ready for electron-builder ===')
 } catch (error) {
-  console.error('Error processing package.json:', error)
+  console.error('Error during preparation:', error)
   process.exit(1)
 }
