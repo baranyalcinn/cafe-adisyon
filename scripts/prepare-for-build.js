@@ -1,11 +1,12 @@
 import fs from 'fs'
 import path from 'path'
+import { fileURLToPath } from 'url'
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const packageJsonPath = path.join(__dirname, '..', 'package.json')
 
 try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const packageJson = require(packageJsonPath)
+  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'))
 
   // Backup original just in case (though CI environment is ephemeral)
   fs.writeFileSync(packageJsonPath + '.bak', JSON.stringify(packageJson, null, 2))
