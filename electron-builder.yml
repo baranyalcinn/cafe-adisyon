@@ -56,7 +56,7 @@ win:
 
 portable:
   artifactName: ${productName}-Portable-${version}.${ext}
-  requestedExecutionLevel: user
+  requestExecutionLevel: user
   splashImage: build/icon.png # Use icon as splash for better UX
 
 extraResources:
