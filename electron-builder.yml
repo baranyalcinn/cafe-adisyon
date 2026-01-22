@@ -7,38 +7,32 @@ directories:
   buildResources: build
   output: dist
 
-# Only include what we need - disable sub-node_modules scanning
+# Simplified files config - use flat list instead of from/to/filter
 files:
-  - from: '.'
-    to: '.'
-    filter:
-      - out/**/*
-      - resources/**/*
-      - package.json
-      - node_modules/**/*
-      # Exclude source files
-      - '!**/*.{ts,tsx}'
-      - '!**/*.map'
-      - '!src/**/*'
-      # Exclude ALL non-Windows platform binaries
-      - '!**/node_modules/@libsql/darwin-*/**'
-      - '!**/node_modules/@libsql/linux-*/**'
-      - '!**/node_modules/@prisma/*darwin*/**'
-      - '!**/node_modules/@prisma/*linux*/**'
-      - '!**/node_modules/@prisma/*linux*/**'
-      - '!**/node_modules/@prisma/*freebsd*/**'
-      # Explicitly include generated prisma client
-      - 'node_modules/prisma-client-generated/**/*'
-      # Exclude unnecessary files to reduce scanning
-      - '!**/node_modules/**/*.d.ts'
-      - '!**/node_modules/**/README*'
-      - '!**/node_modules/**/CHANGELOG*'
-      - '!**/node_modules/**/LICENSE*'
-      - '!**/node_modules/**/{test,tests,__tests__}/**'
-      - '!**/node_modules/**/*.md'
-      - '!**/node_modules/**/.git*'
+  - out/**/*
+  - resources/**/*
+  - package.json
+  - node_modules/**/*
+  # Exclude source files
+  - '!**/*.{ts,tsx}'
+  - '!**/*.map'
+  - '!src/**/*'
+  # Exclude non-Windows native binaries
+  - '!node_modules/@libsql/darwin-*'
+  - '!node_modules/@libsql/darwin-*/**'
+  - '!node_modules/@libsql/linux-*'
+  - '!node_modules/@libsql/linux-*/**'
+  - '!node_modules/@prisma/*darwin*'
+  - '!node_modules/@prisma/*darwin*/**'
+  - '!node_modules/@prisma/*linux*'
+  - '!node_modules/@prisma/*linux*/**'
+  - '!node_modules/@prisma/*freebsd*'
+  - '!node_modules/@prisma/*freebsd*/**'
+  # Exclude dev artifacts
+  - '!**/node_modules/**/{test,tests,__tests__}/**'
+  - '!**/node_modules/**/.git*'
 
-# ASAR disabled to prevent heap OOM with 1.1GB node_modules
+# ASAR disabled to prevent heap OOM with large node_modules
 asar: false
 
 # Disable all rebuilding
@@ -57,7 +51,6 @@ win:
 portable:
   artifactName: ${productName}-Portable-${version}.${ext}
   requestExecutionLevel: user
-  splashImage: build/icon.png # Use icon as splash for better UX
 
 extraResources:
   - from: prisma/dev.db

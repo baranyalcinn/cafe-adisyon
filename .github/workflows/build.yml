@@ -50,7 +50,7 @@ jobs:
         run: npm install -g electron-builder
 
       - name: Package with electron-builder
-        run: electron-builder --win --x64 --publish never
+        run: npx electron-builder --win --x64 --publish never
         env:
           NODE_OPTIONS: '--max-old-space-size=16384'
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

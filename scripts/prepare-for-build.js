@@ -110,6 +110,22 @@ try {
     console.error(`  [ERROR] prisma-client-generated MISSING!`)
   }
 
+  // DEBUGGING: Verify @libsql directories
+  console.log('\n  --- DEBUG: Checking @libsql directories ---')
+  const libsqlClientPath = path.join(nodeModulesPath, '@libsql', 'client')
+  if (fs.existsSync(libsqlClientPath)) {
+    console.log(`  [OK] @libsql/client exists.`)
+  } else {
+    console.error(`  [ERROR] @libsql/client MISSING!`)
+  }
+
+  const libsqlWin32Path = path.join(nodeModulesPath, '@libsql', 'win32-x64-msvc')
+  if (fs.existsSync(libsqlWin32Path)) {
+    console.log(`  [OK] @libsql/win32-x64-msvc exists.`)
+  } else {
+    console.error(`  [ERROR] @libsql/win32-x64-msvc MISSING!`)
+  }
+
   // Step 4: CRITICAL - Strip dependencies from package.json to prevent electron-builder scanning
   console.log('\nStep 4: Stripping dependencies from package.json...')
   const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'))
