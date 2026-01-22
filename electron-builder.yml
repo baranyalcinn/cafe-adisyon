@@ -11,10 +11,24 @@ directories:
 files:
   - out/**/*
   - package.json
+  - '!node_modules'
+  - '!node_modules/**'
   - '!**/node_modules'
-  - '!**/node_modules/**/*'
+  - '!**/node_modules/**'
+  - '!src'
+  - '!src/**'
+  - '!prisma'
+  - '!prisma/**'
+  - '!.git'
+  - '!.git/**'
 
-asar: false
+# ASAR packaging reduces memory usage and speeds up build
+asar: true
+asarUnpack:
+  - '**/*.node'
+  - '**/better-sqlite3/**'
+  - '**/@libsql/**'
+
 npmRebuild: false
 nodeGypRebuild: false
 buildDependenciesFromSource: false
