@@ -6,31 +6,35 @@ directories:
   buildResources: build
   output: dist
 
-# Standard file inclusion - includes node_modules by default
+# Only include what we need - nothing else
 files:
   - out/**/*
   - package.json
-  # Exclude source files and unnecessary artifacts
   - '!**/*.{ts,tsx}'
   - '!**/*.map'
   - '!src/**/*'
-  # Note: node_modules is implicitly INCLUDED. We rely on asarUnpack for native modules.
+  # Exclude ALL non-Windows platform binaries
+  - '!**/node_modules/@libsql/darwin-*/**'
+  - '!**/node_modules/@libsql/linux-*/**'
+  - '!**/node_modules/@prisma/*darwin*/**'
+  - '!**/node_modules/@prisma/*linux*/**'
+  - '!**/node_modules/@prisma/*freebsd*/**'
 
-# Unpack native modules so they can run on Windows
+# ASAR configuration
 asar: true
 asarUnpack:
   - '**/*.node'
   - '**/*.dll'
-  - '**/node_modules/better-sqlite3/**/*'
-  - '**/node_modules/@libsql/**/*' # Unpack entire libsql including native binaries
-  - '**/node_modules/@prisma/**/*' # Unpack prisma engines
-  - '**/node_modules/.prisma/**/*' # Unpack generated client
+  - '**/node_modules/@libsql/**/*'
+  - '**/node_modules/@prisma/**/*'
+  - '**/node_modules/.prisma/**/*'
 
-# Disable rebuilding - we rely on clean CI install
+# Disable all rebuilding
 npmRebuild: false
 nodeGypRebuild: false
 buildDependenciesFromSource: false
 
+# ONLY Windows x64 NSIS - nothing else
 win:
   executableName: cafe-adisyon
   icon: build/icon.ico
@@ -38,11 +42,9 @@ win:
     - target: nsis
       arch: x64
 
-portable:
-  artifactName: ${productName}-Portable-${version}.${ext}
-
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
   shortcutName: Cafe Adisyon
   deleteAppDataOnUninstall: true
+  artifactName: ${productName}-Setup-${version}.${ext}

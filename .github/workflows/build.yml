@@ -47,9 +47,9 @@ jobs:
         run: node scripts/prepare-for-build.js
 
       - name: Package with electron-builder
-        run: npx electron-builder --win --x64 --publish never
+        run: npx -y electron-builder@^26.4.0 --win --x64 --publish never
         env:
-          NODE_OPTIONS: '--max-old-space-size=6144'
+          NODE_OPTIONS: '--max-old-space-size=8192'
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Installer

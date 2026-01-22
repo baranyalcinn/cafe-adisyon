@@ -1,6 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { execSync } from 'child_process'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const packageJsonPath = path.join(__dirname, '..', 'package.json')
@@ -21,6 +22,24 @@ try {
 
   fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2))
   console.log('Successfully stripped dependencies from package.json')
+
+  // Remove non-Windows @libsql platform binaries to prevent memory exhaustion
+  const libsqlPath = path.join(__dirname, '..', 'node_modules', '@libsql')
+  if (fs.existsSync(libsqlPath)) {
+    console.log('Removing non-Windows @libsql platform binaries...')
+    const entries = fs.readdirSync(libsqlPath)
+    for (const entry of entries) {
+      if (entry.startsWith('darwin-') || entry.startsWith('linux-')) {
+        const fullPath = path.join(libsqlPath, entry)
+        fs.rmSync(fullPath, { recursive: true, force: true })
+        console.log(`  Removed: @libsql/${entry}`)
+      }
+    }
+  }
+
+  console.log('Running npm prune --production to physically remove devDependencies...')
+  execSync('npm prune --production', { stdio: 'inherit', cwd: path.join(__dirname, '..') })
+  console.log('Pruning complete.')
 } catch (error) {
   console.error('Error processing package.json:', error)
   process.exit(1)
