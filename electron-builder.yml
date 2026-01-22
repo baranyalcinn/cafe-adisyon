@@ -1,5 +1,6 @@
 appId: com.caffio.cafeadisyon
 productName: Cafe Adisyon
+electronVersion: 39.3.0
 compression: store
 
 directories:
