@@ -34,7 +34,6 @@ files:
       - '!**/node_modules/**/{test,tests,__tests__}/**'
       - '!**/node_modules/**/*.md'
       - '!**/node_modules/**/.git*'
-    includeSubNodeModules: false
 
 # ASAR disabled to prevent heap OOM with 1.1GB node_modules
 asar: false
