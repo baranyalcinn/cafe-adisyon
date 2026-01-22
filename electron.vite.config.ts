@@ -11,7 +11,6 @@ export default defineConfig({
           '@electron-toolkit/utils',
           'prisma-client-generated',
           '@prisma/adapter-libsql',
-          '@libsql/client',
           'zod',
           'date-fns',
           'zustand',
