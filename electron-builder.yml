@@ -6,15 +6,23 @@ directories:
   buildResources: build
   output: dist
 
-# All dependencies are bundled into out/main/index.js by electron-vite
-# We explicitly exclude node_modules to prevent scanning
+# Sıkıştırmayı kapatmak HEAP hatasının kesin çözümüdür.
+# Portable yapacağın için boyutun 20MB artması önemli değil, hız önemli.
+compression: store
+
 files:
   - out/**/*
   - package.json
+  # node_modules'u komple engelliyoruz (senin yaptığın doğru)
   - '!node_modules'
   - '!node_modules/**'
-  - '!**/node_modules'
-  - '!**/node_modules/**'
+  # --- KRİTİK EKLEME 1: Native Modülleri Geri Alıyoruz ---
+  # better-sqlite3 ve prisma bundle olamaz, bunları elle dahil etmelisin.
+  - 'node_modules/better-sqlite3/**/*'
+  - 'node_modules/prisma/**/*'
+  - 'node_modules/@prisma/**/*'
+  - 'node_modules/.prisma/**/*'
+  # -------------------------------------------------------
   - '!src'
   - '!src/**'
   - '!prisma'
@@ -22,13 +30,17 @@ files:
   - '!.git'
   - '!.git/**'
 
-# ASAR packaging reduces memory usage and speeds up build
 asar: true
 asarUnpack:
   - '**/*.node'
   - '**/better-sqlite3/**'
-  - '**/@libsql/**'
+  # Prisma'nın exe dosyasını asar içinden çıkarmazsan çalışmaz
+  - '**/@prisma/engines/**'
+  - '**/query-engine-windows.exe'
+  - '**/schema.prisma'
 
+# Adisyon gibi uygulamalarda native rebuild kapalıysa
+# önceden "npm run rebuild" veya "@electron/rebuild" çalıştırdığından emin ol.
 npmRebuild: false
 nodeGypRebuild: false
 buildDependenciesFromSource: false
@@ -45,5 +57,9 @@ portable:
   requestExecutionLevel: user
 
 extraResources:
+  # Kullanıcının ilk veritabanı şeması
   - from: prisma/dev.db
     to: initial.db
+  # Prisma schema dosyasını bazen runtime'da ister, garanti olsun diye ekle
+  - from: prisma/schema.prisma
+    to: schema.prisma
