@@ -1,50 +1,63 @@
 appId: com.caffio.cafeadisyon
 productName: Cafe Adisyon
-# store = no compression, much less memory usage
 compression: store
 
 directories:
   buildResources: build
   output: dist
 
+# Only include bundled output, no node_modules scanning
 files:
   - out/**/*
   - package.json
-  # Only include required runtime dependencies, not all node_modules
-  - node_modules/@libsql/win32-x64-msvc/**/*
-  - node_modules/@libsql/client/**/*
-  - node_modules/@libsql/core/**/*
-  - node_modules/@libsql/hrana-client/**/*
-  - node_modules/@libsql/isomorphic-fetch/**/*
-  - node_modules/@libsql/isomorphic-ws/**/*
-  - node_modules/@prisma/adapter-libsql/**/*
-  - node_modules/@prisma/client/**/*
-  - node_modules/.prisma/**/*
-  - node_modules/prisma/libquery_engine-windows.dll.node
+  - '!node_modules'
 
-# Disable asar to reduce memory usage during packaging
+# Native modules as extraResources - bypasses dependency scanning
+extraResources:
+  - from: node_modules/@libsql/win32-x64-msvc
+    to: node_modules/@libsql/win32-x64-msvc
+    filter:
+      - '**/*'
+  - from: node_modules/@libsql/client
+    to: node_modules/@libsql/client
+    filter:
+      - '**/*'
+  - from: node_modules/@libsql/core
+    to: node_modules/@libsql/core
+    filter:
+      - '**/*'
+  - from: node_modules/@libsql/hrana-client
+    to: node_modules/@libsql/hrana-client
+    filter:
+      - '**/*'
+  - from: node_modules/@libsql/isomorphic-fetch
+    to: node_modules/@libsql/isomorphic-fetch
+    filter:
+      - '**/*'
+  - from: node_modules/@libsql/isomorphic-ws
+    to: node_modules/@libsql/isomorphic-ws
+    filter:
+      - '**/*'
+  - from: node_modules/@prisma
+    to: node_modules/@prisma
+    filter:
+      - '**/*'
+  - from: node_modules/.prisma
+    to: node_modules/.prisma
+    filter:
+      - '**/*'
+
 asar: false
+npmRebuild: false
+nodeGypRebuild: false
+buildDependenciesFromSource: false
 
 win:
   executableName: cafe-adisyon
   icon: build/icon.ico
   target:
-    - target: nsis
-      arch:
-        - x64
-  requestedExecutionLevel: asInvoker
+    - target: portable
+      arch: x64
 
-nsis:
-  artifactName: ${productName}-Setup-${version}.${ext}
-  shortcutName: ${productName}
-  uninstallDisplayName: ${productName}
-  createDesktopShortcut: always
-  oneClick: false
-  perMachine: false
-  allowToChangeInstallationDirectory: true
-  installerIcon: build/icon.ico
-  uninstallerIcon: build/icon.ico
-  installerHeaderIcon: build/icon.ico
-  differentialPackage: false
-
-npmRebuild: false
+portable:
+  artifactName: ${productName}-Portable-${version}.${ext}
