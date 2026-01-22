@@ -7,45 +7,53 @@ directories:
   buildResources: build
   output: dist
 
-# Only include what we need - nothing else
+# Only include what we need - disable sub-node_modules scanning
 files:
-  - out/**/*
-  - package.json
-  - '!**/*.{ts,tsx}'
-  - '!**/*.map'
-  - '!src/**/*'
-  # Exclude ALL non-Windows platform binaries
-  - '!**/node_modules/@libsql/darwin-*/**'
-  - '!**/node_modules/@libsql/linux-*/**'
-  - '!**/node_modules/@prisma/*darwin*/**'
-  - '!**/node_modules/@prisma/*linux*/**'
-  - '!**/node_modules/@prisma/*freebsd*/**'
+  - from: '.'
+    to: '.'
+    filter:
+      - out/**/*
+      - resources/**/*
+      - package.json
+      - node_modules/**/*
+      # Exclude source files
+      - '!**/*.{ts,tsx}'
+      - '!**/*.map'
+      - '!src/**/*'
+      # Exclude ALL non-Windows platform binaries
+      - '!**/node_modules/@libsql/darwin-*/**'
+      - '!**/node_modules/@libsql/linux-*/**'
+      - '!**/node_modules/@prisma/*darwin*/**'
+      - '!**/node_modules/@prisma/*linux*/**'
+      - '!**/node_modules/@prisma/*freebsd*/**'
+      # Exclude unnecessary files to reduce scanning
+      - '!**/node_modules/**/*.d.ts'
+      - '!**/node_modules/**/README*'
+      - '!**/node_modules/**/CHANGELOG*'
+      - '!**/node_modules/**/LICENSE*'
+      - '!**/node_modules/**/{test,tests,__tests__}/**'
+      - '!**/node_modules/**/*.md'
+      - '!**/node_modules/**/.git*'
+    includeSubNodeModules: false
 
-# ASAR configuration
-asar: true
-asarUnpack:
-  - '**/*.node'
-  - '**/*.dll'
-  - '**/node_modules/@libsql/**/*'
-  - '**/node_modules/@prisma/**/*'
-  - '**/node_modules/.prisma/**/*'
+# ASAR disabled to prevent heap OOM with 1.1GB node_modules
+asar: false
 
 # Disable all rebuilding
 npmRebuild: false
 nodeGypRebuild: false
 buildDependenciesFromSource: false
 
-# ONLY Windows x64 NSIS - nothing else
+# ONLY Windows x64 Portable
 win:
   executableName: cafe-adisyon
   icon: build/icon.ico
   target:
-    - target: nsis
+    - target: portable
       arch: x64
 
-nsis:
-  oneClick: false
-  allowToChangeInstallationDirectory: true
-  shortcutName: Cafe Adisyon
-  deleteAppDataOnUninstall: true
-  artifactName: ${productName}-Setup-${version}.${ext}
+portable:
+  artifactName: ${productName}-Portable-${version}.${ext}
+  requestExecutionLevel: user
+  splashImage: build/icon.png # Use icon as splash for better UX
+

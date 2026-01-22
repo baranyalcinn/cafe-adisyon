@@ -52,8 +52,16 @@ try {
     }
   }
 
-  // Step 3: CRITICAL - Strip dependencies from package.json to prevent electron-builder scanning
-  console.log('\nStep 3: Stripping dependencies from package.json...')
+  // Step 3: Prune dev dependencies (MUST BE DONE BEFORE STRIPPING PACKAGE.JSON)
+  console.log('\nStep 3: Running npm prune --omit=dev...')
+  try {
+    execSync('npm prune --omit=dev', { stdio: 'inherit', cwd: path.join(__dirname, '..') })
+  } catch (error) {
+    console.warn('  npm prune warning (continuing):', error.message)
+  }
+
+  // Step 4: CRITICAL - Strip dependencies from package.json to prevent electron-builder scanning
+  console.log('\nStep 4: Stripping dependencies from package.json...')
   const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'))
 
   // Backup
@@ -67,14 +75,6 @@ try {
 
   fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2))
   console.log('  Stripped all dependency fields from package.json')
-
-  // Step 4: Prune dev dependencies
-  console.log('\nStep 4: Running npm prune --omit=dev...')
-  try {
-    execSync('npm prune --omit=dev', { stdio: 'inherit', cwd: path.join(__dirname, '..') })
-  } catch {
-    console.log('  npm prune completed (or no dev dependencies to remove)')
-  }
 
   console.log('\n=== Preparation complete! Ready for electron-builder ===')
 } catch (error) {
