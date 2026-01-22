@@ -20,6 +20,17 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
+      - name: Cache Electron
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/AppData/Local/electron/Cache
+            ~/.cache/electron
+            ~/.cache/electron-builder
+          key: electron-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            electron-${{ runner.os }}-
+
       - name: Install dependencies
         run: npm ci
 
@@ -32,9 +43,9 @@ jobs:
           NODE_OPTIONS: '--max-old-space-size=4096'
 
       - name: Package with electron-builder
-        run: npx electron-builder --win nsis --x64 --publish never
+        run: npx electron-builder --win --x64 --publish never
         env:
-          NODE_OPTIONS: '--max-old-space-size=6144'
+          NODE_OPTIONS: '--max-old-space-size=8192'
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Installer

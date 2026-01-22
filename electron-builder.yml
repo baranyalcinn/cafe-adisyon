@@ -6,48 +6,43 @@ directories:
   buildResources: build
   output: dist
 
-# Only include bundled output, no node_modules scanning
+# Only include bundled output
 files:
   - out/**/*
   - package.json
-  - '!node_modules'
+  - '!node_modules/**/*'
+  - '!src/**/*'
+  - '!**/*.ts'
+  - '!**/*.tsx'
+  - '!**/*.map'
 
-# Native modules as extraResources - bypasses dependency scanning
+# Native modules as extraResources - bypasses dependency scanning completely
 extraResources:
-  - from: node_modules/@libsql/win32-x64-msvc
-    to: node_modules/@libsql/win32-x64-msvc
+  - from: node_modules/@libsql
+    to: app/node_modules/@libsql
     filter:
-      - '**/*'
-  - from: node_modules/@libsql/client
-    to: node_modules/@libsql/client
-    filter:
-      - '**/*'
-  - from: node_modules/@libsql/core
-    to: node_modules/@libsql/core
-    filter:
-      - '**/*'
-  - from: node_modules/@libsql/hrana-client
-    to: node_modules/@libsql/hrana-client
-    filter:
-      - '**/*'
-  - from: node_modules/@libsql/isomorphic-fetch
-    to: node_modules/@libsql/isomorphic-fetch
-    filter:
-      - '**/*'
-  - from: node_modules/@libsql/isomorphic-ws
-    to: node_modules/@libsql/isomorphic-ws
-    filter:
-      - '**/*'
+      - 'client/**/*'
+      - 'core/**/*'
+      - 'hrana-client/**/*'
+      - 'isomorphic-fetch/**/*'
+      - 'isomorphic-ws/**/*'
+      - 'win32-x64-msvc/**/*'
+      - '!darwin-*/**'
+      - '!linux-*/**'
   - from: node_modules/@prisma
-    to: node_modules/@prisma
+    to: app/node_modules/@prisma
     filter:
       - '**/*'
   - from: node_modules/.prisma
-    to: node_modules/.prisma
+    to: app/node_modules/.prisma
     filter:
       - '**/*'
 
-asar: false
+asar: true
+asarUnpack:
+  - '**/*.node'
+  - '**/node_modules/@libsql/**/*'
+  - '**/node_modules/.prisma/**/*'
 npmRebuild: false
 nodeGypRebuild: false
 buildDependenciesFromSource: false
