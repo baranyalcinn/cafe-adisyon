@@ -1,9 +1,10 @@
-const fs = require('fs')
-const path = require('path')
+import fs from 'fs'
+import path from 'path'
 
 const packageJsonPath = path.join(__dirname, '..', 'package.json')
 
 try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const packageJson = require(packageJsonPath)
 
   // Backup original just in case (though CI environment is ephemeral)

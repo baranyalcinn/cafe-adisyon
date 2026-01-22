@@ -10,6 +10,7 @@ on:
 jobs:
   build-windows:
     runs-on: windows-latest
+    timeout-minutes: 180 # Allow 3 hours for safe memory-constrained builds
 
     steps:
       - uses: actions/checkout@v4

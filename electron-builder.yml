@@ -6,45 +6,27 @@ directories:
   buildResources: build
   output: dist
 
-# Only include bundled output
+# Standard file inclusion - includes node_modules by default
 files:
   - out/**/*
   - package.json
-  - '!node_modules/**/*'
-  - '!src/**/*'
-  - '!**/*.ts'
-  - '!**/*.tsx'
+  # Exclude source files and unnecessary artifacts
+  - '!**/*.{ts,tsx}'
   - '!**/*.map'
+  - '!src/**/*'
+  # Note: node_modules is implicitly INCLUDED. We rely on asarUnpack for native modules.
 
-# Native modules as extraResources - bypasses dependency scanning completely
-extraResources:
-  - from: node_modules/@libsql
-    to: app/node_modules/@libsql
-    filter:
-      - 'client/**/*'
-      - 'core/**/*'
-      - 'hrana-client/**/*'
-      - 'isomorphic-fetch/**/*'
-      - 'isomorphic-ws/**/*'
-      - 'win32-x64-msvc/**/*'
-      - '!darwin-*/**'
-      - '!linux-*/**'
-  - from: node_modules/@prisma
-    to: app/node_modules/@prisma
-    filter:
-      - '**/*'
-  - from: node_modules/.prisma
-    to: app/node_modules/.prisma
-    filter:
-      - '**/*'
-
+# Unpack native modules so they can run on Windows
 asar: true
 asarUnpack:
   - '**/*.node'
   - '**/*.dll'
   - '**/node_modules/better-sqlite3/**/*'
-  - '**/node_modules/@libsql/**/*'
-  - '**/node_modules/.prisma/**/*'
+  - '**/node_modules/@libsql/**/*' # Unpack entire libsql including native binaries
+  - '**/node_modules/@prisma/**/*' # Unpack prisma engines
+  - '**/node_modules/.prisma/**/*' # Unpack generated client
+
+# Disable rebuilding - we rely on clean CI install
 npmRebuild: false
 nodeGypRebuild: false
 buildDependenciesFromSource: false
@@ -63,3 +45,4 @@ nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
   shortcutName: Cafe Adisyon
+  deleteAppDataOnUninstall: true
