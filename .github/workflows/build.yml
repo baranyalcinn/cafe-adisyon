@@ -46,8 +46,11 @@ jobs:
       - name: Optimize node_modules for packaging
         run: node scripts/prepare-for-build.js
 
+      - name: Install global electron-builder (to survive pruning)
+        run: npm install -g electron-builder
+
       - name: Package with electron-builder
-        run: node --max-old-space-size=16384 --expose-gc ./node_modules/.bin/electron-builder --win --x64 --publish never
+        run: electron-builder --win --x64 --publish never
         env:
           NODE_OPTIONS: '--max-old-space-size=16384'
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
