@@ -5,7 +5,11 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin({ exclude: ['@electron-toolkit/utils'] })],
+    plugins: [
+      externalizeDepsPlugin({
+        exclude: ['@electron-toolkit/utils', '@prisma/client', '@prisma/adapter-libsql']
+      })
+    ],
     build: {
       rollupOptions: {
         external: ['better-sqlite3']
