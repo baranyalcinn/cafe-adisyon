@@ -59,3 +59,6 @@ portable:
   requestExecutionLevel: user
   splashImage: build/icon.png # Use icon as splash for better UX
 
+extraResources:
+  - from: prisma/dev.db
+    to: initial.db

@@ -2,12 +2,28 @@ import { PrismaClient } from '@prisma/client'
 import { PrismaLibSql } from '@prisma/adapter-libsql'
 import { app } from 'electron'
 import path from 'path'
+import * as fs from 'fs'
 
 // Get the database path - in production use userData, in dev use project root
 const isDev = !app.isPackaged
 const dbPath = isDev
   ? path.join(process.cwd(), 'prisma', 'dev.db')
   : path.join(app.getPath('userData'), 'caffio.db')
+
+// First Run Logic: Copy initial DB if missing in production
+if (!isDev && !fs.existsSync(dbPath)) {
+  try {
+    const initialDbPath = path.join(process.resourcesPath, 'initial.db')
+    if (fs.existsSync(initialDbPath)) {
+      console.log('First run: Copying initial database...')
+      fs.copyFileSync(initialDbPath, dbPath)
+    } else {
+      console.error('Initial database file not found at:', initialDbPath)
+    }
+  } catch (error) {
+    console.error('Failed to copy initial database:', error)
+  }
+}
 
 // Create Prisma adapter with simplified constructor (v6.6.0+)
 const adapter = new PrismaLibSql({
