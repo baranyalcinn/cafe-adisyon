@@ -32,11 +32,9 @@ jobs:
           NODE_OPTIONS: '--max-old-space-size=4096'
 
       - name: Package with electron-builder
-        shell: pwsh
-        run: |
-          # Run electron-builder with explicit memory limit
-          node --max-old-space-size=6144 ./node_modules/electron-builder/bin/electron-builder.js --win nsis --x64 --publish never
+        run: npx electron-builder --win nsis --x64 --publish never
         env:
+          NODE_OPTIONS: '--max-old-space-size=6144'
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Installer
