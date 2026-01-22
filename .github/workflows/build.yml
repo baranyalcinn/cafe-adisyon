@@ -42,9 +42,6 @@ jobs:
         env:
           NODE_OPTIONS: '--max-old-space-size=4096'
 
-      - name: Remove dependencies for build
-        run: node scripts/prepare-for-build.js
-
       - name: Package with electron-builder
         run: npx electron-builder --win --x64 --publish never
         env:
