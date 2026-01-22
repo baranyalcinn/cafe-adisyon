@@ -55,13 +55,13 @@ try {
   // Step 3: Prune dev dependencies (MUST BE DONE BEFORE STRIPPING PACKAGE.JSON)
   console.log('\nStep 3: Running npm prune --omit=dev...')
 
-  // BACKUP .prisma folder (npm prune deletes it because it's untracked)
-  const dotPrismaPath = path.join(nodeModulesPath, '.prisma')
-  const dotPrismaBackup = path.join(__dirname, '..', '.prisma-backup')
+  // BACKUP prisma-client-generated folder
+  const generatedPrismaPath = path.join(nodeModulesPath, 'prisma-client-generated')
+  const generatedPrismaBackup = path.join(__dirname, '..', 'prisma-client-generated-backup')
 
-  if (fs.existsSync(dotPrismaPath)) {
-    console.log('  Backing up .prisma directory...')
-    fs.cpSync(dotPrismaPath, dotPrismaBackup, { recursive: true })
+  if (fs.existsSync(generatedPrismaPath)) {
+    console.log('  Backing up prisma-client-generated directory...')
+    fs.cpSync(generatedPrismaPath, generatedPrismaBackup, { recursive: true })
   }
 
   try {
@@ -70,14 +70,14 @@ try {
     console.warn('  npm prune warning (continuing):', error.message)
   }
 
-  // RESTORE .prisma folder
-  if (fs.existsSync(dotPrismaBackup)) {
-    console.log('  Restoring .prisma directory...')
-    if (!fs.existsSync(dotPrismaPath)) {
-      fs.mkdirSync(dotPrismaPath, { recursive: true })
+  // RESTORE prisma-client-generated folder
+  if (fs.existsSync(generatedPrismaBackup)) {
+    console.log('  Restoring prisma-client-generated directory...')
+    if (!fs.existsSync(generatedPrismaPath)) {
+      fs.mkdirSync(generatedPrismaPath, { recursive: true })
     }
-    fs.cpSync(dotPrismaBackup, dotPrismaPath, { recursive: true })
-    fs.rmSync(dotPrismaBackup, { recursive: true, force: true })
+    fs.cpSync(generatedPrismaBackup, generatedPrismaPath, { recursive: true })
+    fs.rmSync(generatedPrismaBackup, { recursive: true, force: true })
   }
 
   // DEBUGGING: Verify @prisma/client and .prisma exist
@@ -88,26 +88,26 @@ try {
     // List client folder
     try {
       console.log('  @prisma/client contents:', fs.readdirSync(clientPath).slice(0, 5))
-    } catch (_e) {
+    } catch {
       console.log('  (Unable to list @prisma/client contents)')
     }
   } else {
     console.error(`  [ERROR] @prisma/client MISSING!`)
   }
 
-  if (fs.existsSync(dotPrismaPath)) {
-    console.log(`  [OK] .prisma exists.`)
+  if (fs.existsSync(generatedPrismaPath)) {
+    console.log(`  [OK] prisma-client-generated exists.`)
     try {
-      // Check for client inside .prisma
-      const dotPrismaClient = path.join(dotPrismaPath, 'client')
-      if (fs.existsSync(dotPrismaClient)) {
-        console.log('  .prisma/client contents:', fs.readdirSync(dotPrismaClient))
-      }
-    } catch (_e) {
-      console.log('  (Unable to list .prisma/client contents)')
+      // Check for contents
+      console.log(
+        '  prisma-client-generated contents:',
+        fs.readdirSync(generatedPrismaPath).slice(0, 5)
+      )
+    } catch {
+      console.log('  (Unable to list prisma-client-generated contents)')
     }
   } else {
-    console.error(`  [ERROR] .prisma MISSING!`)
+    console.error(`  [ERROR] prisma-client-generated MISSING!`)
   }
 
   // Step 4: CRITICAL - Strip dependencies from package.json to prevent electron-builder scanning

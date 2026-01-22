@@ -7,7 +7,7 @@ export default defineConfig({
   main: {
     plugins: [
       externalizeDepsPlugin({
-        exclude: ['@electron-toolkit/utils', '@prisma/client', '@prisma/adapter-libsql']
+        exclude: ['@electron-toolkit/utils', 'prisma-client-generated', '@prisma/adapter-libsql']
       })
     ],
     build: {

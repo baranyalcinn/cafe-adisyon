@@ -27,8 +27,8 @@ files:
       - '!**/node_modules/@prisma/*linux*/**'
       - '!**/node_modules/@prisma/*linux*/**'
       - '!**/node_modules/@prisma/*freebsd*/**'
-      # Explicitly include generated .prisma client
-      - 'node_modules/.prisma/**/*'
+      # Explicitly include generated prisma client
+      - 'node_modules/prisma-client-generated/**/*'
       # Exclude unnecessary files to reduce scanning
       - '!**/node_modules/**/*.d.ts'
       - '!**/node_modules/**/README*'
@@ -56,7 +56,7 @@ win:
 
 portable:
   artifactName: ${productName}-Portable-${version}.${ext}
-  requestExecutionLevel: user
+  requestedExecutionLevel: user
   splashImage: build/icon.png # Use icon as splash for better UX
 
 extraResources:

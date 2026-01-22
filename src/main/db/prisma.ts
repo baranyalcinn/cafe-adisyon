@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from 'prisma-client-generated'
 import { PrismaLibSql } from '@prisma/adapter-libsql'
 import { app } from 'electron'
 import path from 'path'
