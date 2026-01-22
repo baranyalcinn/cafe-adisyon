@@ -26,6 +26,48 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
 
+      - name: Clean unused native binaries
+        shell: pwsh
+        run: |
+          # Remove non-Windows @libsql binaries to reduce memory during packaging
+          $libsqlPath = "node_modules/@libsql"
+          if (Test-Path $libsqlPath) {
+            Get-ChildItem -Path $libsqlPath -Directory | Where-Object { 
+              $_.Name -like "linux-*" -or $_.Name -like "darwin-*" 
+            } | ForEach-Object {
+              Write-Host "Removing $($_.FullName)"
+              Remove-Item -Recurse -Force $_.FullName
+            }
+          }
+
+          # Remove non-Windows Prisma query engines
+          $prismaPath = "node_modules/prisma"
+          if (Test-Path $prismaPath) {
+            Get-ChildItem -Path $prismaPath -File | Where-Object {
+              $_.Name -like "libquery_engine-debian*" -or 
+              $_.Name -like "libquery_engine-rhel*" -or 
+              $_.Name -like "libquery_engine-darwin*" -or
+              $_.Name -like "libquery_engine-linux*"
+            } | ForEach-Object {
+              Write-Host "Removing $($_.FullName)"
+              Remove-Item -Force $_.FullName
+            }
+          }
+
+          # Also clean .prisma/client engines
+          $prismaClientPath = "node_modules/.prisma/client"
+          if (Test-Path $prismaClientPath) {
+            Get-ChildItem -Path $prismaClientPath -File | Where-Object {
+              $_.Name -like "libquery_engine-debian*" -or 
+              $_.Name -like "libquery_engine-rhel*" -or 
+              $_.Name -like "libquery_engine-darwin*" -or
+              $_.Name -like "libquery_engine-linux*"
+            } | ForEach-Object {
+              Write-Host "Removing $($_.FullName)"
+              Remove-Item -Force $_.FullName
+            }
+          }
+
       - name: Build Windows Installer
         run: npm run build:win -- --publish never
         env:

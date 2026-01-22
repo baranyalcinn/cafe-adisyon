@@ -56,4 +56,4 @@ nsis:
   installerHeaderIcon: build/icon.ico
   differentialPackage: false
 
-npmRebuild: true
+npmRebuild: false
