@@ -42,8 +42,11 @@ jobs:
 
       - name: Gereksiz Prisma Motorlarını Temizle
         run: |
+          # Sadece Mac ve Linux dosyalarını siliyoruz.
+          # Windows motoru (exe veya dll) kalsın, onu paketleyeceğiz.
           Remove-Item "node_modules/@prisma/engines/*darwin*" -Recurse -Force -ErrorAction SilentlyContinue
           Remove-Item "node_modules/@prisma/engines/*linux*" -Recurse -Force -ErrorAction SilentlyContinue
+          # NOT: query-engine-windows.exe silinmemeli!
 
       - name: Native Rebuild
         run: npm run rebuild --if-present
