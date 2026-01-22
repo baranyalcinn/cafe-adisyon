@@ -6,12 +6,18 @@ directories:
   buildResources: build
   output: dist
 
+# All dependencies are bundled into out/main/index.js by electron-vite
+# We explicitly exclude node_modules to prevent scanning
 files:
   - out/**/*
   - package.json
+  - '!**/node_modules'
+  - '!**/node_modules/**/*'
 
 asar: false
 npmRebuild: false
+nodeGypRebuild: false
+buildDependenciesFromSource: false
 
 win:
   executableName: cafe-adisyon
