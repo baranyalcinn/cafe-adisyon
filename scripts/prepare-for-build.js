@@ -54,10 +54,58 @@ try {
 
   // Step 3: Prune dev dependencies (MUST BE DONE BEFORE STRIPPING PACKAGE.JSON)
   console.log('\nStep 3: Running npm prune --omit=dev...')
+
+  // BACKUP .prisma folder (npm prune deletes it because it's untracked)
+  const dotPrismaPath = path.join(nodeModulesPath, '.prisma')
+  const dotPrismaBackup = path.join(__dirname, '..', '.prisma-backup')
+  let restoredPrisma = false
+
+  if (fs.existsSync(dotPrismaPath)) {
+    console.log('  Backing up .prisma directory...')
+    fs.cpSync(dotPrismaPath, dotPrismaBackup, { recursive: true })
+  }
+
   try {
     execSync('npm prune --omit=dev', { stdio: 'inherit', cwd: path.join(__dirname, '..') })
   } catch (error) {
     console.warn('  npm prune warning (continuing):', error.message)
+  }
+
+  // RESTORE .prisma folder
+  if (fs.existsSync(dotPrismaBackup)) {
+    console.log('  Restoring .prisma directory...')
+    if (!fs.existsSync(dotPrismaPath)) {
+      fs.mkdirSync(dotPrismaPath, { recursive: true })
+    }
+    fs.cpSync(dotPrismaBackup, dotPrismaPath, { recursive: true })
+    fs.rmSync(dotPrismaBackup, { recursive: true, force: true })
+    restoredPrisma = true
+  }
+
+  // DEBUGGING: Verify @prisma/client and .prisma exist
+  console.log('\n  --- DEBUG: Checking Prisma directories ---')
+  const clientPath = path.join(nodeModulesPath, '@prisma', 'client')
+  if (fs.existsSync(clientPath)) {
+    console.log(`  [OK] @prisma/client exists.`)
+    // List client folder
+    try {
+      console.log('  @prisma/client contents:', fs.readdirSync(clientPath).slice(0, 5))
+    } catch (e) {}
+  } else {
+    console.error(`  [ERROR] @prisma/client MISSING!`)
+  }
+
+  if (fs.existsSync(dotPrismaPath)) {
+    console.log(`  [OK] .prisma exists.`)
+    try {
+      // Check for client inside .prisma
+      const dotPrismaClient = path.join(dotPrismaPath, 'client')
+      if (fs.existsSync(dotPrismaClient)) {
+        console.log('  .prisma/client contents:', fs.readdirSync(dotPrismaClient))
+      }
+    } catch (e) {}
+  } else {
+    console.error(`  [ERROR] .prisma MISSING!`)
   }
 
   // Step 4: CRITICAL - Strip dependencies from package.json to prevent electron-builder scanning

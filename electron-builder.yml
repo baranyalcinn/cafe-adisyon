@@ -25,7 +25,10 @@ files:
       - '!**/node_modules/@libsql/linux-*/**'
       - '!**/node_modules/@prisma/*darwin*/**'
       - '!**/node_modules/@prisma/*linux*/**'
+      - '!**/node_modules/@prisma/*linux*/**'
       - '!**/node_modules/@prisma/*freebsd*/**'
+      # Explicitly include generated .prisma client
+      - 'node_modules/.prisma/**/*'
       # Exclude unnecessary files to reduce scanning
       - '!**/node_modules/**/*.d.ts'
       - '!**/node_modules/**/README*'
