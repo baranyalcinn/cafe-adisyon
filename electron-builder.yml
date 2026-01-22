@@ -14,21 +14,36 @@ asar: false # PAKETLEME YOK (RAM kurtarıcısı)
 files:
   - out/**/*
   - package.json
-  # Gereksizleri at
+
+  # --- ENGELLEME LİSTESİ (Blacklist) ---
+  # 1. DevDependencies ve Gereksiz Klasörler
   - '!node_modules'
   - '!node_modules/**'
-  # Native modülleri ve Prisma'yı manuel al
+  - '!.github' # GitHub workflow dosyaları (Gereksiz)
+  - '!.vscode' # VS Code ayarları (Gereksiz)
+  - '!.idea' # WebStorm ayarları (Varsa)
+
+  # 2. Config Dosyaları (Production'da işe yaramaz)
+  - '!.eslintrc*' # eslint ayar dosyaları
+  - '!.prettierrc*' # prettier ayar dosyaları
+  - '!tsconfig*' # typescript ayar dosyaları
+  - '!vite.config.*' # vite ayar dosyası
+  - '!electron-builder.yml' # Build dosyasının kendisi
+
+  # 3. Kaynak Kodlar
+  - '!src'
+  - '!src/**'
+  - '!prisma' # Prisma kaynak dosyaları (Şema hariç, onu aşağıda alıyoruz)
+  - '!prisma/**'
+  - '!.git'
+  - '!.git/**'
+
+  # --- İZİN VERİLENLER (Whitelist) ---
+  # Sadece çalışması zorunlu olan Native Modüller
   - 'node_modules/better-sqlite3/**/*'
   - 'node_modules/prisma/**/*'
   - 'node_modules/@prisma/**/*'
   - 'node_modules/.prisma/**/*'
-  # Kaynak kodları at
-  - '!src'
-  - '!src/**'
-  - '!prisma'
-  - '!prisma/**'
-  - '!.git'
-  - '!.git/**'
 
 # ASAR kapalı olduğu için asarUnpack kısmına gerek kalmadı, silebilirsin.
 

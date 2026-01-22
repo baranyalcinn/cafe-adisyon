@@ -14,34 +14,49 @@ jobs:
       actions: write
 
     steps:
-      - name: Kodları Çek (Checkout)
+      - name: Kodları Çek
         uses: actions/checkout@v4
 
-      - name: Node.js Kur (v20)
+      # 1. Node sürümünü 22 yapıyoruz (Uyarıları susturmak için)
+      - name: Node.js Kur (v22)
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: 'npm'
 
-      - name: Bağımlılıkları Yükle (Install)
+      - name: Bağımlılıkları Yükle
         run: npm install --legacy-peer-deps
 
-      - name: Prisma Generate (Veritabanı Motorunu Hazırla)
+      - name: Prisma Generate
         run: npx prisma generate
 
-      - name: TypeScript/Vite Build (Kodları Derle)
+      # 2. RAM TASARRUFU: Gereksiz Prisma Motorlarını Sil
+      # Windows için build alıyoruz ama node_modules içinde Linux/Mac dosyaları da iniyor.
+      # Bunlar paketlenirken RAM'i sömürüyor. Onları siliyoruz.
+      - name: Gereksiz Prisma Motorlarını Temizle
+        run: |
+          Remove-Item -Path "node_modules/@prisma/engines/*" -Include *"darwin"*,"*"linux"*,"*"openssl"* -Recurse -Force -ErrorAction SilentlyContinue
+          Write-Host "Gereksiz Prisma motorları temizlendi."
+
+      - name: Native Rebuild
+        run: npm run rebuild --if-present
+
+      - name: TypeScript Build
         run: npm run build
 
-      - name: Windows EXE Oluştur (Packaging)
+      - name: Windows EXE Oluştur
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NODE_OPTIONS: '--max-old-space-size=4096'
+          # 3. RAM LİMİTİ: 4096 (Patladı) -> 5120 (5GB - Sınır Zorlama)
+          NODE_OPTIONS: '--max-old-space-size=5120'
           ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES: 'true'
+          DEBUG: electron-builder
         run: |
           npm run typecheck
+          # asar=false ve compression=store hala çok önemli
           npx electron-builder --win portable --publish never --config.compression=store --config.asar=false
 
-      - name: Build Sonucunu Yükle (Artifact)
+      - name: Build Sonucunu Yükle
         uses: actions/upload-artifact@v4
         with:
           name: Cafe-Adisyon-Portable
