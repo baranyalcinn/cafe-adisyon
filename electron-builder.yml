@@ -1,46 +1,18 @@
 appId: com.caffio.cafeadisyon
 productName: Cafe Adisyon
 electronVersion: 39.3.0
-compression: store
 
 directories:
   buildResources: build
   output: dist
 
-# Simplified files config - use flat list instead of from/to/filter
 files:
   - out/**/*
-  - resources/**/*
   - package.json
-  - node_modules/**/*
-  # Exclude source files
-  - '!**/*.{ts,tsx}'
-  - '!**/*.map'
-  - '!src/**/*'
-  # Exclude non-Windows native binaries
-  - '!node_modules/@libsql/darwin-*'
-  - '!node_modules/@libsql/darwin-*/**'
-  - '!node_modules/@libsql/linux-*'
-  - '!node_modules/@libsql/linux-*/**'
-  - '!node_modules/@prisma/*darwin*'
-  - '!node_modules/@prisma/*darwin*/**'
-  - '!node_modules/@prisma/*linux*'
-  - '!node_modules/@prisma/*linux*/**'
-  - '!node_modules/@prisma/*freebsd*'
-  - '!node_modules/@prisma/*freebsd*/**'
-  # Exclude dev artifacts
-  - '!**/node_modules/**/{test,tests,__tests__}/**'
-  - '!**/node_modules/**/.git*'
 
-# ASAR disabled to prevent heap OOM with large node_modules
 asar: false
-
-# Disable all rebuilding
 npmRebuild: false
-nodeGypRebuild: false
-buildDependenciesFromSource: false
 
-# ONLY Windows x64 Portable
 win:
   executableName: cafe-adisyon
   icon: build/icon.ico

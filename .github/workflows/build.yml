@@ -1,4 +1,4 @@
-name: Build Windows Installer
+name: Build Windows Portable
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
 jobs:
   build-windows:
     runs-on: windows-latest
-    timeout-minutes: 180 # Allow 3 hours for safe memory-constrained builds
+    timeout-minutes: 60
 
     steps:
       - uses: actions/checkout@v4
@@ -18,19 +18,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '22'
           cache: 'npm'
-
-      - name: Cache Electron
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/AppData/Local/electron/Cache
-            ~/.cache/electron
-            ~/.cache/electron-builder
-          key: electron-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            electron-${{ runner.os }}-
 
       - name: Install dependencies
         run: npm ci
@@ -40,24 +29,15 @@ jobs:
 
       - name: Build application
         run: npm run build
-        env:
-          NODE_OPTIONS: '--max-old-space-size=4096'
-
-      - name: Optimize node_modules for packaging
-        run: node scripts/prepare-for-build.js
-
-      - name: Install global electron-builder (to survive pruning)
-        run: npm install -g electron-builder
 
       - name: Package with electron-builder
         run: npx electron-builder --win --x64 --publish never
         env:
-          NODE_OPTIONS: '--max-old-space-size=16384'
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_OPTIONS: '--max-old-space-size=8192'
 
-      - name: Upload Installer
+      - name: Upload Portable Exe
         uses: actions/upload-artifact@v4
         with:
-          name: windows-portable-exe
+          name: windows-portable
           path: dist/*.exe
           retention-days: 30
