@@ -6,46 +6,38 @@ directories:
   buildResources: build
   output: dist
 
-# --- KRİTİK DEĞİŞİKLİKLER ---
-compression: store # Sıkıştırma yok
-asar: false # PAKETLEME YOK (RAM kurtarıcısı)
-# ----------------------------
+# Sıkıştırma yok (Hız için) ama Paketleme VAR (Düzen için)
+compression: store
+asar: true
 
 files:
   - out/**/*
   - package.json
-
-  # --- ENGELLEME LİSTESİ (Blacklist) ---
-  # 1. DevDependencies ve Gereksiz Klasörler
+  # Sadece gerekli modülleri al
   - '!node_modules'
   - '!node_modules/**'
-  - '!.github' # GitHub workflow dosyaları (Gereksiz)
-  - '!.vscode' # VS Code ayarları (Gereksiz)
-  - '!.idea' # WebStorm ayarları (Varsa)
-
-  # 2. Config Dosyaları (Production'da işe yaramaz)
-  - '!.eslintrc*' # eslint ayar dosyaları
-  - '!.prettierrc*' # prettier ayar dosyaları
-  - '!tsconfig*' # typescript ayar dosyaları
-  - '!vite.config.*' # vite ayar dosyası
-  - '!electron-builder.yml' # Build dosyasının kendisi
-
-  # 3. Kaynak Kodlar
-  - '!src'
-  - '!src/**'
-  - '!prisma' # Prisma kaynak dosyaları (Şema hariç, onu aşağıda alıyoruz)
-  - '!prisma/**'
-  - '!.git'
-  - '!.git/**'
-
-  # --- İZİN VERİLENLER (Whitelist) ---
-  # Sadece çalışması zorunlu olan Native Modüller
   - 'node_modules/better-sqlite3/**/*'
   - 'node_modules/prisma/**/*'
   - 'node_modules/@prisma/**/*'
   - 'node_modules/.prisma/**/*'
+  # Gereksiz her şeyi engelle
+  - '!.git'
+  - '!.github'
+  - '!.vscode'
+  - '!src'
+  - '!src/**'
+  - '!prisma'
+  - '!prisma/**'
 
-# ASAR kapalı olduğu için asarUnpack kısmına gerek kalmadı, silebilirsin.
+# ASAR içinden çıkarılması gerekenler (Native Modüller)
+# Uygulama çalışırken bu dosyalar exe'nin yanındaki resources klasöründe olur.
+asarUnpack:
+  - '**/*.node'
+  - '**/better-sqlite3/**'
+  - '**/prisma/**'
+  - '**/@prisma/**'
+  - '**/query-engine-windows.exe'
+  - '**/schema.prisma'
 
 npmRebuild: false
 buildDependenciesFromSource: false

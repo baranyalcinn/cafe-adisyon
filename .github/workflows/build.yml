@@ -17,11 +17,21 @@ jobs:
       - name: Kodları Çek
         uses: actions/checkout@v4
 
-      # 1. Node sürümünü 22 yapıyoruz (Uyarıları susturmak için)
-      - name: Node.js Kur (v24)
+      # --- MÜKEMMEL ÇÖZÜM: SWAP ALANI OLUŞTURMA ---
+      # RAM yetmediğinde diski RAM gibi kullanırız.
+      # Bu adım sunucuya +8GB ek sanal bellek tanımlar.
+      - name: Set Pagefile (Swap)
+        uses: al-cheb/configure-pagefile-action@v1.4
+        with:
+          minimum-size: 8GB
+          maximum-size: 8GB
+          disk-root: 'C:'
+      # --------------------------------------------
+
+      - name: Node.js Kur (v22)
         uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 22
           cache: 'npm'
 
       - name: Bağımlılıkları Yükle
@@ -30,17 +40,10 @@ jobs:
       - name: Prisma Generate
         run: npx prisma generate
 
-      # 2. RAM TASARRUFU: Gereksiz Prisma Motorlarını Sil
-      # Windows için build alıyoruz ama node_modules içinde Linux/Mac dosyaları da iniyor.
-      # Bunlar paketlenirken RAM'i sömürüyor. Onları siliyoruz.
       - name: Gereksiz Prisma Motorlarını Temizle
         run: |
-          # Tek satırda karmaşık filtre yazmak yerine tek tek siliyoruz.
-          # Böylece PowerShell tırnak işaretlerini karıştırmıyor.
           Remove-Item "node_modules/@prisma/engines/*darwin*" -Recurse -Force -ErrorAction SilentlyContinue
           Remove-Item "node_modules/@prisma/engines/*linux*" -Recurse -Force -ErrorAction SilentlyContinue
-          # Windows build alırken OpenSSL silmek bazen riskli olabilir, o yüzden onu bıraktım.
-          # Zaten en çok yer kaplayanlar linux ve darwin (mac) dosyalarıdır.
 
       - name: Native Rebuild
         run: npm run rebuild --if-present
@@ -51,14 +54,17 @@ jobs:
       - name: Windows EXE Oluştur
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # 3. RAM LİMİTİ: 4096 (Patladı) -> 5120 (5GB - Sınır Zorlama)
-          NODE_OPTIONS: '--max-old-space-size=5120'
+          # ARTIK RAM LİMİTİNE GEREK YOK!
+          # Swap sayesinde sistem ihtiyacı kadarını kullanacak.
+          # Yine de Node'a 12GB'a kadar yolu var diyelim.
+          NODE_OPTIONS: '--max-old-space-size=12288'
           ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES: 'true'
           DEBUG: electron-builder
         run: |
           npm run typecheck
-          # asar=false ve compression=store hala çok önemli
-          npx electron-builder --win portable --publish never --config.compression=store --config.asar=false
+          # asar: true yapıyoruz (Aşağıda açıklandı)
+          # compression: store (Hız için sıkıştırma yok)
+          npx electron-builder --win portable --publish never --config.compression=store --config.asar=true
 
       - name: Build Sonucunu Yükle
         uses: actions/upload-artifact@v4
