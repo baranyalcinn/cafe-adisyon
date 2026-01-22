@@ -11,7 +11,13 @@ export default defineConfig({
           '@electron-toolkit/utils',
           'prisma-client-generated',
           '@prisma/adapter-libsql',
-          '@libsql/client'
+          '@libsql/client',
+          'zod',
+          'date-fns',
+          'zustand',
+          'clsx',
+          'tailwind-merge',
+          'class-variance-authority'
         ]
       })
     ],
