@@ -58,7 +58,8 @@ try {
   // BACKUP .prisma folder (npm prune deletes it because it's untracked)
   const dotPrismaPath = path.join(nodeModulesPath, '.prisma')
   const dotPrismaBackup = path.join(__dirname, '..', '.prisma-backup')
-  let restoredPrisma = false
+  const dotPrismaPath = path.join(nodeModulesPath, '.prisma')
+  const dotPrismaBackup = path.join(__dirname, '..', '.prisma-backup')
 
   if (fs.existsSync(dotPrismaPath)) {
     console.log('  Backing up .prisma directory...')
@@ -90,7 +91,11 @@ try {
     // List client folder
     try {
       console.log('  @prisma/client contents:', fs.readdirSync(clientPath).slice(0, 5))
-    } catch (e) {}
+    try {
+      console.log('  @prisma/client contents:', fs.readdirSync(clientPath).slice(0, 5))
+    } catch (_e) {
+      console.log('  (Unable to list @prisma/client contents)')
+    }
   } else {
     console.error(`  [ERROR] @prisma/client MISSING!`)
   }
@@ -103,7 +108,15 @@ try {
       if (fs.existsSync(dotPrismaClient)) {
         console.log('  .prisma/client contents:', fs.readdirSync(dotPrismaClient))
       }
-    } catch (e) {}
+    try {
+      // Check for client inside .prisma
+      const dotPrismaClient = path.join(dotPrismaPath, 'client')
+      if (fs.existsSync(dotPrismaClient)) {
+        console.log('  .prisma/client contents:', fs.readdirSync(dotPrismaClient))
+      }
+    } catch (_e) {
+      console.log('  (Unable to list .prisma/client contents)')
+    }
   } else {
     console.error(`  [ERROR] .prisma MISSING!`)
   }
