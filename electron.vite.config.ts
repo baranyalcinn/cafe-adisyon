@@ -14,7 +14,8 @@ export default defineConfig({
           'zustand',
           'clsx',
           'tailwind-merge',
-          'class-variance-authority'
+          'class-variance-authority',
+          'prisma-client-generated'
         ]
       })
     ],
@@ -23,8 +24,6 @@ export default defineConfig({
         external: [
           '@prisma/client',
           '@prisma/client/runtime/client',
-          'prisma-client-generated',
-          'prisma-client-generated/client',
           'better-sqlite3',
           '@libsql/client',
           '@libsql/core',

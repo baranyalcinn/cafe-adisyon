@@ -17,9 +17,8 @@ files:
   - package.json
   # Externalized modules - must be in ASAR for require() to find them
 
-  # Prisma Client Runtime (required by prisma-client-generated)
+  # Prisma Client Runtime (required for @prisma/client external dependency)
   - node_modules/@prisma/client/**/*
-  - node_modules/prisma-client-generated/**/*
 
   - node_modules/@libsql/client/**/*
   - node_modules/@libsql/core/**/*
