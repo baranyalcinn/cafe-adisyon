@@ -22,7 +22,9 @@ export default defineConfig({
       rollupOptions: {
         external: [
           '@prisma/client',
+          '@prisma/client/runtime/client',
           'prisma-client-generated',
+          'prisma-client-generated/client',
           'better-sqlite3',
           '@libsql/client',
           '@libsql/core',
