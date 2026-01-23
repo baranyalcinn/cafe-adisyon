@@ -15,12 +15,13 @@ asar: true
 files:
   - out/**/*
   - package.json
-  # Note: Prisma & LibSQL JS parts are now BUNDLED, no need to include them here
-  # Only native bits are handled via extraFiles below
-
+  # Bundle only necessary node_modules to avoid OOM while ensuring require() works
+  - node_modules/@libsql/win32-x64-msvc/**/*
+  - node_modules/@neon-rs/load/**/*
   - node_modules/detect-libc/**/*
   - node_modules/js-base64/**/*
   - node_modules/promise-limit/**/*
+
   # Exclude everything else
   - '!node_modules/**/node_modules'
   - '!.git'
@@ -30,18 +31,12 @@ files:
   - '!prisma'
 
 # Native .node binaries must be accessible outside ASAR
-# These will be unpacked by asarUnpack
-extraFiles:
-  # LibSQL native bindings (Windows x64) - contains .node binary
-  - from: node_modules/@libsql/win32-x64-msvc
-    to: node_modules/@libsql/win32-x64-msvc
-    filter:
-      - '**/*'
-
+# These will be unpacked by asarUnpack to app.asar.unpacked
 asarUnpack:
   - '**/*.node'
   - '**/node_modules/@libsql/**'
   - '**/node_modules/libsql/**'
+  - '**/node_modules/@neon-rs/load/**'
 
 npmRebuild: false
 buildDependenciesFromSource: false
