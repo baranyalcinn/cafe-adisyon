@@ -1,63 +1,48 @@
 import { PrismaClient } from 'prisma-client-generated'
+import { PrismaLibSql } from '@prisma/adapter-libsql'
 import { app } from 'electron'
 import path from 'path'
-import fs from 'fs'
+import * as fs from 'fs'
 
-// Veritabanı dosyasının adı
-const DB_FILENAME = 'dev.db'
+// Get the database path - in production use userData, in dev use project root
+const isDev = !app.isPackaged
+const dbPath = isDev
+  ? path.join(process.cwd(), 'prisma', 'dev.db')
+  : path.join(app.getPath('userData'), 'caffio.db')
 
-// 1. Veritabanı Yolu Belirleme (DB Path Strategy)
-// Geliştirme ortamında proje kökünü, üretimde (prod) kullanıcının veri klasörünü kullanır.
-// Üretimde "resources" klasörüne yazamayız, o yüzden "userData"ya kopyalayacağız.
-const dbPath = app.isPackaged
-  ? path.join(app.getPath('userData'), DB_FILENAME)
-  : path.join(__dirname, '../../../prisma', DB_FILENAME) // Proje yapınıza göre '../' sayısını ayarlayın
-
-// 2. Prisma Engine ve Schema Yolları
-// Üretimde (Production) bu dosyalar resources klasöründe olacak.
-const qePath = app.isPackaged
-  ? path.join(process.resourcesPath, 'prisma/client') // electron-builder.yml'da verdiğimiz yol
-  : undefined // Dev ortamında node_modules'dan otomatik bulur
-
-const schemaPath = app.isPackaged
-  ? path.join(process.resourcesPath, 'prisma/schema.prisma')
-  : undefined
-
-// 3. Üretim Ortamı İçin Veritabanı Hazırlığı
-if (app.isPackaged) {
-  // Eğer userData klasöründe veritabanı yoksa, resources'tan kopyala (ilk kurulum)
-  if (!fs.existsSync(dbPath)) {
-    // electron-builder ile kopyaladığımız "temiz" veritabanı
-    const originalDbPath = path.join(process.resourcesPath, 'prisma', DB_FILENAME)
-
-    // Eğer kaynak veritabanı varsa kopyala, yoksa boş oluşturulmasını bekle
-    if (fs.existsSync(originalDbPath)) {
-      try {
-        fs.copyFileSync(originalDbPath, dbPath)
-        console.log('Veritabanı başarıyla kopyalandı:', dbPath)
-      } catch (e) {
-        console.error('Veritabanı kopyalama hatası:', e)
-      }
+// First Run Logic: Copy initial DB if missing in production
+if (!isDev && !fs.existsSync(dbPath)) {
+  try {
+    const initialDbPath = path.join(process.resourcesPath, 'initial.db')
+    if (fs.existsSync(initialDbPath)) {
+      console.log('First run: Copying initial database...')
+      fs.copyFileSync(initialDbPath, dbPath)
+    } else {
+      console.error('Initial database file not found at:', initialDbPath)
     }
+  } catch (error) {
+    console.error('Failed to copy initial database:', error)
   }
 }
 
-// 4. Prisma Client'ı Başlatma
-// Logları production'da kapatabilirsiniz, debug için açık bırakıldı.
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: `file:${dbPath}`
-    }
-  },
-  ...(app.isPackaged
-    ? {
-        // Production için özel config (Schema yerini gösteriyoruz)
-        // Not: Modern Prisma versiyonlarında bazen __internal ayarları gerekebilir
-        // ancak genellikle datasource URL'i yeterlidir.
-        // Eğer "Query Engine not found" hatası devam ederse burayı özelleştirmek gerekebilir.
-      }
-    : {})
+// Create Prisma adapter with LibSQL (Prisma 7+ compatible)
+const adapter = new PrismaLibSql({
+  url: `file:${dbPath}`
 })
+
+// Create Prisma client with adapter
+const prisma = new PrismaClient({ adapter })
+
+// Optimize SQLite performance
+;(async () => {
+  try {
+    await prisma.$executeRawUnsafe('PRAGMA journal_mode = WAL;')
+    await prisma.$executeRawUnsafe('PRAGMA synchronous = NORMAL;')
+    await prisma.$executeRawUnsafe('PRAGMA cache_size = -64000;')
+    await prisma.$executeRawUnsafe('PRAGMA temp_store = MEMORY;')
+  } catch (error) {
+    console.error('Failed to set SQLite pragmas:', error)
+  }
+})()
 
 export { prisma, dbPath }

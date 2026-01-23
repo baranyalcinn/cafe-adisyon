@@ -25,7 +25,7 @@ jobs:
           maximum-size: 8GB
           disk-root: 'C:'
 
-      - name: Node.js Kur (v22)
+      - name: Node.js Kur (v24)
         uses: actions/setup-node@v4
         with:
           node-version: 24

@@ -9,7 +9,6 @@ export default defineConfig({
       externalizeDepsPlugin({
         exclude: [
           '@electron-toolkit/utils',
-          'prisma-client-generated',
           'zod',
           'date-fns',
           'zustand',
