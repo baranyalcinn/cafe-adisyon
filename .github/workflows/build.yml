@@ -55,11 +55,20 @@ jobs:
       # With empty dependencies, collector has nothing to analyze (fixes OOM)
       - name: Prepare for Packaging
         run: |
-          # Read package.json and remove dependencies
+          # Read package.json
           $pkg = Get-Content package.json -Raw | ConvertFrom-Json
-          $pkg.dependencies = @{}
+
+          # We must keep native modules in dependencies so electron-builder 
+          # correctly handles their resolution stubs in the ASAR archive.
+          # Everything else is bundled by Vite, so we can clear them to avoid OOM.
+          $nativeDeps = @{}
+          if ($pkg.dependencies.'@libsql/win32-x64-msvc') {
+            $nativeDeps.'@libsql/win32-x64-msvc' = $pkg.dependencies.'@libsql/win32-x64-msvc'
+          }
+
+          $pkg.dependencies = $nativeDeps
           $pkg | ConvertTo-Json -Depth 10 | Set-Content package.json -Encoding UTF8
-          Write-Host "Dependencies stripped from package.json"
+          Write-Host "Dependencies stripped, but native modules preserved."
 
       - name: Windows EXE Oluştur
         env:
