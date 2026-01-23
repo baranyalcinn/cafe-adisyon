@@ -18,14 +18,11 @@ export default defineConfig({
         ]
       })
     ],
-    resolve: {
-      alias: {
-        'prisma-client-generated/client': resolve('node_modules/prisma-client-generated/client.ts')
-      }
-    },
     build: {
       rollupOptions: {
         external: [
+          '@prisma/client',
+          'prisma-client-generated',
           'better-sqlite3',
           '@libsql/client',
           '@libsql/core',
