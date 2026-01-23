@@ -14,8 +14,7 @@ export default defineConfig({
           'zustand',
           'clsx',
           'tailwind-merge',
-          'class-variance-authority',
-          'prisma-client-generated'
+          'class-variance-authority'
         ]
       })
     ],

@@ -6,6 +6,9 @@ out
 *.log*
 .vscode
 
+# Prisma Generated Client
+src/generated/
+
 # Database
 *.db
 *.db-journal
