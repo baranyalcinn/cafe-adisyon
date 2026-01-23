@@ -15,6 +15,7 @@ files:
   # Explicitly include externalized database packages
   # This avoids OOM by skipping node-module scanning while ensuring runtime availability
   - node_modules/@prisma/**/*
+  - node_modules/.prisma/**/*
   - node_modules/@libsql/**/*
   - node_modules/libsql/**/*
   - node_modules/@neon-rs/load/**/*
@@ -35,6 +36,9 @@ files:
 # These will be automatically unpacked by electron-builder if they are native
 asarUnpack:
   - '**/*.node'
+  - 'node_modules/@prisma/**/*'
+  - 'node_modules/.prisma/**/*'
+  - 'node_modules/@libsql/**/*'
 
 npmRebuild: false
 buildDependenciesFromSource: false
