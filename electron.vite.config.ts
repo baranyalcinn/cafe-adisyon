@@ -16,7 +16,10 @@ export default defineConfig({
           'tailwind-merge',
           'class-variance-authority',
           '@prisma/client',
-          '@prisma/adapter-libsql'
+          '@prisma/adapter-libsql',
+          '@libsql/client',
+          '@libsql/core',
+          '@libsql/hrana-client'
         ]
       })
     ],
@@ -26,9 +29,6 @@ export default defineConfig({
       },
       rollupOptions: {
         external: [
-          '@libsql/client',
-          '@libsql/core',
-          '@libsql/hrana-client',
           '@libsql/isomorphic-fetch',
           '@libsql/isomorphic-ws',
           '@libsql/win32-x64-msvc',
