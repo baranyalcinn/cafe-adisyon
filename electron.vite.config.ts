@@ -31,7 +31,8 @@ export default defineConfig({
           'libsql',
           '@prisma/adapter-libsql',
           '@prisma/client',
-          'prisma-client-generated'
+          'prisma-client-generated',
+          'prisma-client-generated/client'
         ]
       }
     }
