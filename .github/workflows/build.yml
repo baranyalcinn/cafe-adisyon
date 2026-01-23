@@ -17,7 +17,7 @@ jobs:
       - name: Kodları Çek
         uses: actions/checkout@v4
 
-      # Swap Alanı (8GB Emniyet Kemeri) - Bunu tutuyoruz, hayat kurtarır.
+      # Swap yine kalsın (Emniyet kemeri)
       - name: Set Pagefile (Swap)
         uses: al-cheb/configure-pagefile-action@v1.4
         with:
@@ -29,65 +29,56 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'npm'
+          # Cache KULLANMIYORUZ. Temiz kurulum şart.
 
-      # 1. AŞAMA: HER ŞEYİ YÜKLE VE DERLE
-      - name: Tüm Bağımlılıkları Yükle
-        run: npm install --legacy-peer-deps
+      # --- KRİTİK DEĞİŞİKLİK BURADA ---
+      - name: Temiz ve Güvenli Kurulum
+        run: |
+          # 1. Eski kilit dosyasını sil (Hatalı ağacı yok et)
+          if (Test-Path package-lock.json) { Remove-Item package-lock.json }
 
-      - name: Prisma Generate (Build İçin)
+          # 2. Node Modules varsa sil
+          if (Test-Path node_modules) { Remove-Item node_modules -Recurse -Force -ErrorAction SilentlyContinue }
+
+          # 3. Bağımlılıkları Yükle
+          # --no-optional: "name=undefined" hatasının en büyük sebebi olan opsiyonel paketleri engeller.
+          # --legacy-peer-deps: Versiyon çakışmalarını takma.
+          npm install --no-optional --legacy-peer-deps
+
+      - name: Prisma Generate
         run: npx prisma generate
 
       - name: Native Rebuild
         run: npm run rebuild --if-present
 
-      - name: TypeScript Build (Kodları JS'e Çevir)
+      - name: TypeScript Build
         run: npm run build
 
-      # 2. AŞAMA: TEMİZLİK OPERASYONU (RAM PATLAMASINI ENGELLEYEN KISIM)
-      # Kodlar artık 'dist' klasöründe. DevDependency'lere ihtiyacımız kalmadı.
-
-      - name: Node Modules'u Sıfırla (Clean Install)
+      # --- TEMİZLİK (Döngü Yaratanları Sil) ---
+      - name: Potansiyel Hataları Temizle
         run: |
-          # 1. Mevcut şişman klasörü sil
-          Remove-Item -Path "node_modules" -Recurse -Force -ErrorAction SilentlyContinue
+          # 1. .bin klasörü bazen sonsuz döngü (symlink) yaratır, SİLİYORUZ.
+          Remove-Item "node_modules/.bin" -Recurse -Force -ErrorAction SilentlyContinue
 
-          # 2. Prisma Config dosyasını sil (Önceki hatayı engellemek için)
-          # Production'da buna ihtiyaç yok, schema.prisma yeterli.
-          Remove-Item "prisma.config.ts" -Force -ErrorAction SilentlyContinue
-
-          # 3. SADECE Production paketlerini kur (DevDeps yok -> Eslint, Vite vb. gelmez)
-          npm install --omit=dev --legacy-peer-deps
-
-          # 4. Electron Builder'ı geri yükle (Çünkü o bir devDep, silindi)
-          npm install electron-builder --save-dev --legacy-peer-deps
-
-      - name: Prisma Client'ı Tekrar Oluştur (Production İçin)
-        run: npx prisma generate
-
-      - name: Gereksiz Dosyaları Temizle (Son Rötuş)
-        run: |
-          # Git geçmişini sil
-          Remove-Item ".git" -Recurse -Force -ErrorAction SilentlyContinue
-          # Kaynak kodları sil (Zaten derlendi)
-          Remove-Item "src" -Recurse -Force -ErrorAction SilentlyContinue
-          # Gereksiz Prisma motorlarını sil
+          # 2. Prisma CLI ve Gereksiz Motorlar
+          Remove-Item "node_modules/prisma" -Recurse -Force -ErrorAction SilentlyContinue
           Remove-Item "node_modules/@prisma/engines/*darwin*" -Recurse -Force -ErrorAction SilentlyContinue
           Remove-Item "node_modules/@prisma/engines/*linux*" -Recurse -Force -ErrorAction SilentlyContinue
 
-      # 3. AŞAMA: PAKETLEME
+          # 3. Git ve Kaynaklar
+          Remove-Item ".git" -Recurse -Force -ErrorAction SilentlyContinue
+          Remove-Item "src" -Recurse -Force -ErrorAction SilentlyContinue
+
       - name: Windows EXE Oluştur
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Swap var, RAM rahat.
-          NODE_OPTIONS: '--max-old-space-size=8192'
+          # 12GB RAM veriyoruz ama sorun çözüldüğü için muhtemelen 2GB bile yetecek.
+          NODE_OPTIONS: '--max-old-space-size=12288'
+          # Bu ayar hala kalsın
           ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES: 'true'
-          NPM_WORKSPACES: 'false'
           DEBUG: electron-builder
         run: |
-          # Use electron-builder directly via node to bypass npx workspace detection
-          # This fixes the "npm prefix -w" exit code 1 error that causes heap OOM
-          node node_modules/electron-builder/out/cli/cli.js --win portable --publish never --config.compression=store --config.asar=true
+          npx electron-builder --win portable --publish never --config.compression=store --config.asar=true
 
       - name: Build Sonucunu Yükle
         uses: actions/upload-artifact@v4

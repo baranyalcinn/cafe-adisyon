@@ -12,11 +12,9 @@ asar: true
 files:
   - out/**/*
   - package.json
-  # Artık node_modules temiz (sadece production var), hepsini alabiliriz.
   - 'node_modules/**/*'
-
-  # Yalandan engellemeler (Zaten sildik ama garanti olsun)
   - '!node_modules/prisma'
+  - '!node_modules/.bin' # Bunu build.yml'da sildik ama burada da dursun
   - '!.git'
   - '!.github'
   - '!.vscode'
