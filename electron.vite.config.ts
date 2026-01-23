@@ -30,6 +30,9 @@ export default defineConfig({
       })
     ],
     build: {
+      commonjsOptions: {
+        ignoreDynamicRequires: true
+      },
       rollupOptions: {
         external: [
           // Prisma & LibSQL JS parts are now BUNDLED via exclude list above
