@@ -66,6 +66,18 @@ jobs:
           Remove-Item ".git" -Recurse -Force -ErrorAction SilentlyContinue
           Remove-Item "src" -Recurse -Force -ErrorAction SilentlyContinue
 
+          # 4. KRITIK FIX: libsql optionalDependencies temizliği
+          # electron-builder v26+ tüm optionalDependencies'i çözmeye çalışıyor
+          # Windows dışındaki platformlar undefined oluyor ve OOM'a yol açıyor
+          # Sadece Windows bağımlılığını bırakıyoruz
+          $libsqlPath = "node_modules/libsql/package.json"
+          if (Test-Path $libsqlPath) {
+            $pkg = Get-Content $libsqlPath -Raw | ConvertFrom-Json
+            $pkg.optionalDependencies = @{ "@libsql/win32-x64-msvc" = $pkg.optionalDependencies."@libsql/win32-x64-msvc" }
+            $pkg | ConvertTo-Json -Depth 10 | Set-Content $libsqlPath -Encoding UTF8
+            Write-Host "libsql optionalDependencies cleaned (Windows only)"
+          }
+
       - name: Windows EXE Oluştur
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
