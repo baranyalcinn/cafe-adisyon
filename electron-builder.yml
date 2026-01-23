@@ -57,6 +57,14 @@ extraFiles:
   - from: node_modules/promise-limit
     to: node_modules/promise-limit
 
+  # Prisma dependencies (externalized)
+  - from: node_modules/prisma-client-generated
+    to: node_modules/prisma-client-generated
+  - from: node_modules/@prisma/client
+    to: node_modules/@prisma/client
+  - from: node_modules/@prisma/adapter-libsql
+    to: node_modules/@prisma/adapter-libsql
+
 asarUnpack:
   - '**/*.node'
   - '**/node_modules/@libsql/**'

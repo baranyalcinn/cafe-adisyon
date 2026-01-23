@@ -10,8 +10,6 @@ export default defineConfig({
         exclude: [
           '@electron-toolkit/utils',
           'prisma-client-generated',
-          '@prisma/adapter-libsql',
-          '@libsql/client',
           'zod',
           'date-fns',
           'zustand',
@@ -23,7 +21,19 @@ export default defineConfig({
     ],
     build: {
       rollupOptions: {
-        external: ['better-sqlite3']
+        external: [
+          'better-sqlite3',
+          '@libsql/client',
+          '@libsql/core',
+          '@libsql/hrana-client',
+          '@libsql/isomorphic-fetch',
+          '@libsql/isomorphic-ws',
+          '@libsql/win32-x64-msvc',
+          'libsql',
+          '@prisma/adapter-libsql',
+          '@prisma/client',
+          'prisma-client-generated'
+        ]
       }
     }
   },
