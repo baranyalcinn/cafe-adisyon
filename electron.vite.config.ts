@@ -14,18 +14,7 @@ export default defineConfig({
           'zustand',
           'clsx',
           'tailwind-merge',
-          'class-variance-authority',
-          // Prisma client must be BUNDLED (not external) because generated
-          // client files import @prisma/client/runtime/* which won't resolve
-          // correctly from ASAR in portable builds
-          '@prisma/client',
-          '@prisma/adapter-libsql',
-          '@libsql/client',
-          '@libsql/core',
-          '@libsql/hrana-client',
-          '@libsql/isomorphic-fetch',
-          '@libsql/isomorphic-ws',
-          'libsql'
+          'class-variance-authority'
         ]
       })
     ],
@@ -35,9 +24,16 @@ export default defineConfig({
       },
       rollupOptions: {
         external: [
-          // Prisma & LibSQL JS parts are now BUNDLED via exclude list above
-          'better-sqlite3',
-          '@libsql/win32-x64-msvc'
+          '@prisma/client',
+          '@prisma/adapter-libsql',
+          '@libsql/client',
+          '@libsql/core',
+          '@libsql/hrana-client',
+          '@libsql/isomorphic-fetch',
+          '@libsql/isomorphic-ws',
+          '@libsql/win32-x64-msvc',
+          'libsql',
+          'better-sqlite3'
         ]
       }
     }

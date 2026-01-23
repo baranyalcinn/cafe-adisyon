@@ -11,16 +11,16 @@ asar: true
 
 # CRITICAL: Only include bundled output - NO node_modules
 # This completely bypasses node-module-collector (fixes OOM)
-# EXCEPT: Externalized modules must be included for require() to work
-files:
-  - out/**/*
-  - package.json
-  # Bundle only necessary node_modules to avoid OOM while ensuring require() works
-  - node_modules/@libsql/win32-x64-msvc/**/*
+  # Explicitly include externalized database packages
+  # This avoids OOM by skipping node-module scanning while ensuring runtime availability
+  - node_modules/@prisma/**/*
+  - node_modules/@libsql/**/*
+  - node_modules/libsql/**/*
   - node_modules/@neon-rs/load/**/*
   - node_modules/detect-libc/**/*
   - node_modules/js-base64/**/*
   - node_modules/promise-limit/**/*
+  - node_modules/async-mutex/**/*
 
   # Exclude everything else
   - '!node_modules/**/node_modules'
@@ -31,12 +31,12 @@ files:
   - '!prisma'
 
 # Native .node binaries must be accessible outside ASAR
-# These will be unpacked by asarUnpack to app.asar.unpacked
 asarUnpack:
   - '**/*.node'
   - '**/node_modules/@libsql/**'
   - '**/node_modules/libsql/**'
   - '**/node_modules/@neon-rs/load/**'
+  - '**/node_modules/@prisma/client/runtime/**'
 
 npmRebuild: false
 buildDependenciesFromSource: false
