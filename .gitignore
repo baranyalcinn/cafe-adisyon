@@ -17,3 +17,4 @@ exports/
 # Electron build temp
 *.blockmap
 succes build.txt
+portable build succes.txt

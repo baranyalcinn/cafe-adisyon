@@ -28,7 +28,7 @@ jobs:
       - name: Node.js Kur (v22)
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Temiz Kurulum
         run: |

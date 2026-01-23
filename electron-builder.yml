@@ -11,59 +11,40 @@ asar: true
 
 # CRITICAL: Only include bundled output - NO node_modules
 # This completely bypasses node-module-collector (fixes OOM)
+# EXCEPT: Externalized modules must be included for require() to work
 files:
   - out/**/*
   - package.json
-  - '!node_modules'
-  - '!node_modules/**/*'
+  # Externalized modules - must be in ASAR for require() to find them
+  - node_modules/prisma-client-generated/**/*
+  - node_modules/@prisma/client/**/*
+  - node_modules/@prisma/adapter-libsql/**/*
+  - node_modules/@libsql/client/**/*
+  - node_modules/@libsql/core/**/*
+  - node_modules/@libsql/hrana-client/**/*
+  - node_modules/@libsql/isomorphic-fetch/**/*
+  - node_modules/@libsql/isomorphic-ws/**/*
+  - node_modules/libsql/**/*
+  - node_modules/detect-libc/**/*
+  - node_modules/js-base64/**/*
+  - node_modules/promise-limit/**/*
+  # Exclude everything else
+  - '!node_modules/@libsql/*/build'
+  - '!node_modules/**/node_modules'
   - '!.git'
   - '!.github'
   - '!.vscode'
   - '!src'
   - '!prisma'
 
-# Native modules copied via extraFiles (not subject to collector)
+# Native .node binaries must be accessible outside ASAR
+# These will be unpacked by asarUnpack
 extraFiles:
-  # LibSQL native bindings (Windows x64)
+  # LibSQL native bindings (Windows x64) - contains .node binary
   - from: node_modules/@libsql/win32-x64-msvc
     to: node_modules/@libsql/win32-x64-msvc
     filter:
       - '**/*'
-
-  # LibSQL core runtime
-  - from: node_modules/libsql
-    to: node_modules/libsql
-    filter:
-      - '**/*'
-      - '!node_modules'
-
-  # LibSQL client dependencies
-  - from: node_modules/@libsql/core
-    to: node_modules/@libsql/core
-  - from: node_modules/@libsql/hrana-client
-    to: node_modules/@libsql/hrana-client
-  - from: node_modules/@libsql/client
-    to: node_modules/@libsql/client
-  - from: node_modules/@libsql/isomorphic-fetch
-    to: node_modules/@libsql/isomorphic-fetch
-  - from: node_modules/@libsql/isomorphic-ws
-    to: node_modules/@libsql/isomorphic-ws
-
-  # Shared dependencies
-  - from: node_modules/detect-libc
-    to: node_modules/detect-libc
-  - from: node_modules/js-base64
-    to: node_modules/js-base64
-  - from: node_modules/promise-limit
-    to: node_modules/promise-limit
-
-  # Prisma dependencies (externalized)
-  - from: node_modules/prisma-client-generated
-    to: node_modules/prisma-client-generated
-  - from: node_modules/@prisma/client
-    to: node_modules/@prisma/client
-  - from: node_modules/@prisma/adapter-libsql
-    to: node_modules/@prisma/adapter-libsql
 
 asarUnpack:
   - '**/*.node'
