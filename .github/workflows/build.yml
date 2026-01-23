@@ -17,7 +17,7 @@ jobs:
       - name: Kodları Çek
         uses: actions/checkout@v4
 
-      # Swap Alanı (Emniyet Kemeri - 8GB)
+      # Swap Alanı (8GB Emniyet Kemeri)
       - name: Set Pagefile (Swap)
         uses: al-cheb/configure-pagefile-action@v1.4
         with:
@@ -31,51 +31,62 @@ jobs:
           node-version: 22
           cache: 'npm'
 
-      # Hepsini yüklüyoruz (Prune yok!)
+      # 1. Aşama: Her şeyi yükle ve Kodu Derle
       - name: Tüm Bağımlılıkları Yükle
         run: npm install --legacy-peer-deps
 
-      # --- KRİTİK NOKTA: Önce İşleri Bitir ---
-      # Henüz hiçbir şeyi silmedik, o yüzden Prisma hata vermez.
-      - name: Prisma Generate
+      - name: Prisma Generate (İlk Hazırlık)
         run: npx prisma generate
 
       - name: Native Rebuild
         run: npm run rebuild --if-present
 
-      - name: TypeScript Build
+      - name: TypeScript Build (Kodları Derle)
         run: npm run build
-      # ---------------------------------------
 
-      # --- AKILLI TEMİZLİK (RAM Kurtarıcı) ---
-      # Artık işimiz bittiğine göre, sadece paketleme sırasında RAM şişiren
-      # devasa klasörleri elle siliyoruz.
-      - name: Gereksiz Dosyaları Sil
+      # --- AMELİYAT BAŞLIYOR ---
+      # Artık kodlar 'dist' veya 'out' klasöründe hazır.
+      # Geri kalan karmaşayı temizliyoruz.
+
+      - name: Node Modules'u Sıfırla (Temiz Kurulum)
         run: |
-          # 1. Prisma CLI (Motor değil, komut satırı aracı - Çok büyüktür)
-          Remove-Item "node_modules/prisma" -Recurse -Force -ErrorAction SilentlyContinue
+          # 1. Mevcut şişkin klasörü sil
+          Remove-Item -Path "node_modules" -Recurse -Force -ErrorAction SilentlyContinue
 
-          # 2. Gereksiz Platform Motorları (Linux/Mac)
+          # 2. Hata çıkaran config dosyalarını sil (Prisma config vb.)
+          Remove-Item "prisma.config.ts" -Force -ErrorAction SilentlyContinue
+
+          # 3. SADECE Production paketlerini kur (DevDeps yok -> Eslint, Vite vb. gelmez)
+          npm install --omit=dev --legacy-peer-deps
+
+          # 4. Electron Builder'ı özel olarak geri çağır (Çünkü o bir devDep)
+          npm install electron-builder --save-dev --legacy-peer-deps
+
+      - name: Prisma Client'ı Tekrar Oluştur (Production İçin)
+        run: npx prisma generate
+
+      - name: Gereksiz Dosyaları Temizle (Son Rötuş)
+        run: |
+          # Git geçmişi build'i yavaşlatır
+          Remove-Item ".git" -Recurse -Force -ErrorAction SilentlyContinue
+          # Kaynak kodlar derlendiği için gereksiz
+          Remove-Item "src" -Recurse -Force -ErrorAction SilentlyContinue
+          # Gereksiz Prisma motorları (Linux/Mac)
           Remove-Item "node_modules/@prisma/engines/*darwin*" -Recurse -Force -ErrorAction SilentlyContinue
           Remove-Item "node_modules/@prisma/engines/*linux*" -Recurse -Force -ErrorAction SilentlyContinue
 
-          # 3. Git Geçmişi (Build içine girmemeli)
-          Remove-Item ".git" -Recurse -Force -ErrorAction SilentlyContinue
-
-          # 4. Kaynak Kodlar (Derlendiği için artık gereksiz)
-          Remove-Item "src" -Recurse -Force -ErrorAction SilentlyContinue
-
-          Write-Host "Temizlik tamamlandı!"
+      # -------------------------
 
       - name: Windows EXE Oluştur
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Swap var + Gereksizler silindi = 8GB fazlasıyla yeter
+          # Swap var, RAM rahat. 8GB yeter.
           NODE_OPTIONS: '--max-old-space-size=8192'
           ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES: 'true'
           DEBUG: electron-builder
         run: |
-          # Sıkıştırmayı 'store' yaparak hızı artırıyoruz
+          # asar: true (Paketli)
+          # compression: store (Hızlı)
           npx electron-builder --win portable --publish never --config.compression=store --config.asar=true
 
       - name: Build Sonucunu Yükle

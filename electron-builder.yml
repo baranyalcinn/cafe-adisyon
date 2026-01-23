@@ -12,18 +12,16 @@ asar: true
 files:
   - out/**/*
   - package.json
-
-  # --- BASİT VE GÜVENLİ ---
-  # Node Modules'u al (Zaten yukarıda temizledik)
+  # Artık node_modules temiz (sadece production var), hepsini alabiliriz.
   - 'node_modules/**/*'
 
-  # Gereksizleri Engelle
+  # Yalandan engellemeler (Zaten sildik ama garanti olsun)
+  - '!node_modules/prisma'
   - '!.git'
   - '!.github'
   - '!.vscode'
   - '!src'
   - '!prisma'
-  # ------------------------
 
 asarUnpack:
   - '**/*.node'
