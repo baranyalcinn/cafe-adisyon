@@ -33,8 +33,7 @@ export default defineConfig({
           '@libsql/isomorphic-fetch',
           '@libsql/isomorphic-ws',
           '@libsql/win32-x64-msvc',
-          'libsql',
-          '@prisma/adapter-libsql'
+          'libsql'
         ]
       }
     }
