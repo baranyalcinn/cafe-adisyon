@@ -9,8 +9,9 @@ directories:
 compression: store
 asar: true
 
-# CRITICAL: Only include bundled output - NO node_modules
-# This completely bypasses node-module-collector (fixes OOM)
+files:
+  - out/**/*
+  - package.json
   # Explicitly include externalized database packages
   # This avoids OOM by skipping node-module scanning while ensuring runtime availability
   - node_modules/@prisma/**/*
