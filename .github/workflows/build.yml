@@ -17,7 +17,7 @@ jobs:
       - name: Kodları Çek
         uses: actions/checkout@v4
 
-      # Swap alanı (Emniyet kemeri olarak kalsın)
+      # Swap Alanı (Emniyet Kemeri - 8GB)
       - name: Set Pagefile (Swap)
         uses: al-cheb/configure-pagefile-action@v1.4
         with:
@@ -31,46 +31,51 @@ jobs:
           node-version: 22
           cache: 'npm'
 
+      # Hepsini yüklüyoruz (Prune yok!)
       - name: Tüm Bağımlılıkları Yükle
         run: npm install --legacy-peer-deps
 
+      # --- KRİTİK NOKTA: Önce İşleri Bitir ---
+      # Henüz hiçbir şeyi silmedik, o yüzden Prisma hata vermez.
       - name: Prisma Generate
         run: npx prisma generate
 
-      - name: Native Rebuild (SQLite için)
+      - name: Native Rebuild
         run: npm run rebuild --if-present
 
-      - name: TypeScript Build (Kodları Derle)
+      - name: TypeScript Build
         run: npm run build
+      # ---------------------------------------
 
-      # --- KASAP OPERASYONU BAŞLIYOR ---
-      # Kodlar zaten derlendi (dist klasöründe).
-      # Artık TypeScript, Vite, Eslint vb. ile işimiz bitti.
-      # Hepsini siliyoruz ki RAM şişmesin.
-      - name: Gereksiz Paketleri Sil (Prune)
+      # --- AKILLI TEMİZLİK (RAM Kurtarıcı) ---
+      # Artık işimiz bittiğine göre, sadece paketleme sırasında RAM şişiren
+      # devasa klasörleri elle siliyoruz.
+      - name: Gereksiz Dosyaları Sil
         run: |
-          npm prune --production --legacy-peer-deps
-          # Prisma Client'ı tekrar generate etmemiz gerekebilir çünkü prune bazen silebilir
-          npx prisma generate
+          # 1. Prisma CLI (Motor değil, komut satırı aracı - Çok büyüktür)
+          Remove-Item "node_modules/prisma" -Recurse -Force -ErrorAction SilentlyContinue
 
-      # Prune yapınca electron-builder da silindi (çünkü o bir devDependency).
-      # Onu geçici olarak tekrar yüklüyoruz.
-      - name: Builder'ı Geri Yükle
-        run: npm install electron-builder --no-save --legacy-peer-deps
+          # 2. Gereksiz Platform Motorları (Linux/Mac)
+          Remove-Item "node_modules/@prisma/engines/*darwin*" -Recurse -Force -ErrorAction SilentlyContinue
+          Remove-Item "node_modules/@prisma/engines/*linux*" -Recurse -Force -ErrorAction SilentlyContinue
 
-      # ---------------------------------
+          # 3. Git Geçmişi (Build içine girmemeli)
+          Remove-Item ".git" -Recurse -Force -ErrorAction SilentlyContinue
+
+          # 4. Kaynak Kodlar (Derlendiği için artık gereksiz)
+          Remove-Item "src" -Recurse -Force -ErrorAction SilentlyContinue
+
+          Write-Host "Temizlik tamamlandı!"
 
       - name: Windows EXE Oluştur
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Artık Node_Modules boş olduğu için devasa RAM vermeye gerek yok ama
-          # Swap var diye bol keseden 12GB verelim, zarar gelmez.
-          NODE_OPTIONS: '--max-old-space-size=12288'
+          # Swap var + Gereksizler silindi = 8GB fazlasıyla yeter
+          NODE_OPTIONS: '--max-old-space-size=8192'
           ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES: 'true'
           DEBUG: electron-builder
         run: |
-          # asar: true (Dosyalar paketli olsun)
-          # compression: store (Hız için sıkıştırma yok)
+          # Sıkıştırmayı 'store' yaparak hızı artırıyoruz
           npx electron-builder --win portable --publish never --config.compression=store --config.asar=true
 
       - name: Build Sonucunu Yükle

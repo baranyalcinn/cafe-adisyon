@@ -13,21 +13,18 @@ files:
   - out/**/*
   - package.json
 
-  # --- SADELEŞTİRİLMİŞ AYARLAR ---
-  # Artık node_modules temizlendiği için komple alabiliriz.
-  # Sadece kaynak kodları ve gereksizleri engelliyoruz.
+  # --- BASİT VE GÜVENLİ ---
+  # Node Modules'u al (Zaten yukarıda temizledik)
   - 'node_modules/**/*'
 
-  # Engellenenler
-  - '!node_modules/prisma' # Prisma CLI (Motor değil, komut satırı aracı)
+  # Gereksizleri Engelle
   - '!.git'
   - '!.github'
   - '!.vscode'
   - '!src'
   - '!prisma'
-  # ------------------------------
+  # ------------------------
 
-# Native modüller paket dışına
 asarUnpack:
   - '**/*.node'
   - '**/better-sqlite3/**'
