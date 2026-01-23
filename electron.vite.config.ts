@@ -34,8 +34,7 @@ export default defineConfig({
           '@libsql/isomorphic-ws',
           '@libsql/win32-x64-msvc',
           'libsql',
-          '@prisma/adapter-libsql',
-          '@prisma/client'
+          '@prisma/adapter-libsql'
         ]
       }
     }

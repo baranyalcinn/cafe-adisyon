@@ -17,7 +17,6 @@ files:
   - package.json
   # Externalized modules - must be in ASAR for require() to find them
 
-  - node_modules/@prisma/client/**/*
   - node_modules/@prisma/adapter-libsql/**/*
   - node_modules/@libsql/client/**/*
   - node_modules/@libsql/core/**/*
