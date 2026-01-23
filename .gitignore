@@ -18,3 +18,4 @@ exports/
 *.blockmap
 succes build.txt
 portable build succes.txt
+succes build github action.txt

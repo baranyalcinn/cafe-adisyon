@@ -30,9 +30,7 @@ export default defineConfig({
           '@libsql/win32-x64-msvc',
           'libsql',
           '@prisma/adapter-libsql',
-          '@prisma/client',
-          'prisma-client-generated',
-          'prisma-client-generated/client'
+          '@prisma/client'
         ]
       }
     }
