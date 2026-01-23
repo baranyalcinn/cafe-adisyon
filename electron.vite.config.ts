@@ -15,7 +15,8 @@ export default defineConfig({
           'clsx',
           'tailwind-merge',
           'class-variance-authority',
-          '@prisma/client'
+          '@prisma/client',
+          '@prisma/adapter-libsql'
         ]
       })
     ],
@@ -25,7 +26,6 @@ export default defineConfig({
       },
       rollupOptions: {
         external: [
-          '@prisma/adapter-libsql',
           '@libsql/client',
           '@libsql/core',
           '@libsql/hrana-client',
