@@ -19,22 +19,22 @@ export default defineConfig({
           // client files import @prisma/client/runtime/* which won't resolve
           // correctly from ASAR in portable builds
           '@prisma/client',
-          '@prisma/adapter-libsql'
+          '@prisma/adapter-libsql',
+          '@libsql/client',
+          '@libsql/core',
+          '@libsql/hrana-client',
+          '@libsql/isomorphic-fetch',
+          '@libsql/isomorphic-ws',
+          'libsql'
         ]
       })
     ],
     build: {
       rollupOptions: {
         external: [
-          // @prisma/client REMOVED - now bundled via exclude list above
+          // Prisma & LibSQL JS parts are now BUNDLED via exclude list above
           'better-sqlite3',
-          '@libsql/client',
-          '@libsql/core',
-          '@libsql/hrana-client',
-          '@libsql/isomorphic-fetch',
-          '@libsql/isomorphic-ws',
-          '@libsql/win32-x64-msvc',
-          'libsql'
+          '@libsql/win32-x64-msvc'
         ]
       }
     }

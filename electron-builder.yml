@@ -1,5 +1,5 @@
-appId: com.caffio.cafeadisyon
-productName: Cafe Adisyon
+appId: com.caffio.caffio
+productName: Caffio
 electronVersion: 39.3.0
 
 directories:
@@ -15,20 +15,13 @@ asar: true
 files:
   - out/**/*
   - package.json
-  # Note: @prisma/client is now BUNDLED (not external), so no need to include it here
-  # Externalized modules - must be in ASAR for require() to find them
+  # Note: Prisma & LibSQL JS parts are now BUNDLED, no need to include them here
+  # Only native bits are handled via extraFiles below
 
-  - node_modules/@libsql/client/**/*
-  - node_modules/@libsql/core/**/*
-  - node_modules/@libsql/hrana-client/**/*
-  - node_modules/@libsql/isomorphic-fetch/**/*
-  - node_modules/@libsql/isomorphic-ws/**/*
-  - node_modules/libsql/**/*
   - node_modules/detect-libc/**/*
   - node_modules/js-base64/**/*
   - node_modules/promise-limit/**/*
   # Exclude everything else
-  - '!node_modules/@libsql/*/build'
   - '!node_modules/**/node_modules'
   - '!.git'
   - '!.github'
@@ -55,7 +48,7 @@ buildDependenciesFromSource: false
 
 win:
   executableName: cafe-adisyon
-  icon: build/icon.ico
+  icon: resources/icon.png
   target:
     - target: portable
       arch: x64
