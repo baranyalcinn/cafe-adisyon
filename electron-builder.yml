@@ -15,10 +15,8 @@ asar: true
 files:
   - out/**/*
   - package.json
+  # Note: @prisma/client is now BUNDLED (not external), so no need to include it here
   # Externalized modules - must be in ASAR for require() to find them
-
-  # Prisma Client Runtime (required for @prisma/client external dependency)
-  - node_modules/@prisma/client/**/*
 
   - node_modules/@libsql/client/**/*
   - node_modules/@libsql/core/**/*

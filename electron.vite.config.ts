@@ -14,15 +14,18 @@ export default defineConfig({
           'zustand',
           'clsx',
           'tailwind-merge',
-          'class-variance-authority'
+          'class-variance-authority',
+          // Prisma client must be BUNDLED (not external) because generated
+          // client files import @prisma/client/runtime/* which won't resolve
+          // correctly from ASAR in portable builds
+          '@prisma/client'
         ]
       })
     ],
     build: {
       rollupOptions: {
         external: [
-          '@prisma/client',
-          '@prisma/client/runtime/client',
+          // @prisma/client REMOVED - now bundled via exclude list above
           'better-sqlite3',
           '@libsql/client',
           '@libsql/core',
