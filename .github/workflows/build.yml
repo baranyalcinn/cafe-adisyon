@@ -17,7 +17,7 @@ jobs:
       - name: Kodları Çek
         uses: actions/checkout@v4
 
-      # Swap yine kalsın (Emniyet kemeri)
+      # Swap Alanı (Hala şart, RAM için)
       - name: Set Pagefile (Swap)
         uses: al-cheb/configure-pagefile-action@v1.4
         with:
@@ -29,21 +29,21 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          # Cache KULLANMIYORUZ. Temiz kurulum şart.
+          # Cache yok (Temiz kurulum)
 
-      # --- KRİTİK DEĞİŞİKLİK BURADA ---
-      - name: Temiz ve Güvenli Kurulum
+      # --- DÜZELTİLEN KISIM ---
+      - name: Temiz Kurulum (Vite Motorunu Dahil Et)
         run: |
-          # 1. Eski kilit dosyasını sil (Hatalı ağacı yok et)
+          # 1. Eski kilit dosyasını sil (Temiz sayfa)
           if (Test-Path package-lock.json) { Remove-Item package-lock.json }
 
           # 2. Node Modules varsa sil
           if (Test-Path node_modules) { Remove-Item node_modules -Recurse -Force -ErrorAction SilentlyContinue }
 
           # 3. Bağımlılıkları Yükle
-          # --no-optional: "name=undefined" hatasının en büyük sebebi olan opsiyonel paketleri engeller.
-          # --legacy-peer-deps: Versiyon çakışmalarını takma.
-          npm install --no-optional --legacy-peer-deps
+          # --no-optional KALDIRILDI. Çünkü Rollup (Vite) buna ihtiyaç duyuyor.
+          # Lock dosyasını sildiğimiz için "undefined" hatası zaten düzelmiş olacak.
+          npm install --legacy-peer-deps
 
       - name: Prisma Generate
         run: npx prisma generate
@@ -54,27 +54,27 @@ jobs:
       - name: TypeScript Build
         run: npm run build
 
-      # --- TEMİZLİK (Döngü Yaratanları Sil) ---
-      - name: Potansiyel Hataları Temizle
+      # --- TEMİZLİK (RAM ve Döngü Önlemleri) ---
+      - name: Build Sonrası Temizlik
         run: |
-          # 1. .bin klasörü bazen sonsuz döngü (symlink) yaratır, SİLİYORUZ.
+          # 1. .bin klasörü (Sonsuz döngü riski)
           Remove-Item "node_modules/.bin" -Recurse -Force -ErrorAction SilentlyContinue
 
-          # 2. Prisma CLI ve Gereksiz Motorlar
+          # 2. Prisma CLI (Gereksiz yük)
           Remove-Item "node_modules/prisma" -Recurse -Force -ErrorAction SilentlyContinue
+
+          # 3. Gereksiz Motorlar
           Remove-Item "node_modules/@prisma/engines/*darwin*" -Recurse -Force -ErrorAction SilentlyContinue
           Remove-Item "node_modules/@prisma/engines/*linux*" -Recurse -Force -ErrorAction SilentlyContinue
 
-          # 3. Git ve Kaynaklar
+          # 4. Git ve Kaynaklar
           Remove-Item ".git" -Recurse -Force -ErrorAction SilentlyContinue
           Remove-Item "src" -Recurse -Force -ErrorAction SilentlyContinue
 
       - name: Windows EXE Oluştur
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # 12GB RAM veriyoruz ama sorun çözüldüğü için muhtemelen 2GB bile yetecek.
           NODE_OPTIONS: '--max-old-space-size=12288'
-          # Bu ayar hala kalsın
           ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES: 'true'
           DEBUG: electron-builder
         run: |
