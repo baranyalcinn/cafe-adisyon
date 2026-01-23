@@ -9,49 +9,58 @@ directories:
 compression: store
 asar: true
 
+# CRITICAL: Only include bundled output - NO node_modules
+# This completely bypasses node-module-collector (fixes OOM)
 files:
   - out/**/*
   - package.json
-
-  # SEÇİCİ NODE_MODULES - Sadece runtime'da gereken native modüller
-  # Bu yaklaşım electron-builder'ın node-module-collector'ını bypass eder
-  # ve OOM sorununu çözer
-
-  # LibSQL native bindings
-  - node_modules/@libsql/**
-  - node_modules/libsql/**
-  - node_modules/@neon-rs/**
-  - node_modules/detect-libc/**
-
-  # Prisma runtime
-  - node_modules/@prisma/client/**
-  - node_modules/@prisma/adapter-libsql/**
-  - node_modules/@prisma/client-runtime-utils/**
-  - node_modules/@prisma/engines/**
-  - node_modules/prisma-client-generated/**
-  - node_modules/.prisma/**
-
-  # Diğer gerekli runtime deps (libsql'in ihtiyaç duyduğu)
-  - node_modules/js-base64/**
-  - node_modules/promise-limit/**
-  - node_modules/@libsql/hrana-client/**
-  - node_modules/@libsql/core/**
-  - node_modules/@libsql/isomorphic-fetch/**
-  - node_modules/@libsql/isomorphic-ws/**
-
-  # Hariç tutulanlar
+  - '!node_modules'
+  - '!node_modules/**/*'
   - '!.git'
   - '!.github'
   - '!.vscode'
   - '!src'
   - '!prisma'
 
+# Native modules copied via extraFiles (not subject to collector)
+extraFiles:
+  # LibSQL native bindings (Windows x64)
+  - from: node_modules/@libsql/win32-x64-msvc
+    to: node_modules/@libsql/win32-x64-msvc
+    filter:
+      - '**/*'
+
+  # LibSQL core runtime
+  - from: node_modules/libsql
+    to: node_modules/libsql
+    filter:
+      - '**/*'
+      - '!node_modules'
+
+  # LibSQL client dependencies
+  - from: node_modules/@libsql/core
+    to: node_modules/@libsql/core
+  - from: node_modules/@libsql/hrana-client
+    to: node_modules/@libsql/hrana-client
+  - from: node_modules/@libsql/client
+    to: node_modules/@libsql/client
+  - from: node_modules/@libsql/isomorphic-fetch
+    to: node_modules/@libsql/isomorphic-fetch
+  - from: node_modules/@libsql/isomorphic-ws
+    to: node_modules/@libsql/isomorphic-ws
+
+  # Shared dependencies
+  - from: node_modules/detect-libc
+    to: node_modules/detect-libc
+  - from: node_modules/js-base64
+    to: node_modules/js-base64
+  - from: node_modules/promise-limit
+    to: node_modules/promise-limit
+
 asarUnpack:
   - '**/*.node'
-  - '**/better-sqlite3/**'
-  - '**/@prisma/engines/**'
-  - '**/query-engine-windows.exe'
-  - '**/schema.prisma'
+  - '**/node_modules/@libsql/**'
+  - '**/node_modules/libsql/**'
 
 npmRebuild: false
 buildDependenciesFromSource: false

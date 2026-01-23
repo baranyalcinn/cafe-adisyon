@@ -17,7 +17,7 @@ jobs:
       - name: Kodları Çek
         uses: actions/checkout@v4
 
-      # Swap Alanı (8GB) - Bunu tutuyoruz, 12GB RAM için şart.
+      # Swap Alanı (8GB) - Extra güvenlik için tutuyoruz
       - name: Set Pagefile (Swap)
         uses: al-cheb/configure-pagefile-action@v1.4
         with:
@@ -38,7 +38,7 @@ jobs:
           # 2. Node Modules varsa sil
           if (Test-Path node_modules) { Remove-Item node_modules -Recurse -Force -ErrorAction SilentlyContinue }
 
-          # 3. Bağımlılıkları Yükle (Rollup hatası olmasın diye optional açık)
+          # 3. Bağımlılıkları Yükle
           npm install --legacy-peer-deps
 
       - name: Prisma Generate
@@ -50,42 +50,13 @@ jobs:
       - name: TypeScript Build
         run: npm run build
 
-      # --- TEMİZLİK ---
-      - name: Build Sonrası Temizlik
-        run: |
-          # DİKKAT: .bin klasörünü SİLMİYORUZ! (Builder orada)
-
-          # 1. Prisma CLI (Gereksiz yük - Silebiliriz)
-          Remove-Item "node_modules/prisma" -Recurse -Force -ErrorAction SilentlyContinue
-
-          # 2. Gereksiz Motorlar (Sadece Windows kalsın)
-          Remove-Item "node_modules/@prisma/engines/*darwin*" -Recurse -Force -ErrorAction SilentlyContinue
-          Remove-Item "node_modules/@prisma/engines/*linux*" -Recurse -Force -ErrorAction SilentlyContinue
-
-          # 3. Git ve Kaynaklar
-          Remove-Item ".git" -Recurse -Force -ErrorAction SilentlyContinue
-          Remove-Item "src" -Recurse -Force -ErrorAction SilentlyContinue
-
-          # 4. KRITIK FIX: libsql optionalDependencies temizliği
-          # electron-builder v26+ tüm optionalDependencies'i çözmeye çalışıyor
-          # Windows dışındaki platformlar undefined oluyor ve OOM'a yol açıyor
-          # Sadece Windows bağımlılığını bırakıyoruz
-          $libsqlPath = "node_modules/libsql/package.json"
-          if (Test-Path $libsqlPath) {
-            $pkg = Get-Content $libsqlPath -Raw | ConvertFrom-Json
-            $pkg.optionalDependencies = @{ "@libsql/win32-x64-msvc" = $pkg.optionalDependencies."@libsql/win32-x64-msvc" }
-            $pkg | ConvertTo-Json -Depth 10 | Set-Content $libsqlPath -Encoding UTF8
-            Write-Host "libsql optionalDependencies cleaned (Windows only)"
-          }
-
       - name: Windows EXE Oluştur
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NODE_OPTIONS: '--max-old-space-size=12288'
-          ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES: 'true'
+          NODE_OPTIONS: '--max-old-space-size=8192'
           DEBUG: electron-builder
         run: |
-          npx electron-builder --win portable --publish never --config.compression=store --config.asar=true
+          npx electron-builder --win portable --publish never
 
       - name: Build Sonucunu Yükle
         uses: actions/upload-artifact@v4
