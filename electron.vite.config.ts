@@ -20,7 +20,21 @@ export default defineConfig({
           '@libsql/client',
           '@libsql/core',
           '@libsql/hrana-client',
-          'libsql'
+          'libsql',
+          '@libsql/isomorphic-fetch',
+          '@libsql/isomorphic-ws',
+          'ws',
+          '@neon-rs/load',
+          'detect-libc',
+          'cross-fetch',
+          'node-fetch',
+          'data-uri-to-buffer',
+          'fetch-blob',
+          'formdata-polyfill',
+          'js-base64',
+          'promise-limit',
+          'async-mutex',
+          'tslib'
         ]
       })
     ],
@@ -29,12 +43,7 @@ export default defineConfig({
         ignoreDynamicRequires: true
       },
       rollupOptions: {
-        external: [
-          '@libsql/isomorphic-fetch',
-          '@libsql/isomorphic-ws',
-          '@libsql/win32-x64-msvc',
-          'better-sqlite3'
-        ]
+        external: ['@libsql/win32-x64-msvc', 'better-sqlite3']
       }
     }
   },
