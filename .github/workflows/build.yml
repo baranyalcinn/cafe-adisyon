@@ -17,7 +17,7 @@ jobs:
       - name: Kodları Çek
         uses: actions/checkout@v4
 
-      # Swap Alanı (Hala şart, RAM için)
+      # Swap Alanı (8GB) - Bunu tutuyoruz, 12GB RAM için şart.
       - name: Set Pagefile (Swap)
         uses: al-cheb/configure-pagefile-action@v1.4
         with:
@@ -29,10 +29,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          # Cache yok (Temiz kurulum)
 
-      # --- DÜZELTİLEN KISIM ---
-      - name: Temiz Kurulum (Vite Motorunu Dahil Et)
+      - name: Temiz Kurulum
         run: |
           # 1. Eski kilit dosyasını sil (Temiz sayfa)
           if (Test-Path package-lock.json) { Remove-Item package-lock.json }
@@ -40,9 +38,7 @@ jobs:
           # 2. Node Modules varsa sil
           if (Test-Path node_modules) { Remove-Item node_modules -Recurse -Force -ErrorAction SilentlyContinue }
 
-          # 3. Bağımlılıkları Yükle
-          # --no-optional KALDIRILDI. Çünkü Rollup (Vite) buna ihtiyaç duyuyor.
-          # Lock dosyasını sildiğimiz için "undefined" hatası zaten düzelmiş olacak.
+          # 3. Bağımlılıkları Yükle (Rollup hatası olmasın diye optional açık)
           npm install --legacy-peer-deps
 
       - name: Prisma Generate
@@ -54,20 +50,19 @@ jobs:
       - name: TypeScript Build
         run: npm run build
 
-      # --- TEMİZLİK (RAM ve Döngü Önlemleri) ---
+      # --- TEMİZLİK ---
       - name: Build Sonrası Temizlik
         run: |
-          # 1. .bin klasörü (Sonsuz döngü riski)
-          Remove-Item "node_modules/.bin" -Recurse -Force -ErrorAction SilentlyContinue
+          # DİKKAT: .bin klasörünü SİLMİYORUZ! (Builder orada)
 
-          # 2. Prisma CLI (Gereksiz yük)
+          # 1. Prisma CLI (Gereksiz yük - Silebiliriz)
           Remove-Item "node_modules/prisma" -Recurse -Force -ErrorAction SilentlyContinue
 
-          # 3. Gereksiz Motorlar
+          # 2. Gereksiz Motorlar (Sadece Windows kalsın)
           Remove-Item "node_modules/@prisma/engines/*darwin*" -Recurse -Force -ErrorAction SilentlyContinue
           Remove-Item "node_modules/@prisma/engines/*linux*" -Recurse -Force -ErrorAction SilentlyContinue
 
-          # 4. Git ve Kaynaklar
+          # 3. Git ve Kaynaklar
           Remove-Item ".git" -Recurse -Force -ErrorAction SilentlyContinue
           Remove-Item "src" -Recurse -Force -ErrorAction SilentlyContinue
 
