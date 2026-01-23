@@ -17,6 +17,10 @@ files:
   - package.json
   # Externalized modules - must be in ASAR for require() to find them
 
+  # Prisma Client Runtime (required by prisma-client-generated)
+  - node_modules/@prisma/client/**/*
+  - node_modules/prisma-client-generated/**/*
+
   - node_modules/@libsql/client/**/*
   - node_modules/@libsql/core/**/*
   - node_modules/@libsql/hrana-client/**/*
@@ -64,6 +68,8 @@ portable:
   requestExecutionLevel: user
 
 extraResources:
+  - from: resources
+    to: resources
   - from: prisma/dev.db
     to: initial.db
   - from: prisma/schema.prisma

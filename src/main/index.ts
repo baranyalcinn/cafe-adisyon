@@ -1,7 +1,6 @@
 import { app, shell, BrowserWindow } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import icon from '../../resources/icon.png?asset'
 import { registerIpcHandlers } from './ipc/handlers'
 import { logger } from './lib/logger'
 import { dbMaintenance } from './lib/db-maintenance'
@@ -16,7 +15,9 @@ function createWindow(): void {
     title: 'Caffio',
     show: false,
     autoHideMenuBar: true,
-    icon,
+    icon: is.dev
+      ? join(__dirname, '../../resources/icon.png')
+      : join(process.resourcesPath, 'resources/icon.png'),
     backgroundColor: '#000000', // Optimize startup paint
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
