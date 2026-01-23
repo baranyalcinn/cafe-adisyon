@@ -12,7 +12,7 @@
     "composite": true,
     "baseUrl": ".",
     "paths": {
-      "prisma-client-generated": ["./node_modules/prisma-client-generated"]
+      "prisma-client-generated/*": ["./node_modules/prisma-client-generated/*"]
     },
     "types": [
       "electron-vite/node"
