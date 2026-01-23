@@ -82,11 +82,12 @@ jobs:
           # Swap var, RAM rahat.
           NODE_OPTIONS: '--max-old-space-size=8192'
           ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES: 'true'
+          NPM_WORKSPACES: 'false'
           DEBUG: electron-builder
         run: |
-          # asar: true (Paketli)
-          # compression: store (Hızlı)
-          npx electron-builder --win portable --publish never --config.compression=store --config.asar=true
+          # Use electron-builder directly via node to bypass npx workspace detection
+          # This fixes the "npm prefix -w" exit code 1 error that causes heap OOM
+          node node_modules/electron-builder/out/cli/cli.js --win portable --publish never --config.compression=store --config.asar=true
 
       - name: Build Sonucunu Yükle
         uses: actions/upload-artifact@v4
