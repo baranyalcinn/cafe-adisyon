@@ -50,6 +50,17 @@ jobs:
       - name: TypeScript Build
         run: npm run build
 
+      # CRITICAL: Strip dependencies to prevent node-module-collector from running
+      # electron-builder reads package.json to determine what to scan
+      # With empty dependencies, collector has nothing to analyze (fixes OOM)
+      - name: Prepare for Packaging
+        run: |
+          # Read package.json and remove dependencies
+          $pkg = Get-Content package.json -Raw | ConvertFrom-Json
+          $pkg.dependencies = @{}
+          $pkg | ConvertTo-Json -Depth 10 | Set-Content package.json -Encoding UTF8
+          Write-Host "Dependencies stripped from package.json"
+
       - name: Windows EXE Oluştur
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
