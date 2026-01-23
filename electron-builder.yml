@@ -12,9 +12,34 @@ asar: true
 files:
   - out/**/*
   - package.json
-  - 'node_modules/**/*'
-  - '!node_modules/prisma'
-  - '!node_modules/.bin' # Bunu build.yml'da sildik ama burada da dursun
+
+  # SEÇİCİ NODE_MODULES - Sadece runtime'da gereken native modüller
+  # Bu yaklaşım electron-builder'ın node-module-collector'ını bypass eder
+  # ve OOM sorununu çözer
+
+  # LibSQL native bindings
+  - node_modules/@libsql/**
+  - node_modules/libsql/**
+  - node_modules/@neon-rs/**
+  - node_modules/detect-libc/**
+
+  # Prisma runtime
+  - node_modules/@prisma/client/**
+  - node_modules/@prisma/adapter-libsql/**
+  - node_modules/@prisma/client-runtime-utils/**
+  - node_modules/@prisma/engines/**
+  - node_modules/prisma-client-generated/**
+  - node_modules/.prisma/**
+
+  # Diğer gerekli runtime deps (libsql'in ihtiyaç duyduğu)
+  - node_modules/js-base64/**
+  - node_modules/promise-limit/**
+  - node_modules/@libsql/hrana-client/**
+  - node_modules/@libsql/core/**
+  - node_modules/@libsql/isomorphic-fetch/**
+  - node_modules/@libsql/isomorphic-ws/**
+
+  # Hariç tutulanlar
   - '!.git'
   - '!.github'
   - '!.vscode'
