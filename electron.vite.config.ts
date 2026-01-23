@@ -18,6 +18,11 @@ export default defineConfig({
         ]
       })
     ],
+    resolve: {
+      alias: {
+        'prisma-client-generated/client': resolve('node_modules/prisma-client-generated/client.ts')
+      }
+    },
     build: {
       rollupOptions: {
         external: [
