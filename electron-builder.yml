@@ -18,6 +18,8 @@ files:
   - node_modules/.prisma/**/*
   - node_modules/@libsql/**/*
   - node_modules/libsql/**/*
+  - node_modules/js-base64/**/*
+  - node_modules/promise-limit/**/*
   - node_modules/@neon-rs/load/**/*
   - node_modules/detect-libc/**/*
   - node_modules/js-base64/**/*
