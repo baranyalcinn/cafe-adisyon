@@ -6,7 +6,6 @@ directories:
   buildResources: build
   output: dist
 
-# Hız için sıkıştırma yok, düzen için paketleme var
 compression: store
 asar: true
 
@@ -14,33 +13,27 @@ files:
   - out/**/*
   - package.json
 
-  # --- TEMİZLİK OPERASYONU ---
-  # 1. Her şeyi engelle
-  - '!node_modules'
-  - '!node_modules/**'
+  # --- SADELEŞTİRİLMİŞ AYARLAR ---
+  # Artık node_modules temizlendiği için komple alabiliriz.
+  # Sadece kaynak kodları ve gereksizleri engelliyoruz.
+  - 'node_modules/**/*'
 
-  # 2. Sadece PRISMA CLIENT'ı al (CLI'yı alma!)
-  - 'node_modules/.prisma/**/*' # Oluşturulan client (Önemli)
-  - 'node_modules/@prisma/client/**/*' # Client kütüphanesi
-
-  # 3. SQLite'ı al
-  - 'node_modules/better-sqlite3/**/*'
-
-  # 4. Gereksiz ne varsa engelle (Prisma CLI dahil)
-  - '!node_modules/prisma' # <-- İŞTE RAM'İ PATLATAN SUÇLU BUYDU
-  - '!node_modules/@prisma/engines' # Motorları asar içine koyma (ExtraResources ile alacağız)
+  # Engellenenler
+  - '!node_modules/prisma' # Prisma CLI (Motor değil, komut satırı aracı)
   - '!.git'
   - '!.github'
   - '!.vscode'
   - '!src'
   - '!prisma'
+  # ------------------------------
 
-# Native modülleri paket dışına çıkar
+# Native modüller paket dışına
 asarUnpack:
   - '**/*.node'
   - '**/better-sqlite3/**'
-  # Prisma client'ın bazen ihtiyaç duyduğu dosyalar
-  - '**/@prisma/client/**'
+  - '**/@prisma/engines/**'
+  - '**/query-engine-windows.exe'
+  - '**/schema.prisma'
 
 npmRebuild: false
 buildDependenciesFromSource: false
@@ -61,13 +54,3 @@ extraResources:
     to: initial.db
   - from: prisma/schema.prisma
     to: schema.prisma
-  # Windows motorunu exe'nin yanına koyuyoruz (RAM tasarrufu)
-  # Bu dosya build sırasında node_modules içinde vardır
-  - from: node_modules/@prisma/engines/query_engine-windows.dll.node
-    to: query_engine-windows.dll.node
-  - from: node_modules/.prisma/client/query_engine-windows.dll.node
-    to: query_engine-windows.dll.node
-  # Prisma sürümüne göre motor ismi .exe veya .dll.node olabilir.
-  # Garanti olsun diye exe'yi de ekleyelim, yoksa hata vermez sadece kopyalamaz.
-  - from: node_modules/@prisma/engines/query-engine-windows.exe
-    to: query-engine-windows.exe

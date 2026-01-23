@@ -17,55 +17,59 @@ jobs:
       - name: Kodları Çek
         uses: actions/checkout@v4
 
-      # --- MÜKEMMEL ÇÖZÜM: SWAP ALANI OLUŞTURMA ---
-      # RAM yetmediğinde diski RAM gibi kullanırız.
-      # Bu adım sunucuya +8GB ek sanal bellek tanımlar.
+      # Swap alanı (Emniyet kemeri olarak kalsın)
       - name: Set Pagefile (Swap)
         uses: al-cheb/configure-pagefile-action@v1.4
         with:
           minimum-size: 8GB
           maximum-size: 8GB
           disk-root: 'C:'
-      # --------------------------------------------
 
-      - name: Node.js Kur (v24)
+      - name: Node.js Kur (v22)
         uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 22
           cache: 'npm'
 
-      - name: Bağımlılıkları Yükle
+      - name: Tüm Bağımlılıkları Yükle
         run: npm install --legacy-peer-deps
 
       - name: Prisma Generate
         run: npx prisma generate
 
-      - name: Gereksiz Prisma Motorlarını Temizle
-        run: |
-          # Sadece Mac ve Linux dosyalarını siliyoruz.
-          # Windows motoru (exe veya dll) kalsın, onu paketleyeceğiz.
-          Remove-Item "node_modules/@prisma/engines/*darwin*" -Recurse -Force -ErrorAction SilentlyContinue
-          Remove-Item "node_modules/@prisma/engines/*linux*" -Recurse -Force -ErrorAction SilentlyContinue
-          # NOT: query-engine-windows.exe silinmemeli!
-
-      - name: Native Rebuild
+      - name: Native Rebuild (SQLite için)
         run: npm run rebuild --if-present
 
-      - name: TypeScript Build
+      - name: TypeScript Build (Kodları Derle)
         run: npm run build
+
+      # --- KASAP OPERASYONU BAŞLIYOR ---
+      # Kodlar zaten derlendi (dist klasöründe).
+      # Artık TypeScript, Vite, Eslint vb. ile işimiz bitti.
+      # Hepsini siliyoruz ki RAM şişmesin.
+      - name: Gereksiz Paketleri Sil (Prune)
+        run: |
+          npm prune --production --legacy-peer-deps
+          # Prisma Client'ı tekrar generate etmemiz gerekebilir çünkü prune bazen silebilir
+          npx prisma generate
+
+      # Prune yapınca electron-builder da silindi (çünkü o bir devDependency).
+      # Onu geçici olarak tekrar yüklüyoruz.
+      - name: Builder'ı Geri Yükle
+        run: npm install electron-builder --no-save --legacy-peer-deps
+
+      # ---------------------------------
 
       - name: Windows EXE Oluştur
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # ARTIK RAM LİMİTİNE GEREK YOK!
-          # Swap sayesinde sistem ihtiyacı kadarını kullanacak.
-          # Yine de Node'a 12GB'a kadar yolu var diyelim.
+          # Artık Node_Modules boş olduğu için devasa RAM vermeye gerek yok ama
+          # Swap var diye bol keseden 12GB verelim, zarar gelmez.
           NODE_OPTIONS: '--max-old-space-size=12288'
           ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES: 'true'
           DEBUG: electron-builder
         run: |
-          npm run typecheck
-          # asar: true yapıyoruz (Aşağıda açıklandı)
+          # asar: true (Dosyalar paketli olsun)
           # compression: store (Hız için sıkıştırma yok)
           npx electron-builder --win portable --publish never --config.compression=store --config.asar=true
 
