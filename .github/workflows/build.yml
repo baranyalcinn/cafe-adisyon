@@ -17,7 +17,7 @@ jobs:
       - name: Kodları Çek
         uses: actions/checkout@v4
 
-      # Swap Alanı (8GB Emniyet Kemeri)
+      # Swap Alanı (8GB Emniyet Kemeri) - Bunu tutuyoruz, hayat kurtarır.
       - name: Set Pagefile (Swap)
         uses: al-cheb/configure-pagefile-action@v1.4
         with:
@@ -31,35 +31,35 @@ jobs:
           node-version: 22
           cache: 'npm'
 
-      # 1. Aşama: Her şeyi yükle ve Kodu Derle
+      # 1. AŞAMA: HER ŞEYİ YÜKLE VE DERLE
       - name: Tüm Bağımlılıkları Yükle
         run: npm install --legacy-peer-deps
 
-      - name: Prisma Generate (İlk Hazırlık)
+      - name: Prisma Generate (Build İçin)
         run: npx prisma generate
 
       - name: Native Rebuild
         run: npm run rebuild --if-present
 
-      - name: TypeScript Build (Kodları Derle)
+      - name: TypeScript Build (Kodları JS'e Çevir)
         run: npm run build
 
-      # --- AMELİYAT BAŞLIYOR ---
-      # Artık kodlar 'dist' veya 'out' klasöründe hazır.
-      # Geri kalan karmaşayı temizliyoruz.
+      # 2. AŞAMA: TEMİZLİK OPERASYONU (RAM PATLAMASINI ENGELLEYEN KISIM)
+      # Kodlar artık 'dist' klasöründe. DevDependency'lere ihtiyacımız kalmadı.
 
-      - name: Node Modules'u Sıfırla (Temiz Kurulum)
+      - name: Node Modules'u Sıfırla (Clean Install)
         run: |
-          # 1. Mevcut şişkin klasörü sil
+          # 1. Mevcut şişman klasörü sil
           Remove-Item -Path "node_modules" -Recurse -Force -ErrorAction SilentlyContinue
 
-          # 2. Hata çıkaran config dosyalarını sil (Prisma config vb.)
+          # 2. Prisma Config dosyasını sil (Önceki hatayı engellemek için)
+          # Production'da buna ihtiyaç yok, schema.prisma yeterli.
           Remove-Item "prisma.config.ts" -Force -ErrorAction SilentlyContinue
 
           # 3. SADECE Production paketlerini kur (DevDeps yok -> Eslint, Vite vb. gelmez)
           npm install --omit=dev --legacy-peer-deps
 
-          # 4. Electron Builder'ı özel olarak geri çağır (Çünkü o bir devDep)
+          # 4. Electron Builder'ı geri yükle (Çünkü o bir devDep, silindi)
           npm install electron-builder --save-dev --legacy-peer-deps
 
       - name: Prisma Client'ı Tekrar Oluştur (Production İçin)
@@ -67,20 +67,19 @@ jobs:
 
       - name: Gereksiz Dosyaları Temizle (Son Rötuş)
         run: |
-          # Git geçmişi build'i yavaşlatır
+          # Git geçmişini sil
           Remove-Item ".git" -Recurse -Force -ErrorAction SilentlyContinue
-          # Kaynak kodlar derlendiği için gereksiz
+          # Kaynak kodları sil (Zaten derlendi)
           Remove-Item "src" -Recurse -Force -ErrorAction SilentlyContinue
-          # Gereksiz Prisma motorları (Linux/Mac)
+          # Gereksiz Prisma motorlarını sil
           Remove-Item "node_modules/@prisma/engines/*darwin*" -Recurse -Force -ErrorAction SilentlyContinue
           Remove-Item "node_modules/@prisma/engines/*linux*" -Recurse -Force -ErrorAction SilentlyContinue
 
-      # -------------------------
-
+      # 3. AŞAMA: PAKETLEME
       - name: Windows EXE Oluştur
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Swap var, RAM rahat. 8GB yeter.
+          # Swap var, RAM rahat.
           NODE_OPTIONS: '--max-old-space-size=8192'
           ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES: 'true'
           DEBUG: electron-builder
