@@ -19,7 +19,8 @@ export default defineConfig({
           '@prisma/adapter-libsql',
           '@libsql/client',
           '@libsql/core',
-          '@libsql/hrana-client'
+          '@libsql/hrana-client',
+          'libsql'
         ]
       })
     ],
@@ -32,7 +33,6 @@ export default defineConfig({
           '@libsql/isomorphic-fetch',
           '@libsql/isomorphic-ws',
           '@libsql/win32-x64-msvc',
-          'libsql',
           'better-sqlite3'
         ]
       }
