@@ -16,8 +16,18 @@ export default defineConfig({
           'tailwind-merge',
           'class-variance-authority',
           '@prisma/client',
+          '@prisma/client-runtime-utils',
           '@prisma/adapter-libsql',
-          '@libsql/client'
+          '@prisma/driver-adapter-utils',
+          'async-mutex',
+          '@libsql/client',
+          '@libsql/core',
+          '@libsql/hrana-client',
+          'libsql',
+          'js-base64',
+          'promise-limit',
+          '@neon-rs/load',
+          'detect-libc'
         ]
       })
     ],
@@ -26,7 +36,7 @@ export default defineConfig({
         ignoreDynamicRequires: true
       },
       rollupOptions: {
-        external: ['libsql', '@libsql/win32-x64-msvc', 'bufferutil', 'utf-8-validate']
+        external: ['@libsql/win32-x64-msvc', 'bufferutil', 'utf-8-validate']
       }
     }
   },
