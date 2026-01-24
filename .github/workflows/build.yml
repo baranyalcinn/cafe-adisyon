@@ -55,59 +55,53 @@ jobs:
       # With empty dependencies, collector has nothing to analyze (fixes OOM)
       - name: Prepare for Packaging
         run: |
-          $pkg = Get-Content package.json -Raw | ConvertFrom-Json -AsHashtable
+          # 1. Gerekli modülleri belirle
+          $essential = @(
+            "@libsql",
+            "libsql",
+            "@prisma",
+            ".prisma",
+            "@neon-rs",
+            "detect-libc",
+            "bufferutil",
+            "utf-8-validate"
+          )
 
-          # 1. Elzem Gruplar
-          $runtimeDeps = @('@libsql/client', '@libsql/win32-x64-msvc', 'libsql', '@prisma/client', '@prisma/adapter-libsql', 'detect-libc', 'bufferutil', 'utf-8-validate', '@neon-rs/load')
-          $buildTools = @('electron-builder', 'electron-vite', 'prisma')
+          # 2. Fiziksel Taşıma (Physical Surgery)
+          # npm prune yerine manuel taşıma yaparak NPM'in OOM'a neden olan turlamalarını engelliyoruz.
+          Move-Item node_modules node_modules_bloated
+          New-Item -ItemType Directory -Path node_modules
 
-          # 2. Tüm elzem paketleri geçici olarak 'dependencies'e taşı (Prune'dan korumak için)
-          $deps = @{}
-          $devDeps = @{}
-
-          $allPackageNames = @(($pkg['dependencies'].Keys) + ($pkg['devDependencies'].Keys)) | Select-Object -Unique
-          foreach ($key in $allPackageNames) {
-            $val = if ($pkg['dependencies'].ContainsKey($key)) { $pkg['dependencies'][$key] } else { $pkg['devDependencies'][$key] }
-            if ($runtimeDeps -contains $key -or $buildTools -contains $key) {
-               $deps[$key] = $val # Hepsi buraya ki 'npm prune' dokunmasın
-            } else {
-               $devDeps[$key] = $val
+          foreach ($mod in $essential) {
+            if (Test-Path "node_modules_bloated/$mod") {
+              Copy-Item -Path "node_modules_bloated/$mod" -Destination "node_modules/$mod" -Recurse -Force
+              Write-Host "Manually preserved: $mod"
             }
           }
+          Remove-Item node_modules_bloated -Recurse -Force
 
+          # 3. Package.json'ı temizle (Sadece runtime için)
+          $pkg = Get-Content package.json -Raw | ConvertFrom-Json -AsHashtable
+          $deps = @{}
+          foreach ($key in $pkg['dependencies'].Keys) {
+            foreach ($ess in $essential) {
+              if ($key -eq $ess -or $key.StartsWith("$ess/")) {
+                $deps[$key] = $pkg['dependencies'][$key]
+              }
+            }
+          }
           $pkg['dependencies'] = $deps
-          $pkg['devDependencies'] = $devDeps
+          $pkg.Remove('devDependencies')
           $pkg.Remove('overrides')
           $pkg | ConvertTo-Json -Depth 10 | Set-Content package.json -Encoding UTF8
 
-          # 3. Fiziksel Budama (OOM Engelleme)
-          npm prune --production
-
-          # 4. HEYECANLI KISIM: Build araçlarını 'devDependencies'a geri taşı
-          # electron-builder kendi ismini 'dependencies' içinde görünce hata veriyor.
-          $finalDeps = @{}
-          $finalDevDeps = @{}
-          foreach ($key in $deps.Keys) {
-            if ($buildTools -contains $key) {
-              $finalDevDeps[$key] = $deps[$key]
-            } else {
-              $finalDeps[$key] = $deps[$key]
-            }
-          }
-          # Eski devDeps (zaten silinmişlerdi) hala listede kalabilir, sorun değil
-          foreach ($key in $devDeps.Keys) { $finalDevDeps[$key] = $devDeps[$key] }
-
-          $pkg['dependencies'] = $finalDeps
-          $pkg['devDependencies'] = $finalDevDeps
-          $pkg | ConvertTo-Json -Depth 10 | Set-Content package.json -Encoding UTF8
-
-          Write-Host "Smart Move-Prune-Restore complete. Tools are on disk and config is valid."
+          Write-Host "Physical Surgery complete. node_modules is now tiny and safe."
 
       - name: Windows EXE Oluştur
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NODE_OPTIONS: '--max-old-space-size=12288' # 12GB'a çıkar
-          ELECTRON_BUILDER_OFFLINE: 'true' # İnternete veya NPM'e sorma
+          NODE_OPTIONS: '--max-old-space-size=14336' # 14GB'a çıkar (Maksimum limit)
+          ELECTRON_BUILDER_OFFLINE: 'true' # NPM'e sormayı yasakla
           DEBUG: electron-builder
         run: |
           npx electron-builder --win portable --publish never
