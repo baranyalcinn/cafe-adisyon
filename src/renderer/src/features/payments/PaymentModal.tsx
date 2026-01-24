@@ -61,6 +61,14 @@ export function PaymentModal({
     }, 0)
   }, [unpaidItems, selectedQuantities])
 
+  // Calculate generic credit (Total Paid - Price of Paid Items) = Unassigned Money
+  // But easier way: Sum of Unpaid Items - Remaining Amount
+  const unpaidItemsTotal = useMemo(() => {
+    return unpaidItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
+  }, [unpaidItems])
+
+  const genericCredit = Math.max(0, unpaidItemsTotal - remainingAmount)
+
   // Reset states on open/close
   // Reset states on open/close
   useEffect(() => {
@@ -83,9 +91,10 @@ export function PaymentModal({
       case 'full':
         return remainingAmount
       case 'items':
-        return selectedTotal
+        // Deduct generic credit from selected total
+        return Math.max(0, selectedTotal - genericCredit)
       case 'split':
-        return Math.round(remainingAmount / splitCount)
+        return Math.ceil(remainingAmount / splitCount)
       case 'custom':
         return Math.round((parseFloat(customAmount) || 0) * 100)
       default:
@@ -134,9 +143,10 @@ export function PaymentModal({
     const amount = getPaymentAmount()
 
     // Safety check: Don't allow paying more than remaining
+    // Exception: In items mode with credit, paymentAmount calculation might be 0, but we proceed to mark items.
     const actualAmount = Math.min(amount, remainingAmount)
 
-    if (actualAmount <= 0) return
+    if (actualAmount <= 0 && !(paymentMode === 'items' && selectedTotal > 0 && genericCredit > 0)) return
 
     if (method === 'CASH') {
       setFinalChange(currentChange)
@@ -223,6 +233,22 @@ export function PaymentModal({
     setTenderedAmount('')
     setPaymentComplete(false)
     onClose()
+  }
+
+  const handleTenderedChange = (val: string): void => {
+    setTenderedAmount(val)
+
+    // Smart Logic: If in custom mode and amount is not set, infer it from tendered
+    if (paymentMode === 'custom' && (!customAmount || parseFloat(customAmount) === 0)) {
+      const tenderedVal = parseFloat(val) || 0
+      if (tenderedVal > 0) {
+        // Cap at remaining amount
+        const remainingUnits = remainingAmount / 100
+        const smartAmount = Math.min(tenderedVal, remainingUnits)
+        // Avoid floating point ugliness if possible (though straightforward division should be safe for currency here)
+        setCustomAmount(parseFloat(smartAmount.toFixed(2)).toString())
+      }
+    }
   }
 
   if (paymentComplete) {
@@ -362,6 +388,16 @@ export function PaymentModal({
                     Tümünü Seç
                   </Button>
                 </div>
+                
+                {genericCredit > 0 && (
+                  <div className="mb-2 px-3 py-2 bg-blue-500/10 border border-blue-500/20 rounded-lg text-xs text-blue-600 flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
+                    <span>
+                      Önceden yapılan <b>{formatCurrency(genericCredit)}</b> genel ödeme seçilenlerden düşülecektir.
+                    </span>
+                  </div>
+                )}
+
                 <div className="flex-1 border rounded-lg overflow-y-auto p-2 space-y-1">
                   {unpaidItems.length === 0 ? (
                     <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
@@ -581,7 +617,7 @@ export function PaymentModal({
                         'h-9 border-none bg-background/50 text-[11px] font-black transition-all hover:bg-primary hover:text-primary-foreground rounded-xl shadow-sm',
                         isDisabled && 'opacity-20 backdrop-blur-none'
                       )}
-                      onClick={() => setTenderedAmount(val.toString())}
+                      onClick={() => handleTenderedChange(val.toString())}
                     >
                       ₺{val}
                     </Button>
@@ -594,7 +630,7 @@ export function PaymentModal({
                   className="h-14 border-none bg-background/40 text-right font-mono text-2xl font-black rounded-2xl focus-visible:ring-2 focus-visible:ring-primary/20 transition-all shadow-inner"
                   placeholder="₺0.00"
                   value={tenderedAmount}
-                  onChange={(e) => setTenderedAmount(e.target.value)}
+                  onChange={(e) => handleTenderedChange(e.target.value)}
                   type="number"
                   min="0"
                   step="0.01"
@@ -622,21 +658,32 @@ export function PaymentModal({
               className="w-full h-16 text-lg gap-3 shadow-2xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all font-black tracking-widest rounded-2xl border-b-4 border-primary/30"
               variant="default"
               size="lg"
-              disabled={isProcessing || paymentAmount <= 0}
+              disabled={
+                isProcessing ||
+                (paymentAmount <= 0 && !(paymentMode === 'items' && selectedTotal > 0))
+              }
               onClick={() => handlePayment('CASH')}
             >
               <Banknote className="w-6 h-6" />
-              NAKİT TAHSİLAT
+              {paymentMode === 'items' && paymentAmount === 0 && selectedTotal > 0
+                ? 'ÜRÜNLERİ KAPAT'
+                : 'NAKİT TAHSİLAT'}
             </Button>
             <Button
               className="w-full h-14 text-base gap-3 font-bold tracking-wide rounded-2xl bg-muted/50 hover:bg-muted hover:text-foreground transition-all"
               variant="secondary"
               size="lg"
-              disabled={isProcessing || paymentAmount <= 0 || tendered > 0}
+              disabled={
+                isProcessing ||
+                (paymentAmount <= 0 && !(paymentMode === 'items' && selectedTotal > 0)) ||
+                tendered > 0
+              }
               onClick={() => handlePayment('CARD')}
             >
               <CreditCard className="w-5 h-5 text-blue-500" />
-              KART İLE ÖDE
+              {paymentMode === 'items' && paymentAmount === 0 && selectedTotal > 0
+                ? 'KART (0 TL)'
+                : 'KART İLE ÖDE'}
             </Button>
           </div>
         </div>

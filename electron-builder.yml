@@ -12,6 +12,10 @@ files:
   - out/**/*
   - package.json
   - node_modules/@libsql/client/**/*
+  - node_modules/@libsql/core/**/*
+  - node_modules/@libsql/hrana-client/**/*
+  - node_modules/js-base64/**/*
+  - node_modules/promise-limit/**/*
   - node_modules/libsql/**/*
   - node_modules/@libsql/win32-x64-msvc/**/*
   - node_modules/@neon-rs/**/*

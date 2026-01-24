@@ -20,7 +20,6 @@ export default defineConfig({
           '@prisma/adapter-libsql',
           '@prisma/driver-adapter-utils',
           'async-mutex',
-          'js-base64',
           'promise-limit'
         ]
       })
