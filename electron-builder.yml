@@ -12,6 +12,7 @@ files:
   - out/**/*
   - package.json
   - node_modules/@libsql/win32-x64-msvc/**/*
+  - node_modules/@libsql/client/**/*
   - node_modules/bufferutil/**/*
   - node_modules/utf-8-validate/**/*
 
