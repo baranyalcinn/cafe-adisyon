@@ -15,7 +15,9 @@ export default defineConfig({
           'clsx',
           'tailwind-merge',
           'class-variance-authority',
-          '@prisma/client'
+          '@prisma/client',
+          '@prisma/adapter-libsql',
+          '@libsql/client'
         ]
       })
     ],
@@ -24,7 +26,7 @@ export default defineConfig({
         ignoreDynamicRequires: true
       },
       rollupOptions: {
-        external: ['@libsql/win32-x64-msvc', 'better-sqlite3', 'bufferutil', 'utf-8-validate']
+        external: ['@libsql/win32-x64-msvc', 'bufferutil', 'utf-8-validate']
       }
     }
   },
