@@ -8,7 +8,7 @@ directories:
 
 compression: store
 asar: true
-
+files:
   - out/**/*
   - package.json
   # Prisma 7 Engines & Client
