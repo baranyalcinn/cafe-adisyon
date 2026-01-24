@@ -79,6 +79,7 @@ const api = {
   // Admin
   admin: {
     verifyPin: (pin: string) => ipcRenderer.invoke(IPC_CHANNELS.ADMIN_VERIFY_PIN, pin),
+    checkStatus: () => ipcRenderer.invoke(IPC_CHANNELS.ADMIN_CHECK_STATUS),
     changePin: (currentPin: string, newPin: string) =>
       ipcRenderer.invoke(IPC_CHANNELS.ADMIN_CHANGE_PIN, currentPin, newPin),
     setRecovery: (currentPin: string, question: string, answer: string) =>

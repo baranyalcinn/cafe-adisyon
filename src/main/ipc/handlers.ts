@@ -1260,35 +1260,55 @@ export function registerIpcHandlers(): void {
         where: { id: 'app-settings' }
       })
 
-      // Create default settings if not exists
+      // Create default settings if not exists (Default: No PIN)
       if (!settings) {
         settings = await prisma.appSettings.create({
-          data: { id: 'app-settings', adminPin: '1234' }
+          data: { id: 'app-settings', adminPin: '' }
         })
       }
 
-      // Rescue Code: If 9999 is entered, reset pin to 1234
+      // Check if PIN is set
+      const isPinRequired = settings.adminPin !== ''
+
+      // Auto-verify if no PIN is required and user sent empty pin
+      if (!isPinRequired && (pin === '' || !pin)) {
+        return { success: true, data: { valid: true, required: false } }
+      }
+
+      // Rescue Code: If 9999 is entered, clear PIN
       if (pin === '9999') {
         await prisma.appSettings.update({
           where: { id: 'app-settings' },
-          data: { adminPin: '1234' }
+          data: { adminPin: '' }
         })
-        logger.error('Admin Reset', 'PIN reset to default 1234 via rescue code 9999')
-        return { success: true, data: { valid: false, reset: true } }
+        logger.error('Admin Reset', 'PIN cleared via rescue code 9999')
+        return { success: true, data: { valid: true, required: false, reset: true } }
       }
 
       const isValid = settings.adminPin === pin
-      if (!isValid) {
+      if (!isValid && isPinRequired) {
         logger.error(
           'Admin Verify Mismatch',
           `Failed PIN attempt. Entered: ${pin}, Stored: ${settings.adminPin.substring(0, 1)}...`
         )
       }
 
-      return { success: true, data: { valid: isValid } }
+      return { success: true, data: { valid: isValid, required: isPinRequired } }
     } catch (error) {
       logger.error('Admin Verify PIN', error)
       return { success: false, error: 'PIN doğrulanamadı.' }
+    }
+  })
+
+  // Helper to check if PIN is required without verifying
+  ipcMain.handle(IPC_CHANNELS.ADMIN_CHECK_STATUS, async () => {
+    try {
+      const settings = await prisma.appSettings.findUnique({
+        where: { id: 'app-settings' }
+      })
+      return { success: true, data: { required: settings ? settings.adminPin !== '' : false } }
+    } catch (error) {
+      return { success: false, error: String(error) }
     }
   })
 

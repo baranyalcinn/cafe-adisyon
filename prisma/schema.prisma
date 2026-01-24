@@ -1,22 +1,21 @@
-datasource db {
-  provider = "sqlite"
-}
-
 generator client {
   provider   = "prisma-client"
   output     = "../src/generated/prisma"
   engineType = "client"
 }
 
+datasource db {
+  provider = "sqlite"
+}
 
 model Product {
-  id          String   @id @default(cuid())
-  name        String
-  price       Int
-  categoryId  String
-  isFavorite  Boolean  @default(false)
-  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  orderItems  OrderItem[]
+  id         String      @id @default(cuid())
+  name       String
+  price      Int
+  categoryId String
+  isFavorite Boolean     @default(false)
+  orderItems OrderItem[]
+  category   Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
   @@index([categoryId])
   @@index([isFavorite])
@@ -38,13 +37,13 @@ model Table {
 model Order {
   id          String        @id @default(cuid())
   tableId     String
-  status      String        @default("OPEN") // OPEN, CLOSED
+  status      String        @default("OPEN")
   totalAmount Int           @default(0)
   isLocked    Boolean       @default(false)
+  createdAt   DateTime      @default(now())
   table       Table         @relation(fields: [tableId], references: [id])
   items       OrderItem[]
   payments    Transaction[]
-  createdAt   DateTime      @default(now())
 
   @@index([tableId, status])
   @@index([status])
@@ -58,8 +57,8 @@ model OrderItem {
   quantity  Int
   unitPrice Int
   isPaid    Boolean @default(false)
-  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product   Product @relation(fields: [productId], references: [id])
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([orderId])
   @@index([productId])
@@ -69,7 +68,7 @@ model Transaction {
   id            String   @id @default(cuid())
   orderId       String
   amount        Int
-  paymentMethod String   // CASH, CARD
+  paymentMethod String
   createdAt     DateTime @default(now())
   order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
@@ -97,7 +96,7 @@ model DailySummary {
 
 model ActivityLog {
   id        String   @id @default(cuid())
-  action    String   // OPEN_TABLE, CLOSE_ORDER, CANCEL_ITEM, CHANGE_PRICE, etc.
+  action    String
   tableName String?
   userName  String?
   details   String?
@@ -108,16 +107,16 @@ model ActivityLog {
 }
 
 model AppSettings {
-  id       String @id @default("app-settings")
-  adminPin        String  @default("1234")
-  securityQuestion String?
+  id               String  @id @default("app-settings")
+  adminPin         String  @default("1234")
   securityAnswer   String?
+  securityQuestion String?
 }
 
 model Expense {
   id          String   @id @default(cuid())
   description String
-  amount      Int      // Stored in cents (kuruş)
+  amount      Int
   category    String?
   createdAt   DateTime @default(now())
 
@@ -126,7 +125,7 @@ model Expense {
 
 model MonthlyReport {
   id            String   @id @default(cuid())
-  monthDate     DateTime @unique // First day of the month for identification
+  monthDate     DateTime @unique
   totalRevenue  Int      @default(0)
   totalExpenses Int      @default(0)
   netProfit     Int      @default(0)

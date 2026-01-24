@@ -239,8 +239,13 @@ export const cafeApi = {
 
   // Admin
   admin: {
-    async verifyPin(pin: string): Promise<{ valid: boolean }> {
+    async verifyPin(pin: string): Promise<{ valid: boolean; required: boolean }> {
       const result = await api.admin.verifyPin(pin)
+      if (!result.success) throw new Error(result.error)
+      return result.data
+    },
+    async checkStatus(): Promise<{ required: boolean }> {
+      const result = await api.admin.checkStatus()
       if (!result.success) throw new Error(result.error)
       return result.data
     },

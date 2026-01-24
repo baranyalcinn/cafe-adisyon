@@ -13,6 +13,8 @@ files:
   - package.json
   # Native dependencies (Externalized & Required at runtime)
   - node_modules/@libsql/win32-x64-msvc/**/*
+  - node_modules/@libsql/client/**/*
+  - node_modules/@prisma/adapter-libsql/**/*
   - node_modules/bufferutil/**/*
   - node_modules/utf-8-validate/**/*
 

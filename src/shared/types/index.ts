@@ -216,6 +216,7 @@ export const IPC_CHANNELS = {
 
   // Admin
   ADMIN_VERIFY_PIN: 'admin:verifyPin',
+  ADMIN_CHECK_STATUS: 'admin:checkStatus',
   ADMIN_CHANGE_PIN: 'admin:changePin',
   ADMIN_SET_RECOVERY: 'admin:setRecovery',
   ADMIN_GET_RECOVERY_QUESTION: 'admin:getRecoveryQuestion',

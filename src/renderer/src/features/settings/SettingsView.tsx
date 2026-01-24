@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Sun,
   Moon,
@@ -151,15 +151,32 @@ export function SettingsView({
 
   // PIN verification state
   const [isUnlocked, setIsUnlocked] = useState(false)
-  const [showPinModal, setShowPinModal] = useState(true)
+  const [showPinModal, setShowPinModal] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
   // PIN change state
   const [showChangePinModal, setShowChangePinModal] = useState(false)
   const [newPin, setNewPin] = useState('')
   const [confirmPin, setConfirmPin] = useState('')
   const [pinChangeError, setPinChangeError] = useState<string | null>(null)
-  const [isChangingPin, setIsChangingPin] = useState(false)
   const [showDemoPinModal, setShowDemoPinModal] = useState(false)
+
+  // Check PIN status on mount
+  useEffect(() => {
+    const checkPinStatus = async (): Promise<void> => {
+      try {
+        const { required } = await cafeApi.admin.checkStatus()
+        if (!required) {
+          setIsUnlocked(true)
+        }
+      } catch (error) {
+        console.error('Failed to check PIN status:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    checkPinStatus()
+  }, [])
 
   // Recovery Settings state
   const [securityQuestion, setSecurityQuestion] = useState('')
@@ -182,25 +199,30 @@ export function SettingsView({
   }
 
   const handleChangePin = async (): Promise<void> => {
-    if (newPin.length !== 4) {
-      setPinChangeError('PIN 4 haneli olmalıdır')
-      return
-    }
-    if (newPin !== confirmPin) {
-      setPinChangeError('PIN kodları eşleşmiyor')
-      return
+    // Both empty = Clear PIN
+    const clearingPin = newPin === '' && confirmPin === ''
+
+    if (!clearingPin) {
+      if (newPin.length !== 4) {
+        setPinChangeError('PIN 4 haneli olmalıdır')
+        return
+      }
+      if (newPin !== confirmPin) {
+        setPinChangeError('PIN kodları eşleşmiyor')
+        return
+      }
     }
 
-    setIsChangingPin(true)
-    setPinChangeError(null)
+    setShowChangePinModal(true)
+  }
 
-    try {
-      setShowChangePinModal(true)
-    } catch {
-      setPinChangeError('PIN değiştirme başarısız')
-    } finally {
-      setIsChangingPin(false)
-    }
+  // Loading State
+  if (isLoading) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <RefreshCw className="w-8 h-8 text-primary animate-spin" />
+      </div>
+    )
   }
 
   // Lock Screen
@@ -208,7 +230,7 @@ export function SettingsView({
     return (
       <div className="h-full flex flex-col items-center justify-center bg-background">
         <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
+          <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
             <Lock className="w-10 h-10 text-muted-foreground" />
           </div>
           <h1 className="text-3xl font-bold mb-2">Ayarlar Kilitli</h1>
@@ -604,7 +626,7 @@ export function SettingsView({
 
                         <Button
                           onClick={handleChangePin}
-                          disabled={isChangingPin || newPin.length !== 4 || confirmPin.length !== 4}
+                          disabled={newPin.length !== 4 || confirmPin.length !== 4}
                           className="w-full h-9 text-xs font-bold"
                           variant="secondary"
                         >
