@@ -51,12 +51,49 @@ jobs:
         run: npm run build
 
       # CRITICAL: Prepare for Packaging
-      # Use npm prune which is safer than manual surgery.
-      # Added --no-workspaces to prevent recursive resolution loops.
+      # We manually prune node_modules to keep only runtime native deps AND the builder itself.
+      # This prevents electron-builder from OOMing during dependency analysis.
       - name: Prepare for Packaging
         run: |
-          npm prune --production --legacy-peer-deps --no-workspaces
-          Write-Host "Production pruning complete. node_modules is optimized."
+          $essential = @(
+            "@libsql",
+            "libsql",
+            "bufferutil",
+            "utf-8-validate",
+            "detect-libc",
+            "electron-builder",
+            "builder-util",
+            "app-builder-lib",
+            "dmg-builder",
+            "electron-publish",
+            "read-config-file",
+            "dotenv",
+            "dotenv-expand"
+          )
+
+          Write-Host "Starting manual surgery to prevent OOM..."
+          Move-Item node_modules node_modules_full
+          New-Item -ItemType Directory -Path node_modules
+
+          foreach ($mod in $essential) {
+            if (Test-Path "node_modules_full/$mod") {
+              # Handle scoped packages (e.g., @libsql)
+              if ($mod.StartsWith("@")) {
+                $scope = $mod.Split("/")[0]
+                if (!(Test-Path "node_modules/$scope")) { New-Item -ItemType Directory -Path "node_modules/$scope" }
+              }
+              Copy-Item -Path "node_modules_full/$mod" -Destination "node_modules/$mod" -Recurse -Force
+              Write-Host "Preserved: $mod"
+            }
+          }
+
+          # Cleanup
+          Remove-Item node_modules_full -Recurse -Force
+
+          # Delete lockfile to prevent npx/npm ECOMPROMISED errors
+          if (Test-Path package-lock.json) { Remove-Item package-lock.json }
+
+          Write-Host "Surgery complete. Environment is now tiny and safe."
 
       - name: Windows EXE Oluştur
         env:
@@ -65,7 +102,8 @@ jobs:
           ELECTRON_BUILDER_OFFLINE: 'true'
           DEBUG: electron-builder
         run: |
-          npx electron-builder --win portable --publish never --no-workspaces
+          # Use the local binary directly to avoid npx overhead/errors
+          ./node_modules/.bin/electron-builder.cmd --win portable --publish never --no-workspaces
 
       - name: Build Sonucunu Yükle
         uses: actions/upload-artifact@v4

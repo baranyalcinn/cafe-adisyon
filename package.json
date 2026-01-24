@@ -23,10 +23,24 @@
     "db:soft-reset": "npx tsx scripts/soft-reset.ts"
   },
   "dependencies": {
-    "@electron-toolkit/preload": "^3.0.2",
-    "@electron-toolkit/utils": "^4.0.0",
     "@libsql/client": "^0.17.0",
     "@libsql/win32-x64-msvc": "^0.5.22",
+    "bufferutil": "^4.1.0",
+    "detect-libc": "^2.0.2",
+    "libsql": "^0.5.22",
+    "utf-8-validate": "^6.0.6"
+  },
+  "overrides": {
+    "glob": "^10.4.0",
+    "rimraf": "^6.0.1"
+  },
+  "devDependencies": {
+    "@electron-toolkit/eslint-config-prettier": "^3.0.0",
+    "@electron-toolkit/eslint-config-ts": "^3.1.0",
+    "@electron-toolkit/preload": "^3.0.2",
+    "@electron-toolkit/tsconfig": "^2.0.0",
+    "@electron-toolkit/utils": "^4.0.0",
+    "@electron/rebuild": "^4.0.2",
     "@neon-rs/load": "^0.0.4",
     "@prisma/adapter-libsql": "7.3.0",
     "@prisma/client": "7.3.0",
@@ -39,37 +53,14 @@
     "@radix-ui/react-separator": "^1.1.8",
     "@radix-ui/react-slot": "^1.2.4",
     "@radix-ui/react-tabs": "^1.1.13",
-    "bufferutil": "^4.1.0",
-    "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
-    "date-fns": "^4.1.0",
-    "detect-libc": "^2.0.2",
-    "input-otp": "^1.4.2",
-    "libsql": "^0.5.22",
-    "lucide-react": "^0.563.0",
-    "react": "^19.2.1",
-    "react-dom": "^19.2.1",
-    "react-is": "^19.2.3",
-    "recharts": "^3.6.0",
-    "tailwind-merge": "^3.4.0",
-    "utf-8-validate": "^6.0.6",
-    "zod": "^4.3.5",
-    "zustand": "^5.0.10"
-  },
-  "overrides": {
-    "glob": "^10.4.0",
-    "rimraf": "^6.0.1"
-  },
-  "devDependencies": {
-    "@electron-toolkit/eslint-config-prettier": "^3.0.0",
-    "@electron-toolkit/eslint-config-ts": "^3.1.0",
-    "@electron-toolkit/tsconfig": "^2.0.0",
-    "@electron/rebuild": "^4.0.2",
     "@tailwindcss/vite": "^4.1.18",
     "@types/node": "^25.0.9",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
     "electron": "39.3.0",
     "electron-builder": "26.4.0",
     "electron-vite": "^5.0.0",
@@ -77,10 +68,19 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
+    "input-otp": "^1.4.2",
+    "lucide-react": "^0.563.0",
     "prettier": "^3.7.4",
     "prisma": "7.3.0",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
+    "react-is": "^19.2.3",
+    "recharts": "^3.6.0",
+    "tailwind-merge": "^3.4.0",
     "tailwindcss": "^4.1.18",
     "typescript": "^5.9.3",
-    "vite": "^7.2.6"
+    "vite": "^7.2.6",
+    "zod": "^4.3.5",
+    "zustand": "^5.0.10"
   }
 }
