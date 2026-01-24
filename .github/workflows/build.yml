@@ -55,17 +55,36 @@ jobs:
       # With empty dependencies, collector has nothing to analyze (fixes OOM)
       - name: Prepare for Packaging
         run: |
-          # package.json'dan devDependencies'i kaldır (build size küçültme)
           $pkg = Get-Content package.json -Raw | ConvertFrom-Json
 
-          # devDependencies'i tamamen kaldır
-          $pkg.PSObject.Properties.Remove('devDependencies')
+          # ÖNEMLİ: Sadece runtime için ELZEM olan modülleri koru
+          # Bunlar bundle edilemeyen native modüllerdir.
+          $keepDeps = @(
+            '@libsql/client',
+            '@libsql/win32-x64-msvc',
+            '@prisma/client',
+            '@prisma/adapter-libsql',
+            'libsql',
+            'detect-libc',
+            'bufferutil',
+            'utf-8-validate',
+            '@neon-rs/load'
+          )
 
-          # overrides'ı da kaldır (gereksiz)
+          $newDeps = @{}
+          foreach ($dep in $keepDeps) {
+            if ($pkg.dependencies.$dep) {
+              $newDeps.$dep = $pkg.dependencies.$dep
+            }
+          }
+
+          # Diğer her şeyi temizle (Frontend paketleri bundle edildi)
+          $pkg.dependencies = $newDeps
+          $pkg.PSObject.Properties.Remove('devDependencies')
           $pkg.PSObject.Properties.Remove('overrides')
 
           $pkg | ConvertTo-Json -Depth 10 | Set-Content package.json -Encoding UTF8
-          Write-Host "DevDependencies removed from package.json"
+          Write-Host "Aggressive pruning complete. Only native/runtime modules kept."
 
       - name: Windows EXE Oluştur
         env:

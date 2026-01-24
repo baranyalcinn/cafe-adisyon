@@ -11,7 +11,7 @@ asar: true
 files:
   - out/**/*
   - package.json
-  # Sadece production dependencies (devDependencies hariç)
+  # Sadece NATIVE ve PRISMA modülleri (Frontend paketleri Vite tarafından bundle edildi)
   - node_modules/@libsql/**/*
   - node_modules/libsql/**/*
   - node_modules/@prisma/**/*
@@ -20,23 +20,6 @@ files:
   - node_modules/detect-libc/**/*
   - node_modules/bufferutil/**/*
   - node_modules/utf-8-validate/**/*
-  - node_modules/@electron-toolkit/**/*
-  - node_modules/zod/**/*
-  - node_modules/date-fns/**/*
-  - node_modules/zustand/**/*
-  - node_modules/clsx/**/*
-  - node_modules/tailwind-merge/**/*
-  - node_modules/class-variance-authority/**/*
-  - node_modules/@radix-ui/**/*
-  - node_modules/input-otp/**/*
-  - node_modules/lucide-react/**/*
-  - node_modules/react/**/*
-  - node_modules/react-dom/**/*
-  - node_modules/react-is/**/*
-  - node_modules/recharts/**/*
-  - node_modules/async-mutex/**/*
-  - node_modules/promise-limit/**/*
-  - node_modules/js-base64/**/*
 
   # Kaynak kodları hariç tut
   - '!**/*.ts'
