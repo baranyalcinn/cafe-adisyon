@@ -57,39 +57,23 @@ jobs:
         run: |
           $pkg = Get-Content package.json -Raw | ConvertFrom-Json
 
-          # ÖNEMLİ: Sadece runtime için ELZEM olan modülleri koru
-          # Bunlar bundle edilemeyen native modüllerdir.
-          $keepDeps = @(
-            '@libsql/client',
-            '@libsql/win32-x64-msvc',
-            '@prisma/client',
-            '@prisma/adapter-libsql',
-            'libsql',
-            'detect-libc',
-            'bufferutil',
-            'utf-8-validate',
-            '@neon-rs/load'
-          )
-
-          $newDeps = @{}
-          foreach ($dep in $keepDeps) {
-            if ($pkg.dependencies.$dep) {
-              $newDeps.$dep = $pkg.dependencies.$dep
-            }
-          }
-
-          # Diğer her şeyi temizle (Frontend paketleri bundle edildi)
-          $pkg.dependencies = $newDeps
+          # HİLE: dependencies'i TAMAMEN boşaltıyoruz.
+          # electron-builder package.json içinde dependency görünce "node-module-collector" 
+          # çalıştırıp 12GB RAM'i bile bitiriyor.
+          # electron-builder.yml içindeki "files" kısmında node_modules klasörlerini 
+          # elle eklediğimiz için burada silmemizde hiçbir sakınca yok.
+          $pkg.dependencies = @{}
           $pkg.PSObject.Properties.Remove('devDependencies')
           $pkg.PSObject.Properties.Remove('overrides')
 
           $pkg | ConvertTo-Json -Depth 10 | Set-Content package.json -Encoding UTF8
-          Write-Host "Aggressive pruning complete. Only native/runtime modules kept."
+          Write-Host "Zero-Dependency Strategy: Package.json stripped to force-skip dependency scanning."
 
       - name: Windows EXE Oluştur
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_OPTIONS: '--max-old-space-size=12288' # 12GB'a çıkar
+          ELECTRON_BUILDER_OFFLINE: 'true' # İnternete veya NPM'e sorma
           DEBUG: electron-builder
         run: |
           npx electron-builder --win portable --publish never
