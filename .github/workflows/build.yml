@@ -50,61 +50,22 @@ jobs:
       - name: TypeScript Build
         run: npm run build
 
-      # CRITICAL: Strip dependencies to prevent node-module-collector from running
-      # electron-builder reads package.json to determine what to scan
-      # With empty dependencies, collector has nothing to analyze (fixes OOM)
+      # CRITICAL: Prepare for Packaging
+      # Use npm prune which is safer than manual surgery.
+      # Added --no-workspaces to prevent recursive resolution loops.
       - name: Prepare for Packaging
         run: |
-          # 1. Gerekli modülleri belirle
-          $essential = @(
-            "@libsql",
-            "libsql",
-            "@prisma",
-            ".prisma",
-            "@neon-rs",
-            "detect-libc",
-            "bufferutil",
-            "utf-8-validate"
-          )
-
-          # 2. Fiziksel Taşıma (Physical Surgery)
-          # npm prune yerine manuel taşıma yaparak NPM'in OOM'a neden olan turlamalarını engelliyoruz.
-          Move-Item node_modules node_modules_bloated
-          New-Item -ItemType Directory -Path node_modules
-
-          foreach ($mod in $essential) {
-            if (Test-Path "node_modules_bloated/$mod") {
-              Copy-Item -Path "node_modules_bloated/$mod" -Destination "node_modules/$mod" -Recurse -Force
-              Write-Host "Manually preserved: $mod"
-            }
-          }
-          Remove-Item node_modules_bloated -Recurse -Force
-
-          # 3. Package.json'ı temizle (Sadece runtime için)
-          $pkg = Get-Content package.json -Raw | ConvertFrom-Json -AsHashtable
-          $deps = @{}
-          foreach ($key in $pkg['dependencies'].Keys) {
-            foreach ($ess in $essential) {
-              if ($key -eq $ess -or $key.StartsWith("$ess/")) {
-                $deps[$key] = $pkg['dependencies'][$key]
-              }
-            }
-          }
-          $pkg['dependencies'] = $deps
-          $pkg.Remove('devDependencies')
-          $pkg.Remove('overrides')
-          $pkg | ConvertTo-Json -Depth 10 | Set-Content package.json -Encoding UTF8
-
-          Write-Host "Physical Surgery complete. node_modules is now tiny and safe."
+          npm prune --production --legacy-peer-deps --no-workspaces
+          Write-Host "Production pruning complete. node_modules is optimized."
 
       - name: Windows EXE Oluştur
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NODE_OPTIONS: '--max-old-space-size=14336' # 14GB'a çıkar (Maksimum limit)
-          ELECTRON_BUILDER_OFFLINE: 'true' # NPM'e sormayı yasakla
+          NODE_OPTIONS: '--max-old-space-size=8192'
+          ELECTRON_BUILDER_OFFLINE: 'true'
           DEBUG: electron-builder
         run: |
-          npx electron-builder --win portable --publish never
+          npx electron-builder --win portable --publish never --no-workspaces
 
       - name: Build Sonucunu Yükle
         uses: actions/upload-artifact@v4
