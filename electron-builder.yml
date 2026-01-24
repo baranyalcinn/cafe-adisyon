@@ -11,10 +11,9 @@ asar: true
 files:
   - out/**/*
   - package.json
-  # Prisma 7 Engines & Client
-  - node_modules/.prisma/client/*.node
+  # Prisma 7 Runtime (Required for bundled code)
   - node_modules/@prisma/client/runtime/*.js
-  # Native dependencies
+  # Native dependencies (Externalized)
   - node_modules/@libsql/win32-x64-msvc/**/*
   - node_modules/bufferutil/**/*
   - node_modules/utf-8-validate/**/*
@@ -31,7 +30,6 @@ files:
 # These will be automatically unpacked by electron-builder if they are native
 asarUnpack:
   - '**/*.node'
-  - 'node_modules/.prisma/client/*.node'
   - 'node_modules/@libsql/win32-x64-msvc/**/*'
 
 npmRebuild: false
