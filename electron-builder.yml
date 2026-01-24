@@ -11,10 +11,13 @@ asar: true
 files:
   - out/**/*
   - package.json
+  - node_modules/libsql/**/*
   - node_modules/@libsql/win32-x64-msvc/**/*
-  - node_modules/@libsql/client/**/*
+  - node_modules/@neon-rs/**/*
+  - node_modules/detect-libc/**/*
   - node_modules/bufferutil/**/*
   - node_modules/utf-8-validate/**/*
+  - node_modules/.prisma/**/*
 
   # Exclude everything else
   - '!node_modules/**/node_modules'
