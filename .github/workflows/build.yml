@@ -57,17 +57,45 @@ jobs:
         run: |
           $pkg = Get-Content package.json -Raw | ConvertFrom-Json
 
-          # HİLE: dependencies'i TAMAMEN boşaltıyoruz.
-          # electron-builder package.json içinde dependency görünce "node-module-collector" 
-          # çalıştırıp 12GB RAM'i bile bitiriyor.
-          # electron-builder.yml içindeki "files" kısmında node_modules klasörlerini 
-          # elle eklediğimiz için burada silmemizde hiçbir sakınca yok.
-          $pkg.dependencies = @{}
-          $pkg.PSObject.Properties.Remove('devDependencies')
-          $pkg.PSObject.Properties.Remove('overrides')
+          # 1. Elzem (Runtime) bağımlılıklar listesi
+          # Bunlar ASAR içinde node_modules olarak kalmalı.
+          $essential = @(
+            '@libsql/client',
+            '@libsql/win32-x64-msvc',
+            'libsql',
+            '@prisma/client',
+            '@prisma/adapter-libsql',
+            'detect-libc',
+            'bufferutil',
+            'utf-8-validate',
+            '@neon-rs/load'
+          )
+
+          # 2. Mevcut bağımlılıkları tara
+          $newDeps = @{}
+          $newDevDeps = $pkg.devDependencies
+
+          foreach ($prop in $pkg.dependencies.PSObject.Properties) {
+            if ($essential -contains $prop.Name) {
+              $newDeps.($prop.Name) = $prop.Value
+            } else {
+              # Frontend paketlerini devDeps'e taşı ki 'npm prune' bunları silsin
+              $newDevDeps.($prop.Name) = $prop.Value
+            }
+          }
+
+          $pkg.dependencies = $newDeps
+          $pkg.devDependencies = $newDevDeps
+          if ($pkg.PSObject.Properties.Match('overrides').Count -gt 0) {
+            $pkg.PSObject.Properties.Remove('overrides')
+          }
 
           $pkg | ConvertTo-Json -Depth 10 | Set-Content package.json -Encoding UTF8
-          Write-Host "Zero-Dependency Strategy: Package.json stripped to force-skip dependency scanning."
+
+          # 3. Gereksiz paketleri diskten fiziksel olarak sil (OOM ENGELLEYİCİ)
+          # Bu sayede hem node_modules küçülür hem de @libsql'in alt bağımlılıkları korunur.
+          npm prune --production
+          Write-Host "Smart Pruning complete. node_modules is now surgical and safe."
 
       - name: Windows EXE Oluştur
         env:

@@ -11,15 +11,8 @@ asar: true
 files:
   - out/**/*
   - package.json
-  # Sadece NATIVE ve PRISMA modülleri (Frontend paketleri Vite tarafından bundle edildi)
-  - node_modules/@libsql/**/*
-  - node_modules/libsql/**/*
-  - node_modules/@prisma/**/*
-  - node_modules/.prisma/**/*
-  - node_modules/@neon-rs/**/*
-  - node_modules/detect-libc/**/*
-  - node_modules/bufferutil/**/*
-  - node_modules/utf-8-validate/**/*
+  # Sadece budanmış (pruned) node_modules dahil edilecek
+  - node_modules/**/*
 
   # Kaynak kodları hariç tut
   - '!**/*.ts'
