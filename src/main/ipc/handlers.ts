@@ -10,11 +10,12 @@ import {
   productSchemas,
   orderSchemas,
   paymentSchemas,
+  expenseSchemas,
   validateInput
 } from '../lib/validation'
 
 function logError(context: string, error: unknown): void {
-  const isDev = !app.isPackaged
+  const isDev = process.env.NODE_ENV === 'development'
   const baseDir = isDev ? process.cwd() : app.getPath('userData')
   const logPath = path.join(baseDir, 'backend-errors.log')
   const timestamp = new Date().toISOString()
@@ -27,11 +28,37 @@ function logError(context: string, error: unknown): void {
   }
 }
 
-// Fire-and-forget activity logging (doesn't block the main operation)
+// Simple log queue to prevent database connection saturation
+const logQueue: Array<{ action: string; tableName?: string; details?: string }> = []
+let isLogProcessing = false
+
+async function processLogQueue(): Promise<void> {
+  if (isLogProcessing || logQueue.length === 0) return
+  isLogProcessing = true
+
+  while (logQueue.length > 0) {
+    const entry = logQueue.shift()
+    if (!entry) continue
+    try {
+      await prisma.activityLog.create({
+        data: {
+          action: entry.action,
+          tableName: entry.tableName,
+          details: entry.details
+        }
+      })
+    } catch (error) {
+      logError('Activity Log', error)
+    }
+  }
+
+  isLogProcessing = false
+}
+
+// Optimized fire-and-forget activity logging
 export function logActivity(action: string, tableName?: string, details?: string): void {
-  prisma.activityLog
-    .create({ data: { action, tableName, details } })
-    .catch((err) => logError('Activity Log', err))
+  logQueue.push({ action, tableName, details })
+  processLogQueue().catch((err) => logError('Process Log Queue', err))
 }
 
 // Simple in-memory cache for categories and products
@@ -63,6 +90,72 @@ function setCache<T>(key: 'categories' | 'products', data: T[]): void {
 function invalidateCache(key: 'categories' | 'products'): void {
   cache[key] = null
 }
+
+// ==================== REPORT HELPERS ====================
+
+async function updateMonthlyReport(date: Date): Promise<void> {
+  const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1)
+  const nextMonth = new Date(date.getFullYear(), date.getMonth() + 1, 1)
+
+  try {
+    // Aggregate DailySummaries for revenue and orders
+    const summaries = await prisma.dailySummary.findMany({
+      where: { date: { gte: startOfMonth, lt: nextMonth } }
+    })
+
+    const totalRevenue = summaries.reduce((sum, s) => sum + s.totalRevenue, 0)
+    const orderCount = summaries.reduce((sum, s) => sum + s.orderCount, 0)
+
+    // Aggregate Expenses for the month
+    const expenses = await prisma.expense.findMany({
+      where: { createdAt: { gte: startOfMonth, lt: nextMonth } }
+    })
+    const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0)
+
+    const netProfit = totalRevenue - totalExpenses
+
+    await prisma.monthlyReport.upsert({
+      where: { monthDate: startOfMonth },
+      create: {
+        monthDate: startOfMonth,
+        totalRevenue,
+        totalExpenses,
+        netProfit,
+        orderCount
+      },
+      update: {
+        totalRevenue,
+        totalExpenses,
+        netProfit,
+        orderCount
+      }
+    })
+  } catch (error) {
+    logError('Update Monthly Report', error)
+  }
+}
+
+async function cleanupOldReports(): Promise<void> {
+  const oneYearAgo = new Date()
+  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
+  oneYearAgo.setHours(0, 0, 0, 0)
+
+  try {
+    const deleted = await prisma.monthlyReport.deleteMany({
+      where: { monthDate: { lt: oneYearAgo } }
+    })
+    if (deleted.count > 0) {
+      logActivity('CLEANUP_OLD_DATA', undefined, `${deleted.count} eski aylık rapor silindi.`)
+    }
+  } catch (error) {
+    logError('Cleanup Old Reports', error)
+  }
+}
+
+// Run cleanup on startup
+setTimeout(() => {
+  cleanupOldReports().catch(console.error)
+}, 5000)
 
 export function registerIpcHandlers(): void {
   // ==================== TABLES ====================
@@ -670,7 +763,6 @@ export function registerIpcHandlers(): void {
       }
 
       try {
-        // Get source and target table names for logging
         const sourceOrder = await prisma.order.findUnique({
           where: { id: sourceOrderId },
           include: { table: true, items: true }
@@ -681,40 +773,43 @@ export function registerIpcHandlers(): void {
         })
 
         const result = await prisma.$transaction(async (tx) => {
-          // Get source order items
+          // 1. Move all payments from source to target
+          await tx.transaction.updateMany({
+            where: { orderId: sourceOrderId },
+            data: { orderId: targetOrderId }
+          })
+
+          // 2. Get source items
           const sourceItems = await tx.orderItem.findMany({
             where: { orderId: sourceOrderId }
           })
 
-          // Get target order items to check for duplicates
-          const targetItems = await tx.orderItem.findMany({
-            where: { orderId: targetOrderId }
-          })
+          // 3. Process items independently (respecting isPaid status)
+          for (const item of sourceItems) {
+            const existing = await tx.orderItem.findFirst({
+              where: {
+                orderId: targetOrderId,
+                productId: item.productId,
+                isPaid: item.isPaid,
+                unitPrice: item.unitPrice
+              }
+            })
 
-          // Process each source item
-          for (const sourceItem of sourceItems) {
-            const existingItem = targetItems.find((t) => t.productId === sourceItem.productId)
-
-            if (existingItem) {
-              // Update quantity of existing item
+            if (existing) {
               await tx.orderItem.update({
-                where: { id: existingItem.id },
-                data: { quantity: existingItem.quantity + sourceItem.quantity }
+                where: { id: existing.id },
+                data: { quantity: existing.quantity + item.quantity }
               })
+              await tx.orderItem.delete({ where: { id: item.id } })
             } else {
-              // Create new item in target order
-              await tx.orderItem.create({
-                data: {
-                  orderId: targetOrderId,
-                  productId: sourceItem.productId,
-                  quantity: sourceItem.quantity,
-                  unitPrice: sourceItem.unitPrice
-                }
+              await tx.orderItem.update({
+                where: { id: item.id },
+                data: { orderId: targetOrderId }
               })
             }
           }
 
-          // Recalculate target order total
+          // 4. Recalculate target order total
           const allTargetItems = await tx.orderItem.findMany({
             where: { orderId: targetOrderId }
           })
@@ -728,12 +823,9 @@ export function registerIpcHandlers(): void {
             data: { totalAmount }
           })
 
-          // Delete source order (items will be deleted by now or cascade)
-          await tx.transaction.deleteMany({ where: { orderId: sourceOrderId } })
-          await tx.orderItem.deleteMany({ where: { orderId: sourceOrderId } })
+          // 5. Delete source order (now empty)
           await tx.order.delete({ where: { id: sourceOrderId } })
 
-          // Return updated target order
           return await tx.order.findUnique({
             where: { id: targetOrderId },
             include: {
@@ -1180,7 +1272,25 @@ export function registerIpcHandlers(): void {
         })
       }
 
-      return { success: true, data: { valid: settings.adminPin === pin } }
+      // Rescue Code: If 9999 is entered, reset pin to 1234
+      if (pin === '9999') {
+        await prisma.appSettings.update({
+          where: { id: 'app-settings' },
+          data: { adminPin: '1234' }
+        })
+        logError('Admin Reset', 'PIN reset to default 1234 via rescue code 9999')
+        return { success: true, data: { valid: false, reset: true } }
+      }
+
+      const isValid = settings.adminPin === pin
+      if (!isValid) {
+        logError(
+          'Admin Verify Mismatch',
+          `Failed PIN attempt. Entered: ${pin}, Stored: ${settings.adminPin.substring(0, 1)}...`
+        )
+      }
+
+      return { success: true, data: { valid: isValid } }
     } catch (error) {
       logError('Admin Verify PIN', error)
       return { success: false, error: 'PIN doğrulanamadı.' }
@@ -1415,7 +1525,7 @@ export function registerIpcHandlers(): void {
   })
 
   // ==================== Z-REPORT ====================
-  ipcMain.handle(IPC_CHANNELS.ZREPORT_GENERATE, async () => {
+  ipcMain.handle(IPC_CHANNELS.ZREPORT_GENERATE, async (_event, actualCash?: number) => {
     try {
       const today = new Date()
       today.setHours(0, 0, 0, 0)
@@ -1438,6 +1548,13 @@ export function registerIpcHandlers(): void {
         include: { payments: true }
       })
 
+      // Get today's expenses
+      const todayExpenses = await prisma.expense.findMany({
+        where: {
+          createdAt: { gte: today }
+        }
+      })
+
       // Calculate totals
       const allPayments = todayOrders.flatMap((o) => o.payments)
       const totalCash = allPayments
@@ -1448,29 +1565,30 @@ export function registerIpcHandlers(): void {
         .reduce((sum, p) => sum + p.amount, 0)
       const totalRevenue = totalCash + totalCard
 
+      const totalExpenses = todayExpenses.reduce((sum, e) => sum + e.amount, 0)
+      const netProfit = totalRevenue - totalExpenses
+
       // Calculate VAT (assuming 10% KDV for simplicity)
-      const totalVat = totalRevenue * 0.1
+      const totalVat = Math.round(totalRevenue * 0.1)
 
       // Create summary
       const summary = await prisma.dailySummary.create({
         data: {
           date: today,
           totalCash,
+          actualCash: actualCash ?? totalCash,
           totalCard,
-          cancelCount: 0, // Could track cancellations separately
+          totalExpenses,
+          netProfit,
+          cancelCount: 0,
           totalVat,
           orderCount: todayOrders.length,
           totalRevenue
         }
       })
 
-      // Log the action
-      await prisma.activityLog.create({
-        data: {
-          action: 'GENERATE_ZREPORT',
-          details: `Z-Raporu: ₺${(totalRevenue / 100).toFixed(2)} (${todayOrders.length} sipariş)`
-        }
-      })
+      // Update Monthly Report
+      await updateMonthlyReport(today)
 
       return { success: true, data: summary }
     } catch (error) {
@@ -1489,6 +1607,82 @@ export function registerIpcHandlers(): void {
     } catch (error) {
       logError('Z-Report History', error)
       return { success: false, error: String(error) }
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.REPORTS_GET_MONTHLY, async (_event, limit: number = 12) => {
+    try {
+      const reports = await prisma.monthlyReport.findMany({
+        orderBy: { monthDate: 'desc' },
+        take: limit
+      })
+      return { success: true, data: reports }
+    } catch (error) {
+      logError('Reports Get Monthly', error)
+      return { success: false, error: 'Aylık raporlar alınamadı.' }
+    }
+  })
+
+  // ==================== EXPENSES ====================
+  ipcMain.handle(
+    IPC_CHANNELS.EXPENSES_CREATE,
+    async (_event, data: { description: string; amount: number; category?: string }) => {
+      const validation = validateInput(expenseSchemas.create, data)
+      if (!validation.success) {
+        return { success: false, error: validation.error }
+      }
+
+      try {
+        const expense = await prisma.expense.create({
+          data: validation.data
+        })
+
+        // Update Monthly Report
+        await updateMonthlyReport(new Date())
+
+        return { success: true, data: expense }
+      } catch (error) {
+        logError('Expenses Create', error)
+        return { success: false, error: 'Gider oluşturulamadı.' }
+      }
+    }
+  )
+
+  ipcMain.handle(IPC_CHANNELS.EXPENSES_GET_ALL, async () => {
+    try {
+      // Get expenses from the last 30 days
+      const thirtyDaysAgo = new Date()
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+
+      const expenses = await prisma.expense.findMany({
+        where: {
+          createdAt: { gte: thirtyDaysAgo }
+        },
+        orderBy: { createdAt: 'desc' }
+      })
+      return { success: true, data: expenses }
+    } catch (error) {
+      logError('Expenses Get All', error)
+      return { success: false, error: 'Giderler alınamadı.' }
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.EXPENSES_DELETE, async (_event, id: string) => {
+    const validation = validateInput(expenseSchemas.delete, { id })
+    if (!validation.success) {
+      return { success: false, error: validation.error }
+    }
+
+    try {
+      await prisma.expense.delete({ where: { id: id } })
+
+      // Update Monthly Report
+      await updateMonthlyReport(new Date())
+
+      return { success: true, data: null }
+    } catch (error) {
+      logError('Expenses Delete', error)
+      return { success: false, error: 'Gider silinemedi.' }
     }
   })
 
@@ -1597,7 +1791,7 @@ export function registerIpcHandlers(): void {
           }
         })
 
-        const isDev = !app.isPackaged
+        const isDev = process.env.NODE_ENV === 'development'
         const baseDir = isDev ? process.cwd() : app.getPath('userData')
         const exportDir = path.join(baseDir, 'exports')
         if (!fs.existsSync(exportDir)) {
@@ -1650,7 +1844,7 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle(IPC_CHANNELS.MAINTENANCE_BACKUP, async () => {
     try {
-      const isDev = !app.isPackaged
+      const isDev = process.env.NODE_ENV === 'development'
       const baseDir = isDev ? process.cwd() : app.getPath('userData')
       const backupDir = path.join(baseDir, 'backups')
       if (!fs.existsSync(backupDir)) {
@@ -1682,7 +1876,7 @@ export function registerIpcHandlers(): void {
     IPC_CHANNELS.MAINTENANCE_BACKUP_WITH_ROTATION,
     async (_, maxBackups: number = 30) => {
       try {
-        const isDev = !app.isPackaged
+        const isDev = process.env.NODE_ENV === 'development'
         const baseDir = isDev ? process.cwd() : app.getPath('userData')
         const backupDir = path.join(baseDir, 'backups')
         if (!fs.existsSync(backupDir)) {
@@ -1762,7 +1956,7 @@ export function registerIpcHandlers(): void {
   })
 
   // End of Day - Execute full workflow
-  ipcMain.handle(IPC_CHANNELS.END_OF_DAY_EXECUTE, async () => {
+  ipcMain.handle(IPC_CHANNELS.END_OF_DAY_EXECUTE, async (_event, actualCash?: number) => {
     try {
       // Step 1: Check for open tables
       const openOrders = await prisma.order.count({ where: { status: 'OPEN' } })
@@ -1773,57 +1967,66 @@ export function registerIpcHandlers(): void {
       // Step 2: Generate Z-Report
       const today = new Date()
       today.setHours(0, 0, 0, 0)
-      const tomorrow = new Date(today)
-      tomorrow.setDate(tomorrow.getDate() + 1)
 
-      const existingReport = await prisma.dailySummary.findFirst({
-        where: { date: { gte: today, lt: tomorrow } }
+      // Get today's closed orders
+      const todayOrders = await prisma.order.findMany({
+        where: { status: 'CLOSED', createdAt: { gte: today } },
+        include: { payments: true }
       })
 
-      let zReport
-      if (existingReport) {
-        zReport = existingReport
-      } else {
-        // Calculate daily stats
-        const transactions = await prisma.transaction.findMany({
-          where: { createdAt: { gte: today, lt: tomorrow } }
-        })
+      // Get today's expenses
+      const todayExpenses = await prisma.expense.findMany({
+        where: { createdAt: { gte: today } }
+      })
 
-        const totalCash = transactions
-          .filter((t) => t.paymentMethod === 'CASH')
-          .reduce((sum, t) => sum + t.amount, 0)
-        const totalCard = transactions
-          .filter((t) => t.paymentMethod === 'CARD')
-          .reduce((sum, t) => sum + t.amount, 0)
-        const totalRevenue = totalCash + totalCard
-        const totalVat = totalRevenue * 0.1
+      // Calculate totals
+      const allPayments = todayOrders.flatMap((o) => o.payments)
+      const totalCash = allPayments
+        .filter((p) => p.paymentMethod === 'CASH')
+        .reduce((sum, p) => sum + p.amount, 0)
+      const totalCard = allPayments
+        .filter((p) => p.paymentMethod === 'CARD')
+        .reduce((sum, p) => sum + p.amount, 0)
+      const totalRevenue = totalCash + totalCard
+      const totalExpenses = todayExpenses.reduce((sum, e) => sum + e.amount, 0)
+      const netProfit = totalRevenue - totalExpenses
+      const totalVat = Math.round(totalRevenue * 0.1)
 
-        const orderCount = await prisma.order.count({
-          where: { status: 'CLOSED', createdAt: { gte: today, lt: tomorrow } }
-        })
-
-        zReport = await prisma.dailySummary.create({
-          data: {
-            date: today,
-            totalCash,
-            totalCard,
-            totalRevenue,
-            totalVat,
-            orderCount,
-            cancelCount: 0
-          }
-        })
-
-        await prisma.activityLog.create({
-          data: {
-            action: 'GENERATE_ZREPORT',
-            details: `Gün sonu Z-Raporu: ₺${totalRevenue.toFixed(2)}`
-          }
-        })
+      // Create/Update summary
+      const existing = await prisma.dailySummary.findUnique({ where: { date: today } })
+      const summaryData = {
+        totalCash,
+        actualCash: actualCash ?? totalCash,
+        totalCard,
+        totalExpenses,
+        netProfit,
+        totalRevenue,
+        totalVat,
+        orderCount: todayOrders.length,
+        cancelCount: 0
       }
 
+      let zReport
+      if (existing) {
+        zReport = await prisma.dailySummary.update({
+          where: { id: existing.id },
+          data: summaryData
+        })
+      } else {
+        zReport = await prisma.dailySummary.create({ data: { date: today, ...summaryData } })
+      }
+
+      await updateMonthlyReport(today)
+
+      await prisma.activityLog.create({
+        data: {
+          action: 'GENERATE_ZREPORT',
+          details: `Gün sonu Z-Raporu: ₺${(totalRevenue / 100).toFixed(2)}`
+        }
+      })
+
       // Step 3: Backup with rotation
-      const isDev = !app.isPackaged
+      const isDev = process.env.NODE_ENV === 'development'
       const baseDir = isDev ? process.cwd() : app.getPath('userData')
       const backupDir = path.join(baseDir, 'backups')
       if (!fs.existsSync(backupDir)) {
@@ -1864,7 +2067,7 @@ export function registerIpcHandlers(): void {
       await prisma.activityLog.create({
         data: {
           action: 'END_OF_DAY',
-          details: `Gün sonu tamamlandı. Z-Rapor: ₺${zReport.totalRevenue.toFixed(2)}, Yedek alındı, DB optimize, ${logsClearedCount} log temizlendi.`
+          details: `Gün sonu tamamlandı. Z-Rapor: ₺${(zReport.totalRevenue / 100).toFixed(2)}, Yedek alındı, DB optimize, ${logsClearedCount} log temizlendi.`
         }
       })
 

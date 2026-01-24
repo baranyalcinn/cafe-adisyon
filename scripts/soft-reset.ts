@@ -13,7 +13,7 @@ const adapter = new PrismaLibSql({
 // Create client with adapter
 const prisma = new PrismaClient({ adapter })
 
-async function softReset() {
+async function softReset(): Promise<void> {
   console.log('🔄 Soft Reset: Transactional data cleaning...')
   console.log(`Target database: ${dbPath}`)
 

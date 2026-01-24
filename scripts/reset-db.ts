@@ -13,7 +13,7 @@ const adapter = new PrismaLibSql({
 // Create client with adapter
 const prisma = new PrismaClient({ adapter })
 
-async function reset() {
+async function reset(): Promise<void> {
   console.log('Resetting database...')
   console.log(`Target database: ${dbPath}`)
 

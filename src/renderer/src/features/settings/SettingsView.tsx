@@ -1,18 +1,55 @@
-import { useState, useEffect, useCallback } from 'react'
-import { Sun, Moon, Lock, KeyRound, Volume2, VolumeX } from 'lucide-react'
+import { useState } from 'react'
+import {
+  Sun,
+  Moon,
+  Lock,
+  KeyRound,
+  Volume2,
+  VolumeX,
+  LayoutGrid,
+  Tags,
+  Coffee,
+  Receipt,
+  LayoutDashboard,
+  History,
+  Wrench,
+  Settings as SettingsIcon,
+  LogOut,
+  ArrowLeft,
+  ChevronRight,
+  Monitor,
+  Heart,
+  ShieldCheck,
+  Database,
+  RefreshCw,
+  Activity,
+  Palette,
+  Speaker
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
 import { DashboardView } from '@/features/dashboard/DashboardView'
-import { cafeApi, type Table, type Category, type Product } from '@/lib/api'
+import { cafeApi } from '@/lib/api'
 import { type ColorScheme } from '@/App'
 import { TablesTab } from './tabs/TablesTab'
 import { CategoriesTab } from './tabs/CategoriesTab'
 import { ProductsTab } from './tabs/ProductsTab'
 import { LogsTab } from './tabs/LogsTab'
 import { MaintenanceTab } from './tabs/MaintenanceTab'
+import { ExpensesTab } from './tabs/ExpensesTab'
 import { AdminPinModal } from '@/components/ui/AdminPinModal'
 import { useSettingsStore } from '@/store/useSettingsStore'
+import { useTableStore } from '@/store/useTableStore'
+import { useInventoryStore } from '@/store/useInventoryStore'
+import { cn } from '@/lib/utils'
 
 interface SettingsViewProps {
   isDark: boolean
@@ -39,16 +76,78 @@ const COLOR_SCHEMES: { id: ColorScheme; name: string; color: string; darkColor: 
   { id: 'rose', name: 'Gül', color: 'oklch(0.55 0.18 350)', darkColor: 'oklch(0.65 0.16 350)' }
 ]
 
+const MENU_ITEMS = [
+  {
+    id: 'general',
+    label: 'Genel Ayarlar',
+    description: 'Tema, ses, renkler ve görünüm tercihleri',
+    icon: SettingsIcon,
+    color: 'text-slate-500'
+  },
+  {
+    id: 'tables',
+    label: 'Masa Yönetimi',
+    description: 'Masa ekleme, silme ve düzenleme işlemleri',
+    icon: LayoutGrid,
+    color: 'text-violet-500'
+  },
+  {
+    id: 'categories',
+    label: 'Kategoriler',
+    description: 'Ürün kategorilerini yönetin',
+    icon: Tags,
+    color: 'text-amber-500'
+  },
+  {
+    id: 'products',
+    label: 'Ürünler & Menü',
+    description: 'Fiyatlar, ürünler ve stok takibi',
+    icon: Coffee,
+    color: 'text-emerald-500'
+  },
+  {
+    id: 'expenses',
+    label: 'Giderler',
+    description: 'İşletme giderlerini kaydedin',
+    icon: Receipt,
+    color: 'text-rose-500'
+  },
+  {
+    id: 'dashboard',
+    label: 'Dashboard',
+    description: 'Detaylı analiz ve raporlar',
+    icon: LayoutDashboard,
+    color: 'text-blue-500'
+  },
+  {
+    id: 'logs',
+    label: 'İşlem Geçmişi',
+    description: 'Tüm sistem loglarını görüntüleyin',
+    icon: History,
+    color: 'text-orange-500'
+  },
+  {
+    id: 'maintenance',
+    label: 'Bakım',
+    description: 'Sistem bakımı ve veritabanı işlemleri',
+    icon: Wrench,
+    color: 'text-gray-500'
+  }
+]
+
 export function SettingsView({
   isDark,
   onThemeToggle,
   colorScheme,
   onColorSchemeChange
 }: SettingsViewProps): React.JSX.Element {
-  const { soundEnabled, toggleSound } = useSettingsStore()
-  const [tables, setTables] = useState<Table[]>([])
-  const [categories, setCategories] = useState<Category[]>([])
-  const [products, setProducts] = useState<Product[]>([])
+  const soundEnabled = useSettingsStore((state) => state.soundEnabled)
+  const toggleSound = useSettingsStore((state) => state.toggleSound)
+  const tables = useTableStore((state) => state.tables)
+  const fetchTables = useTableStore((state) => state.fetchTables)
+  const products = useInventoryStore((state) => state.products)
+  const fetchInventory = useInventoryStore((state) => state.fetchInventory)
+  const [activeView, setActiveView] = useState<string | null>(null)
 
   // PIN verification state
   const [isUnlocked, setIsUnlocked] = useState(false)
@@ -64,6 +163,7 @@ export function SettingsView({
 
   // Recovery Settings state
   const [securityQuestion, setSecurityQuestion] = useState('')
+  const [selectedQuestionVal, setSelectedQuestionVal] = useState('')
   const [securityAnswer, setSecurityAnswer] = useState('')
   const [showRecoveryPinModal, setShowRecoveryPinModal] = useState(false)
   const [recoveryError, setRecoveryError] = useState<string | null>(null)
@@ -75,33 +175,6 @@ export function SettingsView({
     'En sevdiğiniz yemek?',
     'Doğduğunuz şehir?'
   ]
-
-  const loadData = useCallback(async (): Promise<void> => {
-    try {
-      const [tablesData, categoriesData, productsData] = await Promise.all([
-        cafeApi.tables.getAll(),
-        cafeApi.categories.getAll(),
-        cafeApi.products.getAll()
-      ])
-      // Sort tables by extracting number from name
-      const sortedTables = tablesData.sort((a: Table, b: Table) => {
-        const numA = parseInt(a.name.replace(/\D/g, '')) || 0
-        const numB = parseInt(b.name.replace(/\D/g, '')) || 0
-        return numA - numB
-      })
-      setTables(sortedTables)
-      setCategories(categoriesData)
-      setProducts(productsData)
-    } catch (error) {
-      console.error('Failed to load data:', error)
-    }
-  }, [])
-
-  useEffect(() => {
-    ;(async () => {
-      await loadData()
-    })()
-  }, [loadData])
 
   const handlePinSuccess = (): void => {
     setIsUnlocked(true)
@@ -122,10 +195,6 @@ export function SettingsView({
     setPinChangeError(null)
 
     try {
-      // First verify current PIN by checking if we're unlocked
-      // Then change to new PIN - we need current PIN for this
-      // Since we're already authenticated, we use a workaround
-      // The API expects current PIN, so we'll prompt for it
       setShowChangePinModal(true)
     } catch {
       setPinChangeError('PIN değiştirme başarısız')
@@ -134,455 +203,662 @@ export function SettingsView({
     }
   }
 
-  // If not unlocked, show PIN modal
+  // Lock Screen
   if (!isUnlocked) {
     return (
       <div className="h-full flex flex-col items-center justify-center bg-background">
         <div className="text-center mb-8">
-          <Lock className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-          <h1 className="text-2xl font-bold">Ayarlar Kilitli</h1>
-          <p className="text-muted-foreground mt-2">Devam etmek için admin PIN kodunu girin</p>
+          <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
+            <Lock className="w-10 h-10 text-muted-foreground" />
+          </div>
+          <h1 className="text-3xl font-bold mb-2">Ayarlar Kilitli</h1>
+          <p className="text-muted-foreground">Devam etmek için yönetici PIN kodunu girin</p>
         </div>
 
         <AdminPinModal
           open={showPinModal}
           onOpenChange={(open) => {
             if (!open && !isUnlocked) {
-              // User cancelled, show lock screen
               setShowPinModal(false)
             } else {
               setShowPinModal(open)
             }
           }}
           onSuccess={handlePinSuccess}
-          title="Ayarlara Erişim"
-          description="Admin PIN kodunu girin (varsayılan: 1234)"
+          title="Yönetici Girişi"
+          description="Lütfen 4 haneli PIN kodunu girin"
         />
 
-        <Button onClick={() => setShowPinModal(true)} className="mt-4">
+        <Button onClick={() => setShowPinModal(true)} size="lg" className="mt-2 min-w-[200px]">
           <Lock className="w-4 h-4 mr-2" />
-          PIN Gir
+          Kilit Aç
         </Button>
       </div>
     )
   }
 
-  return (
-    <div className="h-full flex flex-col overflow-hidden">
-      <Tabs defaultValue="general" className="h-full flex flex-col">
-        <div className="p-4 border-b flex-shrink-0">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold">Ayarlar</h1>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Lock className="w-4 h-4 text-emerald-500" />
-              <span>Kilit Açık</span>
+  // --- Main Menu View ---
+  if (!activeView) {
+    return (
+      <div className="h-full flex flex-col bg-background overflow-auto p-4 md:p-6 animate-in fade-in zoom-in-95 duration-200">
+        <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col">
+          {/* Header */}
+          <div className="mb-8 flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-extrabold tracking-tight">Ayarlar</h1>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Yönetici paneli ve sistem yapılandırması
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="default"
+              className="h-10 border-destructive/20 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+              onClick={() => setIsUnlocked(false)}
+            >
+              <LogOut className="mr-2.5 w-5 h-5" />
+              Çıkış Yap
+            </Button>
+          </div>
+
+          {/* Grid Menu */}
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {MENU_ITEMS.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setActiveView(item.id)}
+                className="group relative flex h-full min-h-[170px] flex-col items-start rounded-2xl border bg-card p-6 text-left transition-all duration-200 hover:-translate-y-1 hover:shadow-xl hover:bg-accent/50"
+              >
+                <div
+                  className={cn(
+                    'mb-5 rounded-xl bg-muted/50 p-4 transition-all duration-300 group-hover:bg-background shadow-sm',
+                    item.color
+                  )}
+                >
+                  <item.icon className="h-8 w-8" />
+                </div>
+                <h3 className="mb-2 text-xl font-bold tracking-tight">{item.label}</h3>
+                <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground opacity-80">
+                  {item.description}
+                </p>
+                <div className="mt-auto flex w-full justify-end pt-3 opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-1">
+                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {/* Footer / Credits */}
+          <div className="mt-auto pt-24 pb-12 flex flex-col items-center justify-center gap-4">
+            <div className="flex items-center gap-2 group cursor-default">
+              <span className="text-sm font-medium text-muted-foreground/40">Made with</span>
+              <div className="relative flex items-center justify-center">
+                <Heart className="w-4 h-4 text-red-500 fill-red-500 animate-pulse duration-[2s]" />
+                <div className="absolute inset-0 bg-red-500/20 blur-md rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+              <span className="text-sm font-medium text-muted-foreground/40">by</span>
+              <span className="text-sm font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent group-hover:to-primary transition-all">
+                Baran & Beyda
+              </span>
+            </div>
+
+            <div className="px-3 py-1 rounded-full bg-muted/20 border border-muted-foreground/5 text-[10px] font-bold text-muted-foreground/30 tracking-widest uppercase">
+              Caffio v2.1.0
             </div>
           </div>
-          <TabsList>
-            <TabsTrigger value="general">Genel</TabsTrigger>
-            <TabsTrigger value="tables">Masalar</TabsTrigger>
-            <TabsTrigger value="categories">Kategoriler</TabsTrigger>
-            <TabsTrigger value="products">Ürünler</TabsTrigger>
-            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-            <TabsTrigger value="logs">Loglar</TabsTrigger>
-            <TabsTrigger value="maintenance">Bakım</TabsTrigger>
-          </TabsList>
         </div>
+      </div>
+    )
+  }
 
-        <div className="flex-1 overflow-auto">
-          {/* General Settings */}
-          {/* General Settings */}
-          <TabsContent value="general" className="p-6 m-0 h-full overflow-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-7xl mx-auto">
+  // --- Detail View Wrapper ---
+  const activeItem = MENU_ITEMS.find((i) => i.id === activeView)
+
+  return (
+    <div className="h-full flex flex-col bg-background animate-in slide-in-from-right-8 duration-300">
+      {/* Detail Header */}
+      <div className="flex-none flex items-center gap-4 px-6 py-4 border-b bg-background/95 backdrop-blur z-10 sticky top-0">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setActiveView(null)}
+          className="rounded-full h-10 w-10 hover:bg-muted transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
+
+        <div className="h-8 w-px bg-border/60 mx-1" />
+
+        <div className="flex items-center gap-3">
+          <div className={cn('p-2 rounded-lg bg-muted/60', activeItem?.color)}>
+            {activeItem?.icon && <activeItem.icon className="w-5 h-5" />}
+          </div>
+          <div>
+            <h2 className="font-bold text-lg tracking-tight leading-none">{activeItem?.label}</h2>
+            <p className="text-xs text-muted-foreground mt-1 opacity-80">
+              {activeItem?.description}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Detail Content */}
+      <div
+        className={cn(
+          'flex-1 bg-background',
+          ![
+            'products',
+            'dashboard',
+            'tables',
+            'categories',
+            'logs',
+            'expenses',
+            'maintenance'
+          ].includes(activeView || '')
+            ? 'overflow-auto p-6'
+            : 'overflow-hidden'
+        )}
+      >
+        <div
+          className={cn(
+            'h-full',
+            ![
+              'products',
+              'dashboard',
+              'tables',
+              'categories',
+              'logs',
+              'expenses',
+              'maintenance'
+            ].includes(activeView || '')
+              ? 'max-w-6xl mx-auto space-y-6'
+              : 'w-full'
+          )}
+        >
+          {activeView === 'general' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in slide-in-from-bottom-4 duration-500">
               {/* Left Column: Appearance & Preferences */}
               <div className="space-y-6">
-                <Card className="shadow-sm">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Sun className="w-5 h-5 text-amber-500" />
+                <Card className="shadow-sm border-muted/60 overflow-hidden rounded-xl">
+                  <CardHeader className="bg-muted/10 pb-4 pt-5 px-6">
+                    <CardTitle className="flex items-center gap-2 text-base font-bold">
+                      <Palette className="w-5 h-5 text-amber-600" />
                       Görünüm ve Tercihler
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-8">
-                    {/* Theme Mode */}
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <label className="text-base font-medium">Karanlık Mod</label>
-                        <p className="text-sm text-muted-foreground">
-                          Göz yormayan koyu tema deneyimi
-                        </p>
-                      </div>
-                      <Button
-                        onClick={onThemeToggle}
-                        variant={isDark ? 'default' : 'outline'}
-                        className="w-32 transition-all duration-300"
-                      >
-                        {isDark ? (
-                          <>
-                            <Moon className="w-4 h-4 mr-2" /> Açık
-                          </>
-                        ) : (
-                          <>
-                            <Sun className="w-4 h-4 mr-2" /> Kapalı
-                          </>
-                        )}
-                      </Button>
-                    </div>
+                  <CardContent className="space-y-5 pt-6 px-6 pb-8">
+                    {/* Theme Mode Selection */}
+                    <div className="space-y-3">
+                      <label className="text-xs font-semibold flex items-center gap-2 text-muted-foreground uppercase tracking-tight">
+                        <Monitor className="w-3.5 h-3.5" />
+                        Tema Modu
+                      </label>
 
-                    <div className="h-px bg-border/50" />
+                      <div className="grid grid-cols-2 gap-4">
+                        <button
+                          onClick={() => isDark && onThemeToggle()}
+                          className={cn(
+                            'flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 gap-3 shadow-sm',
+                            !isDark
+                              ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
+                              : 'border-border bg-card hover:bg-accent/50 hover:border-accent'
+                          )}
+                        >
+                          <div className="p-3 rounded-full bg-amber-100 text-amber-600">
+                            <Sun className="w-6 h-6" />
+                          </div>
+                          <span className={cn('text-sm font-bold', !isDark && 'text-primary')}>
+                            Aydınlık
+                          </span>
+                        </button>
 
-                    {/* Sound Settings */}
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <label className="text-base font-medium">Ses Efektleri</label>
-                        <p className="text-sm text-muted-foreground">
-                          İşlem yaparken sesli geri bildirim
-                        </p>
+                        <button
+                          onClick={() => !isDark && onThemeToggle()}
+                          className={cn(
+                            'flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 gap-3 shadow-sm',
+                            isDark
+                              ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
+                              : 'border-border bg-card hover:bg-accent/50 hover:border-accent'
+                          )}
+                        >
+                          <div className="p-3 rounded-full bg-slate-800 text-slate-100">
+                            <Moon className="w-6 h-6" />
+                          </div>
+                          <span className={cn('text-sm font-bold', isDark && 'text-primary')}>
+                            Karanlık
+                          </span>
+                        </button>
                       </div>
-                      <Button
-                        onClick={toggleSound}
-                        variant={soundEnabled ? 'default' : 'outline'}
-                        className="w-32 transition-all duration-300"
-                      >
-                        {soundEnabled ? (
-                          <>
-                            <Volume2 className="w-4 h-4 mr-2" /> Açık
-                          </>
-                        ) : (
-                          <>
-                            <VolumeX className="w-4 h-4 mr-2" /> Kapalı
-                          </>
-                        )}
-                      </Button>
                     </div>
 
                     <div className="h-px bg-border/50" />
 
                     {/* Color Scheme */}
                     <div className="space-y-4">
-                      <div className="space-y-0.5">
-                        <label className="text-base font-medium">Renk Teması</label>
-                        <p className="text-sm text-muted-foreground">
-                          Size en uygun uygulama rengini seçin
-                        </p>
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-semibold flex items-center gap-2 text-muted-foreground uppercase tracking-tight">
+                          <Palette className="w-3.5 h-3.5" />
+                          Renk Teması
+                        </label>
+                        <span className="text-xs font-bold text-primary">
+                          {COLOR_SCHEMES.find((c) => c.id === colorScheme)?.name}
+                        </span>
                       </div>
-                      <div className="grid grid-cols-5 gap-3">
+
+                      <div className="flex items-center justify-between gap-2 p-1.5 bg-muted/40 rounded-xl border border-border/50">
                         {COLOR_SCHEMES.map((scheme) => (
                           <button
                             key={scheme.id}
                             onClick={() => onColorSchemeChange(scheme.id)}
-                            className={`group flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all duration-200 hover:scale-105 active:scale-95 ${
+                            title={scheme.name}
+                            className={cn(
+                              'relative group flex items-center justify-center w-full aspect-square rounded-lg transition-all duration-300',
+                              'hover:scale-110 active:scale-95',
                               colorScheme === scheme.id
-                                ? 'border-primary bg-primary/10'
-                                : 'border-transparent bg-muted hover:bg-muted/80'
-                            }`}
+                                ? 'bg-background shadow-sm ring-1 ring-black/5 dark:ring-white/10'
+                                : 'hover:bg-background/50'
+                            )}
                           >
                             <div
-                              className="w-9 h-9 rounded-full shadow-sm"
+                              className="w-8 h-8 rounded-full shadow-sm transition-transform duration-300 group-hover:scale-110"
                               style={{
-                                backgroundColor: isDark ? scheme.darkColor : scheme.color,
-                                boxShadow:
-                                  colorScheme === scheme.id
-                                    ? `0 0 0 3px var(--color-background), 0 0 0 5px ${isDark ? scheme.darkColor : scheme.color}`
-                                    : 'none'
+                                backgroundColor: isDark ? scheme.darkColor : scheme.color
                               }}
                             />
-                            <span className="text-xs font-medium">{scheme.name}</span>
+                            {colorScheme === scheme.id && (
+                              <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-background rounded-full flex items-center justify-center border border-border/10 shadow-sm">
+                                <div className="w-1.5 h-1.5 rounded-full bg-foreground" />
+                              </span>
+                            )}
                           </button>
                         ))}
                       </div>
+                    </div>
+
+                    <div className="h-px bg-border/50" />
+
+                    {/* Sound Settings */}
+                    <div className="bg-muted/40 rounded-xl p-4 border border-border/50 flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2">
+                          <Speaker className="w-4 h-4 text-muted-foreground" />
+                          <span className="font-bold text-sm">Ses Efektleri</span>
+                        </div>
+                      </div>
+
+                      <Button
+                        onClick={toggleSound}
+                        variant={soundEnabled ? 'default' : 'secondary'}
+                        size="sm"
+                        className="rounded-full px-4 font-bold h-8 text-xs"
+                      >
+                        {soundEnabled ? (
+                          <>
+                            <Volume2 className="w-3.5 h-3.5 mr-2" /> AÇIK
+                          </>
+                        ) : (
+                          <>
+                            <VolumeX className="w-3.5 h-3.5 mr-2" /> KAPALI
+                          </>
+                        )}
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
               </div>
 
               {/* Right Column: Security & System */}
-              <div className="space-y-4">
-                {/* Security Card - Compact */}
-                <Card className="shadow-sm">
-                  <CardHeader>
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <KeyRound className="w-4 h-4 text-rose-500" />
-                      Güvenlik
-                    </CardTitle>
+              <div className="space-y-6">
+                {/* Security Card */}
+                <Card className="shadow-sm border-muted/60 overflow-hidden rounded-xl">
+                  <CardHeader className="bg-muted/10 pb-4 pt-5 px-6">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="flex items-center gap-2 text-base font-bold">
+                        <ShieldCheck className="w-5 h-5 text-emerald-500" />
+                        Güvenlik Merkezi
+                      </CardTitle>
+                      <div className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                        GÜVENLİ
+                      </div>
+                    </div>
                     <CardDescription className="text-xs">
-                      Admin PIN kodunu güncelleyin
+                      PIN yönetimi ve güvenlik seçenekleri
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="flex gap-3 items-end">
-                      <div className="flex-1 space-y-1">
-                        <label className="text-xs text-muted-foreground">Yeni PIN</label>
-                        <input
-                          type="password"
-                          inputMode="numeric"
-                          maxLength={4}
-                          value={newPin}
-                          onChange={(e) => {
-                            const val = e.target.value.replace(/\D/g, '')
-                            setNewPin(val)
-                            setPinChangeError(null)
-                          }}
-                          className="w-full px-3 py-2 text-center text-lg tracking-widest font-mono border rounded-md bg-background"
-                          placeholder="••••"
-                        />
-                      </div>
-                      <div className="flex-1 space-y-1">
-                        <label className="text-xs text-muted-foreground">Tekrar</label>
-                        <input
-                          type="password"
-                          inputMode="numeric"
-                          maxLength={4}
-                          value={confirmPin}
-                          onChange={(e) => {
-                            const val = e.target.value.replace(/\D/g, '')
-                            setConfirmPin(val)
-                            setPinChangeError(null)
-                          }}
-                          className="w-full px-3 py-2 text-center text-lg tracking-widest font-mono border rounded-md bg-background"
-                          placeholder="••••"
-                        />
-                      </div>
-                      <Button
-                        onClick={handleChangePin}
-                        disabled={isChangingPin || newPin.length !== 4 || confirmPin.length !== 4}
-                        size="sm"
-                        variant="secondary"
-                      >
-                        <KeyRound className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    {pinChangeError && (
-                      <p className="text-xs text-destructive mt-2 text-center">{pinChangeError}</p>
-                    )}
+                  <CardContent className="space-y-5 pt-6 px-6 pb-8">
+                    {/* PIN Section */}
+                    <div className="space-y-6">
+                      <div className="p-4 bg-muted/30 rounded-xl border border-border/50 space-y-4">
+                        <label className="text-xs font-semibold flex items-center gap-2 text-muted-foreground uppercase tracking-tight">
+                          <KeyRound className="w-4 h-4 text-primary" />
+                          Erişim Şifreleme (PIN)
+                        </label>
 
-                    <AdminPinModal
-                      open={showChangePinModal}
-                      onOpenChange={setShowChangePinModal}
-                      onSuccess={async (verifiedPin) => {
-                        try {
-                          await cafeApi.admin.changePin(verifiedPin, newPin)
-                          setNewPin('')
-                          setConfirmPin('')
-                          setPinChangeError(null)
-                          alert('PIN kodu başarıyla değiştirildi. Yeni PIN kodunuzu unutmayın.')
-                        } catch (err) {
-                          setPinChangeError(err instanceof Error ? err.message : 'Hata oluştu')
-                          console.error(err)
-                        }
-                      }}
-                      title="Güvenlik Doğrulaması"
-                      description="Mevcut PIN kodunuzu girin"
-                    />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-1.5 flex-1">
+                            <span className="text-[10px] font-bold text-muted-foreground/80 ml-1">
+                              YENİ PIN
+                            </span>
+                            <InputOTP
+                              maxLength={4}
+                              value={newPin}
+                              onChange={(val) => {
+                                setNewPin(val)
+                                setPinChangeError(null)
+                              }}
+                            >
+                              <InputOTPGroup className="gap-2">
+                                <InputOTPSlot
+                                  index={0}
+                                  className="rounded-lg border h-10 w-10 text-sm font-bold shadow-sm bg-background"
+                                />
+                                <InputOTPSlot
+                                  index={1}
+                                  className="rounded-lg border h-10 w-10 text-sm font-bold shadow-sm bg-background"
+                                />
+                                <InputOTPSlot
+                                  index={2}
+                                  className="rounded-lg border h-10 w-10 text-sm font-bold shadow-sm bg-background"
+                                />
+                                <InputOTPSlot
+                                  index={3}
+                                  className="rounded-lg border h-10 w-10 text-sm font-bold shadow-sm bg-background"
+                                />
+                              </InputOTPGroup>
+                            </InputOTP>
+                          </div>
+
+                          <div className="space-y-1.5 flex-1">
+                            <span className="text-[10px] font-bold text-muted-foreground/80 ml-1">
+                              TEKRAR GİRİN
+                            </span>
+                            <InputOTP
+                              maxLength={4}
+                              value={confirmPin}
+                              onChange={(val) => {
+                                setConfirmPin(val)
+                                setPinChangeError(null)
+                              }}
+                            >
+                              <InputOTPGroup className="gap-2">
+                                <InputOTPSlot
+                                  index={0}
+                                  className="rounded-lg border h-10 w-10 text-sm font-bold shadow-sm bg-background"
+                                />
+                                <InputOTPSlot
+                                  index={1}
+                                  className="rounded-lg border h-10 w-10 text-sm font-bold shadow-sm bg-background"
+                                />
+                                <InputOTPSlot
+                                  index={2}
+                                  className="rounded-lg border h-10 w-10 text-sm font-bold shadow-sm bg-background"
+                                />
+                                <InputOTPSlot
+                                  index={3}
+                                  className="rounded-lg border h-10 w-10 text-sm font-bold shadow-sm bg-background"
+                                />
+                              </InputOTPGroup>
+                            </InputOTP>
+                          </div>
+                        </div>
+
+                        <Button
+                          onClick={handleChangePin}
+                          disabled={isChangingPin || newPin.length !== 4 || confirmPin.length !== 4}
+                          className="w-full h-9 text-xs font-bold"
+                          variant="secondary"
+                        >
+                          GÜNCELLEMEYİ ONAYLA
+                        </Button>
+
+                        <AdminPinModal
+                          open={showChangePinModal}
+                          onOpenChange={setShowChangePinModal}
+                          onSuccess={async (verifiedPin) => {
+                            try {
+                              await cafeApi.admin.changePin(verifiedPin, newPin)
+                              setNewPin('')
+                              setConfirmPin('')
+                              setPinChangeError(null)
+                              alert('PIN kodu başarıyla değiştirildi.')
+                              setShowChangePinModal(false)
+                            } catch (err) {
+                              setPinChangeError(err instanceof Error ? err.message : 'Hata oluştu')
+                            }
+                          }}
+                          title="Güvenlik Doğrulaması"
+                          description="Mevcut PIN kodunuzu girin"
+                        />
+                      </div>
+
+                      {pinChangeError && (
+                        <div className="mt-4 flex animate-in fade-in slide-in-from-top-1 items-center justify-center gap-2 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-xs font-bold text-destructive">
+                          <span className="h-2 w-2 rounded-full bg-destructive animate-pulse" />
+                          {pinChangeError}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="h-px bg-border/50" />
+
+                    {/* Recovery Section */}
+                    <div className="p-4 bg-muted/30 rounded-xl border border-border/50 space-y-4">
+                      <label className="text-xs font-semibold flex items-center gap-2 text-muted-foreground uppercase tracking-tight">
+                        <ShieldCheck className="w-4 h-4 text-primary" />
+                        Hesap Kurtarma Ayarları
+                      </label>
+
+                      <div className="space-y-3">
+                        <Select
+                          value={selectedQuestionVal}
+                          onValueChange={(val) => {
+                            setSelectedQuestionVal(val)
+                            if (val !== 'custom') setSecurityQuestion(val)
+                            else setSecurityQuestion('')
+                          }}
+                        >
+                          <SelectTrigger className="h-9 text-xs font-medium bg-background">
+                            <SelectValue placeholder="Bir kurtarma sorusu belirleyin" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {PREDEFINED_QUESTIONS.map((q) => (
+                              <SelectItem key={q} value={q} className="text-xs">
+                                {q}
+                              </SelectItem>
+                            ))}
+                            <SelectItem value="custom" className="text-xs">
+                              Kendi sorumu yazacağım...
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+
+                        {selectedQuestionVal === 'custom' && (
+                          <div className="animate-in slide-in-from-top-2 duration-300">
+                            <span className="text-[10px] font-bold text-muted-foreground/80 ml-1 mb-1 block">
+                              ÖZEL GÜVENLİK SORUNUZ
+                            </span>
+                            <input
+                              type="text"
+                              placeholder="Örn: İlk evcil hayvanımın cinsi nedir?"
+                              value={securityQuestion}
+                              onChange={(e) => setSecurityQuestion(e.target.value)}
+                              className="w-full text-xs border rounded-md p-2 bg-background focus:ring-2 focus:ring-primary/10 outline-none transition-all h-9"
+                            />
+                          </div>
+                        )}
+
+                        <div>
+                          <span className="text-[10px] font-bold text-muted-foreground/80 ml-1 mb-1 block">
+                            CEVAP
+                          </span>
+                          <input
+                            type="text"
+                            placeholder="Cevabınızı buraya yazın..."
+                            value={securityAnswer}
+                            onChange={(e) => setSecurityAnswer(e.target.value)}
+                            className="w-full text-xs border rounded-md p-2 bg-background focus:ring-2 focus:ring-primary/10 outline-none h-9 transition-all"
+                          />
+                        </div>
+
+                        <Button
+                          className="w-full h-9 text-xs font-bold"
+                          onClick={() => setShowRecoveryPinModal(true)}
+                          disabled={!securityQuestion || !securityAnswer}
+                          variant="outline"
+                        >
+                          YÖNTEMİ KAYDET
+                        </Button>
+
+                        <AdminPinModal
+                          open={showRecoveryPinModal}
+                          onOpenChange={setShowRecoveryPinModal}
+                          onSuccess={async (verifiedPin) => {
+                            try {
+                              await cafeApi.admin.setRecovery(
+                                verifiedPin,
+                                securityQuestion,
+                                securityAnswer
+                              )
+                              setRecoveryError(null)
+                              alert('Kurtarma yöntemi başarıyla kaydedildi.')
+                              setShowRecoveryPinModal(false)
+                            } catch {
+                              setRecoveryError('Kaydedilemedi')
+                              setShowRecoveryPinModal(false)
+                            }
+                          }}
+                          title="Onay Gerekiyor"
+                          description="Değişiklikleri kaydetmek için PIN girin"
+                        />
+
+                        {recoveryError && (
+                          <div className="mt-2 text-center text-xs font-bold text-destructive p-2 bg-destructive/5 rounded-lg border border-destructive/10">
+                            {recoveryError}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
 
-                {/* Security Question Card */}
-                <Card className="shadow-sm">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Lock className="w-4 h-4 text-amber-500" />
-                      Kurtarma Yöntemi
+                {/* System Actions */}
+                <Card className="shadow-sm border-muted/60 rounded-xl overflow-hidden">
+                  <CardHeader className="bg-muted/10 pb-4 pt-5 px-6">
+                    <CardTitle className="text-base font-bold flex items-center gap-2">
+                      <Activity className="w-5 h-5 text-blue-500" />
+                      Sistem Durumu
                     </CardTitle>
-                    <CardDescription className="text-xs">
-                      Şifrenizi unutursanız sıfırlamak için
-                    </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-3 pt-0">
-                    <div className="space-y-1">
-                      <label className="text-xs text-muted-foreground">Güvenlik Sorusu</label>
-                      <select
-                        className="w-full text-sm border rounded-md p-2 bg-background"
-                        value={
-                          PREDEFINED_QUESTIONS.includes(securityQuestion)
-                            ? securityQuestion
-                            : 'custom'
-                        }
-                        onChange={(e) => {
-                          if (e.target.value === 'custom') setSecurityQuestion('')
-                          else setSecurityQuestion(e.target.value)
-                        }}
-                      >
-                        <option value="" disabled>
-                          Seçiniz...
-                        </option>
-                        {PREDEFINED_QUESTIONS.map((q) => (
-                          <option key={q} value={q}>
-                            {q}
-                          </option>
-                        ))}
-                        <option value="custom">Kendi sorumu yazacağım...</option>
-                      </select>
-                      {(!PREDEFINED_QUESTIONS.includes(securityQuestion) &&
-                        securityQuestion !== '') ||
-                      (securityQuestion === '' &&
-                        !PREDEFINED_QUESTIONS.includes(securityQuestion)) ? (
-                        <input
-                          type="text"
-                          placeholder="Özel sorunuzu yazın"
-                          value={securityQuestion}
-                          onChange={(e) => setSecurityQuestion(e.target.value)}
-                          className="w-full text-sm border rounded-md p-2 bg-background mt-2"
-                        />
-                      ) : null}
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-xs text-muted-foreground">Cevap</label>
-                      <input
-                        type="text"
-                        placeholder="Cevabınız"
-                        value={securityAnswer}
-                        onChange={(e) => setSecurityAnswer(e.target.value)}
-                        className="w-full text-sm border rounded-md p-2 bg-background"
-                      />
+                  <CardContent className="grid grid-cols-2 gap-3 pt-6 px-6 pb-8">
+                    <div className="col-span-2 p-3 bg-primary/5 border border-primary/10 rounded-xl flex items-center justify-between shadow-inner">
+                      <div className="flex items-center gap-3">
+                        <div className="p-1.5 bg-background rounded-md border border-primary/20 shadow-sm">
+                          <Database className="w-4 h-4 text-primary" />
+                        </div>
+                        <div className="space-y-0.5">
+                          <p className="font-bold text-sm">Veritabanı</p>
+                          <p className="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                            GÜNCEL
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <p className="text-lg font-bold tracking-tight text-primary">
+                            {tables.length}
+                          </p>
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-70">
+                            Masa
+                          </p>
+                        </div>
+                        <div className="w-px h-6 bg-border/80" />
+                        <div className="text-right">
+                          <p className="text-lg font-bold tracking-tight text-primary">
+                            {products.length}
+                          </p>
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-70">
+                            Ürün
+                          </p>
+                        </div>
+                      </div>
                     </div>
 
                     <Button
-                      className="w-full"
-                      onClick={() => setShowRecoveryPinModal(true)}
-                      disabled={!securityQuestion || !securityAnswer}
-                      size="sm"
-                      variant="secondary"
+                      onClick={() => setShowDemoPinModal(true)}
+                      variant="outline"
+                      className="w-full h-auto py-3 flex flex-col gap-1.5 items-center justify-center rounded-xl border hover:bg-muted font-bold transition-all"
                     >
-                      Kaydet
+                      <RefreshCw className="w-4 h-4 text-blue-500" />
+                      <span className="text-xs">DEMO YÜKLE</span>
                     </Button>
 
-                    {recoveryError && (
-                      <p className="text-xs text-destructive text-center">{recoveryError}</p>
-                    )}
-
-                    <AdminPinModal
-                      open={showRecoveryPinModal}
-                      onOpenChange={setShowRecoveryPinModal}
-                      onSuccess={async (verifiedPin) => {
+                    <Button
+                      onClick={async () => {
                         try {
-                          await cafeApi.admin.setRecovery(
-                            verifiedPin,
-                            securityQuestion,
-                            securityAnswer
+                          await Promise.all([fetchTables(), fetchInventory(true)])
+                          alert(
+                            'Sistem kontrolü tamamlandı: Veritabanı bağlantısı sağlıklı ve tüm veriler güncel.'
                           )
-                          setRecoveryError(null)
-                          alert('Kurtarma yöntemi başarıyla kaydedildi.')
-                          setShowRecoveryPinModal(false)
-                        } catch {
-                          setRecoveryError('Kaydedilemedi')
-                          setShowRecoveryPinModal(false)
+                        } catch (error) {
+                          console.error('System check failed:', error)
+                          alert(
+                            'Sistem kontrolü sırasında bir hata oluştu. Lütfen bağlantıyı kontrol edin.'
+                          )
                         }
                       }}
-                      title="Onay"
-                      description="Ayarları kaydetmek için PIN girin"
-                    />
-                  </CardContent>
-                </Card>
+                      variant="outline"
+                      className="w-full h-auto py-3 flex flex-col gap-1.5 items-center justify-center rounded-xl border hover:bg-muted font-bold transition-all"
+                    >
+                      <Wrench className="w-4 h-4 text-amber-500" />
+                      <span className="text-xs">KONTROL ET</span>
+                    </Button>
 
-                {/* System Card - Compact */}
-                <Card className="shadow-sm">
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <Lock className="w-4 h-4 text-blue-500" />
-                        Sistem Durumu
-                      </CardTitle>
-                      <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 text-[10px] font-medium">
-                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        Aktif
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="grid grid-cols-2 gap-3 mb-3">
-                      <div className="text-center p-3 rounded-lg bg-muted/50">
-                        <p className="text-2xl font-bold tabular-nums">{tables.length}</p>
-                        <p className="text-xs text-muted-foreground">Masa</p>
-                      </div>
-                      <div className="text-center p-3 rounded-lg bg-muted/50">
-                        <p className="text-2xl font-bold tabular-nums">{products.length}</p>
-                        <p className="text-xs text-muted-foreground">Ürün</p>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button
-                        onClick={() => setShowDemoPinModal(true)}
-                        variant="outline"
-                        size="sm"
-                        className="text-xs"
-                      >
-                        Demo Verisi
-                      </Button>
-                      <AdminPinModal
-                        open={showDemoPinModal}
-                        onOpenChange={setShowDemoPinModal}
-                        onSuccess={async () => {
-                          setShowDemoPinModal(false)
-                          // Small timeout to allow modal to close smoothly before alert
-                          setTimeout(async () => {
-                            if (
-                              confirm(
-                                'DİKKAT: Demo verileri yüklendiğinde MEVCUT TÜM VERİLER SİLİNECEKTİR.\n\nBu işlem geri alınamaz. Devam etmek istiyor musunuz?'
-                              )
-                            ) {
-                              try {
-                                await cafeApi.seed.database()
-                                await loadData()
-                                // Success visual feedback could be added here
-                              } catch (error) {
-                                console.error('Seed error:', error)
-                                alert('Demo veri yükleme başarısız oldu.')
-                              }
+                    <AdminPinModal
+                      open={showDemoPinModal}
+                      onOpenChange={setShowDemoPinModal}
+                      onSuccess={async () => {
+                        setShowDemoPinModal(false)
+                        setTimeout(async () => {
+                          if (
+                            confirm(
+                              'DİKKAT: Demo verileri yüklendiğinde MEVCUT TÜM VERİLER SİLİNECEKTİR.\n\nDevam etmek istiyor musunuz?'
+                            )
+                          ) {
+                            try {
+                              await cafeApi.seed.database()
+                              await Promise.all([fetchTables(), fetchInventory(true)])
+                            } catch (error) {
+                              console.error('Seed error:', error)
+                              alert('Demo veri yükleme başarısız oldu.')
                             }
-                          }, 100)
-                        }}
-                        title="Demo Verisi Onayı"
-                        description="İşlemi onaylamak için admin PIN kodunu girin"
-                      />
-                      <Button
-                        onClick={() => console.log('System check')}
-                        variant="outline"
-                        size="sm"
-                        className="text-xs"
-                      >
-                        Kontrol
-                      </Button>
-                    </div>
+                          }
+                        }, 100)
+                      }}
+                      title="Demo Verisi Onayı"
+                      description="Kritik işlem onayı için PIN girin"
+                    />
                   </CardContent>
                 </Card>
               </div>
             </div>
-          </TabsContent>
+          )}
 
-          {/* Tables Management */}
-          <TabsContent value="tables" className="p-6 space-y-6 m-0">
-            <TablesTab tables={tables} onRefresh={loadData} />
-          </TabsContent>
+          {activeView === 'tables' && <TablesTab />}
 
-          {/* Categories Management */}
-          <TabsContent value="categories" className="p-6 m-0 h-full">
-            <CategoriesTab categories={categories} products={products} onRefresh={loadData} />
-          </TabsContent>
+          {activeView === 'categories' && <CategoriesTab />}
 
-          {/* Products Management */}
-          <TabsContent value="products" className="p-6 m-0 h-full">
-            <ProductsTab categories={categories} products={products} onRefresh={loadData} />
-          </TabsContent>
+          {activeView === 'products' && <ProductsTab />}
 
-          {/* Dashboard */}
-          <TabsContent value="dashboard" className="m-0 h-full overflow-auto">
-            <DashboardView />
-          </TabsContent>
+          {activeView === 'expenses' && <ExpensesTab />}
 
-          {/* Activity Logs */}
-          <TabsContent value="logs" className="p-6 m-0 h-full">
-            <LogsTab />
-          </TabsContent>
+          {activeView === 'dashboard' && <DashboardView />}
 
-          {/* Maintenance */}
-          <TabsContent value="maintenance" className="p-6 m-0 h-full overflow-auto">
-            <MaintenanceTab />
-          </TabsContent>
+          {activeView === 'logs' && <LogsTab />}
+
+          {activeView === 'maintenance' && <MaintenanceTab />}
         </div>
-      </Tabs>
+      </div>
     </div>
   )
 }

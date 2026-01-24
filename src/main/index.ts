@@ -1,6 +1,5 @@
 import { app, shell, BrowserWindow } from 'electron'
 import { join } from 'path'
-import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { registerIpcHandlers } from './ipc/handlers'
 import { logger } from './lib/logger'
 import { dbMaintenance } from './lib/db-maintenance'
@@ -15,9 +14,10 @@ function createWindow(): void {
     title: 'Caffio',
     show: false,
     autoHideMenuBar: true,
-    icon: is.dev
-      ? join(__dirname, '../../resources/icon.png')
-      : join(process.resourcesPath, 'resources/icon.png'),
+    icon:
+      process.env.NODE_ENV === 'development'
+        ? join(__dirname, '../../resources/icon.png')
+        : join(process.resourcesPath, 'resources/icon.png'),
     backgroundColor: '#000000', // Optimize startup paint
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -38,14 +38,14 @@ function createWindow(): void {
 
   // HMR for renderer base on electron-vite cli.
   // Load the remote URL for development or the local html file for production.
-  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+  if (process.env.NODE_ENV === 'development' && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
 
   // Prevent DevTools from opening in production
-  if (!is.dev) {
+  if (process.env.NODE_ENV !== 'development') {
     mainWindow.webContents.on('devtools-opened', () => {
       mainWindow.webContents.closeDevTools()
     })
@@ -57,17 +57,12 @@ function createWindow(): void {
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(async () => {
   // Set app user model id for windows
-  electronApp.setAppUserModelId('com.caffio.caffio')
+  if (process.platform === 'win32') {
+    app.setAppUserModelId('com.caffio.caffio')
+  }
 
   // Run DB Maintenance on startup
   await dbMaintenance.runMaintenance()
-
-  // Default open or close DevTools by F12 in development
-  // and ignore CommandOrControl + R in production.
-  // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
-  app.on('browser-window-created', (_, window) => {
-    optimizer.watchWindowShortcuts(window)
-  })
 
   // Register IPC handlers for database operations
   registerIpcHandlers()

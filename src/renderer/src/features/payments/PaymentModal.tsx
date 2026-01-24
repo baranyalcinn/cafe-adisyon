@@ -1,12 +1,11 @@
 import { useState, useMemo, useEffect } from 'react'
-import { Banknote, CreditCard, CheckCircle } from 'lucide-react'
+import { Banknote, CreditCard, CheckCircle, Delete, Plus, Minus } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
-  DialogFooter
+  DialogDescription
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -23,7 +22,7 @@ interface PaymentModalProps {
   onPaymentComplete?: () => void
 }
 
-type PaymentMode = 'full' | 'items' | 'custom'
+type PaymentMode = 'full' | 'items' | 'split' | 'custom'
 
 export function PaymentModal({
   open,
@@ -42,6 +41,9 @@ export function PaymentModal({
   const [paymentComplete, setPaymentComplete] = useState(false)
   const [finalChange, setFinalChange] = useState(0)
 
+  // Split State
+  const [splitCount, setSplitCount] = useState(2)
+
   const total = getTotal()
   const paidAmount = currentOrder?.payments?.reduce((sum, p) => sum + p.amount, 0) || 0
   const remainingAmount = total - paidAmount
@@ -59,6 +61,22 @@ export function PaymentModal({
     }, 0)
   }, [unpaidItems, selectedQuantities])
 
+  // Reset states on open/close
+  // Reset states on open/close
+  useEffect(() => {
+    if (open) {
+      // Use setTimeout to avoid synchronous state update warning
+      const timer = setTimeout(() => {
+        setPaymentMode('full')
+        setCustomAmount('')
+        setTenderedAmount('')
+        setSplitCount(2)
+      }, 0)
+      return () => clearTimeout(timer)
+    }
+    return undefined
+  }, [open])
+
   // Get the payment amount based on mode
   const getPaymentAmount = (): number => {
     switch (paymentMode) {
@@ -66,6 +84,8 @@ export function PaymentModal({
         return remainingAmount
       case 'items':
         return selectedTotal
+      case 'split':
+        return Math.round(remainingAmount / splitCount)
       case 'custom':
         return Math.round((parseFloat(customAmount) || 0) * 100)
       default:
@@ -80,6 +100,12 @@ export function PaymentModal({
   const updateQuantity = (itemId: string, delta: number, max: number): void => {
     setSelectedQuantities((prev) => {
       const current = prev[itemId] || 0
+      // If delta is 0, it means we clicked the row but maybe we are at max,
+      // typically we want to just select 1 if 0, or do nothing if max.
+      // But the logic used in onClick was: selected < item.quantity ? 1 : 0.
+      // If selected < max, we add 1. If at max, we add 0.
+      // Let's rely on passed delta.
+
       const next = Math.min(Math.max(0, current + delta), max)
 
       if (next === 0) {
@@ -100,19 +126,26 @@ export function PaymentModal({
     setSelectedQuantities(all)
   }
 
-  const deselectAllItems = (): void => {
-    setSelectedQuantities({})
-  }
-
   const handlePayment = async (method: PaymentMethod): Promise<void> => {
+    // If splitting, we might have a remainder on the last person
+    // Ideally we should track "split parts paid", but for simplicity
+    // we just take the amount. The LAST person will pay the remainder eventually.
+
     const amount = getPaymentAmount()
-    if (amount <= 0) return
 
-    // Store change before processing payment (as amount will change after success)
-    setFinalChange(currentChange)
+    // Safety check: Don't allow paying more than remaining
+    const actualAmount = Math.min(amount, remainingAmount)
 
+    if (actualAmount <= 0) return
+
+    if (method === 'CASH') {
+      setFinalChange(currentChange)
+    } else {
+      setFinalChange(0)
+    }
     setIsProcessing(true)
-    const isComplete = await processPayment(amount, method)
+
+    const isComplete = await processPayment(actualAmount, method)
 
     // If in items mode, mark selected items as paid
     if (paymentMode === 'items' && Object.keys(selectedQuantities).length > 0) {
@@ -127,65 +160,61 @@ export function PaymentModal({
       }
     }
 
-    // Force refresh order to ensure UI sync
     if (selectedTableId) {
       await loadOrderForTable(selectedTableId)
     }
 
     setIsProcessing(false)
 
-    // Wait for success message, then navigate
-    setTimeout(() => {
-      if (isComplete) {
-        soundManager.playSuccess()
-        setPaymentComplete(true)
-        // Keep success message visible for 3 seconds before navigating
-        setTimeout(() => {
-          onClose()
-          if (onPaymentComplete) {
-            onPaymentComplete()
-          } else {
-            selectTable(null) // Fallback behavior
-          }
-        }, 3000)
-      } else {
-        // Partial payment done, reset selection
-        if (paymentMode === 'items') {
-          setSelectedQuantities({})
-        } else if (paymentMode === 'custom') {
-          setCustomAmount('')
+    // Play sound and show success
+    soundManager.playSuccess()
+
+    // Check if fully paid or if we should just clear inputs
+    // If remaining amount is now close to 0 (allow small tolerance), close modal
+    // But we need to use the fresh remaining amount.
+    // Since we don't have fresh state immediately in this scope without await reload,
+    // we rely on 'isComplete' from processPayment which checks order status.
+
+    if (isComplete) {
+      setPaymentComplete(true)
+      setTimeout(() => {
+        onClose()
+        if (onPaymentComplete) {
+          onPaymentComplete()
+        } else {
+          selectTable(null)
         }
-        setTenderedAmount('')
+      }, 3000)
+    } else {
+      // Partial payment successful
+      setCustomAmount('')
+      setTenderedAmount('')
+      setSelectedQuantities({}) // Clear selected items after payment
+
+      // Maintain current mode if it's 'split' or 'items' to allow sequential payments
+      if (paymentMode !== 'split' && paymentMode !== 'items') {
+        setPaymentMode('full')
       }
-    }, 100)
+      // Don't close modal, allow next payment
+    }
   }
 
-  // Handle Enter key for payment
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent): void => {
-      if (!open || isProcessing || paymentComplete) return
-
-      if (e.key === 'Enter') {
-        const amount = getPaymentAmount()
-        if (amount > 0) {
-          e.preventDefault()
-          handlePayment('CASH')
-        }
+  // Keypad handler for Custom Amount
+  const handleKeypad = (val: string): void => {
+    if (val === 'backspace') {
+      setCustomAmount((prev) => prev.slice(0, -1))
+    } else if (val === 'clear') {
+      setCustomAmount('')
+    } else if (val === '.') {
+      if (!customAmount.includes('.')) {
+        setCustomAmount((prev) => prev + '.')
       }
+    } else {
+      // Limit decimal places
+      if (customAmount.includes('.') && customAmount.split('.')[1].length >= 2) return
+      setCustomAmount((prev) => prev + val)
     }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [
-    open,
-    isProcessing,
-    paymentComplete,
-    paymentMode,
-    selectedQuantities,
-    customAmount,
-    getPaymentAmount,
-    handlePayment
-  ])
+  }
 
   const handleClose = (): void => {
     setPaymentMode('full')
@@ -208,15 +237,12 @@ export function PaymentModal({
             <p className="text-sm text-muted-foreground mt-1">Masa boşaltıldı</p>
             {finalChange > 0 && (
               <div className="mt-8 relative w-full max-w-[240px] mx-auto group perspective-1000">
-                {/* Glow Effect */}
-                <div className="absolute inset-0 bg-primary/30 blur-2xl rounded-full opacity-50 group-hover:opacity-80 transition-opacity duration-500" />
-
-                {/* Main Card */}
-                <div className="relative p-6 bg-card border-2 border-primary/50 shadow-xl shadow-primary/20 rounded-3xl text-center transform transition-all duration-300 hover:scale-105 hover:-translate-y-1">
+                <div className="absolute inset-0 bg-primary/30 blur-2xl rounded-full opacity-50" />
+                <div className="relative p-6 bg-card border-2 border-primary/50 shadow-xl shadow-primary/20 rounded-3xl text-center">
                   <span className="text-xs font-bold text-muted-foreground uppercase tracking-[0.2em] mb-1 block">
                     Para Üstü
                   </span>
-                  <p className="text-5xl font-black text-primary tabular-nums tracking-tighter drop-shadow-sm">
+                  <p className="text-5xl font-black text-primary tabular-nums tracking-tighter">
                     <span className="text-3xl opacity-50 font-bold mr-1">₺</span>
                     {formatCurrency(finalChange).replace('₺', '')}
                   </p>
@@ -231,315 +257,389 @@ export function PaymentModal({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-xl p-6 max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold">Ödeme Al</DialogTitle>
-          <DialogDescription>
-            Tam ödeme, ürün seçerek veya tutar girerek ödeme alın
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-4xl p-0 gap-0 overflow-hidden h-[600px] flex flex-col md:flex-row">
+        {/* Left Side: Payment Methods and Modes */}
+        <div className="flex-1 flex flex-col p-6 bg-background">
+          <DialogHeader className="mb-4">
+            <DialogTitle className="text-2xl font-bold">Ödeme Al</DialogTitle>
+            <DialogDescription>Ödeme yöntemini seçin</DialogDescription>
+          </DialogHeader>
 
-        {/* Payment Mode Tabs */}
-        <div className="mt-4 flex gap-2">
-          <Button
-            variant={paymentMode === 'full' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setPaymentMode('full')}
-            className="flex-1"
-          >
-            Tam Ödeme
-          </Button>
-          <Button
-            variant={paymentMode === 'items' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setPaymentMode('items')}
-            className="flex-1"
-          >
-            Ürün Seç
-          </Button>
-          <Button
-            variant={paymentMode === 'custom' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setPaymentMode('custom')}
-            className="flex-1"
-          >
-            Tutar Gir
-          </Button>
+          {/* Mode Selection Tabs */}
+          <div className="grid grid-cols-4 gap-2 mb-6 bg-muted/50 p-1 rounded-xl">
+            <Button
+              variant={paymentMode === 'full' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setPaymentMode('full')}
+              className="rounded-lg text-xs md:text-sm font-medium transition-all"
+            >
+              Tamamı
+            </Button>
+            <Button
+              variant={paymentMode === 'split' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setPaymentMode('split')}
+              className="rounded-lg text-xs md:text-sm font-medium transition-all"
+            >
+              Bölüşmeli
+            </Button>
+            <Button
+              variant={paymentMode === 'items' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setPaymentMode('items')}
+              className="rounded-lg text-xs md:text-sm font-medium transition-all"
+            >
+              Ürün Seç
+            </Button>
+            <Button
+              variant={paymentMode === 'custom' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setPaymentMode('custom')}
+              className="rounded-lg text-xs md:text-sm font-medium transition-all"
+            >
+              Tutar
+            </Button>
+          </div>
+
+          {/* Dynamic Content Based on Mode */}
+          <div className="flex-1 overflow-auto">
+            {paymentMode === 'full' && (
+              <div className="h-full flex flex-col items-center justify-center space-y-2 text-center">
+                <p className="text-muted-foreground">Kalan Tutarın Tamamı</p>
+                <div className="text-5xl font-bold tabular-nums text-primary">
+                  {formatCurrency(remainingAmount)}
+                </div>
+              </div>
+            )}
+
+            {paymentMode === 'split' && (
+              <div className="space-y-6">
+                <div className="text-center">
+                  <p className="text-muted-foreground mb-2">Kaça bölünecek?</p>
+                  <div className="flex justify-center gap-4 items-center">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-12 w-12 rounded-full"
+                      onClick={() => setSplitCount(Math.max(2, splitCount - 1))}
+                    >
+                      -
+                    </Button>
+                    <span className="text-4xl font-bold w-12 text-center">{splitCount}</span>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-12 w-12 rounded-full"
+                      onClick={() => setSplitCount(Math.min(10, splitCount + 1))}
+                    >
+                      +
+                    </Button>
+                  </div>
+                </div>
+                <div className="p-4 bg-primary/5 rounded-xl text-center border-2 border-primary/10">
+                  <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-1">
+                    Kişi Başı
+                  </p>
+                  <p className="text-4xl font-extrabold text-primary tabular-nums">
+                    {formatCurrency(remainingAmount / splitCount)}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {paymentMode === 'items' && (
+              <div className="h-full flex flex-col">
+                <div className="flex justify-between items-center mb-2 px-1">
+                  <span className="text-xs uppercase font-bold text-muted-foreground">
+                    Ödenecekler
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={selectAllItems}
+                    className="h-6 text-xs"
+                  >
+                    Tümünü Seç
+                  </Button>
+                </div>
+                <div className="flex-1 border rounded-lg overflow-y-auto p-2 space-y-1">
+                  {unpaidItems.length === 0 ? (
+                    <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
+                      Liste boş
+                    </div>
+                  ) : (
+                    unpaidItems.map((item) => {
+                      const selected = selectedQuantities[item.id] || 0
+                      return (
+                        <div
+                          key={item.id}
+                          className={cn(
+                            'flex items-center justify-between p-2 rounded-md border transition-all cursor-pointer select-none',
+                            selected > 0
+                              ? 'bg-primary/10 border-primary'
+                              : 'border-transparent hover:bg-muted'
+                          )}
+                          onClick={() =>
+                            updateQuantity(item.id, selected < item.quantity ? 1 : 0, item.quantity)
+                          }
+                        >
+                          <div className="flex items-center gap-2 overflow-hidden flex-1">
+                            <div
+                              className={cn(
+                                'w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors shrink-0',
+                                selected > 0
+                                  ? 'bg-primary text-primary-foreground'
+                                  : 'bg-muted text-muted-foreground'
+                              )}
+                            >
+                              {item.quantity}
+                            </div>
+                            <span className="truncate font-medium">
+                              {item.product?.name || 'Ürün'}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-bold tabular-nums">
+                                {formatCurrency(selected * item.unitPrice)}
+                              </span>
+                            </div>
+
+                            {selected > 0 && (
+                              <div
+                                className="flex items-center bg-background rounded-md border shadow-sm"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 rounded-none rounded-l-md hover:bg-muted"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    updateQuantity(item.id, -1, item.quantity)
+                                  }}
+                                >
+                                  <Minus className="w-3 h-3" />
+                                </Button>
+                                <div className="w-8 h-7 flex items-center justify-center text-xs font-bold border-x bg-muted/20 tabular-nums">
+                                  {selected}/{item.quantity}
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 rounded-none rounded-r-md hover:bg-muted"
+                                  disabled={selected >= item.quantity}
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    updateQuantity(item.id, 1, item.quantity)
+                                  }}
+                                >
+                                  <Plus className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
+                <div className="mt-2 text-right">
+                  <span className="text-2xl font-bold text-primary tabular-nums">
+                    {formatCurrency(selectedTotal)}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {paymentMode === 'custom' && (
+              <div className="h-full flex flex-col">
+                <div className="mb-4 text-center">
+                  <div className="text-4xl font-bold tabular-nums text-foreground border-b-2 border-primary/20 pb-2 inline-block min-w-[200px]">
+                    {customAmount ? (
+                      `₺${customAmount}`
+                    ) : (
+                      <span className="text-muted-foreground/30">₺0.00</span>
+                    )}
+                  </div>
+                </div>
+                {/* Keypad */}
+                <div className="grid grid-cols-3 gap-2 flex-1">
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, '.', 0].map((n) => (
+                    <Button
+                      key={n}
+                      variant="outline"
+                      className="text-2xl font-semibold h-full"
+                      onClick={() => handleKeypad(n.toString())}
+                    >
+                      {n}
+                    </Button>
+                  ))}
+                  <Button
+                    variant="destructive"
+                    className="h-full"
+                    onClick={() => handleKeypad('backspace')}
+                  >
+                    <Delete className="w-6 h-6" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Amount Summary */}
-        <div className="mt-4 p-4 rounded-lg bg-muted space-y-3">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Toplam Tutar</span>
-            <span className="font-semibold tabular-nums">{formatCurrency(total)}</span>
-          </div>
-          {paidAmount > 0 && (
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Ödenen</span>
-              <span className="font-semibold text-emerald-500 tabular-nums">
-                {formatCurrency(paidAmount)}
-              </span>
+        {/* Right Side: Summary & Actions */}
+        <div className="flex flex-col w-full border-l md:w-[350px] bg-muted/20 p-6 overflow-y-auto">
+          {/* Hero Balance Card */}
+          <div className="relative mb-4 overflow-hidden border border-primary/30 rounded-[2.5rem] bg-card p-6 shadow-2xl shadow-primary/10">
+            <div className="absolute right-0 top-0 h-32 w-32 translate-x-12 -translate-y-12 rounded-full bg-primary/10 blur-3xl" />
+
+            <div className="relative z-10">
+              <div className="mb-5 flex items-center justify-between">
+                <div>
+                  <p className="mb-1 text-[10px] font-bold uppercase leading-none tracking-widest text-muted-foreground/60">
+                    Toplam
+                  </p>
+                  <p className="text-lg font-bold tabular-nums">{formatCurrency(total)}</p>
+                </div>
+                <div className="text-right">
+                  <p className="mb-1 text-[10px] font-bold uppercase leading-none tracking-widest text-emerald-500/80">
+                    Tahsil Edilen
+                  </p>
+                  <p className="text-lg font-bold text-emerald-500 tabular-nums">
+                    {formatCurrency(paidAmount)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="mb-6 h-1.5 w-full overflow-hidden rounded-full bg-muted/50">
+                <div
+                  className="h-full bg-primary shadow-[0_0_12px_rgba(var(--primary),0.6)] transition-all duration-1000 ease-out"
+                  style={{ width: `${Math.min(100, (paidAmount / total) * 100)}%` }}
+                />
+              </div>
+
+              <div className="space-y-1 text-center">
+                <p className="text-[11px] font-black uppercase tracking-[0.25em] text-primary/70">
+                  KALAN BAKİYE
+                </p>
+                <p className="text-5xl font-extrabold tracking-tighter text-foreground tabular-nums">
+                  {formatCurrency(remainingAmount)}
+                </p>
+              </div>
             </div>
-          )}
-          <div className="flex justify-between pt-2 border-t">
-            <span className="text-lg font-bold">Ödenecek Tutar</span>
-            <span className="text-xl font-bold text-primary tabular-nums">
-              {formatCurrency(paymentAmount)}
-            </span>
           </div>
 
-          <div className="flex items-center gap-4 pt-2 border-t">
-            <div className="flex-1">
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                Verilen (Nakit)
-              </label>
-              <div className="relative">
-                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground">
-                  ₺
-                </span>
+          <div className="mb-auto space-y-4">
+            <div className="mt-2 animate-in fade-in slide-in-from-top-2 duration-500 rounded-[2rem] border border-primary/10 bg-primary/5 p-6 text-center">
+              <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-primary">
+                ŞİMDİ TAHSİL EDİLECEK
+              </p>
+              <div className="flex items-center justify-center gap-2">
+                <p className="text-4xl font-extrabold tracking-tight text-primary tabular-nums">
+                  {formatCurrency(paymentAmount)}
+                </p>
+              </div>
+
+              {paymentAmount < remainingAmount && (
+                <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-muted/50 px-3 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                  <span>SONA KALAN:</span>
+                  <span className="tabular-nums">
+                    {formatCurrency(remainingAmount - paymentAmount)}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-4 space-y-3">
+              <div className="flex items-center justify-between px-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">
+                  NAKİT HESAPLAYICI
+                </label>
+                {tenderedAmount && (
+                  <button
+                    onClick={() => setTenderedAmount('')}
+                    className="text-[9px] font-black text-primary hover:opacity-80 transition-opacity"
+                  >
+                    SIFIRLA
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-5 gap-1.5 px-1">
+                {[10, 20, 50, 100, 200].map((val) => {
+                  const isDisabled = val * 100 < paymentAmount
+                  return (
+                    <Button
+                      key={val}
+                      variant="outline"
+                      size="sm"
+                      disabled={isDisabled}
+                      className={cn(
+                        'h-9 border-none bg-background/50 text-[11px] font-black transition-all hover:bg-primary hover:text-primary-foreground rounded-xl shadow-sm',
+                        isDisabled && 'opacity-20 backdrop-blur-none'
+                      )}
+                      onClick={() => setTenderedAmount(val.toString())}
+                    >
+                      ₺{val}
+                    </Button>
+                  )
+                })}
+              </div>
+
+              <div className="relative group">
                 <Input
-                  type="number"
-                  placeholder="0.00"
+                  className="h-14 border-none bg-background/40 text-right font-mono text-2xl font-black rounded-2xl focus-visible:ring-2 focus-visible:ring-primary/20 transition-all shadow-inner"
+                  placeholder="₺0.00"
                   value={tenderedAmount}
                   onChange={(e) => setTenderedAmount(e.target.value)}
-                  className="pl-6 h-9"
+                  type="number"
                   min="0"
                   step="0.01"
                 />
               </div>
-            </div>
-            <div className="flex-1 text-right">
-              <span className="text-xs font-medium text-muted-foreground mb-1 block">
-                Para Üstü
-              </span>
-              <span
-                className={cn(
-                  'text-xl font-bold tabular-nums',
-                  currentChange > 0 ? 'text-amber-500' : ''
-                )}
-              >
-                {formatCurrency(currentChange)}
-              </span>
-            </div>
-          </div>
-        </div>
 
-        {/* Full Payment Mode */}
-        {paymentMode === 'full' && (
-          <div className="mt-5 grid grid-cols-2 gap-4">
-            <Button
-              variant="outline"
-              className="flex-col h-auto py-5 gap-2"
-              onClick={() => handlePayment('CASH')}
-              disabled={isProcessing || remainingAmount <= 0}
-            >
-              <Banknote className="w-12 h-12 text-emerald-500" />
-              <span className="text-lg font-bold">Nakit</span>
-              <span className="text-sm font-medium text-muted-foreground">
-                {formatCurrency(remainingAmount)}
-              </span>
-            </Button>
-            <Button
-              variant="outline"
-              className="flex-col h-auto py-5 gap-2"
-              onClick={() => handlePayment('CARD')}
-              disabled={isProcessing || remainingAmount <= 0}
-            >
-              <CreditCard className="w-12 h-12 text-blue-500" />
-              <span className="text-lg font-bold">Kart</span>
-              <span className="text-sm font-medium text-muted-foreground">
-                {formatCurrency(remainingAmount)}
-              </span>
-            </Button>
-          </div>
-        )}
-
-        {/* Item Selection Mode */}
-        {paymentMode === 'items' && (
-          <div className="mt-4">
-            <div className="flex justify-between items-center mb-3">
-              <span className="text-sm font-medium text-muted-foreground">
-                Ödenecek ürünleri seçin
-              </span>
-              <div className="flex gap-2">
-                <Button variant="ghost" size="sm" onClick={selectAllItems}>
-                  Tümünü Seç
-                </Button>
-                <Button variant="ghost" size="sm" onClick={deselectAllItems}>
-                  Temizle
-                </Button>
-              </div>
-            </div>
-
-            <div className="max-h-60 overflow-y-auto space-y-2 border rounded-lg p-2">
-              {unpaidItems.length === 0 ? (
-                <div className="p-4 text-center text-muted-foreground text-sm">
-                  Ödenecek ürün bulunamadı.
+              {tendered > 0 && (
+                <div className="mt-2 p-4 bg-amber-500/10 border border-amber-500/20 rounded-[1.5rem] animate-in zoom-in-95 duration-300">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest">
+                      PARA ÜSTÜ
+                    </span>
+                    <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                  </div>
+                  <div className="text-3xl font-extrabold text-amber-600 tabular-nums text-right tracking-tight">
+                    {formatCurrency(currentChange)}
+                  </div>
                 </div>
-              ) : (
-                unpaidItems.map((item) => {
-                  const selectedQty = selectedQuantities[item.id] || 0
-                  const isSelected = selectedQty > 0
-
-                  return (
-                    <div
-                      key={item.id}
-                      className={cn(
-                        'flex items-center justify-between p-3 rounded-lg border transition-colors',
-                        isSelected
-                          ? 'bg-primary/5 border-primary shadow-sm'
-                          : 'bg-card border-transparent hover:bg-accent/5'
-                      )}
-                    >
-                      <div className="flex items-center gap-3 flex-1">
-                        <div
-                          className={cn(
-                            'w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold',
-                            isSelected
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-muted text-muted-foreground'
-                          )}
-                        >
-                          {item.quantity}x
-                        </div>
-                        <div>
-                          <p className="font-medium">{item.product?.name || 'Ürün'}</p>
-                          <p className="text-sm text-muted-foreground tabular-nums">
-                            {formatCurrency(item.unitPrice)} / adet
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-3">
-                        {/* Quantity Controls */}
-                        <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7 rounded-md"
-                            onClick={() => updateQuantity(item.id, -1, item.quantity)}
-                            disabled={!isSelected}
-                          >
-                            -
-                          </Button>
-                          <span className="w-8 text-center font-bold tabular-nums">
-                            {selectedQty}
-                          </span>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7 rounded-md"
-                            onClick={() => updateQuantity(item.id, 1, item.quantity)}
-                            disabled={selectedQty >= item.quantity}
-                          >
-                            +
-                          </Button>
-                        </div>
-
-                        <div className="w-20 text-right font-bold tabular-nums">
-                          {isSelected ? formatCurrency(selectedQty * item.unitPrice) : '₺0.00'}
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })
               )}
             </div>
-
-            {/* Selected Total and Payment Buttons */}
-            <div className="mt-4 p-3 rounded-lg bg-primary/5 border border-primary/20">
-              <div className="flex justify-between items-center mb-3">
-                <span className="font-medium">Seçilen Toplam</span>
-                <span className="text-xl font-bold text-primary tabular-nums">
-                  {formatCurrency(selectedTotal)}
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <Button
-                  onClick={() => handlePayment('CASH')}
-                  disabled={isProcessing || selectedTotal <= 0}
-                  className="gap-2"
-                >
-                  <Banknote className="w-4 h-4" />
-                  Nakit Al
-                </Button>
-                <Button
-                  onClick={() => handlePayment('CARD')}
-                  disabled={isProcessing || selectedTotal <= 0}
-                  className="gap-2"
-                >
-                  <CreditCard className="w-4 h-4" />
-                  Kart Al
-                </Button>
-              </div>
-            </div>
           </div>
-        )}
 
-        {/* Custom Amount Mode */}
-        {paymentMode === 'custom' && (
-          <div className="mt-4">
-            <p className="text-sm font-medium text-muted-foreground mb-3">
-              Ödemek istediğiniz tutarı girin
-            </p>
-
-            <div className="relative mb-4">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-lg font-semibold text-muted-foreground">
-                ₺
-              </span>
-              <Input
-                type="number"
-                placeholder="0.00"
-                value={customAmount}
-                onChange={(e) => setCustomAmount(e.target.value)}
-                className="pl-8 h-14 text-2xl font-bold text-center"
-                min="0"
-                max={(remainingAmount / 100).toFixed(2)}
-                step="0.01"
-              />
-            </div>
-
-            {/* Quick Amount Buttons */}
-            <div className="grid grid-cols-4 gap-2 mb-4">
-              {[50, 100, 200, remainingAmount / 100].map((amount, index) => (
-                <Button
-                  key={index}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCustomAmount(amount.toFixed(2))}
-                  className="text-sm"
-                >
-                  {index === 3 ? 'Tamamı' : `₺${amount}`}
-                </Button>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <Button
-                onClick={() => handlePayment('CASH')}
-                disabled={isProcessing || paymentAmount <= 0}
-                className="h-12 gap-2"
-              >
-                <Banknote className="w-5 h-5" />
-                Nakit Al
-              </Button>
-              <Button
-                onClick={() => handlePayment('CARD')}
-                disabled={isProcessing || paymentAmount <= 0}
-                className="h-12 gap-2"
-              >
-                <CreditCard className="w-5 h-5" />
-                Kart Al
-              </Button>
-            </div>
+          <div className="mt-8 space-y-3">
+            <Button
+              className="w-full h-16 text-lg gap-3 shadow-2xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all font-black tracking-widest rounded-2xl border-b-4 border-primary/30"
+              variant="default"
+              size="lg"
+              disabled={isProcessing || paymentAmount <= 0}
+              onClick={() => handlePayment('CASH')}
+            >
+              <Banknote className="w-6 h-6" />
+              NAKİT TAHSİLAT
+            </Button>
+            <Button
+              className="w-full h-14 text-base gap-3 font-bold tracking-wide rounded-2xl bg-muted/50 hover:bg-muted hover:text-foreground transition-all"
+              variant="secondary"
+              size="lg"
+              disabled={isProcessing || paymentAmount <= 0 || tendered > 0}
+              onClick={() => handlePayment('CARD')}
+            >
+              <CreditCard className="w-5 h-5 text-blue-500" />
+              KART İLE ÖDE
+            </Button>
           </div>
-        )}
-
-        <DialogFooter className="mt-5">
-          <Button variant="outline" onClick={handleClose}>
-            İptal
-          </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   )

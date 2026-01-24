@@ -78,15 +78,18 @@ model Transaction {
 }
 
 model DailySummary {
-  id           String   @id @default(cuid())
-  date         DateTime @unique
-  totalCash    Int      @default(0)
-  totalCard    Int      @default(0)
-  cancelCount  Int      @default(0)
-  totalVat     Int      @default(0)
-  orderCount   Int      @default(0)
-  totalRevenue Int      @default(0)
-  createdAt    DateTime @default(now())
+  id            String   @id @default(cuid())
+  date          DateTime @unique
+  totalCash     Int      @default(0)
+  actualCash    Int?     @default(0)
+  totalCard     Int      @default(0)
+  totalExpenses Int      @default(0)
+  netProfit     Int      @default(0)
+  cancelCount   Int      @default(0)
+  totalVat      Int      @default(0)
+  orderCount    Int      @default(0)
+  totalRevenue  Int      @default(0)
+  createdAt     DateTime @default(now())
 
   @@index([date])
 }
@@ -108,4 +111,26 @@ model AppSettings {
   adminPin        String  @default("1234")
   securityQuestion String?
   securityAnswer   String?
+}
+
+model Expense {
+  id          String   @id @default(cuid())
+  description String
+  amount      Int      // Stored in cents (kuruş)
+  category    String?
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+model MonthlyReport {
+  id            String   @id @default(cuid())
+  monthDate     DateTime @unique // First day of the month for identification
+  totalRevenue  Int      @default(0)
+  totalExpenses Int      @default(0)
+  netProfit     Int      @default(0)
+  orderCount    Int      @default(0)
+  updatedAt     DateTime @updatedAt
+
+  @@index([monthDate])
 }

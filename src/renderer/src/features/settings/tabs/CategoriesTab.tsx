@@ -1,9 +1,8 @@
 import { useState } from 'react'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, Tag, Layers } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { Card } from '@/components/ui/card'
 import {
   Dialog,
   DialogContent,
@@ -12,20 +11,12 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog'
-import { cafeApi, type Category, type Product } from '@/lib/api'
+import { cafeApi } from '@/lib/api'
+import { useInventoryStore } from '@/store/useInventoryStore'
 import { toast } from '@/store/useToastStore'
 
-interface CategoriesTabProps {
-  categories: Category[]
-  products: Product[] // Needed for counting products per category
-  onRefresh: () => Promise<void>
-}
-
-export function CategoriesTab({
-  categories,
-  products,
-  onRefresh
-}: CategoriesTabProps): React.JSX.Element {
+export function CategoriesTab(): React.JSX.Element {
+  const { categories, products, addCategory, updateCategory, removeCategory } = useInventoryStore()
   const [newCategoryName, setNewCategoryName] = useState('')
   const [deleteCategoryId, setDeleteCategoryId] = useState<string | null>(null)
   const [showDeleteCategoryDialog, setShowDeleteCategoryDialog] = useState(false)
@@ -36,9 +27,9 @@ export function CategoriesTab({
       return
     }
     try {
-      await cafeApi.categories.create(newCategoryName)
+      const category = await cafeApi.categories.create(newCategoryName)
+      addCategory(category)
       setNewCategoryName('')
-      await onRefresh()
       toast({ title: 'Başarılı', description: 'Kategori başarıyla eklendi', variant: 'success' })
     } catch (error) {
       console.error('Failed to add category:', error)
@@ -59,7 +50,7 @@ export function CategoriesTab({
     if (!deleteCategoryId) return
     try {
       await cafeApi.categories.delete(deleteCategoryId)
-      await onRefresh()
+      removeCategory(deleteCategoryId)
     } catch (error) {
       console.error('Failed to delete category:', error)
       toast({
@@ -74,93 +65,109 @@ export function CategoriesTab({
   }
 
   return (
-    <>
-      <Card className="h-full flex flex-col">
-        <CardHeader className="pb-3 flex-shrink-0">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Kategori Yönetimi</CardTitle>
-              <CardDescription>Kategorileri ve simgelerini yönetin</CardDescription>
-            </div>
-            <div className="flex gap-2">
+    <Card className="h-full flex flex-col border-0 shadow-none bg-transparent">
+      {/* Header Section */}
+      <div className="flex-none py-4 px-8 border-b bg-background/50 backdrop-blur z-10 w-full">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Kategori Yönetimi</h2>
+            <p className="text-sm text-muted-foreground">
+              Kategorileri ve görsel simgelerini düzenleyin
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="relative">
               <Input
-                placeholder="Yeni kategori..."
+                placeholder="Yeni kategori adı..."
                 value={newCategoryName}
                 onChange={(e) => setNewCategoryName(e.target.value)}
-                className="w-48"
+                className="w-48 h-9"
+                onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
               />
-              <Button onClick={handleAddCategory}>
-                <Plus className="w-4 h-4 mr-2" />
-                Ekle
-              </Button>
             </div>
+            <Button onClick={handleAddCategory} size="sm" className="gap-2">
+              <Plus className="w-4 h-4" />
+              Ekle
+            </Button>
           </div>
-        </CardHeader>
-        <CardContent className="flex-1 overflow-hidden">
-          <ScrollArea className="h-[400px]">
-            <div className="divide-y divide-border/50 pr-3">
-              {categories.map((cat) => (
-                <div
-                  key={cat.id}
-                  className="group flex items-center justify-between py-4 px-3 hover:bg-muted transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <span className="text-lg">
-                        {cat.icon === 'coffee' && '☕'}
-                        {cat.icon === 'ice-cream-cone' && '🍦'}
-                        {cat.icon === 'cookie' && '🍪'}
-                        {cat.icon === 'utensils' && '🍽️'}
-                        {cat.icon === 'wine' && '🍷'}
-                        {cat.icon === 'cake' && '🎂'}
-                        {cat.icon === 'sandwich' && '🥪'}
-                        {!cat.icon && '🍽️'}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="font-medium">{cat.name}</span>
-                      <p className="text-xs text-muted-foreground">
-                        {products.filter((p) => p.categoryId === cat.id).length} ürün
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <select
-                      className="bg-muted rounded px-2 py-1 text-sm"
-                      value={cat.icon || 'utensils'}
-                      onChange={async (e) => {
-                        await cafeApi.categories.update(cat.id, { icon: e.target.value })
-                        await onRefresh()
-                      }}
-                    >
-                      <option value="coffee">☕</option>
-                      <option value="ice-cream-cone">🍦</option>
-                      <option value="cookie">🍪</option>
-                      <option value="utensils">🍽️</option>
-                      <option value="wine">🍷</option>
-                      <option value="cake">🎂</option>
-                      <option value="sandwich">🥪</option>
-                    </select>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-8 w-8"
-                      onClick={() => handleDeleteCategory(cat.id)}
-                    >
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
+        </div>
+      </div>
+
+      {/* Main List Area */}
+      <div className="flex-1 overflow-y-auto p-8">
+        <div className="max-w-4xl mx-auto space-y-3">
+          {categories.map((cat) => (
+            <div
+              key={cat.id}
+              className="group flex items-center justify-between p-4 rounded-xl border bg-card/50 hover:bg-card hover:shadow-sm transition-all"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
+                  <span className="text-xl">
+                    {cat.icon === 'coffee' && '☕'}
+                    {cat.icon === 'ice-cream-cone' && '🍦'}
+                    {cat.icon === 'cookie' && '🍪'}
+                    {cat.icon === 'utensils' && '🍽️'}
+                    {cat.icon === 'wine' && '🍷'}
+                    {cat.icon === 'cake' && '🎂'}
+                    {cat.icon === 'sandwich' && '🥪'}
+                    {!cat.icon && '🍽️'}
+                  </span>
+                </div>
+                <div>
+                  <h3 className="font-bold text-base">{cat.name}</h3>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                    <Layers className="w-3 h-3" />
+                    <span>
+                      {products.filter((p) => p.categoryId === cat.id).length} Ürün Mevcut
+                    </span>
                   </div>
                 </div>
-              ))}
-              {categories.length === 0 && (
-                <p className="text-muted-foreground text-center py-8">
-                  Henüz kategori yok. &quot;Ekle&quot; butonuna tıklayın.
-                </p>
-              )}
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <span className="text-xs font-medium text-muted-foreground">Simge:</span>
+                  <select
+                    className="bg-muted border rounded-md px-2 py-1 text-sm outline-none focus:ring-1 focus:ring-primary"
+                    value={cat.icon || 'utensils'}
+                    onChange={async (e) => {
+                      const updated = await cafeApi.categories.update(cat.id, { icon: e.target.value })
+                      updateCategory(updated)
+                    }}
+                  >
+                    <option value="coffee">☕ Kahveler</option>
+                    <option value="ice-cream-cone">🍦 Tatlılar</option>
+                    <option value="cookie">🍪 Atıştırmalık</option>
+                    <option value="utensils">🍽️ Yemekler</option>
+                    <option value="wine">🍷 İçecekler</option>
+                    <option value="cake">🎂 Pastalar</option>
+                    <option value="sandwich">🥪 Sandviçler</option>
+                  </select>
+                </div>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-9 w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                  onClick={() => handleDeleteCategory(cat.id)}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
-          </ScrollArea>
-        </CardContent>
-      </Card>
+          ))}
+
+          {categories.length === 0 && (
+            <div className="flex flex-col items-center justify-center h-64 text-center border-2 border-dashed rounded-2xl">
+              <Tag className="w-12 h-12 text-muted-foreground/30 mb-4" />
+              <h3 className="text-lg font-semibold">Henüz kategori yok</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Üst taraftaki kutudan yeni kategori oluşturun.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
 
       <Dialog open={showDeleteCategoryDialog} onOpenChange={setShowDeleteCategoryDialog}>
         <DialogContent>
@@ -181,6 +188,6 @@ export function CategoriesTab({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+    </Card>
   )
 }

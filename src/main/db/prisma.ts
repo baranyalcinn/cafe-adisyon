@@ -5,7 +5,7 @@ import path from 'path'
 import * as fs from 'fs'
 
 // Get the database path - in production use userData, in dev use project root
-const isDev = !app.isPackaged
+const isDev = process.env.NODE_ENV === 'development'
 const dbPath = isDev
   ? path.join(process.cwd(), 'prisma', 'dev.db')
   : path.join(app.getPath('userData'), 'caffio.db')

@@ -7,7 +7,7 @@ export class Logger {
   private maxSizeBytes: number
 
   constructor(filename: string = 'backend-errors.log', maxSizeBytes: number = 5 * 1024 * 1024) {
-    const isDev = !app.isPackaged
+    const isDev = process.env.NODE_ENV === 'development'
     const baseDir = isDev ? process.cwd() : app.getPath('userData')
     this.logPath = path.join(baseDir, filename)
     this.maxSizeBytes = maxSizeBytes

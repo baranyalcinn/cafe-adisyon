@@ -1,10 +1,9 @@
-import { useState, useMemo } from 'react'
-import { Plus, Pencil, Check, X, Star, Trash2 } from 'lucide-react'
+import { useState, useMemo, useEffect } from 'react'
+import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { cafeApi, type Category, type Product } from '@/lib/api'
+import { Card } from '@/components/ui/card'
+import { cafeApi } from '@/lib/api'
+import { useInventoryStore } from '@/store/useInventoryStore'
 import { toast } from '@/store/useToastStore'
 import {
   Dialog,
@@ -14,58 +13,57 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog'
-import { formatCurrency } from '@/lib/utils'
+import { CategorySidebar } from './components/CategorySidebar'
+import { ProductCard } from './components/ProductCard'
+import { Input } from '@/components/ui/input'
 
-interface ProductsTabProps {
-  products: Product[]
-  categories: Category[]
-  onRefresh: () => Promise<void>
-}
-
-export function ProductsTab({
-  products,
-  categories,
-  onRefresh
-}: ProductsTabProps): React.JSX.Element {
-  const [newProductName, setNewProductName] = useState('')
-  const [newProductPrice, setNewProductPrice] = useState('')
+export function ProductsTab(): React.JSX.Element {
+  const products = useInventoryStore((state) => state.products)
+  const categories = useInventoryStore((state) => state.categories)
+  const addProduct = useInventoryStore((state) => state.addProduct)
+  const updateProduct = useInventoryStore((state) => state.updateProduct)
+  const removeProduct = useInventoryStore((state) => state.removeProduct)
+  const addCategory = useInventoryStore((state) => state.addCategory)
+  const updateCategory = useInventoryStore((state) => state.updateCategory)
+  const removeCategory = useInventoryStore((state) => state.removeCategory)
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
 
-  // Category Editing State
-  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null)
-  const [editCategoryName, setEditCategoryName] = useState('')
+  // Category Delete State
   const [deleteCategoryId, setDeleteCategoryId] = useState<string | null>(null)
   const [showDeleteCategoryDialog, setShowDeleteCategoryDialog] = useState(false)
 
-  // Product Editing State
-  const [editingProductId, setEditingProductId] = useState<string | null>(null)
-  const [editPrice, setEditPrice] = useState('')
-  const [editName, setEditName] = useState('')
+  // Quick Add State (Local to the grid card)
+  const [isAddingProduct, setIsAddingProduct] = useState(false)
+  const [newProductName, setNewProductName] = useState('')
+  const [newProductPrice, setNewProductPrice] = useState('')
 
   // Initialize selected category if needed
-  if (!selectedCategoryId && categories.length > 0) {
-    setSelectedCategoryId(categories[0].id)
-  }
+  useEffect(() => {
+    if (!selectedCategoryId && categories.length > 0) {
+      setSelectedCategoryId(categories[0].id)
+    }
+  }, [categories, selectedCategoryId])
 
   const filteredProducts = useMemo(() => {
-    return selectedCategoryId
-      ? products.filter((p) => p.categoryId === selectedCategoryId)
-      : products
+    return selectedCategoryId ? products.filter((p) => p.categoryId === selectedCategoryId) : []
   }, [products, selectedCategoryId])
 
-  const startEditingCategory = (category: Category): void => {
-    setEditingCategoryId(category.id)
-    setEditCategoryName(category.name)
+  // --- Category Handlers ---
+  const handleAddCategory = async (name: string): Promise<void> => {
+    try {
+      const category = await cafeApi.categories.create(name)
+      addCategory(category)
+    } catch {
+      toast({ title: 'Hata', description: 'Kategori eklenemedi', variant: 'destructive' })
+    }
   }
 
-  const handleUpdateCategory = async (id: string): Promise<void> => {
-    if (!editCategoryName.trim()) return
+  const handleUpdateCategory = async (id: string, name: string): Promise<void> => {
     try {
-      await cafeApi.categories.update(id, { name: editCategoryName })
-      setEditingCategoryId(null)
-      await onRefresh()
-    } catch (error) {
-      console.error('Failed to update category:', error)
+      const category = await cafeApi.categories.update(id, { name })
+      updateCategory(category)
+    } catch {
+      toast({ title: 'Hata', description: 'Kategori güncellenemedi', variant: 'destructive' })
     }
   }
 
@@ -81,318 +79,181 @@ export function ProductsTab({
       if (selectedCategoryId === deleteCategoryId) {
         setSelectedCategoryId(categories.length > 1 ? categories[0].id : null)
       }
-      await onRefresh()
-    } catch (error) {
-      console.error('Failed to delete category:', error)
-      toast({
-        title: 'Hata',
-        description: 'Kategori silinemedi: ' + String(error),
-        variant: 'destructive'
-      })
+      removeCategory(deleteCategoryId)
+      toast({ title: 'Başarılı', description: 'Kategori silindi', variant: 'success' })
+    } catch {
+      toast({ title: 'Hata', description: 'Kategori silinemedi', variant: 'destructive' })
     } finally {
       setShowDeleteCategoryDialog(false)
       setDeleteCategoryId(null)
     }
   }
 
+  // --- Product Handlers ---
   const handleAddProduct = async (): Promise<void> => {
     if (!newProductName.trim() || !newProductPrice || !selectedCategoryId) return
     try {
-      await cafeApi.products.create({
+      const product = await cafeApi.products.create({
         name: newProductName,
         price: Math.round(parseFloat(newProductPrice) * 100),
         categoryId: selectedCategoryId,
         isFavorite: false
       })
+      addProduct(product)
       setNewProductName('')
       setNewProductPrice('')
-      await onRefresh()
-      toast({ title: 'Başarılı', description: 'Ürün başarıyla eklendi', variant: 'success' })
-    } catch (error) {
-      console.error('Failed to add product:', error)
-      toast({
-        title: 'Hata',
-        description: 'Ürün eklenemedi: ' + String(error),
-        variant: 'destructive'
-      })
+      setIsAddingProduct(false)
+      toast({ title: 'Başarılı', description: 'Ürün eklendi', variant: 'success' })
+    } catch {
+      toast({ title: 'Hata', description: 'Ürün eklenemedi', variant: 'destructive' })
     }
   }
 
-  const handleUpdateProduct = async (id: string): Promise<void> => {
-    if (!editPrice || !editName.trim()) return
+  const handleUpdateProduct = async (
+    id: string,
+    data: { name: string; price: number }
+  ): Promise<void> => {
     try {
-      await cafeApi.products.update(id, {
-        name: editName,
-        price: Math.round(parseFloat(editPrice) * 100)
-      })
-      setEditingProductId(null)
-      setEditPrice('')
-      setEditName('')
-      await onRefresh()
-    } catch (error) {
-      console.error('Failed to update product:', error)
-      toast({
-        title: 'Hata',
-        description: 'Ürün güncellenemedi',
-        variant: 'destructive'
-      })
+      const product = await cafeApi.products.update(id, data)
+      updateProduct(product)
+      toast({ title: 'Başarılı', description: 'Ürün güncellendi', variant: 'success' })
+    } catch {
+      toast({ title: 'Hata', description: 'Ürün güncellenemedi', variant: 'destructive' })
     }
   }
 
   const handleDeleteProduct = async (id: string): Promise<void> => {
+    if (!confirm('Bu ürünü silmek istediğinize emin misiniz?')) return
     try {
       await cafeApi.products.delete(id)
-      await onRefresh()
-    } catch (error) {
-      console.error('Failed to delete product:', error)
-      toast({
-        title: 'Hata',
-        description: 'Ürün silinemedi: ' + String(error),
-        variant: 'destructive'
-      })
+      removeProduct(id)
+      toast({ title: 'Başarılı', description: 'Ürün silindi', variant: 'success' })
+    } catch {
+      toast({ title: 'Hata', description: 'Ürün silinemedi', variant: 'destructive' })
     }
   }
 
-  const handleToggleFavorite = async (id: string, currentStatus: boolean): Promise<void> => {
+  const handleToggleFavorite = async (id: string, current: boolean): Promise<void> => {
     try {
-      await cafeApi.products.update(id, { isFavorite: !currentStatus })
-      await onRefresh()
+      const product = await cafeApi.products.update(id, { isFavorite: !current })
+      updateProduct(product)
     } catch (error) {
-      console.error('Failed to toggle favorite:', error)
+      console.error(error)
     }
   }
 
   return (
     <>
-      <Card className="h-full flex flex-col">
-        <CardHeader className="pb-3 flex-shrink-0">
-          <div className="flex items-center justify-between">
+      <Card className="h-full flex flex-row overflow-hidden border-0 shadow-none bg-transparent">
+        {/* Left Sidebar */}
+        <div className="w-64 h-full bg-background border-r flex-shrink-0 z-10">
+          <CategorySidebar
+            categories={categories}
+            selectedCategoryId={selectedCategoryId}
+            onSelectCategory={setSelectedCategoryId}
+            onAddCategory={handleAddCategory}
+            onUpdateCategory={handleUpdateCategory}
+            onDeleteCategory={handleDeleteCategory}
+          />
+        </div>
+
+        {/* Right Content */}
+        <div className="flex-1 h-full bg-background flex flex-col">
+          {/* Header / Context Bar */}
+          <div className="h-14 border-b bg-background/50 backdrop-blur px-6 flex items-center justify-between">
             <div>
-              <CardTitle>Ürün Yönetimi</CardTitle>
-              <CardDescription>Kategori ve ürünleri yönetin</CardDescription>
+              <h3 className="font-bold text-lg">
+                {categories.find((c) => c.id === selectedCategoryId)?.name || 'Kategori Seçin'}
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                {filteredProducts.length} Ürün listeleniyor
+              </p>
             </div>
           </div>
 
-          {/* Category Tabs */}
-          <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t">
-            {categories.map((cat) => (
-              <div
-                key={cat.id}
-                className={`group flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-all ${
-                  selectedCategoryId === cat.id
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted hover:bg-muted/80'
-                }`}
-                onClick={() => setSelectedCategoryId(cat.id)}
-              >
-                {editingCategoryId === cat.id ? (
-                  <>
-                    <Input
-                      value={editCategoryName}
-                      onChange={(e) => setEditCategoryName(e.target.value)}
-                      className="h-6 w-32 px-1 py-0 text-sm bg-background text-foreground"
-                      autoFocus
-                      onClick={(e) => e.stopPropagation()}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleUpdateCategory(cat.id)
-                        if (e.key === 'Escape') setEditingCategoryId(null)
-                      }}
-                    />
-                    <button
-                      className="p-1 hover:text-green-500 transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleUpdateCategory(cat.id)
-                      }}
-                    >
-                      <Check className="w-3 h-3" />
-                    </button>
-                    <button
-                      className="p-1 hover:text-red-500 transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setEditingCategoryId(null)
-                      }}
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <span>{cat.name}</span>
-                    <span className="text-xs opacity-70">
-                      ({products.filter((p) => p.categoryId === cat.id).length})
-                    </span>
-                    <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity ml-1">
-                      <button
-                        className="p-1 hover:text-primary transition-colors"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          startEditingCategory(cat)
-                        }}
-                      >
-                        <Pencil className="w-3 h-3" />
-                      </button>
-                      <button
-                        className="p-1 hover:text-destructive transition-colors"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleDeleteCategory(cat.id)
-                        }}
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            ))}
-            {categories.length === 0 && (
-              <p className="text-muted-foreground text-sm">Kategori ekleyin</p>
-            )}
-          </div>
-        </CardHeader>
-
-        <CardContent className="flex-1 overflow-auto">
-          {/* Add Product Form */}
-          {selectedCategoryId && (
-            <div className="flex gap-2 mb-4 p-3 bg-muted rounded-lg">
-              <Input
-                placeholder="Ürün adı..."
-                value={newProductName}
-                onChange={(e) => setNewProductName(e.target.value)}
-                className="flex-1"
-              />
-              <Input
-                type="number"
-                placeholder="₺ Fiyat"
-                value={newProductPrice}
-                onChange={(e) => setNewProductPrice(e.target.value)}
-                className="w-28"
-              />
-              <Button onClick={handleAddProduct} size="sm">
-                <Plus className="w-4 h-4 mr-1" />
-                Ekle
-              </Button>
-            </div>
-          )}
-
-          {/* Products List */}
-          <ScrollArea className="h-[400px]">
-            <div className="divide-y divide-border/50 pr-3">
-              {filteredProducts.map((product) => (
+          <div className="flex-1 overflow-y-auto p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-20">
+              {/* Add Product Card */}
+              {selectedCategoryId && (
                 <div
-                  key={product.id}
-                  className="group flex items-center justify-between py-4 px-3 hover:bg-muted/30 transition-colors"
+                  className={`group flex flex-col justify-center items-center p-4 border-2 border-dashed rounded-2xl bg-muted/20 hover:bg-muted/40 transition-all duration-200 cursor-pointer min-h-[140px] ${isAddingProduct ? 'border-primary bg-primary/5' : 'border-muted-foreground/20'}`}
+                  onClick={() => !isAddingProduct && setIsAddingProduct(true)}
                 >
-                  <div className="flex items-center gap-3 flex-1 mr-4">
-                    <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
-                    {editingProductId === product.id ? (
+                  {isAddingProduct ? (
+                    <div
+                      className="w-full space-y-3 animate-in fade-in zoom-in-95"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <p className="text-xs font-bold text-primary uppercase text-center">
+                        Yeni Ürün Ekle
+                      </p>
                       <Input
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        className="h-8 max-w-[200px]"
-                        placeholder="Ürün adı"
+                        placeholder="Ürün Adı"
+                        value={newProductName}
+                        onChange={(e) => setNewProductName(e.target.value)}
+                        className="h-8 text-sm bg-background"
+                        autoFocus
                       />
-                    ) : (
-                      <span className="font-medium">{product.name}</span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {editingProductId === product.id ? (
-                      <>
-                        <Input
-                          type="number"
-                          value={editPrice}
-                          onChange={(e) => setEditPrice(e.target.value)}
-                          className="w-24 h-8"
-                        />
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8 text-emerald-500"
-                          onClick={() => handleUpdateProduct(product.id)}
-                        >
-                          <Check className="w-4 h-4" />
+                      <Input
+                        type="number"
+                        placeholder="Fiyat ₺"
+                        value={newProductPrice}
+                        onChange={(e) => setNewProductPrice(e.target.value)}
+                        className="h-8 text-sm bg-background"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleAddProduct()
+                          if (e.key === 'Escape') setIsAddingProduct(false)
+                        }}
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button size="sm" className="h-8 text-xs" onClick={handleAddProduct}>
+                          Ekle
                         </Button>
                         <Button
-                          size="icon"
+                          size="sm"
                           variant="ghost"
-                          className="h-8 w-8"
-                          onClick={() => {
-                            setEditingProductId(null)
-                            setEditPrice('')
-                            setEditName('')
-                          }}
+                          className="h-8 text-xs"
+                          onClick={() => setIsAddingProduct(false)}
                         >
-                          <X className="w-4 h-4" />
+                          İptal
                         </Button>
-                      </>
-                    ) : (
-                      <>
-                        <span className="text-primary font-semibold mr-2">
-                          {formatCurrency(product.price)}
-                        </span>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className={`h-7 w-7 transition-colors ${
-                            product.isFavorite
-                              ? 'text-yellow-500 hover:text-yellow-600 opacity-100'
-                              : 'opacity-0 group-hover:opacity-100'
-                          }`}
-                          onClick={() => handleToggleFavorite(product.id, product.isFavorite)}
-                        >
-                          <Star className={`w-4 h-4 ${product.isFavorite ? 'fill-current' : ''}`} />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => {
-                            setEditingProductId(product.id)
-                            setEditPrice((product.price / 100).toFixed(2))
-                            setEditName(product.name)
-                          }}
-                        >
-                          <Pencil className="w-3 h-3" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
-                          onClick={() => handleDeleteProduct(product.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </>
-                    )}
-                  </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                        <Plus className="w-5 h-5 text-muted-foreground" />
+                      </div>
+                      <span className="font-bold text-sm text-muted-foreground">
+                        Yeni Ürün Ekle
+                      </span>
+                    </>
+                  )}
                 </div>
+              )}
+
+              {/* Product Cards */}
+              {filteredProducts.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onUpdate={handleUpdateProduct}
+                  onDelete={handleDeleteProduct}
+                  onToggleFavorite={handleToggleFavorite}
+                />
               ))}
-              {filteredProducts.length === 0 && selectedCategoryId && (
-                <p className="text-muted-foreground text-center py-8">
-                  Bu kategoride henüz ürün yok
-                </p>
-              )}
-              {!selectedCategoryId && (
-                <p className="text-muted-foreground text-center py-8">
-                  Ürünleri görmek için bir kategori seçin
-                </p>
-              )}
             </div>
-          </ScrollArea>
-        </CardContent>
+          </div>
+        </div>
       </Card>
 
-      {/* Delete Category Confirmation Dialog */}
+      {/* Dialogs */}
       <Dialog open={showDeleteCategoryDialog} onOpenChange={setShowDeleteCategoryDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Kategori Silinsin Mi?</DialogTitle>
             <DialogDescription>
-              Bu kategoriyi sildiğinizde içindeki tüm ürünler de silinecektir. Bu işlem geri
-              alınamaz. Onaylıyor musunuz?
+              Bu kategoriyi sildiğinizde içindeki tüm ürünler de silinecektir.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

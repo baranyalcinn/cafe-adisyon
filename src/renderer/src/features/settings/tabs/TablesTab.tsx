@@ -1,17 +1,12 @@
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, LayoutGrid } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { cafeApi, type Table } from '@/lib/api'
+import { Card } from '@/components/ui/card'
+import { cafeApi } from '@/lib/api'
 import { toast } from '@/store/useToastStore'
 import { useTableStore } from '@/store/useTableStore'
 
-interface TablesTabProps {
-  tables: Table[]
-  onRefresh: () => Promise<void>
-}
-
-export function TablesTab({ tables, onRefresh }: TablesTabProps): React.JSX.Element {
-  const { refreshTableStatus } = useTableStore()
+export function TablesTab(): React.JSX.Element {
+  const { tables, addTable, removeTable } = useTableStore()
 
   const handleAddTable = async (): Promise<void> => {
     try {
@@ -23,9 +18,8 @@ export function TablesTab({ tables, onRefresh }: TablesTabProps): React.JSX.Elem
       const nextNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 1
       const newTableName = `Masa ${nextNumber}`
 
-      await cafeApi.tables.create(newTableName)
-      await onRefresh()
-      refreshTableStatus()
+      const newTable = await cafeApi.tables.create(newTableName)
+      addTable(newTable)
       toast({ title: 'Başarılı', description: 'Yeni masa oluşturuldu', variant: 'success' })
     } catch (error) {
       console.error('Failed to add table:', error)
@@ -40,8 +34,7 @@ export function TablesTab({ tables, onRefresh }: TablesTabProps): React.JSX.Elem
   const handleDeleteTable = async (id: string): Promise<void> => {
     try {
       await cafeApi.tables.delete(id)
-      await onRefresh()
-      refreshTableStatus()
+      removeTable(id)
     } catch (error) {
       console.error('Failed to delete table:', error)
       toast({
@@ -53,42 +46,76 @@ export function TablesTab({ tables, onRefresh }: TablesTabProps): React.JSX.Elem
   }
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div>
-          <CardTitle>Masalar ({tables.length})</CardTitle>
-          <CardDescription>Masa ekle veya sil</CardDescription>
+    <Card className="h-full flex flex-col border-0 shadow-none bg-transparent">
+      {/* Header Section */}
+      <div className="flex-none py-4 px-8 border-b bg-background/50 backdrop-blur z-10 w-full">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Masa Yönetimi</h2>
+            <p className="text-sm text-muted-foreground">
+              İşletmenizdeki masaları ekleyin, düzenleyin ve yönetin
+            </p>
+          </div>
         </div>
-        <Button onClick={handleAddTable} size="sm">
-          <Plus className="w-4 h-4 mr-1" />
-          Yeni Masa Ekle
-        </Button>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4">
+          {/* Add Table Quick Card */}
+          <div
+            role="button"
+            className="group flex flex-col items-center justify-center aspect-[4/3] rounded-xl border-2 border-dashed border-muted-foreground/20 hover:border-primary/50 hover:bg-muted/50 transition-all cursor-pointer"
+            onClick={handleAddTable}
+          >
+            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+              <Plus className="w-5 h-5 text-muted-foreground" />
+            </div>
+            <span className="text-sm font-medium text-muted-foreground group-hover:text-primary">
+              Masa Ekle
+            </span>
+          </div>
+
+          {/* Table Cards */}
           {tables.map((table) => (
             <div
               key={table.id}
-              className="group flex items-center justify-between p-3 rounded-lg bg-muted hover:bg-accent transition-colors"
+              className="group relative flex flex-col justify-between p-4 rounded-xl bg-card border shadow-sm hover:shadow-md hover:border-primary/20 transition-all aspect-[4/3]"
             >
-              <span className="font-medium">{table.name}</span>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
-                onClick={() => handleDeleteTable(table.id)}
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
+              <div className="flex items-start justify-between">
+                <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                  <LayoutGrid className="w-5 h-5" />
+                </div>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8 -mr-2 -mt-2 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                  onClick={() => handleDeleteTable(table.id)}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+
+              <div>
+                <h3 className="font-bold text-lg">{table.name}</h3>
+                <p className="text-xs text-muted-foreground">Aktif</p>
+              </div>
             </div>
           ))}
         </div>
+
         {tables.length === 0 && (
-          <p className="text-muted-foreground text-center py-8">
-            Henüz masa yok. &quot;Yeni Masa Ekle&quot; butonuna tıklayın.
-          </p>
+          <div className="flex flex-col items-center justify-center h-64 text-center">
+            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+              <LayoutGrid className="w-8 h-8 text-muted-foreground/50" />
+            </div>
+            <h3 className="text-lg font-semibold">Henüz masa yok</h3>
+            <p className="text-muted-foreground max-w-sm mt-2">
+              İşletmenizi yapılandırmak için yukarıdaki butonla veya hızlı ekleme kartı ile yeni
+              masalar oluşturun.
+            </p>
+          </div>
         )}
-      </CardContent>
+      </div>
     </Card>
   )
 }

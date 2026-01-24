@@ -6,7 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
 import { useTableStore } from '@/store/useTableStore'
 import { useOrderStore } from '@/store/useOrderStore'
-import { cafeApi, type Product, type Category } from '@/lib/api'
+import { useInventoryStore } from '@/store/useInventoryStore'
 import { ProductCard } from './ProductCard'
 import { CartPanel } from './CartPanel'
 import { PaymentModal } from '../payments/PaymentModal'
@@ -16,11 +16,13 @@ interface OrderViewProps {
 }
 
 export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
-  const { selectedTableId, tables } = useTableStore()
-  const { loadOrderForTable } = useOrderStore()
+  const selectedTableId = useTableStore((state) => state.selectedTableId)
+  const tables = useTableStore((state) => state.tables)
+  const loadOrderForTable = useOrderStore((state) => state.loadOrderForTable)
+  const products = useInventoryStore((state) => state.products)
+  const categories = useInventoryStore((state) => state.categories)
+  const fetchInventory = useInventoryStore((state) => state.fetchInventory)
 
-  const [products, setProducts] = useState<Product[]>([])
-  const [categories, setCategories] = useState<Category[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [isPaymentOpen, setIsPaymentOpen] = useState(false)
@@ -29,20 +31,8 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
   const selectedTable = tables.find((t) => t.id === selectedTableId)
 
   useEffect(() => {
-    const loadData = async (): Promise<void> => {
-      try {
-        const [productsData, categoriesData] = await Promise.all([
-          cafeApi.products.getAll(),
-          cafeApi.categories.getAll()
-        ])
-        setProducts(productsData)
-        setCategories(categoriesData)
-      } catch (error) {
-        console.error('Failed to load data:', error)
-      }
-    }
-    loadData()
-  }, [])
+    fetchInventory() // Uses cache if possible
+  }, [fetchInventory])
 
   useEffect(() => {
     if (selectedTableId) {

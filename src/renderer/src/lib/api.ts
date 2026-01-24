@@ -12,7 +12,9 @@ import type {
   DailySummary,
   ActivityLog,
   OrderStatus,
-  PaymentMethod
+  PaymentMethod,
+  Expense,
+  MonthlyReport
 } from '../../../shared/types'
 
 // Get the API from the preload script
@@ -33,7 +35,9 @@ export type {
   DailySummary,
   ActivityLog,
   OrderStatus,
-  PaymentMethod
+  PaymentMethod,
+  Expense,
+  MonthlyReport
 }
 
 // Type-safe API wrapper with error handling
@@ -261,8 +265,8 @@ export const cafeApi = {
 
   // Z-Report
   zReport: {
-    async generate(): Promise<DailySummary> {
-      const result = await api.zReport.generate()
+    async generate(actualCash?: number): Promise<DailySummary> {
+      const result = await api.zReport.generate(actualCash)
       if (!result.success) throw new Error(result.error)
       return result.data
     },
@@ -328,6 +332,28 @@ export const cafeApi = {
     }
   },
 
+  // Expenses
+  expenses: {
+    async create(data: {
+      description: string
+      amount: number
+      category?: string
+    }): Promise<Expense> {
+      const result = await api.expenses.create(data)
+      if (!result.success) throw new Error(result.error)
+      return result.data
+    },
+    async getAll(): Promise<Expense[]> {
+      const result = await api.expenses.getAll()
+      if (!result.success) throw new Error(result.error)
+      return result.data
+    },
+    async delete(id: string): Promise<void> {
+      const result = await api.expenses.delete(id)
+      if (!result.success) throw new Error(result.error)
+    }
+  },
+
   // End of Day
   endOfDay: {
     async check(): Promise<{
@@ -338,13 +364,13 @@ export const cafeApi = {
       if (!result.success) throw new Error(result.error)
       return result.data
     },
-    async execute(): Promise<{
+    async execute(actualCash?: number): Promise<{
       zReport: DailySummary
       backupPath: string
       deletedBackups: number
       vacuumCompleted: boolean
     }> {
-      const result = await api.endOfDay.execute()
+      const result = await api.endOfDay.execute(actualCash)
       if (!result.success) throw new Error(result.error)
       return result.data
     }
@@ -376,6 +402,14 @@ export const cafeApi = {
   system: {
     async check(): Promise<{ dbPath: string; connection: boolean; tableCount: number }> {
       const result = await api.system.check()
+      if (!result.success) throw new Error(result.error)
+      return result.data
+    }
+  },
+  // Reports
+  reports: {
+    async getMonthly(limit: number = 12): Promise<MonthlyReport[]> {
+      const result = await api.reports.getMonthly(limit)
       if (!result.success) throw new Error(result.error)
       return result.data
     }

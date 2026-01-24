@@ -8,7 +8,7 @@ export class DBMaintenance {
   private backupDir: string
 
   constructor() {
-    const isDev = !app.isPackaged
+    const isDev = process.env.NODE_ENV === 'development'
     // In dev, use project root/backups. In prod, use userData/backups
     const baseDir = isDev ? process.cwd() : app.getPath('userData')
     this.backupDir = path.join(baseDir, 'backups')

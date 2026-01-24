@@ -3,13 +3,23 @@ import { AlertTriangle, CheckCircle, Loader2, Moon, X, Database, FileText } from
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { cafeApi, type DailySummary } from '@/lib/api'
+import { formatCurrency, cn } from '@/lib/utils'
+import { Input } from '@/components/ui/input'
 
 interface EndOfDayModalProps {
   open: boolean
   onClose: () => void
 }
 
-type Step = 'idle' | 'checking' | 'blocked' | 'confirm' | 'processing' | 'success' | 'error'
+type Step =
+  | 'idle'
+  | 'checking'
+  | 'blocked'
+  | 'confirm'
+  | 'cash_reconcile'
+  | 'processing'
+  | 'success'
+  | 'error'
 
 interface OpenTableInfo {
   tableId: string
@@ -27,6 +37,13 @@ export function EndOfDayModal({ open, onClose }: EndOfDayModalProps): React.JSX.
     deletedBackups: number
   } | null>(null)
   const [error, setError] = useState<string>('')
+  const [actualCashInput, setActualCashInput] = useState<string>('')
+  const [expectedTotals, setExpectedTotals] = useState<{
+    revenue: number
+    cash: number
+    card: number
+    expenses: number
+  } | null>(null)
 
   const handleCheck = useCallback(async (): Promise<void> => {
     setStep('checking')
@@ -34,6 +51,25 @@ export function EndOfDayModal({ open, onClose }: EndOfDayModalProps): React.JSX.
     try {
       const checkResult = await cafeApi.endOfDay.check()
       if (checkResult.canProceed) {
+        // Fetch expected totals for reconciliation
+        const stats = await cafeApi.dashboard.getExtendedStats()
+        // Assuming we need a more specific "today" stats if necessary,
+        // but getExtendedStats usually gives today's snapshot.
+        setExpectedTotals({
+          revenue: stats.dailyRevenue,
+          cash: stats.paymentMethodBreakdown.cash,
+          card: stats.paymentMethodBreakdown.card,
+          expenses: 0 // We'll sum expenses in execute if needed, or fetch here if API allowed
+        })
+        // Fetch today's expenses specifically for better accuracy in reconciliation
+        const expenses = await cafeApi.expenses.getAll()
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        const dayExpensesTotal = expenses
+          .filter((e) => new Date(e.createdAt) >= today)
+          .reduce((sum, e) => sum + e.amount, 0)
+
+        setExpectedTotals((prev) => (prev ? { ...prev, expenses: dayExpensesTotal } : null))
         setStep('confirm')
       } else {
         setOpenTables(checkResult.openTables)
@@ -46,16 +82,23 @@ export function EndOfDayModal({ open, onClose }: EndOfDayModalProps): React.JSX.
   }, [])
 
   // Auto-check when modal opens
+  // Auto-check when modal opens
   useEffect(() => {
-    if (open && step === 'idle') {
+    let mounted = true
+    if (open && step === 'idle' && mounted) {
       handleCheck()
     }
-  }, [open, step, handleCheck])
+    return () => {
+      mounted = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, step])
 
   const handleExecute = async (): Promise<void> => {
     setStep('processing')
     try {
-      const execResult = await cafeApi.endOfDay.execute()
+      const cents = Math.round(parseFloat(actualCashInput || '0') * 100)
+      const execResult = await cafeApi.endOfDay.execute(cents)
       setResult(execResult)
       setStep('success')
     } catch (err) {
@@ -111,7 +154,9 @@ export function EndOfDayModal({ open, onClose }: EndOfDayModalProps): React.JSX.
                     className="flex items-center justify-between p-3 bg-muted rounded-lg"
                   >
                     <span className="font-medium">{table.tableName}</span>
-                    <span className="text-muted-foreground">₺{table.totalAmount.toFixed(2)}</span>
+                    <span className="text-muted-foreground">
+                      {formatCurrency(table.totalAmount)}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -153,9 +198,91 @@ export function EndOfDayModal({ open, onClose }: EndOfDayModalProps): React.JSX.
                 <Button variant="outline" className="flex-1" onClick={handleClose}>
                   İptal
                 </Button>
-                <Button className="flex-1 bg-primary" onClick={handleExecute}>
-                  <Moon className="w-4 h-4 mr-2" />
-                  Gün Sonu Yap
+                <Button
+                  className="flex-1 bg-primary font-bold"
+                  onClick={() => setStep('cash_reconcile')}
+                >
+                  İlerle
+                  <Moon className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Cash Reconcile Step */}
+          {step === 'cash_reconcile' && expectedTotals && (
+            <div className="space-y-6">
+              <div className="p-4 bg-muted rounded-2xl space-y-3">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground uppercase font-bold text-[10px] tracking-wider">
+                    Sistem Nakit Beklentisi
+                  </span>
+                  <span className="font-bold font-mono">
+                    {formatCurrency(expectedTotals.cash)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground uppercase font-bold text-[10px] tracking-wider">
+                    Bugünkü Giderler
+                  </span>
+                  <span className="font-bold font-mono text-red-500">
+                    -{formatCurrency(expectedTotals.expenses || 0)}
+                  </span>
+                </div>
+                <div className="h-px bg-border" />
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-sm text-muted-foreground uppercase tracking-wider text-[10px]">
+                    Net Beklenen
+                  </span>
+                  <span className="font-extrabold text-lg tabular-nums">
+                    {formatCurrency(Math.max(0, expectedTotals.cash - expectedTotals.expenses))}
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                  Kasadaki Gerçek Nakit Tutarı
+                </label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  autoFocus
+                  className="h-12 text-center text-2xl font-extrabold bg-background border-2 border-primary/20 rounded-2xl"
+                  value={actualCashInput}
+                  onChange={(e) => setActualCashInput(e.target.value)}
+                />
+
+                <div
+                  className={cn(
+                    'p-3 rounded-xl text-center text-sm font-bold flex justify-between items-center',
+                    Math.round(parseFloat(actualCashInput) * 100) >=
+                      expectedTotals.cash - expectedTotals.expenses
+                      ? 'bg-emerald-500/10 text-emerald-600'
+                      : 'bg-red-500/10 text-red-600'
+                  )}
+                >
+                  <span>Kasa Farkı:</span>
+                  <span className="font-mono">
+                    {formatCurrency(
+                      Math.round(parseFloat(actualCashInput) * 100) -
+                        (expectedTotals.cash - expectedTotals.expenses)
+                    )}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1" onClick={() => setStep('confirm')}>
+                  Geri
+                </Button>
+                <Button
+                  className="flex-1 bg-primary font-bold shadow-lg shadow-primary/20"
+                  onClick={handleExecute}
+                  disabled={!actualCashInput}
+                >
+                  Kesinleştir ve Bitir
                 </Button>
               </div>
             </div>
@@ -188,15 +315,17 @@ export function EndOfDayModal({ open, onClose }: EndOfDayModalProps): React.JSX.
               <div className="p-4 bg-muted rounded-lg space-y-3">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Günlük Ciro</span>
-                  <span className="font-bold">₺{result.zReport.totalRevenue.toFixed(2)}</span>
+                  <span className="font-bold">{formatCurrency(result.zReport.totalRevenue)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Nakit</span>
-                  <span className="text-emerald-600">₺{result.zReport.totalCash.toFixed(2)}</span>
+                  <span className="text-emerald-600">
+                    {formatCurrency(result.zReport.totalCash)}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Kart</span>
-                  <span className="text-blue-600">₺{result.zReport.totalCard.toFixed(2)}</span>
+                  <span className="text-blue-600">{formatCurrency(result.zReport.totalCard)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Sipariş Sayısı</span>

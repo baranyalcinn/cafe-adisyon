@@ -102,6 +102,18 @@ export const paymentSchemas = {
   })
 }
 
+// Expense Schemas
+export const expenseSchemas = {
+  create: z.object({
+    description: z.string().min(1, 'Açıklama gerekli'),
+    amount: priceSchema,
+    category: z.string().optional()
+  }),
+  delete: z.object({
+    id: cuidSchema
+  })
+}
+
 // Helper function to validate input
 export function validateInput<T>(
   schema: z.ZodSchema<T>,

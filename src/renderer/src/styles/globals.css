@@ -58,7 +58,7 @@
   --color-chart-5: oklch(0.6 0.2 20);
 
   --radius: 0.625rem;
-  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Plus Jakarta Sans', 'Inter', ui-sans-serif, system-ui, sans-serif;
 }
 
 /* ===== DARK MODE OVERRIDES ===== */

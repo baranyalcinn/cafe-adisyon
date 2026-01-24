@@ -25,6 +25,8 @@ files:
   - node_modules/js-base64/**/*
   - node_modules/promise-limit/**/*
   - node_modules/async-mutex/**/*
+  - node_modules/bufferutil/**/*
+  - node_modules/utf-8-validate/**/*
 
   # Exclude everything else
   - '!node_modules/**/node_modules'

@@ -16,6 +16,11 @@ interface TableState {
   fetchTables: () => Promise<void>
   selectTable: (tableId: string | null) => void
   refreshTableStatus: () => Promise<void>
+
+  // Local Smart Updates (No refetch needed)
+  addTable: (table: Table) => void
+  updateTable: (table: Partial<Table> & { id: string }) => void
+  removeTable: (tableId: string) => void
 }
 
 export const useTableStore = create<TableState>((set) => ({
@@ -45,5 +50,29 @@ export const useTableStore = create<TableState>((set) => ({
     } catch (error) {
       console.error('Failed to refresh table status:', error)
     }
+  },
+
+  addTable: (table) => {
+    set((state) => ({
+      tables: [...state.tables, { ...table, hasOpenOrder: false }].sort((a, b) =>
+        a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
+      )
+    }))
+  },
+
+  updateTable: (data) => {
+    set((state) => ({
+      tables: state.tables
+        .map((t) => (t.id === data.id ? { ...t, ...data } : t))
+        .sort((a, b) =>
+          a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
+        )
+    }))
+  },
+
+  removeTable: (tableId) => {
+    set((state) => ({
+      tables: state.tables.filter((t) => t.id !== tableId)
+    }))
   }
 }))

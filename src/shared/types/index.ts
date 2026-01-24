@@ -144,6 +144,26 @@ export interface AppSettings {
   adminPin: string
 }
 
+// Expenses
+export interface Expense {
+  id: string
+  description: string
+  amount: number
+  category?: string
+  createdAt: Date
+}
+
+// Monthly Report
+export interface MonthlyReport {
+  id: string
+  monthDate: Date
+  totalRevenue: number
+  totalExpenses: number
+  netProfit: number
+  orderCount: number
+  updatedAt: Date
+}
+
 // IPC Channel names
 export const IPC_CHANNELS = {
   // Tables
@@ -189,12 +209,20 @@ export const IPC_CHANNELS = {
   DASHBOARD_GET_EXTENDED_STATS: 'dashboard:getExtendedStats',
   DASHBOARD_GET_REVENUE_TREND: 'dashboard:getRevenueTrend',
 
+  // Expenses
+  EXPENSES_CREATE: 'expenses:create',
+  EXPENSES_GET_ALL: 'expenses:getAll',
+  EXPENSES_DELETE: 'expenses:delete',
+
   // Admin
   ADMIN_VERIFY_PIN: 'admin:verifyPin',
   ADMIN_CHANGE_PIN: 'admin:changePin',
   ADMIN_SET_RECOVERY: 'admin:setRecovery',
   ADMIN_GET_RECOVERY_QUESTION: 'admin:getRecoveryQuestion',
   ADMIN_RESET_PIN: 'admin:resetPin',
+
+  // Reports
+  REPORTS_GET_MONTHLY: 'reports:getMonthly',
 
   // Z-Report
   ZREPORT_GENERATE: 'zreport:generate',

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { TablesView } from '@/features/tables/TablesView'
 import { OrderView } from '@/features/orders/OrderView'
 import { useTableStore } from '@/store/useTableStore'
+import { useInventoryStore } from '@/store/useInventoryStore'
 import { cn } from '@/lib/utils'
 import '@/styles/globals.css'
 import { Toaster } from '@/components/ui/toaster'
@@ -35,7 +36,14 @@ function App(): React.JSX.Element {
     const saved = localStorage.getItem('colorScheme')
     return (saved as ColorScheme) || 'emerald'
   })
-  const { selectTable } = useTableStore()
+  const { selectTable, fetchTables } = useTableStore()
+  const { fetchInventory } = useInventoryStore()
+
+  // Pre-fetch all essential data on mount
+  useEffect(() => {
+    fetchTables()
+    fetchInventory()
+  }, [fetchTables, fetchInventory])
 
   // Apply theme and color scheme to document
   useEffect(() => {

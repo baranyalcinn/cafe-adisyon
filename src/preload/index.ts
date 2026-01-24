@@ -89,7 +89,8 @@ const api = {
 
   // Z-Report
   zReport: {
-    generate: () => ipcRenderer.invoke(IPC_CHANNELS.ZREPORT_GENERATE),
+    generate: (actualCash?: number) =>
+      ipcRenderer.invoke(IPC_CHANNELS.ZREPORT_GENERATE, actualCash),
     getHistory: (limit: number = 30) => ipcRenderer.invoke(IPC_CHANNELS.ZREPORT_GET_HISTORY, limit)
   },
 
@@ -111,10 +112,19 @@ const api = {
       ipcRenderer.invoke(IPC_CHANNELS.MAINTENANCE_BACKUP_WITH_ROTATION, maxBackups)
   },
 
+  // Expenses
+  expenses: {
+    create: (data: { description: string; amount: number; category?: string }) =>
+      ipcRenderer.invoke(IPC_CHANNELS.EXPENSES_CREATE, data),
+    getAll: () => ipcRenderer.invoke(IPC_CHANNELS.EXPENSES_GET_ALL),
+    delete: (id: string) => ipcRenderer.invoke(IPC_CHANNELS.EXPENSES_DELETE, id)
+  },
+
   // End of Day
   endOfDay: {
     check: () => ipcRenderer.invoke(IPC_CHANNELS.END_OF_DAY_CHECK),
-    execute: () => ipcRenderer.invoke(IPC_CHANNELS.END_OF_DAY_EXECUTE)
+    execute: (actualCash?: number) =>
+      ipcRenderer.invoke(IPC_CHANNELS.END_OF_DAY_EXECUTE, actualCash)
   },
 
   // Seed
@@ -125,6 +135,10 @@ const api = {
   // System
   system: {
     check: () => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM_CHECK)
+  },
+  // Reports
+  reports: {
+    getMonthly: (limit: number = 12) => ipcRenderer.invoke(IPC_CHANNELS.REPORTS_GET_MONTHLY, limit)
   }
 }
 
