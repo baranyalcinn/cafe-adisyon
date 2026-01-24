@@ -59,10 +59,17 @@ jobs:
       # electron-builder runs from global, so we don't need any build tools locally
       - name: Prepare for Packaging
         run: |
+          # Runtime dependencies that must be preserved
+          # Format: "scope/package" for scoped, "package" for regular
           $essential = @(
-            "@libsql",
+            "@libsql/client",
+            "@libsql/core",
+            "@libsql/hrana-client",
+            "@libsql/isomorphic-fetch",
+            "@libsql/isomorphic-ws",
+            "@libsql/win32-x64-msvc",
+            "@neon-rs/load",
             "libsql",
-            "@neon-rs",
             "bufferutil",
             "utf-8-validate",
             "detect-libc"
@@ -73,14 +80,21 @@ jobs:
           New-Item -ItemType Directory -Path node_modules
 
           foreach ($mod in $essential) {
-            if (Test-Path "node_modules_full/$mod") {
-              # Handle scoped packages (e.g., @libsql)
+            $srcPath = "node_modules_full/$mod"
+            $dstPath = "node_modules/$mod"
+            
+            if (Test-Path $srcPath) {
+              # Handle scoped packages (e.g., @libsql/client)
               if ($mod.StartsWith("@")) {
                 $scope = $mod.Split("/")[0]
-                if (!(Test-Path "node_modules/$scope")) { New-Item -ItemType Directory -Path "node_modules/$scope" }
+                if (!(Test-Path "node_modules/$scope")) { 
+                  New-Item -ItemType Directory -Path "node_modules/$scope" | Out-Null
+                }
               }
-              Copy-Item -Path "node_modules_full/$mod" -Destination "node_modules/$mod" -Recurse -Force
+              Copy-Item -Path $srcPath -Destination $dstPath -Recurse -Force
               Write-Host "Preserved: $mod"
+            } else {
+              Write-Host "Not found (skipping): $mod"
             }
           }
 
