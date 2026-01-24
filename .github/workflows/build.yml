@@ -50,28 +50,25 @@ jobs:
       - name: TypeScript Build
         run: npm run build
 
-      # CRITICAL: Prepare for Packaging
-      # We manually prune node_modules to keep only runtime native deps AND the builder itself.
-      # This prevents electron-builder from OOMing during dependency analysis.
+      # STEP 1: Install electron-builder globally BEFORE surgery
+      # This ensures the build tool is completely independent of local node_modules
+      - name: Install Electron Builder Globally
+        run: npm install -g electron-builder@26.4.0
+
+      # STEP 2: Prune node_modules to keep ONLY runtime native deps
+      # electron-builder runs from global, so we don't need any build tools locally
       - name: Prepare for Packaging
         run: |
           $essential = @(
             "@libsql",
             "libsql",
+            "@neon-rs",
             "bufferutil",
             "utf-8-validate",
-            "detect-libc",
-            "electron-builder",
-            "builder-util",
-            "app-builder-lib",
-            "dmg-builder",
-            "electron-publish",
-            "read-config-file",
-            "dotenv",
-            "dotenv-expand"
+            "detect-libc"
           )
 
-          Write-Host "Starting manual surgery to prevent OOM..."
+          Write-Host "Starting manual surgery - keeping ONLY runtime deps..."
           Move-Item node_modules node_modules_full
           New-Item -ItemType Directory -Path node_modules
 
@@ -87,29 +84,17 @@ jobs:
             }
           }
 
-          # CRITICAL: Preserve .bin folder for local binaries
-          if (Test-Path "node_modules_full/.bin") {
-            Copy-Item -Path "node_modules_full/.bin" -Destination "node_modules/.bin" -Recurse -Force
-            Write-Host "Preserved: .bin folder"
-          }
-
           # Cleanup
           Remove-Item node_modules_full -Recurse -Force
+          Write-Host "Surgery complete. Only runtime dependencies remain."
 
-          # Delete lockfile to prevent npx/npm ECOMPROMISED errors
-          if (Test-Path package-lock.json) { Remove-Item package-lock.json }
-
-          Write-Host "Surgery complete. Environment is now tiny and safe."
-
+      # STEP 3: Run electron-builder from GLOBAL installation
       - name: Windows EXE Oluştur
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_OPTIONS: '--max-old-space-size=8192'
-          ELECTRON_BUILDER_OFFLINE: 'true'
           DEBUG: electron-builder
-        run: |
-          # Use npx to ensure electron-builder is available (fallback if .bin is missing)
-          npx electron-builder@26.4.0 --win portable --publish never
+        run: electron-builder --win portable --publish never
 
       - name: Build Sonucunu Yükle
         uses: actions/upload-artifact@v4
