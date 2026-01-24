@@ -19,8 +19,13 @@ export default defineConfig({
           '@prisma/client-runtime-utils',
           '@prisma/adapter-libsql',
           '@prisma/driver-adapter-utils',
+          '@libsql/client',
+          '@libsql/core',
+          '@libsql/hrana-client',
           'async-mutex',
-          'promise-limit'
+          'promise-limit',
+          'js-base64',
+          'detect-libc'
         ]
       })
     ],
@@ -29,7 +34,7 @@ export default defineConfig({
         ignoreDynamicRequires: true
       },
       rollupOptions: {
-        external: ['@libsql/win32-x64-msvc', 'bufferutil', 'utf-8-validate']
+        external: ['libsql', '@libsql/win32-x64-msvc', 'bufferutil', 'utf-8-validate']
       }
     }
   },
