@@ -11,16 +11,40 @@ asar: true
 files:
   - out/**/*
   - package.json
-  # Include all externalized native modules and their specific ecosystem
-  - node_modules/libsql/**/*
+  # Sadece production dependencies (devDependencies hariç)
   - node_modules/@libsql/**/*
+  - node_modules/libsql/**/*
+  - node_modules/@prisma/**/*
+  - node_modules/.prisma/**/*
   - node_modules/@neon-rs/**/*
   - node_modules/detect-libc/**/*
   - node_modules/bufferutil/**/*
   - node_modules/utf-8-validate/**/*
-  - node_modules/.prisma/**/*
+  - node_modules/@electron-toolkit/**/*
+  - node_modules/zod/**/*
+  - node_modules/date-fns/**/*
+  - node_modules/zustand/**/*
+  - node_modules/clsx/**/*
+  - node_modules/tailwind-merge/**/*
+  - node_modules/class-variance-authority/**/*
+  - node_modules/@radix-ui/**/*
+  - node_modules/input-otp/**/*
+  - node_modules/lucide-react/**/*
+  - node_modules/react/**/*
+  - node_modules/react-dom/**/*
+  - node_modules/react-is/**/*
+  - node_modules/recharts/**/*
+  - node_modules/async-mutex/**/*
+  - node_modules/promise-limit/**/*
+  - node_modules/js-base64/**/*
 
-  # Exclude non-production source stuff and dev database
+  # Kaynak kodları hariç tut
+  - '!**/*.ts'
+  - '!**/*.tsx'
+  - '!**/*.map'
+  - '!**/README.md'
+  - '!**/LICENSE'
+  - '!**/CHANGELOG.md'
   - '!.git'
   - '!.github'
   - '!.vscode'
@@ -28,8 +52,7 @@ files:
   - '!prisma/*.db'
   - '!prisma/*.db-*'
 
-# Native .node binaries must be accessible outside ASAR
-# These will be automatically unpacked by electron-builder if they are native
+# ASAR dışında tutulması gereken native modüller
 asarUnpack:
   - '**/*.node'
   - 'node_modules/@libsql/**/*'
