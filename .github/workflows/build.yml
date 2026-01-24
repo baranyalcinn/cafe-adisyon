@@ -55,10 +55,10 @@ jobs:
       # With empty dependencies, collector has nothing to analyze (fixes OOM)
       - name: Prepare for Packaging
         run: |
-          $pkg = Get-Content package.json -Raw | ConvertFrom-Json
+          # PowerShell 7'de -AsHashtable kullanımı özel karakterli (@, /) keyleri güvenle yönetmemizi sağlar
+          $pkg = Get-Content package.json -Raw | ConvertFrom-Json -AsHashtable
 
-          # 1. Elzem (Runtime) bağımlılıklar listesi
-          # Bunlar ASAR içinde node_modules olarak kalmalı.
+          # 1. Elzem (Runtime) bağımlılıklar
           $essential = @(
             '@libsql/client',
             '@libsql/win32-x64-msvc',
@@ -71,29 +71,28 @@ jobs:
             '@neon-rs/load'
           )
 
-          # 2. Mevcut bağımlılıkları tara
-          $newDeps = @{}
-          $newDevDeps = $pkg.devDependencies
+          $deps = $pkg['dependencies']
+          if ($null -eq $pkg['devDependencies']) { $pkg['devDependencies'] = @{} }
+          $devDeps = $pkg['devDependencies']
 
-          foreach ($prop in $pkg.dependencies.PSObject.Properties) {
-            if ($essential -contains $prop.Name) {
-              $newDeps.($prop.Name) = $prop.Value
-            } else {
-              # Frontend paketlerini devDeps'e taşı ki 'npm prune' bunları silsin
-              $newDevDeps.($prop.Name) = $prop.Value
+          # 2. Bağımlılıkları tara ve gereksizleri devDependencies'e taşı
+          $keys = @($deps.Keys)
+          foreach ($key in $keys) {
+            if ($essential -notcontains $key) {
+               $devDeps[$key] = $deps[$key]
+               $deps.Remove($key)
+               Write-Host "Moving $key to devDependencies..."
             }
           }
 
-          $pkg.dependencies = $newDeps
-          $pkg.devDependencies = $newDevDeps
-          if ($pkg.PSObject.Properties.Match('overrides').Count -gt 0) {
-            $pkg.PSObject.Properties.Remove('overrides')
-          }
+          $pkg['dependencies'] = $deps
+          $pkg['devDependencies'] = $devDeps
+          $pkg.Remove('overrides')
 
+          # 3. Güncellenmiş package.json'ı kaydet
           $pkg | ConvertTo-Json -Depth 10 | Set-Content package.json -Encoding UTF8
 
-          # 3. Gereksiz paketleri diskten fiziksel olarak sil (OOM ENGELLEYİCİ)
-          # Bu sayede hem node_modules küçülür hem de @libsql'in alt bağımlılıkları korunur.
+          # 4. Gereksiz paketleri fiziksel olarak sil (OOM ENGELLEYİCİ)
           npm prune --production
           Write-Host "Smart Pruning complete. node_modules is now surgical and safe."
 
