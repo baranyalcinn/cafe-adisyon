@@ -8,6 +8,7 @@ import { useInventoryStore } from '@/store/useInventoryStore'
 import { cn } from '@/lib/utils'
 import '@/styles/globals.css'
 import { Toaster } from '@/components/ui/toaster'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 // Lazy load SettingsView (not used frequently)
 const SettingsView = lazy(() =>
@@ -75,55 +76,57 @@ function App(): React.JSX.Element {
   }
 
   return (
-    <div className="fixed inset-0 flex bg-background">
-      {/* Sidebar - Fixed width, never shrinks */}
-      <aside className="w-20 h-full flex flex-col items-center py-6 px-2 bg-card border-r gap-6">
-        <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center flex-shrink-0">
-          <Coffee className="w-7 h-7 text-primary-foreground" />
-        </div>
+    <ErrorBoundary>
+      <div className="fixed inset-0 flex bg-background">
+        {/* Sidebar - Fixed width, never shrinks */}
+        <aside className="w-20 h-full flex flex-col items-center py-6 px-2 bg-card border-r gap-6">
+          <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center flex-shrink-0">
+            <Coffee className="w-7 h-7 text-primary-foreground" />
+          </div>
 
-        <nav className="flex-1 flex flex-col gap-4">
-          <Button
-            variant={currentView === 'tables' ? 'secondary' : 'ghost'}
-            size="icon"
-            onClick={() => setCurrentView('tables')}
-            className={cn('w-12 h-12 rounded-xl', currentView === 'tables' && 'bg-primary/20')}
-            title="Masalar"
-          >
-            <LayoutGrid className="w-5 h-5" />
-          </Button>
-        </nav>
+          <nav className="flex-1 flex flex-col gap-4">
+            <Button
+              variant={currentView === 'tables' ? 'secondary' : 'ghost'}
+              size="icon"
+              onClick={() => setCurrentView('tables')}
+              className={cn('w-12 h-12 rounded-xl', currentView === 'tables' && 'bg-primary/20')}
+              title="Masalar"
+            >
+              <LayoutGrid className="w-5 h-5" />
+            </Button>
+          </nav>
 
-        <div className="mt-auto">
-          <Button
-            variant={currentView === 'settings' ? 'secondary' : 'ghost'}
-            size="icon"
-            onClick={() => setCurrentView('settings')}
-            className={cn('w-12 h-12 rounded-xl', currentView === 'settings' && 'bg-primary/20')}
-            title="Ayarlar"
-          >
-            <Settings className="w-5 h-5" />
-          </Button>
-        </div>
-      </aside>
+          <div className="mt-auto">
+            <Button
+              variant={currentView === 'settings' ? 'secondary' : 'ghost'}
+              size="icon"
+              onClick={() => setCurrentView('settings')}
+              className={cn('w-12 h-12 rounded-xl', currentView === 'settings' && 'bg-primary/20')}
+              title="Ayarlar"
+            >
+              <Settings className="w-5 h-5" />
+            </Button>
+          </div>
+        </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 h-full overflow-hidden">
-        {currentView === 'tables' && <TablesView onTableSelect={handleTableSelect} />}
-        {currentView === 'order' && <OrderView onBack={handleBackToTables} />}
-        {currentView === 'settings' && (
-          <Suspense fallback={<LoadingFallback />}>
-            <SettingsView
-              isDark={isDark}
-              onThemeToggle={toggleTheme}
-              colorScheme={colorScheme}
-              onColorSchemeChange={handleColorSchemeChange}
-            />
-          </Suspense>
-        )}
-      </main>
-      <Toaster />
-    </div>
+        {/* Main Content */}
+        <main className="flex-1 h-full overflow-hidden">
+          {currentView === 'tables' && <TablesView onTableSelect={handleTableSelect} />}
+          {currentView === 'order' && <OrderView onBack={handleBackToTables} />}
+          {currentView === 'settings' && (
+            <Suspense fallback={<LoadingFallback />}>
+              <SettingsView
+                isDark={isDark}
+                onThemeToggle={toggleTheme}
+                colorScheme={colorScheme}
+                onColorSchemeChange={handleColorSchemeChange}
+              />
+            </Suspense>
+          )}
+        </main>
+        <Toaster />
+      </div>
+    </ErrorBoundary>
   )
 }
 

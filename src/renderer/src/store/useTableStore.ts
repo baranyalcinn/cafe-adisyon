@@ -1,34 +1,41 @@
-import { create } from 'zustand'
+import { create, type StateCreator } from 'zustand'
 import { cafeApi, type Table } from '@/lib/api'
+
+// --- Types ---
 
 interface TableWithStatus extends Table {
   hasOpenOrder: boolean
   isLocked?: boolean
 }
 
-interface TableState {
+interface TableData {
   tables: TableWithStatus[]
   selectedTableId: string | null
   isLoading: boolean
   error: string | null
+}
 
-  // Actions
+interface TableActions {
   fetchTables: () => Promise<void>
   selectTable: (tableId: string | null) => void
   refreshTableStatus: () => Promise<void>
-
-  // Local Smart Updates (No refetch needed)
   addTable: (table: Table) => void
   updateTable: (table: Partial<Table> & { id: string }) => void
   removeTable: (tableId: string) => void
 }
 
-export const useTableStore = create<TableState>((set) => ({
+type TableStore = TableData & TableActions
+
+// --- Slices ---
+
+const createTableDataSlice: StateCreator<TableStore, [], [], TableData> = () => ({
   tables: [],
   selectedTableId: null,
   isLoading: false,
-  error: null,
+  error: null
+})
 
+const createTableActionSlice: StateCreator<TableStore, [], [], TableActions> = (set) => ({
   fetchTables: async () => {
     set({ isLoading: true, error: null })
     try {
@@ -75,4 +82,11 @@ export const useTableStore = create<TableState>((set) => ({
       tables: state.tables.filter((t) => t.id !== tableId)
     }))
   }
+})
+
+// --- Final Store Composition ---
+
+export const useTableStore = create<TableStore>()((...a) => ({
+  ...createTableDataSlice(...a),
+  ...createTableActionSlice(...a)
 }))

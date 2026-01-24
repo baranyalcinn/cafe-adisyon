@@ -287,8 +287,8 @@ export function MaintenanceTab(): React.JSX.Element {
             </div>
             <p className="text-xs text-muted-foreground max-w-lg mx-auto">
               Bakım işlemleri genellikle hızlıdır ancak işlem sırasında veritabanı kısa süreliğine
-              kilitlenebilir. Özellikle "Verileri Temizleme" işlemi öncesinde mutlaka yedek almanız
-              önerilir.
+              kilitlenebilir. Özellikle &quot;Verileri Temizleme&quot; işlemi öncesinde mutlaka
+              yedek almanız önerilir.
             </p>
           </div>
         </div>

@@ -5,15 +5,13 @@
     "src/main/**/*",
     "src/preload/**/*",
     "src/shared/**/*",
-    "prisma.config.ts",
-    "node_modules/prisma-client-generated"
+    "prisma.config.ts"
   ],
   "compilerOptions": {
     "composite": true,
+    "moduleResolution": "bundler",
     "baseUrl": ".",
-    "paths": {
-      "prisma-client-generated/*": ["./node_modules/prisma-client-generated/*"]
-    },
+    "paths": {},
     "types": [
       "electron-vite/node"
     ]

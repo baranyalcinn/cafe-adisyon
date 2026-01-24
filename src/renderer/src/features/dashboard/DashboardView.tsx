@@ -816,7 +816,9 @@ export function DashboardView(): React.JSX.Element {
                         </div>
                         <div className="h-px bg-muted-foreground/5" />
                         <div className="flex justify-between items-center text-sm">
-                          <span className="text-muted-foreground font-semibold">Toplam KDV (%10)</span>
+                          <span className="text-muted-foreground font-semibold">
+                            Toplam KDV (%10)
+                          </span>
                           <span className="font-extrabold tabular-nums text-foreground">
                             {formatCurrency(selectedReport.totalVat)}
                           </span>

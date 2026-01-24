@@ -1,18 +1,19 @@
-import { create } from 'zustand'
+import { create, type StateCreator } from 'zustand'
 import { cafeApi, type Product, type Category } from '@/lib/api'
 
-interface InventoryState {
+// --- Types ---
+
+interface InventoryData {
   products: Product[]
   categories: Category[]
   isLoading: boolean
   error: string | null
   lastFetched: number | null
+}
 
-  // Actions
+interface InventoryActions {
   fetchInventory: (force?: boolean) => Promise<void>
   clearInventory: () => void
-
-  // Local Smart Updates (No refetch needed)
   addProduct: (product: Product) => void
   updateProduct: (product: Product) => void
   removeProduct: (productId: string) => void
@@ -21,25 +22,28 @@ interface InventoryState {
   removeCategory: (categoryId: string) => void
 }
 
+type InventoryStore = InventoryData & InventoryActions
+
 const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
-export const useInventoryStore = create<InventoryState>((set, get) => ({
+// --- Slices ---
+
+const createInventoryDataSlice: StateCreator<InventoryStore, [], [], InventoryData> = () => ({
   products: [],
   categories: [],
   isLoading: false,
   error: null,
-  lastFetched: null,
+  lastFetched: null
+})
 
+const createInventoryActionSlice: StateCreator<InventoryStore, [], [], InventoryActions> = (
+  set,
+  get
+) => ({
   fetchInventory: async (force = false) => {
     const { lastFetched, isLoading } = get()
-
-    // Skip if already loading
     if (isLoading) return
-
-    // Use cache if available and not forced
-    if (!force && lastFetched && Date.now() - lastFetched < CACHE_DURATION) {
-      return
-    }
+    if (!force && lastFetched && Date.now() - lastFetched < CACHE_DURATION) return
 
     set({ isLoading: true, error: null })
     try {
@@ -95,8 +99,14 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
   removeCategory: (categoryId) => {
     set((state) => ({
       categories: state.categories.filter((c) => c.id !== categoryId),
-      // Also remove products belonging to this category
       products: state.products.filter((p) => p.categoryId !== categoryId)
     }))
   }
+})
+
+// --- Final Store Composition ---
+
+export const useInventoryStore = create<InventoryStore>()((...a) => ({
+  ...createInventoryDataSlice(...a),
+  ...createInventoryActionSlice(...a)
 }))

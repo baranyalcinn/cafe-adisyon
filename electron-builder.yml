@@ -9,22 +9,13 @@ directories:
 compression: store
 asar: true
 
-files:
   - out/**/*
   - package.json
-  # Explicitly include externalized database packages
-  # This avoids OOM by skipping node-module scanning while ensuring runtime availability
-  - node_modules/@prisma/**/*
-  - node_modules/.prisma/**/*
-  - node_modules/@libsql/**/*
-  - node_modules/libsql/**/*
-  - node_modules/js-base64/**/*
-  - node_modules/promise-limit/**/*
-  - node_modules/@neon-rs/load/**/*
-  - node_modules/detect-libc/**/*
-  - node_modules/js-base64/**/*
-  - node_modules/promise-limit/**/*
-  - node_modules/async-mutex/**/*
+  # Prisma 7 Engines & Client
+  - node_modules/.prisma/client/*.node
+  - node_modules/@prisma/client/runtime/*.js
+  # Native dependencies
+  - node_modules/@libsql/win32-x64-msvc/**/*
   - node_modules/bufferutil/**/*
   - node_modules/utf-8-validate/**/*
 
@@ -40,9 +31,8 @@ files:
 # These will be automatically unpacked by electron-builder if they are native
 asarUnpack:
   - '**/*.node'
-  - 'node_modules/@prisma/**/*'
-  - 'node_modules/.prisma/**/*'
-  - 'node_modules/@libsql/**/*'
+  - 'node_modules/.prisma/client/*.node'
+  - 'node_modules/@libsql/win32-x64-msvc/**/*'
 
 npmRebuild: false
 buildDependenciesFromSource: false

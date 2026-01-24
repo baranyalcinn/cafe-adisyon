@@ -15,29 +15,6 @@ export default defineConfig({
           'clsx',
           'tailwind-merge',
           'class-variance-authority'
-          // Externalizing DB libs to prevent bundle corruption and ensure native binary access
-          // '@prisma/client',
-          // '@prisma/adapter-libsql',
-          // '@libsql/client',
-          // '@libsql/core',
-          // '@libsql/hrana-client',
-          // 'libsql',
-          // '@libsql/isomorphic-fetch',
-          // '@libsql/isomorphic-ws',
-          // 'ws',
-          // '@neon-rs/load',
-          // 'detect-libc',
-          // 'cross-fetch',
-          // 'node-fetch',
-          // 'data-uri-to-buffer',
-          // 'fetch-blob',
-          // 'formdata-polyfill',
-          // 'js-base64',
-          // 'promise-limit',
-          // 'async-mutex',
-          // 'tslib',
-          // 'bufferutil',
-          // 'utf-8-validate'
         ]
       })
     ],
@@ -46,7 +23,14 @@ export default defineConfig({
         ignoreDynamicRequires: true
       },
       rollupOptions: {
-        external: ['@libsql/win32-x64-msvc', 'better-sqlite3']
+        external: [
+          '@libsql/win32-x64-msvc',
+          'better-sqlite3',
+          '@prisma/client',
+          '@prisma/adapter-libsql',
+          '@libsql/client',
+          '.prisma/client'
+        ]
       }
     }
   },

@@ -217,9 +217,7 @@ export function EndOfDayModal({ open, onClose }: EndOfDayModalProps): React.JSX.
                   <span className="text-muted-foreground uppercase font-bold text-[10px] tracking-wider">
                     Sistem Nakit Beklentisi
                   </span>
-                  <span className="font-bold font-mono">
-                    {formatCurrency(expectedTotals.cash)}
-                  </span>
+                  <span className="font-bold font-mono">{formatCurrency(expectedTotals.cash)}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-muted-foreground uppercase font-bold text-[10px] tracking-wider">

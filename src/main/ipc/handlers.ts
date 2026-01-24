@@ -1,5 +1,6 @@
 import { ipcMain, app } from 'electron'
-import { prisma, dbPath } from '../db/prisma'
+import { prisma, dbPath, dbWrite } from '../db/prisma'
+import { logger } from '../lib/logger'
 import * as fs from 'fs'
 import * as path from 'path'
 import { IPC_CHANNELS } from '../../shared/types'
@@ -13,20 +14,6 @@ import {
   expenseSchemas,
   validateInput
 } from '../lib/validation'
-
-function logError(context: string, error: unknown): void {
-  const isDev = process.env.NODE_ENV === 'development'
-  const baseDir = isDev ? process.cwd() : app.getPath('userData')
-  const logPath = path.join(baseDir, 'backend-errors.log')
-  const timestamp = new Date().toISOString()
-  const message = `${timestamp} [${context}] ${String(error)}\n`
-
-  try {
-    fs.appendFileSync(logPath, message)
-  } catch (err) {
-    console.error('Failed to write to log file:', err)
-  }
-}
 
 // Simple log queue to prevent database connection saturation
 const logQueue: Array<{ action: string; tableName?: string; details?: string }> = []
@@ -48,7 +35,7 @@ async function processLogQueue(): Promise<void> {
         }
       })
     } catch (error) {
-      logError('Activity Log', error)
+      logger.error('Activity Log', error)
     }
   }
 
@@ -58,7 +45,7 @@ async function processLogQueue(): Promise<void> {
 // Optimized fire-and-forget activity logging
 export function logActivity(action: string, tableName?: string, details?: string): void {
   logQueue.push({ action, tableName, details })
-  processLogQueue().catch((err) => logError('Process Log Queue', err))
+  processLogQueue().catch((err) => logger.error('Process Log Queue', err))
 }
 
 // Simple in-memory cache for categories and products
@@ -131,7 +118,7 @@ async function updateMonthlyReport(date: Date): Promise<void> {
       }
     })
   } catch (error) {
-    logError('Update Monthly Report', error)
+    logger.error('Update Monthly Report', error)
   }
 }
 
@@ -148,7 +135,7 @@ async function cleanupOldReports(): Promise<void> {
       logActivity('CLEANUP_OLD_DATA', undefined, `${deleted.count} eski aylık rapor silindi.`)
     }
   } catch (error) {
-    logError('Cleanup Old Reports', error)
+    logger.error('Cleanup Old Reports', error)
   }
 }
 
@@ -208,41 +195,40 @@ export function registerIpcHandlers(): void {
     }
 
     try {
-      const table = await prisma.table.create({
-        data: { name: validation.data.name }
-      })
+      const table = await dbWrite(() =>
+        prisma.table.create({
+          data: { name: validation.data.name }
+        })
+      )
       return { success: true, data: table }
     } catch (error) {
-      logError('Tables Create', error)
+      logger.error('Tables Create', error)
       return { success: false, error: 'Masa oluşturulamadı. Bu isimde masa zaten var olabilir.' }
     }
   })
 
   ipcMain.handle(IPC_CHANNELS.TABLES_DELETE, async (_event, id: string) => {
-    // Validate input
     const validation = validateInput(tableSchemas.delete, { id })
     if (!validation.success) {
       return { success: false, error: validation.error }
     }
 
     try {
-      // Use transaction for atomic delete
-      await prisma.$transaction(async (tx) => {
-        // First delete all orders and their related items/transactions for this table
-        const orders = await tx.order.findMany({ where: { tableId: id } })
-        for (const order of orders) {
-          await tx.transaction.deleteMany({ where: { orderId: order.id } })
-          await tx.orderItem.deleteMany({ where: { orderId: order.id } })
-        }
-        await tx.order.deleteMany({ where: { tableId: id } })
-
-        // Now delete the table
-        await tx.table.delete({ where: { id } })
-      })
+      await dbWrite(() =>
+        prisma.$transaction(async (tx) => {
+          const orders = await tx.order.findMany({ where: { tableId: validation.data.id } })
+          for (const order of orders) {
+            await tx.transaction.deleteMany({ where: { orderId: order.id } })
+            await tx.orderItem.deleteMany({ where: { orderId: order.id } })
+          }
+          await tx.order.deleteMany({ where: { tableId: validation.data.id } })
+          await tx.table.delete({ where: { id: validation.data.id } })
+        })
+      )
 
       return { success: true, data: null }
     } catch (error) {
-      logError('Tables Delete', error)
+      logger.error('Tables Delete', error)
       return { success: false, error: 'Masa silinemedi.' }
     }
   })
@@ -274,13 +260,15 @@ export function registerIpcHandlers(): void {
     }
 
     try {
-      const category = await prisma.category.create({
-        data: { name: validation.data.name }
-      })
+      const category = await dbWrite(() =>
+        prisma.category.create({
+          data: { name: validation.data.name }
+        })
+      )
       invalidateCache('categories')
       return { success: true, data: category }
     } catch (error) {
-      logError('Categories Create', error)
+      logger.error('Categories Create', error)
       return { success: false, error: 'Kategori oluşturulamadı.' }
     }
   })
@@ -300,7 +288,7 @@ export function registerIpcHandlers(): void {
         })
         return { success: true, data: category }
       } catch (error) {
-        logError('Categories Update', error)
+        logger.error('Categories Update', error)
         return { success: false, error: 'Kategori güncellenemedi.' }
       }
     }
@@ -322,7 +310,7 @@ export function registerIpcHandlers(): void {
       invalidateCache('products') // Also invalidate products since we deleted some
       return { success: true, data: null }
     } catch (error) {
-      logError('Categories Delete', error)
+      logger.error('Categories Delete', error)
       return { success: false, error: 'Kategori silinemedi.' }
     }
   })
@@ -408,9 +396,10 @@ export function registerIpcHandlers(): void {
           data: validation.data,
           include: { category: true }
         })
+        invalidateCache('products')
         return { success: true, data: product }
       } catch (error) {
-        logError('Products Create', error)
+        logger.error('Products Create', error)
         return { success: false, error: 'Ürün oluşturulamadı.' }
       }
     }
@@ -425,16 +414,17 @@ export function registerIpcHandlers(): void {
       }
 
       try {
-        // Use the validated and transformed data (price is rounded by Zod)
-        const product = await prisma.product.update({
-          where: { id: validation.data.id },
-          data: validation.data.data,
-          include: { category: true }
-        })
+        const product = await dbWrite(() =>
+          prisma.product.update({
+            where: { id: validation.data.id },
+            data: validation.data.data,
+            include: { category: true }
+          })
+        )
         invalidateCache('products')
         return { success: true, data: product }
       } catch (error) {
-        logError('Products Update', error)
+        logger.error('Products Update', error)
         return { success: false, error: 'Ürün güncellenemedi.' }
       }
     }
@@ -447,10 +437,11 @@ export function registerIpcHandlers(): void {
     }
 
     try {
-      await prisma.product.delete({ where: { id } })
+      await dbWrite(() => prisma.product.delete({ where: { id: validation.data.id } }))
+      invalidateCache('products')
       return { success: true, data: null }
     } catch (error) {
-      logError('Products Delete', error)
+      logger.error('Products Delete', error)
       return { success: false, error: 'Ürün silinemedi.' }
     }
   })
@@ -494,17 +485,19 @@ export function registerIpcHandlers(): void {
     }
 
     try {
-      const order = await prisma.order.create({
-        data: { tableId, status: 'OPEN', totalAmount: 0 },
-        include: {
-          items: { include: { product: true } },
-          payments: true
-        }
-      })
+      const order = await dbWrite(() =>
+        prisma.order.create({
+          data: { tableId: validation.data.tableId, status: 'OPEN', totalAmount: 0 },
+          include: {
+            items: { include: { product: true } },
+            payments: true
+          }
+        })
+      )
 
       return { success: true, data: order }
     } catch (error) {
-      logError('Orders Create', error)
+      logger.error('Orders Create', error)
       return { success: false, error: 'Sipariş oluşturulamadı.' }
     }
   })
@@ -518,17 +511,19 @@ export function registerIpcHandlers(): void {
       }
 
       try {
-        const order = await prisma.order.update({
-          where: { id: orderId },
-          data,
-          include: {
-            items: { include: { product: true } },
-            payments: true
-          }
-        })
+        const order = await dbWrite(() =>
+          prisma.order.update({
+            where: { id: validation.data.orderId },
+            data: validation.data.data,
+            include: {
+              items: { include: { product: true } },
+              payments: true
+            }
+          })
+        )
         return { success: true, data: order }
       } catch (error) {
-        logError('Orders Update', error)
+        logger.error('Orders Update', error)
         return { success: false, error: 'Sipariş güncellenemedi.' }
       }
     }
@@ -621,7 +616,7 @@ export function registerIpcHandlers(): void {
 
         return { success: true, data: order }
       } catch (error) {
-        logError('Orders Update Item', error)
+        logger.error('Orders Update Item', error)
         return { success: false, error: 'Sipariş ürünü güncellenemedi.' }
       }
     }
@@ -672,7 +667,7 @@ export function registerIpcHandlers(): void {
 
       return { success: true, data: order }
     } catch (error) {
-      logError('Orders Remove Item', error)
+      logger.error('Orders Remove Item', error)
       return { success: false, error: 'Sipariş ürünü silinemedi.' }
     }
   })
@@ -690,7 +685,7 @@ export function registerIpcHandlers(): void {
 
       return { success: true, data: null }
     } catch (error) {
-      logError('Orders Delete', error)
+      logger.error('Orders Delete', error)
       return { success: false, error: 'Sipariş silinemedi.' }
     }
   })
@@ -744,7 +739,7 @@ export function registerIpcHandlers(): void {
 
         return { success: true, data: result }
       } catch (error) {
-        logError('Orders Transfer', error)
+        logger.error('Orders Transfer', error)
         return {
           success: false,
           error: error instanceof Error ? error.message : 'Sipariş aktarılamadı.'
@@ -846,7 +841,7 @@ export function registerIpcHandlers(): void {
 
         return { success: true, data: result }
       } catch (error) {
-        logError('Orders Merge', error)
+        logger.error('Orders Merge', error)
         return { success: false, error: 'Siparişler birleştirilemedi.' }
       }
     }
@@ -951,7 +946,7 @@ export function registerIpcHandlers(): void {
         if (!result) return { success: false, error: 'İşlem tamamlanamadı.' }
         return { success: true, data: result }
       } catch (error) {
-        logError('Orders Mark Items Paid', error)
+        logger.error('Orders Mark Items Paid', error)
         return { success: false, error: 'Ürünler ödenmiş olarak işaretlenemedi.' }
       }
     }
@@ -1025,7 +1020,7 @@ export function registerIpcHandlers(): void {
 
         return { success: true, data: { payment, order: updatedOrder } }
       } catch (error) {
-        logError('Payments Create', error)
+        logger.error('Payments Create', error)
         return { success: false, error: 'Ödeme işlenemedi.' }
       }
     }
@@ -1253,7 +1248,7 @@ export function registerIpcHandlers(): void {
         }
       }
     } catch (error) {
-      logError('System Check Failed', error)
+      logger.error('System Check Failed', error)
       return { success: false, error: String(error) }
     }
   })
@@ -1278,13 +1273,13 @@ export function registerIpcHandlers(): void {
           where: { id: 'app-settings' },
           data: { adminPin: '1234' }
         })
-        logError('Admin Reset', 'PIN reset to default 1234 via rescue code 9999')
+        logger.error('Admin Reset', 'PIN reset to default 1234 via rescue code 9999')
         return { success: true, data: { valid: false, reset: true } }
       }
 
       const isValid = settings.adminPin === pin
       if (!isValid) {
-        logError(
+        logger.error(
           'Admin Verify Mismatch',
           `Failed PIN attempt. Entered: ${pin}, Stored: ${settings.adminPin.substring(0, 1)}...`
         )
@@ -1292,7 +1287,7 @@ export function registerIpcHandlers(): void {
 
       return { success: true, data: { valid: isValid } }
     } catch (error) {
-      logError('Admin Verify PIN', error)
+      logger.error('Admin Verify PIN', error)
       return { success: false, error: 'PIN doğrulanamadı.' }
     }
   })
@@ -1316,7 +1311,7 @@ export function registerIpcHandlers(): void {
 
         return { success: true, data: null }
       } catch (error) {
-        logError('Admin Change PIN', error)
+        logger.error('Admin Change PIN', error)
         return { success: false, error: 'PIN değiştirilemedi.' }
       }
     }
@@ -1344,7 +1339,7 @@ export function registerIpcHandlers(): void {
 
         return { success: true, data: null }
       } catch (error) {
-        logError('Admin Set Recovery', error)
+        logger.error('Admin Set Recovery', error)
         return { success: false, error: 'Güvenlik sorusu ayarlanamadı.' }
       }
     }
@@ -1362,7 +1357,7 @@ export function registerIpcHandlers(): void {
 
       return { success: true, data: settings.securityQuestion }
     } catch (error) {
-      logError('Admin Get Recovery', error)
+      logger.error('Admin Get Recovery', error)
       return { success: false, error: 'Güvenlik sorusu alınamadı.' }
     }
   })
@@ -1389,7 +1384,7 @@ export function registerIpcHandlers(): void {
 
       return { success: true, data: null }
     } catch (error) {
-      logError('Admin Reset PIN', error)
+      logger.error('Admin Reset PIN', error)
       return { success: false, error: 'PIN sıfırlanamadı.' }
     }
   })
@@ -1484,7 +1479,7 @@ export function registerIpcHandlers(): void {
         }
       }
     } catch (error) {
-      logError('Dashboard Extended Stats', error)
+      logger.error('Dashboard Extended Stats', error)
       return { success: false, error: String(error) }
     }
   })
@@ -1519,7 +1514,7 @@ export function registerIpcHandlers(): void {
 
       return { success: true, data: result }
     } catch (error) {
-      logError('Dashboard Revenue Trend', error)
+      logger.error('Dashboard Revenue Trend', error)
       return { success: false, error: String(error) }
     }
   })
@@ -1592,7 +1587,7 @@ export function registerIpcHandlers(): void {
 
       return { success: true, data: summary }
     } catch (error) {
-      logError('Z-Report Generate', error)
+      logger.error('Z-Report Generate', error)
       return { success: false, error: 'Z-Raporu oluşturulamadı.' }
     }
   })
@@ -1605,7 +1600,7 @@ export function registerIpcHandlers(): void {
       })
       return { success: true, data: reports }
     } catch (error) {
-      logError('Z-Report History', error)
+      logger.error('Z-Report History', error)
       return { success: false, error: String(error) }
     }
   })
@@ -1618,7 +1613,7 @@ export function registerIpcHandlers(): void {
       })
       return { success: true, data: reports }
     } catch (error) {
-      logError('Reports Get Monthly', error)
+      logger.error('Reports Get Monthly', error)
       return { success: false, error: 'Aylık raporlar alınamadı.' }
     }
   })
@@ -1642,7 +1637,7 @@ export function registerIpcHandlers(): void {
 
         return { success: true, data: expense }
       } catch (error) {
-        logError('Expenses Create', error)
+        logger.error('Expenses Create', error)
         return { success: false, error: 'Gider oluşturulamadı.' }
       }
     }
@@ -1662,7 +1657,7 @@ export function registerIpcHandlers(): void {
       })
       return { success: true, data: expenses }
     } catch (error) {
-      logError('Expenses Get All', error)
+      logger.error('Expenses Get All', error)
       return { success: false, error: 'Giderler alınamadı.' }
     }
   })
@@ -1681,7 +1676,7 @@ export function registerIpcHandlers(): void {
 
       return { success: true, data: null }
     } catch (error) {
-      logError('Expenses Delete', error)
+      logger.error('Expenses Delete', error)
       return { success: false, error: 'Gider silinemedi.' }
     }
   })
@@ -1695,7 +1690,7 @@ export function registerIpcHandlers(): void {
       })
       return { success: true, data: logs }
     } catch (error) {
-      logError('Logs Get Recent', error)
+      logger.error('Logs Get Recent', error)
       return { success: false, error: String(error) }
     }
   })
@@ -1709,7 +1704,7 @@ export function registerIpcHandlers(): void {
         })
         return { success: true, data: log }
       } catch (error) {
-        logError('Logs Create', error)
+        logger.error('Logs Create', error)
         return { success: false, error: String(error) }
       }
     }
@@ -1766,7 +1761,7 @@ export function registerIpcHandlers(): void {
         }
       }
     } catch (error) {
-      logError('Maintenance Archive', error)
+      logger.error('Maintenance Archive', error)
       return { success: false, error: 'Veri arşivleme başarısız.' }
     }
   })
@@ -1818,7 +1813,7 @@ export function registerIpcHandlers(): void {
 
         return { success: true, data: { filepath, count: oldOrders.length } }
       } catch (error) {
-        logError('Maintenance Export', error)
+        logger.error('Maintenance Export', error)
         return { success: false, error: 'Veri dışa aktarma başarısız.' }
       }
     }
@@ -1837,7 +1832,7 @@ export function registerIpcHandlers(): void {
 
       return { success: true, data: null }
     } catch (error) {
-      logError('Maintenance Vacuum', error)
+      logger.error('Maintenance Vacuum', error)
       return { success: false, error: 'Veritabanı optimizasyonu başarısız.' }
     }
   })
@@ -1866,7 +1861,7 @@ export function registerIpcHandlers(): void {
 
       return { success: true, data: { backupPath } }
     } catch (error) {
-      logError('Maintenance Backup', error)
+      logger.error('Maintenance Backup', error)
       return { success: false, error: 'Yedekleme başarısız.' }
     }
   })
@@ -1921,7 +1916,7 @@ export function registerIpcHandlers(): void {
           }
         }
       } catch (error) {
-        logError('Maintenance Backup Rotation', error)
+        logger.error('Maintenance Backup Rotation', error)
         return { success: false, error: 'Yedekleme başarısız.' }
       }
     }
@@ -1950,7 +1945,7 @@ export function registerIpcHandlers(): void {
         }
       }
     } catch (error) {
-      logError('End of Day Check', error)
+      logger.error('End of Day Check', error)
       return { success: false, error: 'Gün sonu kontrolü başarısız.' }
     }
   })
@@ -2081,7 +2076,7 @@ export function registerIpcHandlers(): void {
         }
       }
     } catch (error) {
-      logError('End of Day Execute', error)
+      logger.error('End of Day Execute', error)
       return { success: false, error: 'Gün sonu işlemi başarısız.' }
     }
   })
@@ -2132,7 +2127,7 @@ export function registerIpcHandlers(): void {
           }
         }
       } catch (error) {
-        logError('Orders Get History', error)
+        logger.error('Orders Get History', error)
         return { success: false, error: 'Sipariş geçmişi alınamadı.' }
       }
     }

@@ -1,4 +1,4 @@
-import { PrismaClient } from '../../generated/prisma/client'
+import { PrismaClient } from '@prisma/client'
 import { PrismaLibSql } from '@prisma/adapter-libsql'
 import { app } from 'electron'
 import path from 'path'
@@ -32,6 +32,37 @@ const adapter = new PrismaLibSql({
 
 // Create Prisma client with adapter
 const prisma = new PrismaClient({ adapter })
+
+// --- Sequential Write Queue for SQLite ---
+// Since SQLite only allows one writer at a time, we use a simple queue to prevent "database is locked" errors.
+type DbTask<T> = () => Promise<T>
+
+class TaskQueue {
+  private queue: Promise<void> = Promise.resolve()
+
+  async enqueue<T>(task: DbTask<T>): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      this.queue = this.queue.then(async () => {
+        try {
+          const result = await task()
+          resolve(result)
+        } catch (error) {
+          reject(error)
+        }
+      })
+    })
+  }
+}
+
+const writeQueue = new TaskQueue()
+
+/**
+ * Execute a database write operation through the sequential queue.
+ * Use this for all Prisma CREATE, UPDATE, DELETE or TRANSACTION operations.
+ */
+export async function dbWrite<T>(task: DbTask<T>): Promise<T> {
+  return writeQueue.enqueue(task)
+}
 
 // Optimize SQLite performance
 ;(async () => {

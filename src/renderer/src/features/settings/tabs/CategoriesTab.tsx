@@ -132,7 +132,9 @@ export function CategoriesTab(): React.JSX.Element {
                     className="bg-muted border rounded-md px-2 py-1 text-sm outline-none focus:ring-1 focus:ring-primary"
                     value={cat.icon || 'utensils'}
                     onChange={async (e) => {
-                      const updated = await cafeApi.categories.update(cat.id, { icon: e.target.value })
+                      const updated = await cafeApi.categories.update(cat.id, {
+                        icon: e.target.value
+                      })
                       updateCategory(updated)
                     }}
                   >

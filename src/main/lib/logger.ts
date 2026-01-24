@@ -1,81 +1,62 @@
+import { app } from 'electron'
 import * as fs from 'fs'
 import * as path from 'path'
-import { app } from 'electron'
 
-export class Logger {
+class Logger {
   private logPath: string
-  private maxSizeBytes: number
 
-  constructor(filename: string = 'backend-errors.log', maxSizeBytes: number = 5 * 1024 * 1024) {
+  constructor() {
     const isDev = process.env.NODE_ENV === 'development'
     const baseDir = isDev ? process.cwd() : app.getPath('userData')
-    this.logPath = path.join(baseDir, filename)
-    this.maxSizeBytes = maxSizeBytes
+    const logsDir = path.join(baseDir, 'logs')
 
-    // Ensure log file exists or create it
-    this.rotateIfNeeded()
+    if (!fs.existsSync(logsDir)) {
+      fs.mkdirSync(logsDir, { recursive: true })
+    }
+
+    this.logPath = path.join(logsDir, 'technical.log')
   }
 
-  private rotateIfNeeded(): void {
-    try {
-      if (fs.existsSync(this.logPath)) {
-        const stats = fs.statSync(this.logPath)
-        if (stats.size > this.maxSizeBytes) {
-          const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
-          const backupPath = `${this.logPath}.${timestamp}.old`
-          fs.renameSync(this.logPath, backupPath)
+  error(context: string, error: unknown): void {
+    const timestamp = new Date().toISOString()
+    const errorMessage = error instanceof Error ? error.stack || error.message : String(error)
+    const logEntry = `[${timestamp}] [ERROR] [${context}]: ${errorMessage}\n`
 
-          // Cleanup very old logs (keep last 5)
-          this.cleanupOldLogs()
+    console.error(logEntry)
+
+    try {
+      fs.appendFileSync(this.logPath, logEntry)
+      this.rotateLogIfLarge()
+    } catch (err) {
+      console.error('Failed to write to log file:', err)
+    }
+  }
+
+  info(context: string, message: string): void {
+    const timestamp = new Date().toISOString()
+    const logEntry = `[${timestamp}] [INFO] [${context}]: ${message}\n`
+
+    try {
+      fs.appendFileSync(this.logPath, logEntry)
+    } catch (err) {
+      console.error('Failed to write to log file:', err)
+    }
+  }
+
+  private rotateLogIfLarge(): void {
+    try {
+      const stats = fs.statSync(this.logPath)
+      const maxSize = 5 * 1024 * 1024 // 5MB
+
+      if (stats.size > maxSize) {
+        const backupPath = `${this.logPath}.old`
+        if (fs.existsSync(backupPath)) {
+          fs.unlinkSync(backupPath)
         }
+        fs.renameSync(this.logPath, backupPath)
       }
-    } catch (error) {
-      console.error('Failed to rotate logs:', error)
-    }
-  }
-
-  private cleanupOldLogs(): void {
-    try {
-      const dir = path.dirname(this.logPath)
-      const basename = path.basename(this.logPath)
-
-      const files = fs
-        .readdirSync(dir)
-        .filter((f) => f.startsWith(basename) && f.endsWith('.old'))
-        .map((f) => ({
-          name: f,
-          time: fs.statSync(path.join(dir, f)).mtime.getTime()
-        }))
-        .sort((a, b) => b.time - a.time) // Newest first
-
-      // Delete if more than 5
-      if (files.length > 5) {
-        files.slice(5).forEach((file) => {
-          fs.unlinkSync(path.join(dir, file.name))
-        })
-      }
-    } catch (error) {
-      console.error('Failed to cleanup old logs:', error)
-    }
-  }
-
-  public error(context: string, error: unknown): void {
-    try {
-      const timestamp = new Date().toISOString()
-      const message = `${timestamp} [${context}] ERROR: ${String(error)}\n`
-      fs.appendFileSync(this.logPath, message)
-    } catch (err) {
-      console.error('Failed to write to log:', err)
-    }
-  }
-
-  public info(context: string, message: string): void {
-    try {
-      const timestamp = new Date().toISOString()
-      const logMessage = `${timestamp} [${context}] INFO: ${message}\n`
-      fs.appendFileSync(this.logPath, logMessage)
-    } catch (err) {
-      console.error('Failed to write to log:', err)
+    } catch {
+      // Rotation failed, ignore
     }
   }
 }
