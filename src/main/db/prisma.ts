@@ -1,3 +1,4 @@
+import { createClient } from '@libsql/client'
 import { PrismaClient } from '../../generated/prisma/client'
 import { PrismaLibSql } from '@prisma/adapter-libsql'
 import { app } from 'electron'
@@ -25,10 +26,13 @@ if (!isDev && !fs.existsSync(dbPath)) {
   }
 }
 
-// Create Prisma adapter with LibSQL (Prisma 7+ compatible)
-const adapter = new PrismaLibSql({
+// Create LibSQL client
+const libsql = createClient({
   url: `file:${dbPath}`
 })
+
+// Create Prisma adapter with LibSQL (Prisma 7+ compatible)
+const adapter = new PrismaLibSql(libsql as any)
 
 // Create Prisma client with adapter
 const prisma = new PrismaClient({ adapter })
