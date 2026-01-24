@@ -11,9 +11,7 @@ asar: true
 files:
   - out/**/*
   - package.json
-  # Prisma 7 Runtime (Required for bundled code)
-  - node_modules/@prisma/client/runtime/*.js
-  # Native dependencies (Externalized)
+  # Native dependencies (Externalized & Required at runtime)
   - node_modules/@libsql/win32-x64-msvc/**/*
   - node_modules/bufferutil/**/*
   - node_modules/utf-8-validate/**/*
