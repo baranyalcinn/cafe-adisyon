@@ -55,59 +55,53 @@ jobs:
       # With empty dependencies, collector has nothing to analyze (fixes OOM)
       - name: Prepare for Packaging
         run: |
-          # PowerShell 7'de -AsHashtable kullanımı özel karakterli (@, /) keyleri güvenle yönetmemizi sağlar
           $pkg = Get-Content package.json -Raw | ConvertFrom-Json -AsHashtable
 
-          # 1. Elzem Bağımlılıklar (Runtime + Build Tools)
-          # electron-builder'ı burada tutmalıyız ki 'npm prune' onu silmesin
-          $essential = @(
-            '@libsql/client',
-            '@libsql/win32-x64-msvc',
-            'libsql',
-            '@prisma/client',
-            '@prisma/adapter-libsql',
-            'detect-libc',
-            'bufferutil',
-            'utf-8-validate',
-            '@neon-rs/load',
-            'electron-builder',
-            'electron-vite',
-            'prisma'
-          )
+          # 1. Elzem Gruplar
+          $runtimeDeps = @('@libsql/client', '@libsql/win32-x64-msvc', 'libsql', '@prisma/client', '@prisma/adapter-libsql', 'detect-libc', 'bufferutil', 'utf-8-validate', '@neon-rs/load')
+          $buildTools = @('electron-builder', 'electron-vite', 'prisma')
 
-          $deps = $pkg['dependencies']
-          if ($null -eq $pkg['devDependencies']) { $pkg['devDependencies'] = @{} }
-          $devDeps = $pkg['devDependencies']
+          # 2. Tüm elzem paketleri geçici olarak 'dependencies'e taşı (Prune'dan korumak için)
+          $deps = @{}
+          $devDeps = @{}
 
-          # 2. Bağımlılıkları tara ve gereksizleri devDependencies'e taşı
-          # NOT: electron-builder ve prisma zaten devDeps'te olabilir, onları dependencies'e TAŞIYORUZ
-          $allPackageNames = @(($deps.Keys) + ($devDeps.Keys)) | Select-Object -Unique
-
-          $finalDeps = @{}
-          $finalDevDeps = @{}
-
+          $allPackageNames = @(($pkg['dependencies'].Keys) + ($pkg['devDependencies'].Keys)) | Select-Object -Unique
           foreach ($key in $allPackageNames) {
-            $val = if ($deps.ContainsKey($key)) { $deps[$key] } else { $devDeps[$key] }
-            
-            if ($essential -contains $key) {
-               $finalDeps[$key] = $val
-               Write-Host "Keeping $key in dependencies..."
+            $val = if ($pkg['dependencies'].ContainsKey($key)) { $pkg['dependencies'][$key] } else { $pkg['devDependencies'][$key] }
+            if ($runtimeDeps -contains $key -or $buildTools -contains $key) {
+               $deps[$key] = $val # Hepsi buraya ki 'npm prune' dokunmasın
             } else {
-               $finalDevDeps[$key] = $val
+               $devDeps[$key] = $val
             }
           }
 
-          $pkg['dependencies'] = $finalDeps
-          $pkg['devDependencies'] = $finalDevDeps
+          $pkg['dependencies'] = $deps
+          $pkg['devDependencies'] = $devDeps
           $pkg.Remove('overrides')
-
-          # 3. Güncellenmiş package.json'ı kaydet
           $pkg | ConvertTo-Json -Depth 10 | Set-Content package.json -Encoding UTF8
 
-          # 4. Gereksiz paketleri fiziksel olarak sil (OOM ENGELLEYİCİ)
-          # Prune sonrası sadece $essential listesindekiler ve onların alt bağımlılıkları kalacak
+          # 3. Fiziksel Budama (OOM Engelleme)
           npm prune --production
-          Write-Host "Smart Pruning complete. Build tools and runtime modules preserved."
+
+          # 4. HEYECANLI KISIM: Build araçlarını 'devDependencies'a geri taşı
+          # electron-builder kendi ismini 'dependencies' içinde görünce hata veriyor.
+          $finalDeps = @{}
+          $finalDevDeps = @{}
+          foreach ($key in $deps.Keys) {
+            if ($buildTools -contains $key) {
+              $finalDevDeps[$key] = $deps[$key]
+            } else {
+              $finalDeps[$key] = $deps[$key]
+            }
+          }
+          # Eski devDeps (zaten silinmişlerdi) hala listede kalabilir, sorun değil
+          foreach ($key in $devDeps.Keys) { $finalDevDeps[$key] = $devDeps[$key] }
+
+          $pkg['dependencies'] = $finalDeps
+          $pkg['devDependencies'] = $finalDevDeps
+          $pkg | ConvertTo-Json -Depth 10 | Set-Content package.json -Encoding UTF8
+
+          Write-Host "Smart Move-Prune-Restore complete. Tools are on disk and config is valid."
 
       - name: Windows EXE Oluştur
         env:
