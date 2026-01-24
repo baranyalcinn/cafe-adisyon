@@ -20,14 +20,8 @@ export default defineConfig({
           '@prisma/adapter-libsql',
           '@prisma/driver-adapter-utils',
           'async-mutex',
-          '@libsql/client',
-          '@libsql/core',
-          '@libsql/hrana-client',
-          'libsql',
           'js-base64',
-          'promise-limit',
-          '@neon-rs/load',
-          'detect-libc'
+          'promise-limit'
         ]
       })
     ],

@@ -11,6 +11,7 @@ asar: true
 files:
   - out/**/*
   - package.json
+  - node_modules/@libsql/client/**/*
   - node_modules/libsql/**/*
   - node_modules/@libsql/win32-x64-msvc/**/*
   - node_modules/@neon-rs/**/*
