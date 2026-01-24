@@ -55,26 +55,32 @@ jobs:
       # With empty dependencies, collector has nothing to analyze (fixes OOM)
       - name: Prepare for Packaging
         run: |
-          # Read package.json
           $pkg = Get-Content package.json -Raw | ConvertFrom-Json
 
-          # We must keep native modules in dependencies so electron-builder 
-          # correctly handles their resolution stubs in the ASAR archive.
-          $nativeDeps = @{}
-          if ($pkg.dependencies.'@libsql/win32-x64-msvc') {
-            $nativeDeps.'@libsql/win32-x64-msvc' = $pkg.dependencies.'@libsql/win32-x64-msvc'
-          }
-          # Add Prisma so it's not stripped
-          if ($pkg.dependencies.'@prisma/client') {
-            $nativeDeps.'@prisma/client' = $pkg.dependencies.'@prisma/client'
-          }
-          if ($pkg.devDependencies.'prisma') {
-            $nativeDeps.'prisma' = $pkg.devDependencies.'prisma'
+          # ÖNEMLİ: Tüm runtime dependencies'i koru
+          # Native bridges ve Prisma runtime ASAR içinde kalmalı
+          $keepDeps = @(
+            '@libsql/client',
+            '@libsql/win32-x64-msvc',
+            '@prisma/client',
+            '@prisma/adapter-libsql',
+            'libsql',
+            'detect-libc',
+            'bufferutil',
+            'utf-8-validate',
+            '@neon-rs/load'
+          )
+
+          $newDeps = @{}
+          foreach ($dep in $keepDeps) {
+            if ($pkg.dependencies.$dep) {
+              $newDeps.$dep = $pkg.dependencies.$dep
+            }
           }
 
-          $pkg.dependencies = $nativeDeps
+          $pkg.dependencies = $newDeps
           $pkg | ConvertTo-Json -Depth 10 | Set-Content package.json -Encoding UTF8
-          Write-Host "Dependencies stripped, but native modules and Prisma preserved."
+          Write-Host "Package.json pruned. Native modules and Prisma preserved."
 
       - name: Windows EXE Oluştur
         env:

@@ -20,18 +20,25 @@ files:
   - node_modules/utf-8-validate/**/*
   - node_modules/.prisma/**/*
 
-  # Exclude non-production source stuff
+  # Exclude non-production source stuff and dev database
   - '!.git'
   - '!.github'
   - '!.vscode'
   - '!src'
-  - '!prisma'
+  - '!prisma/*.db'
+  - '!prisma/*.db-*'
 
 # Native .node binaries must be accessible outside ASAR
 # These will be automatically unpacked by electron-builder if they are native
 asarUnpack:
   - '**/*.node'
-  - 'node_modules/@libsql/win32-x64-msvc/**/*'
+  - 'node_modules/@libsql/**/*'
+  - 'node_modules/libsql/**/*'
+  - 'node_modules/@neon-rs/**/*'
+  - 'node_modules/.prisma/**/*'
+  - 'node_modules/bufferutil/**/*'
+  - 'node_modules/utf-8-validate/**/*'
+  - 'node_modules/detect-libc/**/*'
 
 npmRebuild: false
 buildDependenciesFromSource: false

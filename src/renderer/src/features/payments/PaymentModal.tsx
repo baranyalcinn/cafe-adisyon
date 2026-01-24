@@ -146,7 +146,8 @@ export function PaymentModal({
     // Exception: In items mode with credit, paymentAmount calculation might be 0, but we proceed to mark items.
     const actualAmount = Math.min(amount, remainingAmount)
 
-    if (actualAmount <= 0 && !(paymentMode === 'items' && selectedTotal > 0 && genericCredit > 0)) return
+    if (actualAmount <= 0 && !(paymentMode === 'items' && selectedTotal > 0 && genericCredit > 0))
+      return
 
     if (method === 'CASH') {
       setFinalChange(currentChange)
@@ -388,12 +389,13 @@ export function PaymentModal({
                     Tümünü Seç
                   </Button>
                 </div>
-                
+
                 {genericCredit > 0 && (
                   <div className="mb-2 px-3 py-2 bg-blue-500/10 border border-blue-500/20 rounded-lg text-xs text-blue-600 flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
                     <span>
-                      Önceden yapılan <b>{formatCurrency(genericCredit)}</b> genel ödeme seçilenlerden düşülecektir.
+                      Önceden yapılan <b>{formatCurrency(genericCredit)}</b> genel ödeme
+                      seçilenlerden düşülecektir.
                     </span>
                   </div>
                 )}
