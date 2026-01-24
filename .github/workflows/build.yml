@@ -87,6 +87,12 @@ jobs:
             }
           }
 
+          # CRITICAL: Preserve .bin folder for local binaries
+          if (Test-Path "node_modules_full/.bin") {
+            Copy-Item -Path "node_modules_full/.bin" -Destination "node_modules/.bin" -Recurse -Force
+            Write-Host "Preserved: .bin folder"
+          }
+
           # Cleanup
           Remove-Item node_modules_full -Recurse -Force
 
@@ -102,8 +108,8 @@ jobs:
           ELECTRON_BUILDER_OFFLINE: 'true'
           DEBUG: electron-builder
         run: |
-          # Use the local binary directly to avoid npx overhead/errors
-          ./node_modules/.bin/electron-builder.cmd --win portable --publish never --no-workspaces
+          # Use npx to ensure electron-builder is available (fallback if .bin is missing)
+          npx electron-builder@26.4.0 --win portable --publish never
 
       - name: Build Sonucunu Yükle
         uses: actions/upload-artifact@v4
