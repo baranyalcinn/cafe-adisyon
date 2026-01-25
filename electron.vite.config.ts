@@ -20,8 +20,7 @@ export default defineConfig({
           '@prisma/adapter-libsql',
           '@prisma/driver-adapter-utils',
           'async-mutex',
-          'promise-limit',
-          'js-base64'
+          'promise-limit'
         ]
       })
     ],
@@ -38,6 +37,7 @@ export default defineConfig({
           '@libsql/isomorphic-fetch',
           '@libsql/isomorphic-ws',
           'libsql',
+          'js-base64',
           'bufferutil',
           'utf-8-validate',
           'detect-libc'

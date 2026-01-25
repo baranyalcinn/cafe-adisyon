@@ -70,6 +70,7 @@ jobs:
             "@libsql/win32-x64-msvc",
             "@neon-rs/load",
             "libsql",
+            "js-base64",
             "bufferutil",
             "utf-8-validate",
             "detect-libc"
