@@ -11,13 +11,12 @@ jobs:
 
     permissions:
       contents: read
-      actions: write
 
     steps:
       - name: Kodları Çek
         uses: actions/checkout@v4
 
-      # Swap Alanı (8GB) - Extra güvenlik için tutuyoruz
+      # RAM yetmezliği yaşamamak için Swap alanı
       - name: Set Pagefile (Swap)
         uses: al-cheb/configure-pagefile-action@v1.4
         with:
@@ -29,47 +28,38 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
+          cache: 'npm'
 
-      - name: Temiz Kurulum
-        run: |
-          # 1. Eski kilit dosyasını sil (Temiz sayfa)
-          if (Test-Path package-lock.json) { Remove-Item package-lock.json }
-
-          # 2. Node Modules varsa sil
-          if (Test-Path node_modules) { Remove-Item node_modules -Recurse -Force -ErrorAction SilentlyContinue }
-
-          # 3. Bağımlılıkları Yükle
-          npm install --legacy-peer-deps
+      - name: Bağımlılıkları Yükle
+        # --legacy-peer-deps gerekiyorsa kalsın, gerekmiyorsa silinebilir
+        run: npm ci --legacy-peer-deps
 
       - name: Prisma Generate
         run: npx prisma generate
 
       - name: Native Rebuild
+        # sqlite3 vb. modüllerin Windows için derlenmesi
         run: npm run rebuild --if-present
 
-      - name: TypeScript Build
+      - name: TypeScript/Vite Build
+        # Frontend kodunu dist klasörüne derler
         run: npm run build
 
-      # STEP 1: Install electron-builder globally
-      - name: Install Electron Builder Globally
-        run: npm install -g electron-builder@26.4.0
+      # Global kurulum ve Prune adımlarını kaldırdık.
+      # Doğrudan proje içindeki builder'ı kullanıyoruz.
 
-      # STEP 2: Use NPM's built-in pruning (Optional but good for safety)
-      - name: Prune devDependencies
-        run: npm prune --omit=dev --no-package-lock
-
-      # STEP 3: Run electron-builder from GLOBAL installation
       - name: Windows EXE Oluştur
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Bellek limitini yüksek tutuyoruz
           NODE_OPTIONS: '--max-old-space-size=12288'
-          ELECTRON_BUILDER_OFFLINE: 'true'
           DEBUG: electron-builder
-        run: electron-builder --win portable --publish never
+        # npx kullanarak projedeki electron-builder sürümüyle build alıyoruz
+        run: npx electron-builder --win portable --publish never
 
       - name: Build Sonucunu Yükle
         uses: actions/upload-artifact@v4
         with:
           name: Caffio-Portable
-          path: dist/*.exe
+          path: dist/*.exe # Çıktı klasörünüz 'release' veya 'build' ise burayı düzeltin
           retention-days: 5
