@@ -66,9 +66,10 @@ jobs:
       - name: Windows EXE Oluştur
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NODE_OPTIONS: '--max-old-space-size=8192'
+          NODE_OPTIONS: '--max-old-space-size=14336'
+          ELECTRON_BUILDER_OFFLINE: 'true'
           DEBUG: electron-builder
-        run: electron-builder --win portable --publish never
+        run: electron-builder --win portable --publish never --no-workspaces
 
       - name: Build Sonucunu Yükle
         uses: actions/upload-artifact@v4
