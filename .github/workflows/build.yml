@@ -69,7 +69,7 @@ jobs:
           NODE_OPTIONS: '--max-old-space-size=14336'
           ELECTRON_BUILDER_OFFLINE: 'true'
           DEBUG: electron-builder
-        run: electron-builder --win portable --publish never --no-workspaces
+        run: electron-builder --win portable --publish never
 
       - name: Build Sonucunu Yükle
         uses: actions/upload-artifact@v4
