@@ -50,69 +50,17 @@ jobs:
       - name: TypeScript Build
         run: npm run build
 
-      # STEP 1: Install electron-builder globally BEFORE surgery
-      # This ensures the build tool is completely independent of local node_modules
+      # STEP 1: Install electron-builder globally
       - name: Install Electron Builder Globally
         run: npm install -g electron-builder@26.4.0
 
-      # STEP 2: Prune node_modules to keep ONLY runtime native deps
-      # electron-builder runs from global, so we don't need any build tools locally
-      - name: Prepare for Packaging
+      # STEP 2: Use NPM's built-in pruning to keep ONLY runtime dependencies
+      # This automatically handles ALL transitive dependencies (fixing the "whack-a-mole" issue)
+      - name: Prepare for Packaging (Automated Prune)
         run: |
-          # Runtime dependencies that must be preserved
-          # Format: "scope/package" for scoped, "package" for regular
-          $essential = @(
-            "@libsql/client",
-            "@libsql/core",
-            "@libsql/hrana-client",
-            "@libsql/isomorphic-fetch",
-            "@libsql/isomorphic-ws",
-            "@libsql/win32-x64-msvc",
-            "@neon-rs/load",
-            "libsql",
-            "js-base64",
-            "ws",
-            "cross-fetch",
-            "node-fetch",
-            "node-fetch-native",
-            "whatwg-url",
-            "webidl-conversions",
-            "tr46",
-            "web-streams-polyfill",
-            "data-uri-to-buffer",
-            "fetch-blob",
-            "formdata-polyfill",
-            "bufferutil",
-            "utf-8-validate",
-            "detect-libc"
-          )
-
-          Write-Host "Starting manual surgery - keeping ONLY runtime deps..."
-          Move-Item node_modules node_modules_full
-          New-Item -ItemType Directory -Path node_modules
-
-          foreach ($mod in $essential) {
-            $srcPath = "node_modules_full/$mod"
-            $dstPath = "node_modules/$mod"
-            
-            if (Test-Path $srcPath) {
-              # Handle scoped packages (e.g., @libsql/client)
-              if ($mod.StartsWith("@")) {
-                $scope = $mod.Split("/")[0]
-                if (!(Test-Path "node_modules/$scope")) { 
-                  New-Item -ItemType Directory -Path "node_modules/$scope" | Out-Null
-                }
-              }
-              Copy-Item -Path $srcPath -Destination $dstPath -Recurse -Force
-              Write-Host "Preserved: $mod"
-            } else {
-              Write-Host "Not found (skipping): $mod"
-            }
-          }
-
-          # Cleanup
-          Remove-Item node_modules_full -Recurse -Force
-          Write-Host "Surgery complete. Only runtime dependencies remain."
+          Write-Host "Pruning devDependencies to prevent OOM and include all runtime deps..."
+          npm prune --omit=dev --no-package-lock
+          Write-Host "Pruning complete. node_modules is now optimized for production."
 
       # STEP 3: Run electron-builder from GLOBAL installation
       - name: Windows EXE Oluştur

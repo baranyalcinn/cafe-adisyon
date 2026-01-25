@@ -14,13 +14,7 @@ export default defineConfig({
           'zustand',
           'clsx',
           'tailwind-merge',
-          'class-variance-authority',
-          '@prisma/client',
-          '@prisma/client-runtime-utils',
-          '@prisma/adapter-libsql',
-          '@prisma/driver-adapter-utils',
-          'async-mutex',
-          'promise-limit'
+          'class-variance-authority'
         ]
       })
     ],
@@ -51,7 +45,11 @@ export default defineConfig({
           'formdata-polyfill',
           'bufferutil',
           'utf-8-validate',
-          'detect-libc'
+          'detect-libc',
+          '@prisma/client',
+          '@prisma/adapter-libsql',
+          'async-mutex',
+          'promise-limit'
         ]
       }
     }

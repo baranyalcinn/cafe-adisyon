@@ -23,12 +23,13 @@
     "db:soft-reset": "npx tsx scripts/soft-reset.ts"
   },
   "dependencies": {
-    "@libsql/client": "^0.17.0",
-    "@libsql/win32-x64-msvc": "^0.5.22",
     "bufferutil": "^4.1.0",
     "detect-libc": "^2.0.2",
     "libsql": "^0.5.22",
-    "utf-8-validate": "^6.0.6"
+    "utf-8-validate": "^6.0.6",
+    "@prisma/client": "7.3.0",
+    "@prisma/adapter-libsql": "7.3.0",
+    "js-base64": "^3.7.7"
   },
   "overrides": {
     "glob": "^10.4.0",
@@ -42,8 +43,6 @@
     "@electron-toolkit/utils": "^4.0.0",
     "@electron/rebuild": "^4.0.2",
     "@neon-rs/load": "^0.0.4",
-    "@prisma/adapter-libsql": "7.3.0",
-    "@prisma/client": "7.3.0",
     "@radix-ui/react-context-menu": "^2.2.16",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
