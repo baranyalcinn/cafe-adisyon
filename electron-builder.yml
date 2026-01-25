@@ -9,7 +9,6 @@ directories:
 compression: store
 asar: true
 detectUpdateChannel: false
-nodeModulesLock: true
 files:
   - out/**/*
   - package.json
