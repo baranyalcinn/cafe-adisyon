@@ -54,19 +54,15 @@ jobs:
       - name: Install Electron Builder Globally
         run: npm install -g electron-builder@26.4.0
 
-      # STEP 2: Use NPM's built-in pruning to keep ONLY runtime dependencies
-      # This automatically handles ALL transitive dependencies (fixing the "whack-a-mole" issue)
-      - name: Prepare for Packaging (Automated Prune)
-        run: |
-          Write-Host "Pruning devDependencies to prevent OOM and include all runtime deps..."
-          npm prune --omit=dev --no-package-lock
-          Write-Host "Pruning complete. node_modules is now optimized for production."
+      # STEP 2: Use NPM's built-in pruning (Optional but good for safety)
+      - name: Prune devDependencies
+        run: npm prune --omit=dev --no-package-lock
 
       # STEP 3: Run electron-builder from GLOBAL installation
       - name: Windows EXE Oluştur
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NODE_OPTIONS: '--max-old-space-size=14336'
+          NODE_OPTIONS: '--max-old-space-size=12288'
           ELECTRON_BUILDER_OFFLINE: 'true'
           DEBUG: electron-builder
         run: electron-builder --win portable --publish never
