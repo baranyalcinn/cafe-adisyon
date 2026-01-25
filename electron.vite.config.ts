@@ -38,6 +38,10 @@ export default defineConfig({
           '@libsql/isomorphic-ws',
           'libsql',
           'js-base64',
+          'ws',
+          'cross-fetch',
+          'node-fetch',
+          'node-fetch-native',
           'bufferutil',
           'utf-8-validate',
           'detect-libc'
