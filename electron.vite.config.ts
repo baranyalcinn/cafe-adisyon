@@ -42,6 +42,13 @@ export default defineConfig({
           'cross-fetch',
           'node-fetch',
           'node-fetch-native',
+          'whatwg-url',
+          'webidl-conversions',
+          'tr46',
+          'web-streams-polyfill',
+          'data-uri-to-buffer',
+          'fetch-blob',
+          'formdata-polyfill',
           'bufferutil',
           'utf-8-validate',
           'detect-libc'
