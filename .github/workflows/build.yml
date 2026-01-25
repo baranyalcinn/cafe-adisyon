@@ -5,61 +5,45 @@ on:
     branches: [main]
   workflow_dispatch:
 
+env:
+  NODE_OPTIONS: '--max-old-space-size=8192'
+
 jobs:
   build:
     runs-on: windows-latest
+    timeout-minutes: 20
 
     permissions:
       contents: read
+      actions: write
 
     steps:
-      - name: Kodları Çek
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      # RAM yetmezliği yaşamamak için Swap alanı
-      - name: Set Pagefile (Swap)
-        uses: al-cheb/configure-pagefile-action@v1.4
-        with:
-          minimum-size: 8GB
-          maximum-size: 8GB
-          disk-root: 'C:'
-
-      - name: Node.js Kur (v24)
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 20
           cache: 'npm'
 
-      - name: Bağımlılıkları Yükle
-        # --legacy-peer-deps gerekiyorsa kalsın, gerekmiyorsa silinebilir
-        run: npm ci --legacy-peer-deps
+      - name: Install Dependencies
+        run: npm ci
 
-      - name: Prisma Generate
+      - name: Generate Prisma Client
         run: npx prisma generate
 
-      - name: Native Rebuild
-        # sqlite3 vb. modüllerin Windows için derlenmesi
-        run: npm run rebuild --if-present
-
-      - name: TypeScript/Vite Build
-        # Frontend kodunu dist klasörüne derler
+      - name: Build Application
         run: npm run build
 
-      # Global kurulum ve Prune adımlarını kaldırdık.
-      # Doğrudan proje içindeki builder'ı kullanıyoruz.
-
-      - name: Windows EXE Oluştur
+      - name: Build Portable EXE
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Bellek limitini yüksek tutuyoruz
-          NODE_OPTIONS: '--max-old-space-size=12288'
-          DEBUG: electron-builder
-        # npx kullanarak projedeki electron-builder sürümüyle build alıyoruz
-        run: npx electron-builder --win portable --publish never
+        run: npx electron-builder@26.4.0 --win portable --publish never
 
-      - name: Build Sonucunu Yükle
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: Caffio-Portable
-          path: dist/*.exe # Çıktı klasörünüz 'release' veya 'build' ise burayı düzeltin
+          path: dist/*.exe
           retention-days: 5
