@@ -15,26 +15,12 @@ export default defineConfig({
           'clsx',
           'tailwind-merge',
           'class-variance-authority',
-          '@prisma/client',
-          '@prisma/client-runtime-utils',
           '@prisma/adapter-libsql',
-          '@prisma/driver-adapter-utils'
-        ]
-      })
-    ],
-    build: {
-      commonjsOptions: {
-        ignoreDynamicRequires: true
-      },
-      rollupOptions: {
-        external: [
-          '@libsql/win32-x64-msvc',
+          '@prisma/driver-adapter-utils',
           '@libsql/client',
           '@libsql/core',
           '@libsql/hrana-client',
-          '@libsql/isomorphic-fetch',
           '@libsql/isomorphic-ws',
-          'libsql',
           'js-base64',
           'ws',
           'cross-fetch',
@@ -47,12 +33,23 @@ export default defineConfig({
           'data-uri-to-buffer',
           'fetch-blob',
           'formdata-polyfill',
+          'async-mutex',
+          'promise-limit',
+          'node-domexception'
+        ]
+      })
+    ],
+    build: {
+      commonjsOptions: {
+        ignoreDynamicRequires: true
+      },
+      rollupOptions: {
+        external: [
+          'libsql',
+          '@libsql/win32-x64-msvc',
           'bufferutil',
           'utf-8-validate',
-          'detect-libc',
-          'promise-limit',
-          'async-mutex',
-          'node-domexception'
+          'detect-libc'
         ]
       }
     }
