@@ -15,6 +15,8 @@ export default defineConfig({
           'clsx',
           'tailwind-merge',
           'class-variance-authority',
+          '@prisma/client',
+          '@prisma/client-runtime-utils',
           '@prisma/adapter-libsql',
           '@prisma/driver-adapter-utils',
           '@libsql/client',
