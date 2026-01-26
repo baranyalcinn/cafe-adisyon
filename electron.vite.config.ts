@@ -18,9 +18,7 @@ export default defineConfig({
           '@prisma/client',
           '@prisma/client-runtime-utils',
           '@prisma/adapter-libsql',
-          '@prisma/driver-adapter-utils',
-          'async-mutex',
-          'promise-limit'
+          '@prisma/driver-adapter-utils'
         ]
       })
     ],
@@ -51,7 +49,9 @@ export default defineConfig({
           'formdata-polyfill',
           'bufferutil',
           'utf-8-validate',
-          'detect-libc'
+          'detect-libc',
+          'promise-limit',
+          'async-mutex'
         ]
       }
     }
