@@ -51,7 +51,8 @@ export default defineConfig({
           'utf-8-validate',
           'detect-libc',
           'promise-limit',
-          'async-mutex'
+          'async-mutex',
+          'node-domexception'
         ]
       }
     }

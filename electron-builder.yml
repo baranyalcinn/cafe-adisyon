@@ -36,6 +36,7 @@ files:
   - node_modules/promise-limit/**
   - node_modules/async-mutex/**
   - node_modules/@neon-rs/load/**
+  - node_modules/node-domexception/**
 
   # Kaynak kodları hariç tut
   - '!**/*.ts'
