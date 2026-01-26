@@ -8,8 +8,10 @@ import { useTableStore } from '@/store/useTableStore'
 import { useOrderStore } from '@/store/useOrderStore'
 import { useInventoryStore } from '@/store/useInventoryStore'
 import { ProductCard } from './ProductCard'
+import { getCategoryIcon } from './order-icons'
 import { CartPanel } from './CartPanel'
 import { PaymentModal } from '../payments/PaymentModal'
+import { cn } from '@/lib/utils'
 
 interface OrderViewProps {
   onBack: () => void
@@ -64,10 +66,10 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
   const favoriteProducts = products.filter((p) => p.isFavorite)
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full bg-background/95">
       {/* Left Panel - Categories & Search */}
-      <div className="w-64 border-r bg-card flex flex-col h-full min-h-0">
-        <div className="p-4 border-b">
+      <div className="w-72 glass-panel flex flex-col h-full min-h-0 animate-in slide-in-from-left duration-300">
+        <div className="p-6">
           <Button variant="ghost" onClick={onBack} className="gap-2 mb-4 w-full justify-start">
             <ArrowLeft className="w-4 h-4" />
             Masalara Dön
@@ -103,21 +105,30 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
             className="flex-1 p-4 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col"
           >
             <ScrollArea className="h-full">
-              <div className="space-y-2">
+              <div className="space-y-1.5 px-2">
                 <Button
                   variant={activeCategory === null ? 'secondary' : 'ghost'}
-                  className="w-full justify-start"
+                  className={cn(
+                    'w-full justify-start h-12 rounded-2xl gap-3 px-4 font-bold transition-all',
+                    activeCategory === null && 'bg-primary/10 text-primary border-primary/20'
+                  )}
                   onClick={() => setActiveCategory(null)}
                 >
+                  <Grid className="w-4 h-4" />
                   Tümü
                 </Button>
                 {categories.map((category) => (
                   <Button
                     key={category.id}
                     variant={activeCategory === category.id ? 'secondary' : 'ghost'}
-                    className="w-full justify-start"
+                    className={cn(
+                      'w-full justify-start h-12 rounded-2xl gap-3 px-4 font-bold transition-all',
+                      activeCategory === category.id &&
+                        'bg-primary/10 text-primary border-primary/20'
+                    )}
                     onClick={() => setActiveCategory(category.id)}
                   >
+                    {getCategoryIcon(category.icon, 'w-4 h-4')}
                     {category.name}
                   </Button>
                 ))}
@@ -145,10 +156,13 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
 
       {/* Center Panel - Products Grid */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="p-4 border-b bg-card">
-          <h2 className="text-xl font-semibold">{selectedTable?.name || 'Masa'} - Sipariş</h2>
-          <p className="text-sm text-muted-foreground">
-            {filteredProducts.length} ürün listeleniyor
+        <div className="p-6 bg-transparent">
+          <h2 className="text-3xl font-black tracking-tighter uppercase text-foreground/90 leading-none">
+            {selectedTable?.name || 'Masa'}
+            <span className="text-primary ml-2 inline-block">SİPARİŞ</span>
+          </h2>
+          <p className="text-[10px] font-black text-muted-foreground mt-2 uppercase tracking-[0.3em]">
+            {filteredProducts.length} ÜRÜN LİSTELENİYOR
           </p>
         </div>
 

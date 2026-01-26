@@ -42,8 +42,10 @@ const api = {
     getOpenByTable: (tableId: string) =>
       ipcRenderer.invoke(IPC_CHANNELS.ORDERS_GET_OPEN_BY_TABLE, tableId),
     create: (tableId: string) => ipcRenderer.invoke(IPC_CHANNELS.ORDERS_CREATE, tableId),
-    update: (orderId: string, data: { status?: OrderStatus; totalAmount?: number }) =>
-      ipcRenderer.invoke(IPC_CHANNELS.ORDERS_UPDATE, orderId, data),
+    update: (
+      orderId: string,
+      data: { status?: OrderStatus; totalAmount?: number; isLocked?: boolean }
+    ) => ipcRenderer.invoke(IPC_CHANNELS.ORDERS_UPDATE, orderId, data),
     addItem: (orderId: string, productId: string, quantity: number, unitPrice: number) =>
       ipcRenderer.invoke(IPC_CHANNELS.ORDERS_ADD_ITEM, orderId, productId, quantity, unitPrice),
     updateItem: (orderItemId: string, quantity: number) =>

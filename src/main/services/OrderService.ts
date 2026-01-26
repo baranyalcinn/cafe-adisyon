@@ -138,16 +138,39 @@ export class OrderService {
     }
   }
 
-  async toggleLock(
+  async updateOrder(
     orderId: string,
-    isLocked: boolean
-  ): Promise<ApiResponse<{ isLocked: boolean }>> {
+    data: { status?: string; totalAmount?: number; isLocked?: boolean }
+  ): Promise<ApiResponse<Order>> {
     try {
-      await prisma.order.update({
+      const updatedOrder = (await prisma.order.update({
         where: { id: orderId },
-        data: { isLocked }
-      })
-      return { success: true, data: { isLocked } }
+        // @ts-ignore status enum cast
+        data,
+        include: {
+          items: { include: { product: true } },
+          payments: true
+        }
+      })) as unknown as Order
+
+      return { success: true, data: updatedOrder }
+    } catch (error) {
+      logger.error('OrderService.updateOrder', error)
+      return { success: false, error: 'Sipariş güncellenemedi.' }
+    }
+  }
+
+  async toggleLock(orderId: string, isLocked: boolean): Promise<ApiResponse<Order>> {
+    try {
+      const updatedOrder = (await prisma.order.update({
+        where: { id: orderId },
+        data: { isLocked },
+        include: {
+          items: { include: { product: true } },
+          payments: true
+        }
+      })) as unknown as Order
+      return { success: true, data: updatedOrder }
     } catch (error) {
       logger.error('OrderService.toggleLock', error)
       return { success: false, error: 'Kilit durumu değiştirilemedi.' }

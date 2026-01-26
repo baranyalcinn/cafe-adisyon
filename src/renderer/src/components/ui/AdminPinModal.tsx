@@ -24,7 +24,7 @@ export function AdminPinModal({
   const [pin, setPin] = useState<string>('')
   const [error, setError] = useState<boolean>(false)
   const [isVerifying, setIsVerifying] = useState(false)
-  
+
   // Hidden input ref for keyboard focus
   const hiddenInputRef = useRef<HTMLInputElement>(null)
 
@@ -42,7 +42,7 @@ export function AdminPinModal({
       setQuestion(null)
       setAnswer('')
       setRecoveryError(null)
-      
+
       // Focus hidden input for keyboard entry
       setTimeout(() => hiddenInputRef.current?.focus(), 100)
     }
@@ -149,8 +149,8 @@ export function AdminPinModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className={cn(
-          "sm:max-w-[400px] p-0 overflow-hidden border-none bg-transparent shadow-none transition-all duration-500",
-          error && "animate-shake"
+          'sm:max-w-[400px] p-0 overflow-hidden border-none bg-transparent shadow-none transition-all duration-500',
+          error && 'animate-shake'
         )}
         onClick={handleModalClick}
       >
