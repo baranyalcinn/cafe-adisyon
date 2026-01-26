@@ -5,43 +5,124 @@ on:
     branches: [main]
   workflow_dispatch:
 
-env:
-  NODE_OPTIONS: '--max-old-space-size=8192'
-
 jobs:
   build:
     runs-on: windows-latest
-    timeout-minutes: 20
 
     permissions:
       contents: read
       actions: write
 
     steps:
-      - name: Checkout Code
+      - name: Kodları Çek
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      # Swap Alanı (8GB) - Extra güvenlik için tutuyoruz
+      - name: Set Pagefile (Swap)
+        uses: al-cheb/configure-pagefile-action@v1.4
+        with:
+          minimum-size: 8GB
+          maximum-size: 8GB
+          disk-root: 'C:'
+
+      - name: Node.js Kur (v24)
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: 'npm'
+          node-version: 24
 
-      - name: Install Dependencies
-        run: npm ci
+      - name: Temiz Kurulum
+        run: |
+          # 1. Eski kilit dosyasını sil (Temiz sayfa)
+          if (Test-Path package-lock.json) { Remove-Item package-lock.json }
 
-      - name: Generate Prisma Client
+          # 2. Node Modules varsa sil
+          if (Test-Path node_modules) { Remove-Item node_modules -Recurse -Force -ErrorAction SilentlyContinue }
+
+          # 3. Bağımlılıkları Yükle
+          npm install --legacy-peer-deps
+
+      - name: Prisma Generate
         run: npx prisma generate
 
-      - name: Build Application
+      - name: Native Rebuild
+        run: npm run rebuild --if-present
+
+      - name: TypeScript Build
         run: npm run build
 
-      - name: Build Portable EXE
+      # STEP 1: Install electron-builder globally BEFORE surgery
+      # This ensures the build tool is completely independent of local node_modules
+      - name: Install Electron Builder Globally
+        run: npm install -g electron-builder@26.4.0
+
+      # STEP 2: Prune node_modules to keep ONLY runtime native deps
+      # electron-builder runs from global, so we don't need any build tools locally
+      - name: Prepare for Packaging
+        run: |
+          # Runtime dependencies that must be preserved
+          # Format: "scope/package" for scoped, "package" for regular
+          $essential = @(
+            "@libsql/client",
+            "@libsql/core",
+            "@libsql/hrana-client",
+            "@libsql/isomorphic-fetch",
+            "@libsql/isomorphic-ws",
+            "@libsql/win32-x64-msvc",
+            "@neon-rs/load",
+            "libsql",
+            "js-base64",
+            "ws",
+            "cross-fetch",
+            "node-fetch",
+            "node-fetch-native",
+            "whatwg-url",
+            "webidl-conversions",
+            "tr46",
+            "web-streams-polyfill",
+            "data-uri-to-buffer",
+            "fetch-blob",
+            "formdata-polyfill",
+            "bufferutil",
+            "utf-8-validate",
+            "detect-libc"
+          )
+
+          Write-Host "Starting manual surgery - keeping ONLY runtime deps..."
+          Move-Item node_modules node_modules_full
+          New-Item -ItemType Directory -Path node_modules
+
+          foreach ($mod in $essential) {
+            $srcPath = "node_modules_full/$mod"
+            $dstPath = "node_modules/$mod"
+            
+            if (Test-Path $srcPath) {
+              # Handle scoped packages (e.g., @libsql/client)
+              if ($mod.StartsWith("@")) {
+                $scope = $mod.Split("/")[0]
+                if (!(Test-Path "node_modules/$scope")) { 
+                  New-Item -ItemType Directory -Path "node_modules/$scope" | Out-Null
+                }
+              }
+              Copy-Item -Path $srcPath -Destination $dstPath -Recurse -Force
+              Write-Host "Preserved: $mod"
+            } else {
+              Write-Host "Not found (skipping): $mod"
+            }
+          }
+
+          # Cleanup
+          Remove-Item node_modules_full -Recurse -Force
+          Write-Host "Surgery complete. Only runtime dependencies remain."
+
+      # STEP 3: Run electron-builder from GLOBAL installation
+      - name: Windows EXE Oluştur
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx electron-builder@26.4.0 --win portable --publish never
+          NODE_OPTIONS: '--max-old-space-size=8192'
+          DEBUG: electron-builder
+        run: electron-builder --win portable --publish never
 
-      - name: Upload Artifact
+      - name: Build Sonucunu Yükle
         uses: actions/upload-artifact@v4
         with:
           name: Caffio-Portable

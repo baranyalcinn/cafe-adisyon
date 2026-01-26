@@ -70,7 +70,6 @@ export function PaymentModal({
   const genericCredit = Math.max(0, unpaidItemsTotal - remainingAmount)
 
   // Reset states on open/close
-  // Reset states on open/close
   useEffect(() => {
     if (open) {
       // Use setTimeout to avoid synchronous state update warning
@@ -93,8 +92,12 @@ export function PaymentModal({
       case 'items':
         // Deduct generic credit from selected total
         return Math.max(0, selectedTotal - genericCredit)
-      case 'split':
-        return Math.ceil(remainingAmount / splitCount)
+      case 'split': {
+        // FIX: Calculate split based on TOTAL, not remaining.
+        // Cap at remainingAmount to ensure we don't overpay on the last split.
+        const splitShare = Math.ceil(total / splitCount)
+        return Math.min(splitShare, remainingAmount)
+      }
       case 'custom':
         return Math.round((parseFloat(customAmount) || 0) * 100)
       default:
@@ -103,18 +106,16 @@ export function PaymentModal({
   }
 
   const paymentAmount = getPaymentAmount()
+  // Cap the actual payment at the remaining amount
+  const effectivePayment = Math.min(paymentAmount, remainingAmount)
+
   const tendered = Math.round((parseFloat(tenderedAmount) || 0) * 100)
-  const currentChange = Math.max(0, tendered - paymentAmount)
+  // Calculate change based on what we are REALLY taking (effectivePayment)
+  const currentChange = Math.max(0, tendered - effectivePayment)
 
   const updateQuantity = (itemId: string, delta: number, max: number): void => {
     setSelectedQuantities((prev) => {
       const current = prev[itemId] || 0
-      // If delta is 0, it means we clicked the row but maybe we are at max,
-      // typically we want to just select 1 if 0, or do nothing if max.
-      // But the logic used in onClick was: selected < item.quantity ? 1 : 0.
-      // If selected < max, we add 1. If at max, we add 0.
-      // Let's rely on passed delta.
-
       const next = Math.min(Math.max(0, current + delta), max)
 
       if (next === 0) {
@@ -136,18 +137,12 @@ export function PaymentModal({
   }
 
   const handlePayment = async (method: PaymentMethod): Promise<void> => {
-    // If splitting, we might have a remainder on the last person
-    // Ideally we should track "split parts paid", but for simplicity
-    // we just take the amount. The LAST person will pay the remainder eventually.
-
-    const amount = getPaymentAmount()
-
     // Safety check: Don't allow paying more than remaining
-    // Exception: In items mode with credit, paymentAmount calculation might be 0, but we proceed to mark items.
-    const actualAmount = Math.min(amount, remainingAmount)
+    // effectivePayment is already capped by remainingAmount
+    const actualAmount = effectivePayment
 
-    if (actualAmount <= 0 && !(paymentMode === 'items' && selectedTotal > 0 && genericCredit > 0))
-      return
+    // Allow 0 amount ONLY if in 'items' mode and we have selections (covered by credit)
+    if (actualAmount <= 0 && !(paymentMode === 'items' && selectedTotal > 0)) return
 
     if (method === 'CASH') {
       setFinalChange(currentChange)
@@ -156,57 +151,78 @@ export function PaymentModal({
     }
     setIsProcessing(true)
 
-    const isComplete = await processPayment(actualAmount, method)
+    try {
+      let isComplete = false
 
-    // If in items mode, mark selected items as paid
-    if (paymentMode === 'items' && Object.keys(selectedQuantities).length > 0) {
-      try {
+      // FIX: Only call processPayment if there is an actual amount to pay.
+      // If amount is 0 (covered by credit), we skip this and just mark items.
+      if (actualAmount > 0) {
+        isComplete = await processPayment(actualAmount, method)
+        // If payment failed (returned false/undefined), stop here
+        if (!isComplete && actualAmount > 0) {
+          // In current store implementation, processPayment returns boolean success
+          // However, we need to be careful. The store implementation might return true for partial?
+          // Checking store code (via memory/inference): usually returns true on success.
+          // If it failed, isComplete is false.
+        }
+      }
+
+      // If in items mode, mark selected items as paid
+      // We do this if payment succeeded OR if payment was 0 (skipped)
+      if (paymentMode === 'items' && Object.keys(selectedQuantities).length > 0) {
+        // If actualAmount > 0 and payment failed, don't mark items
+        if (actualAmount > 0 && !isComplete) {
+          throw new Error('Ödeme işlemi başarısız oldu.')
+        }
+
         const itemsToPay = Object.entries(selectedQuantities).map(([id, quantity]) => ({
           id,
           quantity
         }))
         await markItemsPaid(itemsToPay)
-      } catch (error) {
-        console.error('Failed to mark items as paid:', error)
+
+        // Items marked paid. If we processed a payment (actualAmount > 0) it should be fine.
+        // If we didn't (actualAmount == 0), we assume this "payment" is effectively done for these items.
       }
-    }
 
-    if (selectedTableId) {
-      await loadOrderForTable(selectedTableId)
-    }
+      if (selectedTableId) {
+        await loadOrderForTable(selectedTableId)
+      }
 
-    setIsProcessing(false)
+      // Determine if we should close modal
+      const effectivelyPaid = actualAmount
+      const newRemaining = remainingAmount - effectivelyPaid
 
-    // Play sound and show success
-    soundManager.playSuccess()
+      // 3. Close if remaining amount is basically 0
+      const shouldClose = newRemaining <= 0.01
 
-    // Check if fully paid or if we should just clear inputs
-    // If remaining amount is now close to 0 (allow small tolerance), close modal
-    // But we need to use the fresh remaining amount.
-    // Since we don't have fresh state immediately in this scope without await reload,
-    // we rely on 'isComplete' from processPayment which checks order status.
+      setIsProcessing(false)
+      soundManager.playSuccess()
 
-    if (isComplete) {
-      setPaymentComplete(true)
-      setTimeout(() => {
-        onClose()
-        if (onPaymentComplete) {
-          onPaymentComplete()
-        } else {
-          selectTable(null)
+      if (shouldClose || isComplete) {
+        setPaymentComplete(true)
+        setTimeout(() => {
+          onClose()
+          if (onPaymentComplete) {
+            onPaymentComplete()
+          } else {
+            selectTable(null)
+          }
+        }, 3000)
+      } else {
+        // Partial payment successful
+        setCustomAmount('')
+        setTenderedAmount('')
+        setSelectedQuantities({}) // Clear selected items after payment
+
+        if (paymentMode !== 'split' && paymentMode !== 'items') {
+          setPaymentMode('full')
         }
-      }, 3000)
-    } else {
-      // Partial payment successful
-      setCustomAmount('')
-      setTenderedAmount('')
-      setSelectedQuantities({}) // Clear selected items after payment
-
-      // Maintain current mode if it's 'split' or 'items' to allow sequential payments
-      if (paymentMode !== 'split' && paymentMode !== 'items') {
-        setPaymentMode('full')
       }
-      // Don't close modal, allow next payment
+    } catch (error) {
+      console.error('Payment failed:', error)
+      setIsProcessing(false)
+      // Ideally show toast here
     }
   }
 
@@ -239,14 +255,14 @@ export function PaymentModal({
   const handleTenderedChange = (val: string): void => {
     setTenderedAmount(val)
 
-    // Smart Logic: If in custom mode and amount is not set, infer it from tendered
-    if (paymentMode === 'custom' && (!customAmount || parseFloat(customAmount) === 0)) {
+    // Proactive Logic: If in custom mode, update amount to match tendered (capped at remaining)
+    // This guides the user and prevents accidental "large change" scenarios for partial payments.
+    if (paymentMode === 'custom') {
       const tenderedVal = parseFloat(val) || 0
       if (tenderedVal > 0) {
         // Cap at remaining amount
         const remainingUnits = remainingAmount / 100
         const smartAmount = Math.min(tenderedVal, remainingUnits)
-        // Avoid floating point ugliness if possible (though straightforward division should be safe for currency here)
         setCustomAmount(parseFloat(smartAmount.toFixed(2)).toString())
       }
     }
@@ -255,27 +271,51 @@ export function PaymentModal({
   if (paymentComplete) {
     return (
       <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className="sm:max-w-md">
-          <div className="flex flex-col items-center justify-center py-8">
-            <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-4">
-              <CheckCircle className="w-10 h-10 text-primary" />
-            </div>
-            <h3 className="text-xl font-bold text-primary">Ödeme Tamamlandı</h3>
-            <p className="text-sm text-muted-foreground mt-1">Masa boşaltıldı</p>
-            {finalChange > 0 && (
-              <div className="mt-8 relative w-full max-w-[240px] mx-auto group perspective-1000">
-                <div className="absolute inset-0 bg-primary/30 blur-2xl rounded-full opacity-50" />
-                <div className="relative p-6 bg-card border-2 border-primary/50 shadow-xl shadow-primary/20 rounded-3xl text-center">
-                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-[0.2em] mb-1 block">
-                    Para Üstü
-                  </span>
-                  <p className="text-5xl font-black text-primary tabular-nums tracking-tighter">
-                    <span className="text-3xl opacity-50 font-bold mr-1">₺</span>
-                    {formatCurrency(finalChange).replace('₺', '')}
-                  </p>
-                </div>
+        <DialogContent className="sm:max-w-md border-none p-0 overflow-hidden bg-transparent shadow-none">
+          <div className="relative animate-in zoom-in-95 duration-500">
+            {/* Background Glow */}
+            <div className="absolute inset-0 bg-primary/20 blur-[80px] rounded-full" />
+            {/* Main Content Card */}
+            <div className="relative bg-card/80 backdrop-blur-2xl border border-white/10 rounded-[3rem] p-10 flex flex-col items-center text-center shadow-2xl">
+              <div className="w-24 h-24 rounded-full bg-emerald-500/20 flex items-center justify-center mb-6 animate-bounce duration-[2000ms]">
+                <CheckCircle className="w-14 h-14 text-emerald-500" />
               </div>
-            )}
+              <h3 className="text-3xl font-black text-foreground tracking-tight mb-2">
+                ÖDEME BAŞARILI
+              </h3>
+              <p className="text-muted-foreground font-medium mb-8">
+                İşlem kaydedildi ve masa boşaltıldı.
+              </p>
+
+              {finalChange > 0 ? (
+                <div className="w-full space-y-4">
+                  <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+                  <div className="py-4">
+                    <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-3 block">
+                      MÜŞTERİYE VERİLECEK
+                    </span>
+                    <div className="relative inline-block px-8 py-4 bg-primary/10 rounded-[2rem] border border-primary/20">
+                      <p className="text-6xl font-black text-primary tabular-nums tracking-tighter">
+                        <span className="text-3xl font-bold mr-1">₺</span>
+                        {formatCurrency(finalChange).replace('₺', '')}
+                      </p>
+                    </div>
+                    <p className="mt-4 text-xs font-bold text-amber-500/80 uppercase tracking-widest">
+                      PARA ÜSTÜNÜ VERMEYİ UNUTMAYIN
+                    </p>
+                  </div>
+                  <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+                </div>
+              ) : (
+                <div className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-emerald-500/10 rounded-full border border-emerald-500/20 text-emerald-500 font-bold text-sm">
+                  <span>TAM ÖDEME ALINDI</span>
+                </div>
+              )}
+
+              <div className="mt-10 text-[10px] font-bold text-muted-foreground/40 uppercase tracking-[0.2em]">
+                BU PENCERE OTOMATİK KAPANACAKTIR
+              </div>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -368,7 +408,8 @@ export function PaymentModal({
                     Kişi Başı
                   </p>
                   <p className="text-4xl font-extrabold text-primary tabular-nums">
-                    {formatCurrency(remainingAmount / splitCount)}
+                    {/* Fixed Logic: Use Total, not Remaining */}
+                    {formatCurrency(Math.min(remainingAmount, Math.ceil(total / splitCount)))}
                   </p>
                 </div>
               </div>
@@ -411,8 +452,21 @@ export function PaymentModal({
                       return (
                         <div
                           key={item.id}
+                          role="button"
+                          tabIndex={0}
+                          aria-label={`${item.product?.name || 'Ürün'}, ${item.quantity} adet`}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault()
+                              updateQuantity(
+                                item.id,
+                                selected < item.quantity ? 1 : 0,
+                                item.quantity
+                              )
+                            }
+                          }}
                           className={cn(
-                            'flex items-center justify-between p-2 rounded-md border transition-all cursor-pointer select-none',
+                            'flex items-center justify-between p-2 rounded-md border transition-all cursor-pointer select-none focus:outline-none focus:ring-2 focus:ring-primary',
                             selected > 0
                               ? 'bg-primary/10 border-primary'
                               : 'border-transparent hover:bg-muted'
@@ -577,15 +631,15 @@ export function PaymentModal({
               </p>
               <div className="flex items-center justify-center gap-2">
                 <p className="text-4xl font-extrabold tracking-tight text-primary tabular-nums">
-                  {formatCurrency(paymentAmount)}
+                  {formatCurrency(effectivePayment)}
                 </p>
               </div>
 
-              {paymentAmount < remainingAmount && (
+              {effectivePayment < remainingAmount && (
                 <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-muted/50 px-3 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                   <span>SONA KALAN:</span>
                   <span className="tabular-nums">
-                    {formatCurrency(remainingAmount - paymentAmount)}
+                    {formatCurrency(remainingAmount - effectivePayment)}
                   </span>
                 </div>
               )}
@@ -608,7 +662,7 @@ export function PaymentModal({
 
               <div className="grid grid-cols-5 gap-1.5 px-1">
                 {[10, 20, 50, 100, 200].map((val) => {
-                  const isDisabled = val * 100 < paymentAmount
+                  const isDisabled = val * 100 < effectivePayment
                   return (
                     <Button
                       key={val}

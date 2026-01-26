@@ -198,6 +198,7 @@ export const IPC_CHANNELS = {
   ORDERS_DELETE: 'orders:delete',
   ORDERS_TRANSFER: 'orders:transfer',
   ORDERS_MERGE: 'orders:merge',
+  ORDERS_TOGGLE_LOCK: 'orders:toggleLock',
   ORDERS_MARK_ITEMS_PAID: 'orders:markItemsPaid',
 
   // Payments

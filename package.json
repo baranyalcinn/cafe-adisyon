@@ -23,13 +23,14 @@
     "db:soft-reset": "npx tsx scripts/soft-reset.ts"
   },
   "dependencies": {
+    "@libsql/client": "^0.17.0",
+    "@prisma/adapter-libsql": "7.3.0",
+    "@prisma/client": "7.3.0",
     "bufferutil": "^4.1.0",
     "detect-libc": "^2.0.2",
+    "js-base64": "^3.7.7",
     "libsql": "^0.5.22",
-    "utf-8-validate": "^6.0.6",
-    "@prisma/client": "7.3.0",
-    "@prisma/adapter-libsql": "7.3.0",
-    "js-base64": "^3.7.7"
+    "utf-8-validate": "^6.0.6"
   },
   "overrides": {
     "glob": "^10.4.0",

@@ -1041,7 +1041,14 @@ export function registerIpcHandlers(): void {
   // ==================== DASHBOARD ====================
   ipcMain.handle(IPC_CHANNELS.DASHBOARD_GET_STATS, async () => {
     try {
-      const today = new Date()
+      const now = new Date()
+      const currentHour = now.getHours()
+
+      // Smart Dating: If before 05:00 AM, assume it belongs to the previous day (Shift logic)
+      const today = new Date(now)
+      if (currentHour < 5) {
+        today.setDate(today.getDate() - 1)
+      }
       today.setHours(0, 0, 0, 0)
 
       // Get today's closed orders
@@ -1113,7 +1120,6 @@ export function registerIpcHandlers(): void {
     }
   })
 
-  // ==================== SEED ====================
   // ==================== SEED ====================
   ipcMain.handle(IPC_CHANNELS.SEED_DATABASE, async () => {
     try {
@@ -1412,7 +1418,14 @@ export function registerIpcHandlers(): void {
   // ==================== EXTENDED DASHBOARD ====================
   ipcMain.handle(IPC_CHANNELS.DASHBOARD_GET_EXTENDED_STATS, async () => {
     try {
-      const today = new Date()
+      const now = new Date()
+      const currentHour = now.getHours()
+
+      // Smart Dating: If before 05:00 AM, assume it belongs to the previous day (Shift logic)
+      const today = new Date(now)
+      if (currentHour < 5) {
+        today.setDate(today.getDate() - 1)
+      }
       today.setHours(0, 0, 0, 0)
 
       // Get today's closed orders
@@ -1540,38 +1553,57 @@ export function registerIpcHandlers(): void {
   })
 
   // ==================== Z-REPORT ====================
+  // ==================== Z-REPORT ====================
   ipcMain.handle(IPC_CHANNELS.ZREPORT_GENERATE, async (_event, actualCash?: number) => {
     try {
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
+      const now = new Date()
+      const currentHour = now.getHours()
 
-      // Check if report already exists for today
-      const existing = await prisma.dailySummary.findUnique({
-        where: { date: today }
+      // Smart Dating: If before 05:00 AM, assume it belongs to the previous day (Shift logic)
+      const reportDate = new Date(now)
+      if (currentHour < 5) {
+        reportDate.setDate(reportDate.getDate() - 1)
+      }
+      reportDate.setHours(0, 0, 0, 0)
+
+      // Find the Last Z-Report taken BEFORE this report date
+      // This establishes the "Start Time" of the current period.
+      const lastReport = await prisma.dailySummary.findFirst({
+        where: {
+          date: { lt: reportDate }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
       })
 
-      if (existing) {
-        return { success: false, error: 'Bugün için Z-Raporu zaten oluşturulmuş.' }
-      }
+      const startDate = lastReport ? lastReport.createdAt : new Date(0) // Default to Epoch if no previous report
 
-      // Get today's closed orders
-      const todayOrders = await prisma.order.findMany({
+      // Get ALL closed orders since the last Z-Report (or beginning of time)
+      // This ensures NO GAP in data, even if reports were forgotten for days.
+      const periodicOrders = await prisma.order.findMany({
         where: {
           status: 'CLOSED',
-          createdAt: { gte: today }
+          createdAt: {
+            gt: startDate,
+            lte: now
+          }
         },
         include: { payments: true }
       })
 
-      // Get today's expenses
-      const todayExpenses = await prisma.expense.findMany({
+      // Get expenses in the same period
+      const periodicExpenses = await prisma.expense.findMany({
         where: {
-          createdAt: { gte: today }
+          createdAt: {
+            gt: startDate,
+            lte: now
+          }
         }
       })
 
       // Calculate totals
-      const allPayments = todayOrders.flatMap((o) => o.payments)
+      const allPayments = periodicOrders.flatMap((o) => o.payments)
       const totalCash = allPayments
         .filter((p) => p.paymentMethod === 'CASH')
         .reduce((sum, p) => sum + p.amount, 0)
@@ -1580,16 +1612,17 @@ export function registerIpcHandlers(): void {
         .reduce((sum, p) => sum + p.amount, 0)
       const totalRevenue = totalCash + totalCard
 
-      const totalExpenses = todayExpenses.reduce((sum, e) => sum + e.amount, 0)
+      const totalExpenses = periodicExpenses.reduce((sum, e) => sum + e.amount, 0)
       const netProfit = totalRevenue - totalExpenses
 
       // Calculate VAT (assuming 10% KDV for simplicity)
       const totalVat = Math.round(totalRevenue * 0.1)
 
-      // Create summary
-      const summary = await prisma.dailySummary.create({
-        data: {
-          date: today,
+      // Create or Update summary for the calculated reportDate
+      const summary = await prisma.dailySummary.upsert({
+        where: { date: reportDate },
+        create: {
+          date: reportDate,
           totalCash,
           actualCash: actualCash ?? totalCash,
           totalCard,
@@ -1597,13 +1630,24 @@ export function registerIpcHandlers(): void {
           netProfit,
           cancelCount: 0,
           totalVat,
-          orderCount: todayOrders.length,
+          orderCount: periodicOrders.length,
           totalRevenue
+        },
+        update: {
+          totalCash,
+          actualCash: actualCash ?? totalCash,
+          totalCard,
+          totalExpenses,
+          netProfit,
+          totalVat,
+          orderCount: periodicOrders.length,
+          totalRevenue,
+          createdAt: now // Update timestamp to reflect latest calculation
         }
       })
 
       // Update Monthly Report
-      await updateMonthlyReport(today)
+      await updateMonthlyReport(reportDate)
 
       return { success: true, data: summary }
     } catch (error) {

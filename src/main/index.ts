@@ -1,6 +1,6 @@
 import { app, shell, BrowserWindow } from 'electron'
 import { join } from 'path'
-import { registerIpcHandlers } from './ipc/handlers'
+import { registerAllHandlers } from './ipc'
 import { logger } from './lib/logger'
 import { dbMaintenance } from './lib/db-maintenance'
 
@@ -65,7 +65,7 @@ app.whenReady().then(async () => {
   await dbMaintenance.runMaintenance()
 
   // Register IPC handlers for database operations
-  registerIpcHandlers()
+  registerAllHandlers()
 
   createWindow()
 
