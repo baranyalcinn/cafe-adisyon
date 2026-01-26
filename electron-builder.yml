@@ -1,6 +1,6 @@
 appId: com.caffio.caffio
 productName: Caffio
-electronVersion: 39.3.0
+electronVersion: 40.0.0
 
 directories:
   buildResources: build

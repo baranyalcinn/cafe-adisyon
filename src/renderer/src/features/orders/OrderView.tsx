@@ -156,13 +156,13 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
 
       {/* Center Panel - Products Grid */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="p-6 bg-transparent">
-          <h2 className="text-3xl font-black tracking-tighter uppercase text-foreground/90 leading-none">
+        <div className="p-8 pb-4 bg-transparent">
+          <h2 className="text-2xl font-bold tracking-tight text-foreground/90 leading-none">
             {selectedTable?.name || 'Masa'}
-            <span className="text-primary ml-2 inline-block">SİPARİŞ</span>
+            <span className="text-primary ml-2 inline-block">Sipariş</span>
           </h2>
-          <p className="text-[10px] font-black text-muted-foreground mt-2 uppercase tracking-[0.3em]">
-            {filteredProducts.length} ÜRÜN LİSTELENİYOR
+          <p className="text-[10px] font-bold text-muted-foreground mt-2 uppercase tracking-widest">
+            {filteredProducts.length} Ürün Listeleniyor
           </p>
         </div>
 

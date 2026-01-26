@@ -78,34 +78,63 @@ function App(): React.JSX.Element {
   return (
     <ErrorBoundary>
       <div className="fixed inset-0 flex bg-background">
-        {/* Sidebar - Fixed width, never shrinks */}
-        <aside className="w-20 h-full flex flex-col items-center py-6 px-2 bg-card border-r gap-6">
-          <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center flex-shrink-0">
-            <Coffee className="w-7 h-7 text-primary-foreground" />
+        <aside className="w-20 h-full flex flex-col items-center py-8 px-2 bg-card/80 backdrop-blur-xl border-r gap-8 z-50">
+          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0 border border-primary/20 shadow-sm transition-transform hover:scale-105 active:scale-95 cursor-pointer">
+            <Coffee className="w-6 h-6 text-primary" />
           </div>
 
-          <nav className="flex-1 flex flex-col gap-4">
-            <Button
-              variant={currentView === 'tables' ? 'secondary' : 'ghost'}
-              size="icon"
-              onClick={() => setCurrentView('tables')}
-              className={cn('w-12 h-12 rounded-xl', currentView === 'tables' && 'bg-primary/20')}
-              title="Masalar"
-            >
-              <LayoutGrid className="w-5 h-5" />
-            </Button>
+          <nav className="flex-1 flex flex-col gap-6 pt-4">
+            <div className="relative group">
+              {currentView === 'tables' && (
+                <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-r-full shadow-[0_0_12px_rgba(var(--primary),0.5)]" />
+              )}
+              <Button
+                variant={currentView === 'tables' ? 'secondary' : 'ghost'}
+                size="icon"
+                onClick={() => setCurrentView('tables')}
+                className={cn(
+                  'w-12 h-12 rounded-2xl transition-all duration-300',
+                  currentView === 'tables'
+                    ? 'bg-primary/15 text-primary shadow-inner'
+                    : 'hover:bg-accent/50'
+                )}
+                title="Masalar"
+              >
+                <LayoutGrid
+                  className={cn(
+                    'w-5 h-5 transition-transform duration-300',
+                    currentView === 'tables' && 'scale-110'
+                  )}
+                />
+              </Button>
+            </div>
           </nav>
 
-          <div className="mt-auto">
-            <Button
-              variant={currentView === 'settings' ? 'secondary' : 'ghost'}
-              size="icon"
-              onClick={() => setCurrentView('settings')}
-              className={cn('w-12 h-12 rounded-xl', currentView === 'settings' && 'bg-primary/20')}
-              title="Ayarlar"
-            >
-              <Settings className="w-5 h-5" />
-            </Button>
+          <div className="mt-auto pb-4">
+            <div className="relative group">
+              {currentView === 'settings' && (
+                <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-r-full shadow-[0_0_12px_rgba(var(--primary),0.5)]" />
+              )}
+              <Button
+                variant={currentView === 'settings' ? 'secondary' : 'ghost'}
+                size="icon"
+                onClick={() => setCurrentView('settings')}
+                className={cn(
+                  'w-12 h-12 rounded-2xl transition-all duration-300',
+                  currentView === 'settings'
+                    ? 'bg-primary/15 text-primary shadow-inner'
+                    : 'hover:bg-accent/50'
+                )}
+                title="Ayarlar"
+              >
+                <Settings
+                  className={cn(
+                    'w-5 h-5 transition-transform duration-300',
+                    currentView === 'settings' && 'scale-110'
+                  )}
+                />
+              </Button>
+            </div>
           </div>
         </aside>
 

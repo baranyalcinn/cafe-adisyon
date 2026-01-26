@@ -1,6 +1,6 @@
 import { prisma } from '../db/prisma'
 import { logger } from '../lib/logger'
-// PaymentMethod removed
+import { logService } from './LogService'
 import { ApiResponse, Order } from '../../shared/types'
 
 export class OrderService {
@@ -76,6 +76,16 @@ export class OrderService {
       }
 
       const updatedOrder = await this.recalculateOrderTotal(orderId)
+
+      // Log activity
+      const product = await prisma.product.findUnique({ where: { id: productId } })
+      const table = await prisma.table.findUnique({ where: { id: updatedOrder.tableId } })
+      await logService.createLog(
+        'ADD_ITEM',
+        table?.name,
+        `${quantity}x ${product?.name || 'Ürün'} eklendi`
+      )
+
       return { success: true, data: updatedOrder }
     } catch (error) {
       logger.error('OrderService.addItem', error)
@@ -105,9 +115,18 @@ export class OrderService {
   async removeItem(itemId: string): Promise<ApiResponse<Order>> {
     try {
       const item = await prisma.orderItem.delete({
-        where: { id: itemId }
+        where: { id: itemId },
+        include: { product: true, order: { include: { table: true } } }
       })
       const updatedOrder = await this.recalculateOrderTotal(item.orderId)
+
+      // Log activity
+      await logService.createLog(
+        'REMOVE_ITEM',
+        item.order?.table?.name,
+        `${item.quantity}x ${item.product?.name || 'Ürün'} çıkarıldı`
+      )
+
       return { success: true, data: updatedOrder }
     } catch (error) {
       logger.error('OrderService.removeItem', error)
@@ -222,9 +241,21 @@ export class OrderService {
       // Return updated order
       const updatedOrder = (await prisma.order.findUnique({
         where: { id: orderId },
-        include: { items: { include: { product: true } }, payments: true }
+        include: { items: { include: { product: true } }, payments: true, table: true }
       })) as unknown as Order
-      return { success: true, data: { order: updatedOrder!, completed: false } }
+
+      // Log activity
+      await logService.createLog(
+        method === 'CASH' ? 'PAYMENT_CASH' : 'PAYMENT_CARD',
+        updatedOrder.table?.name,
+        `₺${(amount / 100).toFixed(2)} ${method === 'CASH' ? 'nakit' : 'kart'} ödeme alındı`
+      )
+
+      if (remaining <= 0) {
+        await logService.createLog('CLOSE_TABLE', updatedOrder.table?.name, `Adisyon kapatıldı`)
+      }
+
+      return { success: true, data: { order: updatedOrder!, completed: remaining <= 0 } }
     } catch (error) {
       logger.error('OrderService.processPayment', error)
       return { success: false, error: 'Ödeme alınamadı.' }

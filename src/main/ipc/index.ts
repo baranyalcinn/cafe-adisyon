@@ -6,6 +6,7 @@ import { registerExpenseHandlers } from './routes/expenseHandlers'
 import { registerMaintenanceHandlers } from './routes/maintenanceHandlers'
 import { registerTableHandlers } from './routes/tableHandlers'
 import { registerCategoryHandlers } from './routes/categoryHandlers'
+import { registerLogHandlers } from './routes/logHandlers'
 
 export function registerAllHandlers(): void {
   registerTableHandlers()
@@ -16,4 +17,5 @@ export function registerAllHandlers(): void {
   registerAdminHandlers()
   registerExpenseHandlers()
   registerMaintenanceHandlers()
+  registerLogHandlers()
 }

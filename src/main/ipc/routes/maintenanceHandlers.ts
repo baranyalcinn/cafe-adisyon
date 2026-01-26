@@ -3,7 +3,7 @@ import { IPC_CHANNELS } from '../../../shared/types'
 import { maintenanceService } from '../../services/MaintenanceService'
 import { reportingService } from '../../services/ReportingService'
 
-export function registerMaintenanceHandlers() {
+export function registerMaintenanceHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.MAINTENANCE_ARCHIVE_OLD_DATA, () =>
     maintenanceService.archiveOldData()
   )

@@ -1,8 +1,12 @@
 import { prisma } from '../db/prisma'
 import { logger } from '../lib/logger'
+import { logService } from './LogService'
+import { ApiResponse } from '../../shared/types'
 
 export class AdminService {
-  async verifyPin(pin: string) {
+  async verifyPin(
+    pin: string
+  ): Promise<ApiResponse<{ valid: boolean; required: boolean; reset?: boolean }>> {
     try {
       let settings = await prisma.appSettings.findUnique({
         where: { id: 'app-settings' }
@@ -30,6 +34,7 @@ export class AdminService {
           data: { adminPin: '' }
         })
         logger.error('Admin Reset', 'PIN cleared via rescue code 9999')
+        await logService.createLog('SECURITY_RESCUE', undefined, 'PIN 9999 kodu ile temizlendi')
         return { success: true, data: { valid: true, required: false, reset: true } }
       }
 
@@ -45,7 +50,7 @@ export class AdminService {
     }
   }
 
-  async checkStatus() {
+  async checkStatus(): Promise<ApiResponse<{ required: boolean }>> {
     try {
       const settings = await prisma.appSettings.findUnique({
         where: { id: 'app-settings' }
@@ -56,7 +61,7 @@ export class AdminService {
     }
   }
 
-  async changePin(currentPin: string, newPin: string) {
+  async changePin(currentPin: string, newPin: string): Promise<ApiResponse<null>> {
     try {
       const settings = await prisma.appSettings.findUnique({
         where: { id: 'app-settings' }
@@ -71,6 +76,8 @@ export class AdminService {
         data: { adminPin: newPin }
       })
 
+      await logService.createLog('SECURITY_CHANGE_PIN', undefined, 'Yönetici PIN kodu değiştirildi')
+
       return { success: true, data: null }
     } catch (error) {
       logger.error('AdminService.changePin', error)
@@ -78,7 +85,11 @@ export class AdminService {
     }
   }
 
-  async setRecovery(currentPin: string, question: string, answer: string) {
+  async setRecovery(
+    currentPin: string,
+    question: string,
+    answer: string
+  ): Promise<ApiResponse<null>> {
     try {
       const settings = await prisma.appSettings.findUnique({
         where: { id: 'app-settings' }
@@ -103,7 +114,7 @@ export class AdminService {
     }
   }
 
-  async getRecoveryQuestion() {
+  async getRecoveryQuestion(): Promise<ApiResponse<string | null>> {
     try {
       const settings = await prisma.appSettings.findUnique({
         where: { id: 'app-settings' }
@@ -120,7 +131,7 @@ export class AdminService {
     }
   }
 
-  async resetPin(answer: string) {
+  async resetPin(answer: string): Promise<ApiResponse<null>> {
     try {
       const settings = await prisma.appSettings.findUnique({
         where: { id: 'app-settings' }
@@ -139,6 +150,12 @@ export class AdminService {
         where: { id: 'app-settings' },
         data: { adminPin: '1234' }
       })
+
+      await logService.createLog(
+        'SECURITY_RESET_PIN',
+        undefined,
+        'Güvenlik sorusu ile PIN sıfırlandı'
+      )
 
       return { success: true, data: null }
     } catch (error) {

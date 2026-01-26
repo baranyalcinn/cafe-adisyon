@@ -1,5 +1,6 @@
 import { prisma, dbPath } from '../db/prisma'
 import { logger } from '../lib/logger'
+import { logService } from './LogService'
 import { app } from 'electron'
 import * as fs from 'fs'
 import * as path from 'path'
@@ -38,12 +39,11 @@ export class MaintenanceService {
         }
       })
 
-      await prisma.activityLog.create({
-        data: {
-          action: 'ARCHIVE_DATA',
-          details: `Silinen: ${deletedOrders.count} sipariş, ${deletedItems.count} ürün, ${deletedTransactions.count} işlem`
-        }
-      })
+      await logService.createLog(
+        'ARCHIVE_DATA',
+        undefined,
+        `Silinen: ${deletedOrders.count} sipariş, ${deletedItems.count} ürün, ${deletedTransactions.count} işlem`
+      )
 
       return {
         success: true,
@@ -113,12 +113,7 @@ export class MaintenanceService {
     try {
       await prisma.$executeRawUnsafe('VACUUM')
 
-      await prisma.activityLog.create({
-        data: {
-          action: 'VACUUM',
-          details: 'Veritabanı optimize edildi'
-        }
-      })
+      await logService.createLog('VACUUM', undefined, 'Veritabanı optimize edildi')
 
       return { success: true, data: null }
     } catch (error) {
@@ -141,12 +136,7 @@ export class MaintenanceService {
 
       fs.copyFileSync(dbPath, backupPath)
 
-      await prisma.activityLog.create({
-        data: {
-          action: 'BACKUP_DATABASE',
-          details: `Yedek oluşturuldu: ${backupPath}`
-        }
-      })
+      await logService.createLog('BACKUP_DATABASE', undefined, `Yedek oluşturuldu: ${backupPath}`)
 
       return { success: true, data: { backupPath } }
     } catch (error) {
@@ -188,12 +178,11 @@ export class MaintenanceService {
         fs.unlinkSync(file.path)
       }
 
-      await prisma.activityLog.create({
-        data: {
-          action: 'BACKUP_DATABASE',
-          details: `Yedek oluşturuldu. Silinen eski yedek sayısı: ${toDelete.length}`
-        }
-      })
+      await logService.createLog(
+        'BACKUP_DATABASE',
+        undefined,
+        `Yedek oluşturuldu. Silinen eski yedek sayısı: ${toDelete.length}`
+      )
 
       return {
         success: true,
@@ -344,12 +333,11 @@ export class MaintenanceService {
         })
       }
 
-      await prisma.activityLog.create({
-        data: {
-          action: 'SEED_DATABASE',
-          details: 'Demo verileri yüklendi (12 masa, 4 kategori, 40+ ürün)'
-        }
-      })
+      await logService.createLog(
+        'SEED_DATABASE',
+        undefined,
+        'Demo verileri yüklendi (12 masa, 4 kategori, 40+ ürün)'
+      )
 
       return { success: true, data: null }
     } catch (error) {

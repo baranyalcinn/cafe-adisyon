@@ -36,8 +36,8 @@ function ProductCardComponent({ product, compact = false }: ProductCardProps): R
         onClick={handleClick}
         disabled={isLocked}
         className={cn(
-          'flex items-center gap-3 p-3.5 rounded-2xl bg-card/60 backdrop-blur-sm border border-white/5 transition-all w-full text-left group',
-          isLocked ? 'opacity-50 cursor-not-allowed' : 'hover:bg-accent/20 active:scale-[0.99]'
+          'flex items-center gap-3 p-3 rounded-2xl bg-card border border-white/5 transition-all w-full text-left group',
+          isLocked ? 'opacity-50 cursor-not-allowed' : 'hover:bg-accent/10 active:scale-[0.99]'
         )}
       >
         <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
@@ -61,8 +61,8 @@ function ProductCardComponent({ product, compact = false }: ProductCardProps): R
       onClick={handleClick}
       disabled={isLocked}
       className={cn(
-        'group relative flex flex-col items-center p-6 rounded-[2rem] border bg-card/60 backdrop-blur-sm transition-all duration-200 w-full hover:scale-[1.02] active:scale-[0.98] cursor-pointer h-full min-h-[160px] overflow-hidden',
-        isLocked ? 'opacity-50 cursor-not-allowed' : 'hover:bg-card/70',
+        'group relative flex flex-col items-center p-6 rounded-2xl border bg-card transition-all duration-200 w-full hover:shadow-md active:scale-[0.98] cursor-pointer h-full min-h-[160px] overflow-hidden',
+        isLocked ? 'opacity-50 cursor-not-allowed' : 'hover:bg-accent/5',
         product.isFavorite && 'border-amber-500/20'
       )}
     >
@@ -72,21 +72,20 @@ function ProductCardComponent({ product, compact = false }: ProductCardProps): R
         </div>
       )}
 
-      {/* Product Icon & Background Detail */}
       <div className="flex-1 flex flex-col items-center justify-center w-full min-h-0 relative z-10">
-        <div className="w-16 h-16 rounded-3xl bg-primary/10 flex items-center justify-center mb-4 transition-all duration-300 group-hover:scale-105 group-hover:bg-primary/20">
+        <div className="w-14 h-14 rounded-2xl bg-primary/5 flex items-center justify-center mb-4 transition-all duration-300 group-hover:bg-primary/10">
           {/* Bigger icon in card center */}
-          {getCategoryIcon(product.category?.icon, 'w-8 h-8 transition-colors duration-300')}
+          {getCategoryIcon(product.category?.icon, 'w-7 h-7 transition-colors duration-300')}
         </div>
 
-        <h3 className="font-black text-xs md:text-sm text-center line-clamp-2 leading-none uppercase tracking-tighter w-full px-2 text-foreground group-hover:text-primary transition-colors">
+        <h3 className="font-bold text-xs md:text-sm text-center line-clamp-2 leading-tight uppercase tracking-tight w-full px-2 text-foreground group-hover:text-primary transition-colors">
           {product.name}
         </h3>
       </div>
 
       {/* Price Badge */}
-      <div className="mt-4 px-4 py-2 rounded-2xl bg-primary/10 border border-primary/20 backdrop-blur-sm transition-all duration-300 group-hover:bg-primary group-hover:text-primary-foreground">
-        <span className="text-sm font-black tabular-nums">{formatCurrency(product.price)}</span>
+      <div className="mt-4 px-3 py-1.5 rounded-xl bg-primary/10 border border-primary/10 transition-all duration-300 group-hover:bg-primary group-hover:text-primary-foreground">
+        <span className="text-sm font-bold tabular-nums">{formatCurrency(product.price)}</span>
       </div>
 
       {/* Decorative Gradient Overlay */}

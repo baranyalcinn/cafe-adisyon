@@ -1,5 +1,6 @@
 import { prisma } from '../db/prisma'
 import { logger } from '../lib/logger'
+import { logService } from './LogService'
 import {
   ApiResponse,
   DailySummary,
@@ -104,6 +105,13 @@ export class ReportingService {
       })
 
       await this.updateMonthlyReport(reportDate)
+
+      // Log activity
+      await logService.createLog(
+        'GENERATE_ZREPORT',
+        undefined,
+        `Gün sonu Z-Raporu oluşturuldu: ₺${(totalRevenue / 100).toFixed(2)}`
+      )
 
       return { success: true, data: summary }
     } catch (error) {

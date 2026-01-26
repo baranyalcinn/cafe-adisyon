@@ -46,20 +46,20 @@ const TableCard = memo(
           <button
             onClick={onClick}
             className={cn(
-              'group relative flex flex-col items-center justify-center gap-4 p-8 rounded-[2rem] border-2 transition-all duration-500 cursor-pointer overflow-hidden',
-              'hover:scale-105 hover:shadow-[0_20px_50px_rgba(0,0,0,0.1)] active:scale-95',
+              'group relative flex flex-col items-center justify-center gap-4 p-8 rounded-2xl border transition-all duration-300 cursor-pointer overflow-hidden',
+              'hover:shadow-lg active:scale-95',
               hasOpenOrder
-                ? 'bg-red-500/5 border-red-500/30 hover:border-red-400/50'
-                : 'bg-emerald-500/5 border-emerald-500/30 hover:border-emerald-400/50',
-              isLocked && 'bg-amber-500/5 border-amber-500/30 hover:border-amber-400/50'
+                ? 'bg-red-500/5 border-red-500/20 hover:border-red-400/40'
+                : 'bg-emerald-500/5 border-emerald-500/20 hover:border-emerald-400/40',
+              isLocked && 'bg-amber-500/5 border-amber-500/20 hover:border-amber-400/40'
             )}
           >
             {/* Subtle Glow Effect */}
             <div
               className={cn(
-                'absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 blur-2xl -z-10',
-                hasOpenOrder ? 'bg-red-500/10' : 'bg-emerald-500/10',
-                isLocked && 'bg-amber-500/10'
+                'absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl -z-10',
+                hasOpenOrder ? 'bg-red-500/5' : 'bg-emerald-500/5',
+                isLocked && 'bg-amber-500/5'
               )}
             />
 
@@ -96,25 +96,25 @@ const TableCard = memo(
 
             <div
               className={cn(
-                'p-4 rounded-3xl transition-all duration-500 group-hover:rotate-12 group-hover:scale-110',
-                hasOpenOrder ? 'bg-red-500/10 text-red-400' : 'bg-emerald-500/10 text-emerald-400',
-                isLocked && 'bg-amber-500/10 text-amber-400'
+                'p-4 rounded-2xl transition-all duration-300 group-hover:scale-105',
+                hasOpenOrder ? 'bg-red-500/10 text-red-500' : 'bg-emerald-500/10 text-emerald-500',
+                isLocked && 'bg-amber-500/10 text-amber-500'
               )}
             >
-              <Coffee className="w-12 h-12" />
+              <Coffee className="w-10 h-10" />
             </div>
 
-            <div className="text-center space-y-1.5">
-              <span className="text-lg font-bold text-foreground/90 tracking-tight block">
+            <div className="text-center space-y-1">
+              <span className="text-base font-bold text-foreground/90 tracking-tight block">
                 {name}
               </span>
               <div
                 className={cn(
-                  'text-[10px] uppercase font-semibold tracking-wider px-3 py-0.5 rounded-full border bg-background/50',
+                  'text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md border bg-background/50',
                   hasOpenOrder
-                    ? 'border-red-500/30 text-red-500/80'
-                    : 'border-emerald-500/30 text-emerald-500/80',
-                  isLocked && 'border-amber-500/30 text-amber-500/80'
+                    ? 'border-red-500/20 text-red-500'
+                    : 'border-emerald-500/20 text-emerald-500',
+                  isLocked && 'border-amber-500/20 text-amber-500'
                 )}
               >
                 {isLocked ? 'KİLİTLİ' : hasOpenOrder ? 'DOLU' : 'BOŞ'}
@@ -264,11 +264,13 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
   return (
     <div className="h-full flex flex-col overflow-hidden bg-background">
       {/* Header Section */}
-      <div className="flex-none py-4 px-8 border-b bg-background/50 backdrop-blur z-10 w-full mb-2">
+      <div className="flex-none py-4 px-8 border-b bg-background/80 backdrop-blur-md z-10 w-full mb-2">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold tracking-tight">Masa Seçimi</h2>
-            <p className="text-sm text-muted-foreground">Sipariş almak için bir masa seçin</p>
+            <h2 className="text-xl font-bold tracking-tight">Masa Seçimi</h2>
+            <p className="text-xs text-muted-foreground font-medium">
+              Sipariş almak için bir masa seçin
+            </p>
           </div>
         </div>
       </div>
