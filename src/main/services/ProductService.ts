@@ -1,7 +1,7 @@
 import { prisma } from '../db/prisma'
 import { logger } from '../lib/logger'
 import { ApiResponse, Product, Category } from '../../shared/types'
-import { Prisma } from '@prisma/client'
+import { Prisma } from '../../generated/prisma/client'
 
 export class ProductService {
   async getAllProducts(): Promise<ApiResponse<Product[]>> {
