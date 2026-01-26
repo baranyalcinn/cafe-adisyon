@@ -243,7 +243,7 @@ export class MaintenanceService {
       await prisma.category.createMany({
         data: [
           { id: 'cat-sicak', name: 'Sıcak İçecekler', icon: 'coffee' },
-          { id: 'cat-soguk', name: 'Soğuk İçecekler', icon: 'ice-cream' },
+          { id: 'cat-soguk', name: 'Soğuk İçecekler', icon: 'wine' },
           { id: 'cat-yiyecek', name: 'Yiyecekler', icon: 'utensils' },
           { id: 'cat-tatli', name: 'Tatlılar', icon: 'cake' }
         ]
