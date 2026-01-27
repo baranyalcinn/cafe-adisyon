@@ -2,7 +2,7 @@ import { ipcMain } from 'electron'
 import { IPC_CHANNELS } from '../../../shared/types'
 import { reportingService } from '../../services/ReportingService'
 
-export function registerReportingHandlers() {
+export function registerReportingHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.DASHBOARD_GET_STATS, () => reportingService.getDashboardStats())
 
   ipcMain.handle(IPC_CHANNELS.DASHBOARD_GET_EXTENDED_STATS, () =>

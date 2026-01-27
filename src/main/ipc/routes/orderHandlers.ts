@@ -46,4 +46,12 @@ export function registerOrderHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.ORDERS_GET_HISTORY, (_, options) =>
     orderService.getOrderHistory(options)
   )
+
+  ipcMain.handle(IPC_CHANNELS.ORDERS_TRANSFER, async (_, orderId, targetTableId) =>
+    orderService.transferTable(orderId, targetTableId)
+  )
+
+  ipcMain.handle(IPC_CHANNELS.ORDERS_MERGE, async (_, sourceOrderId, targetOrderId) =>
+    orderService.mergeTables(sourceOrderId, targetOrderId)
+  )
 }

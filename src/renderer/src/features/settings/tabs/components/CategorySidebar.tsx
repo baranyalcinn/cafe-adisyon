@@ -90,7 +90,7 @@ export const CategorySidebar = memo(
               <Button
                 size="icon"
                 variant="ghost"
-                className="h-8 w-8 shrink-0"
+                className="h-8 w-8 shrink-0 hover:bg-red-500/10 hover:text-red-500 transition-all duration-300"
                 onClick={() => setIsAdding(false)}
               >
                 <X className="w-4 h-4" />

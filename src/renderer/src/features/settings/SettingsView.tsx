@@ -344,7 +344,7 @@ export function SettingsView({
           variant="ghost"
           size="icon"
           onClick={() => setActiveView(null)}
-          className="rounded-full h-10 w-10 hover:bg-muted transition-colors"
+          className="rounded-full h-10 w-10 hover:bg-primary/10 hover:text-primary transition-all duration-300"
         >
           <ArrowLeft className="w-5 h-5" />
         </Button>

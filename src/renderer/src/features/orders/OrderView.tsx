@@ -70,7 +70,11 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
       {/* Left Panel - Categories & Search */}
       <div className="w-72 glass-panel flex flex-col h-full min-h-0 animate-in slide-in-from-left duration-300">
         <div className="p-6">
-          <Button variant="ghost" onClick={onBack} className="gap-2 mb-4 w-full justify-start">
+          <Button
+            variant="ghost"
+            onClick={onBack}
+            className="gap-2 mb-4 w-full justify-start hover:bg-primary/10 hover:text-primary transition-all duration-300"
+          >
             <ArrowLeft className="w-4 h-4" />
             Masalara Dön
           </Button>

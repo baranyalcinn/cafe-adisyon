@@ -397,6 +397,148 @@ export class OrderService {
     })) as unknown as Order
     return updated
   }
+  async transferTable(orderId: string, targetTableId: string): Promise<ApiResponse<Order>> {
+    try {
+      // 1. Check if target table is empty
+      const targetOrder = await prisma.order.findFirst({
+        where: { tableId: targetTableId, status: 'OPEN' }
+      })
+
+      if (targetOrder) {
+        return {
+          success: false,
+          error: 'Hedef masada açık adisyon var. Lütfen birleştirme işlemini kullanın.'
+        }
+      }
+
+      // 2. Get source order (for logging)
+      const sourceOrder = await prisma.order.findUnique({
+        where: { id: orderId },
+        include: { table: true }
+      })
+
+      if (!sourceOrder) {
+        return { success: false, error: 'Taşınacak adisyon bulunamadı.' }
+      }
+
+      // 3. Update order tableId
+      const updatedOrder = (await prisma.order.update({
+        where: { id: orderId },
+        data: { tableId: targetTableId },
+        include: {
+          items: { include: { product: true } },
+          payments: true,
+          table: true
+        }
+      })) as unknown as Order
+
+      // Log activity
+      const toTable = await prisma.table.findUnique({ where: { id: targetTableId } })
+
+      await logService.createLog(
+        'TRANSFER_TABLE',
+        undefined,
+        `${sourceOrder.table?.name || 'Masa'} -> ${toTable?.name} taşındı`
+      )
+
+      return { success: true, data: updatedOrder }
+    } catch (error) {
+      logger.error('OrderService.transferTable', error)
+      return { success: false, error: 'Masa taşıma işlemi başarısız.' }
+    }
+  }
+
+  async mergeTables(sourceOrderId: string, targetOrderId: string): Promise<ApiResponse<Order>> {
+    try {
+      const result = await prisma.$transaction(
+        async (tx) => {
+          // 1. Get items from source order
+          const sourceItems = await tx.orderItem.findMany({
+            where: { orderId: sourceOrderId }
+          })
+
+          if (!sourceItems.length) {
+            throw new Error('Kaynak adisyonda ürün bulunamadı.')
+          }
+
+          // 2. Get items from target order to check duplicates
+          const targetItems = await tx.orderItem.findMany({
+            where: { orderId: targetOrderId }
+          })
+
+          // 3. Move items logic with quantity merging
+          for (const sourceItem of sourceItems) {
+            const existingItem = targetItems.find(
+              (t) => t.productId === sourceItem.productId && !t.isPaid && !sourceItem.isPaid
+            )
+
+            if (existingItem) {
+              // Update quantity of existing item
+              await tx.orderItem.update({
+                where: { id: existingItem.id },
+                data: { quantity: existingItem.quantity + sourceItem.quantity }
+              })
+              // Delete source item since it's merged
+              await tx.orderItem.delete({ where: { id: sourceItem.id } })
+            } else {
+              // Move item to target order (just update orderId)
+              await tx.orderItem.update({
+                where: { id: sourceItem.id },
+                data: { orderId: targetOrderId }
+              })
+            }
+          }
+
+          // 4. Move payments
+          await tx.transaction.updateMany({
+            where: { orderId: sourceOrderId },
+            data: { orderId: targetOrderId }
+          })
+
+          // 5. Delete source order
+          await tx.order.delete({ where: { id: sourceOrderId } })
+
+          // 6. Recalculate target order total
+          const allTargetItems = await tx.orderItem.findMany({
+            where: { orderId: targetOrderId }
+          })
+          const totalAmount = allTargetItems.reduce(
+            (sum, item) => sum + item.quantity * item.unitPrice,
+            0
+          )
+
+          const updatedOrder = (await tx.order.update({
+            where: { id: targetOrderId },
+            data: { totalAmount },
+            include: {
+              items: { include: { product: true } },
+              payments: true,
+              table: true
+            }
+          })) as unknown as Order
+
+          return { success: true, data: updatedOrder }
+        },
+        {
+          timeout: 20000 // Increase timeout to 20s
+        }
+      )
+
+      // Log outside transaction
+      if (result.success && result.data) {
+        await logService.createLog(
+          'MERGE_TABLES',
+          result.data.table?.name,
+          `Adisyonlar birleştirildi (Toplam: ₺${(result.data.totalAmount / 100).toFixed(2)})`
+        )
+      }
+
+      return result
+    } catch (error) {
+      logger.error('OrderService.mergeTables', error)
+      return { success: false, error: String(error) }
+    }
+  }
 }
 
 export const orderService = new OrderService()

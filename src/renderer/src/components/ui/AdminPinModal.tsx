@@ -306,7 +306,7 @@ export function AdminPinModal({
                   <Button
                     variant="ghost"
                     onClick={() => setMode('verify')}
-                    className="flex-1 h-14 rounded-2xl font-bold"
+                    className="flex-1 h-14 rounded-2xl font-bold hover:bg-primary/10 hover:text-primary transition-all duration-300"
                     disabled={isResetting}
                   >
                     İptal

@@ -76,7 +76,7 @@ export const ProductCard = memo(function ProductCard({
             <Button
               size="sm"
               variant="outline"
-              className="h-8 w-8 px-0"
+              className="h-8 w-8 px-0 hover:bg-red-500/10 hover:text-red-500 transition-all duration-300"
               onClick={() => setIsEditing(false)}
             >
               <X className="w-4 h-4" />

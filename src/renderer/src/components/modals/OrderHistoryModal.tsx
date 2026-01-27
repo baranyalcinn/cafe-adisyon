@@ -253,6 +253,7 @@ export function OrderHistoryModal(): React.JSX.Element {
               size="sm"
               onClick={() => setPage((p) => Math.max(0, p - 1))}
               disabled={page === 0 || loading}
+              className="hover:bg-primary/10 hover:text-primary transition-all duration-300"
             >
               <ChevronLeft className="w-4 h-4 mr-1" />
               Önceki
@@ -262,6 +263,7 @@ export function OrderHistoryModal(): React.JSX.Element {
               size="sm"
               onClick={() => setPage((p) => p + 1)}
               disabled={orders.length < LIMIT || loading}
+              className="hover:bg-primary/10 hover:text-primary transition-all duration-300"
             >
               Sonraki
               <ChevronRight className="w-4 h-4 ml-1" />

@@ -17,6 +17,15 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '@/components/ui/table'
 import {
   cafeApi,
   type ExtendedDashboardStats,
@@ -50,7 +59,7 @@ interface CustomTooltipProps {
   payload?: Array<{
     value: number
     name: string
-    dataKey: string
+    dataKey: string | number
     payload: Record<string, unknown>
   }>
   label?: string
@@ -105,28 +114,36 @@ function PaymentTooltip({ active, payload }: CustomTooltipProps): React.JSX.Elem
 function MonthlyTooltip({ active, payload, label }: CustomTooltipProps): React.JSX.Element | null {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-card text-card-foreground border border-border rounded-lg px-4 py-3 shadow-lg">
-        <p className="text-sm font-semibold mb-1">{label}</p>
-        <div className="space-y-1">
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-xs text-muted-foreground">Gelir:</span>
-            <span className="text-sm font-bold text-emerald-500">
-              {formatCurrency(payload.find((p) => p.dataKey === 'revenue')?.value || 0)}
-            </span>
-          </div>
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-xs text-muted-foreground">Gider:</span>
-            <span className="text-sm font-bold text-red-500">
-              {formatCurrency(payload.find((p) => p.dataKey === 'expenses')?.value || 0)}
-            </span>
-          </div>
-          <div className="h-px bg-border my-1" />
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-xs text-muted-foreground">Net Kar:</span>
-            <span className="text-sm font-black text-primary">
-              {formatCurrency(payload.find((p) => p.dataKey === 'profit')?.value || 0)}
-            </span>
-          </div>
+      <div className="bg-card text-card-foreground border border-border rounded-xl px-4 py-3 shadow-xl backdrop-blur-md">
+        <p className="text-sm font-bold mb-2 text-muted-foreground">{label}</p>
+        <div className="space-y-1.5">
+          {payload.map((entry, index) => (
+            <div key={index} className="flex items-center justify-between gap-8">
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-2 h-2 rounded-full"
+                  style={{
+                    backgroundColor:
+                      ((entry.payload as Record<string, unknown>).fill as string) ||
+                      (entry as unknown as { color: string }).color
+                  }}
+                />
+                <span className="text-xs font-medium">{entry.name}:</span>
+              </div>
+              <span
+                className={cn(
+                  'text-sm font-bold tabular-nums',
+                  entry.dataKey === 'profit'
+                    ? (entry.value as number) >= 0
+                      ? 'text-emerald-500'
+                      : 'text-red-500'
+                    : 'text-foreground'
+                )}
+              >
+                {formatCurrency(entry.value as number)}
+              </span>
+            </div>
+          ))}
         </div>
       </div>
     )
@@ -422,7 +439,12 @@ export function DashboardView(): React.JSX.Element {
                         isAnimationActive={false}
                       >
                         {paymentData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={entry.fill}
+                            stroke="none"
+                            style={{ outline: 'none' }}
+                          />
                         ))}
                       </Pie>
                       <Tooltip content={<PaymentTooltip />} />
@@ -605,46 +627,49 @@ export function DashboardView(): React.JSX.Element {
                 <CardTitle className="text-base font-bold">Aylık Kar Özeti</CardTitle>
               </CardHeader>
               <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr className="border-b bg-muted/30">
-                        <th className="text-left p-3 font-bold">Ay</th>
-                        <th className="text-right p-3 font-bold">Ciro</th>
-                        <th className="text-right p-3 font-bold">Kâr</th>
-                      </tr>
-                    </thead>
-                    <tbody>
+                <ScrollArea className="h-[320px]">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/30">
+                        <TableHead className="font-bold">Ay</TableHead>
+                        <TableHead className="text-right font-bold">Ciro</TableHead>
+                        <TableHead className="text-right font-bold">Kâr</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                       {monthlyReports.map((report) => (
-                        <tr key={report.id} className="border-b last:border-0 hover:bg-muted/50">
-                          <td className="p-3 font-medium uppercase">
+                        <TableRow key={report.id} className="hover:bg-muted/50">
+                          <TableCell className="font-medium uppercase">
                             {new Date(report.monthDate).toLocaleDateString('tr-TR', {
                               month: 'long'
                             })}
-                          </td>
-                          <td className="p-3 text-right tabular-nums">
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums">
                             {formatCurrency(report.totalRevenue)}
-                          </td>
-                          <td
+                          </TableCell>
+                          <TableCell
                             className={cn(
-                              'p-3 text-right font-bold tabular-nums',
+                              'text-right font-bold tabular-nums',
                               report.netProfit >= 0 ? 'text-emerald-600' : 'text-red-600'
                             )}
                           >
                             {formatCurrency(report.netProfit)}
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       ))}
                       {monthlyReports.length === 0 && (
-                        <tr>
-                          <td colSpan={3} className="p-8 text-center text-muted-foreground italic">
+                        <TableRow>
+                          <TableCell
+                            colSpan={3}
+                            className="h-24 text-center text-muted-foreground italic"
+                          >
                             Veri henüz toplanmadı
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       )}
-                    </tbody>
-                  </table>
-                </div>
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
               </CardContent>
             </Card>
           </div>
@@ -665,51 +690,49 @@ export function DashboardView(): React.JSX.Element {
                 oluşturabilirsiniz.
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-3 px-4 font-medium text-muted-foreground">
-                        Tarih
-                      </th>
-                      <th className="text-right py-3 px-4 font-medium text-muted-foreground">
+              <ScrollArea className="h-[400px]">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="font-medium text-muted-foreground">Tarih</TableHead>
+                      <TableHead className="text-right font-medium text-muted-foreground">
                         Nakit
-                      </th>
-                      <th className="text-right py-3 px-4 font-medium text-muted-foreground">
+                      </TableHead>
+                      <TableHead className="text-right font-medium text-muted-foreground">
                         Kart
-                      </th>
-                      <th className="text-right py-3 px-4 font-medium text-muted-foreground">
+                      </TableHead>
+                      <TableHead className="text-right font-medium text-muted-foreground">
                         Toplam
-                      </th>
-                      <th className="text-right py-3 px-4 font-medium text-muted-foreground">
+                      </TableHead>
+                      <TableHead className="text-right font-medium text-muted-foreground">
                         Sipariş
-                      </th>
-                      <th className="text-center py-3 px-4 font-medium text-muted-foreground">
+                      </TableHead>
+                      <TableHead className="text-center font-medium text-muted-foreground">
                         Detay
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {zReportHistory.map((report) => (
-                      <tr
+                      <TableRow
                         key={report.id}
-                        className="border-b hover:bg-muted/50 cursor-pointer transition-colors"
+                        className="cursor-pointer transition-colors"
                         onClick={() => setSelectedReport(report)}
                       >
-                        <td className="py-3 px-4 font-medium">
+                        <TableCell className="font-medium">
                           {new Date(report.date).toLocaleDateString('tr-TR')}
-                        </td>
-                        <td className="text-right py-3 px-4 text-emerald-600 tabular-nums">
+                        </TableCell>
+                        <TableCell className="text-right text-emerald-600 tabular-nums">
                           {formatCurrency(report.totalCash)}
-                        </td>
-                        <td className="text-right py-3 px-4 text-blue-600 tabular-nums">
+                        </TableCell>
+                        <TableCell className="text-right text-blue-600 tabular-nums">
                           {formatCurrency(report.totalCard)}
-                        </td>
-                        <td className="text-right py-3 px-4 font-bold tabular-nums">
+                        </TableCell>
+                        <TableCell className="text-right font-bold tabular-nums">
                           {formatCurrency(report.totalRevenue)}
-                        </td>
-                        <td className="text-right py-3 px-4">{report.orderCount}</td>
-                        <td className="text-center py-3 px-4">
+                        </TableCell>
+                        <TableCell className="text-right">{report.orderCount}</TableCell>
+                        <TableCell className="text-center">
                           <Button
                             variant="ghost"
                             size="sm"
@@ -721,12 +744,12 @@ export function DashboardView(): React.JSX.Element {
                           >
                             <Eye className="w-4 h-4" />
                           </Button>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
-              </div>
+                  </TableBody>
+                </Table>
+              </ScrollArea>
             )}
           </CardContent>
         </Card>
@@ -734,22 +757,23 @@ export function DashboardView(): React.JSX.Element {
         {/* Z-Report Detail Modal */}
         {/* Z-Report Detail Modal - Redesigned for better fit and visuals */}
         <Dialog open={!!selectedReport} onOpenChange={(open) => !open && setSelectedReport(null)}>
-          <DialogContent className="sm:max-w-[440px] p-0 overflow-hidden border-primary/20 bg-background/95 backdrop-blur-xl">
+          <DialogContent className="sm:max-w-[480px] max-h-[96vh] p-0 overflow-hidden border-primary/20 bg-background/95 backdrop-blur-xl">
             {selectedReport && (
               <div className="flex flex-col">
-                <div className="bg-primary/10 p-8 pb-10 border-b border-primary/10 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-                  <div className="relative z-10 flex flex-col items-center text-center space-y-3">
-                    <div className="p-4 bg-background/50 rounded-2xl shadow-sm border border-primary/10">
-                      <FileText className="w-8 h-8 text-primary" />
+                <div className="bg-gradient-to-br from-primary/20 via-primary/10 to-background p-4 border-b border-primary/10 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
+
+                  <div className="relative z-10 flex items-center gap-4">
+                    <div className="p-2 bg-background/40 backdrop-blur-md rounded-2xl shadow-xl border border-white/10 ring-1 ring-black/5 shrink-0">
+                      <ReceiptText className="w-6 h-6 text-primary" />
                     </div>
-                    <div>
-                      <h2 className="text-xl font-extrabold text-foreground tracking-tight">
-                        Z-Raporu Detayı
+                    <div className="flex-1 min-w-0">
+                      <h2 className="text-lg font-black text-foreground tracking-tight uppercase italic truncate">
+                        <span className="text-primary">Z</span> Raporu Detayı
                       </h2>
-                      <div className="flex items-center gap-2 text-muted-foreground mt-1">
-                        <Calendar className="w-3.5 h-3.5" />
-                        <span className="text-sm font-medium">
+                      <div className="flex items-center gap-2.5 text-muted-foreground mt-1">
+                        <Calendar className="w-4 h-4 text-primary/60" />
+                        <span className="text-xs font-bold uppercase tracking-widest truncate">
                           {new Date(selectedReport.date).toLocaleDateString('tr-TR', {
                             weekday: 'long',
                             day: 'numeric',
@@ -762,91 +786,100 @@ export function DashboardView(): React.JSX.Element {
                   </div>
                 </div>
 
-                <div className="p-6 -mt-6 relative z-20">
+                <div className="p-4 relative z-20 space-y-4">
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-card border p-5 rounded-[2.5rem] flex flex-col items-center text-center shadow-sm hover:shadow-md transition-shadow">
-                      <TrendingUp className="w-5 h-5 text-emerald-500 mb-3" />
-                      <p className="text-[11px] font-bold text-muted-foreground/80 uppercase tracking-wider mb-2">
+                    <div className="group bg-gradient-to-br from-emerald-500/10 to-background border p-3.5 rounded-[1.5rem] flex flex-col items-center text-center shadow-sm hover:shadow-lg transition-all duration-300 border-emerald-500/20">
+                      <div className="p-1.5 bg-emerald-500/20 rounded-xl mb-2 group-hover:scale-110 transition-transform">
+                        <TrendingUp className="w-4 h-4 text-emerald-500" />
+                      </div>
+                      <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">
                         Günlük Ciro
                       </p>
-                      <p className="text-xl font-extrabold text-emerald-600 tabular-nums tracking-tight">
+                      <p className="text-xl font-black text-emerald-500 tabular-nums tracking-tight">
                         {formatCurrency(selectedReport.totalRevenue)}
                       </p>
                     </div>
 
-                    <div className="bg-card border p-5 rounded-[2.5rem] flex flex-col items-center text-center shadow-sm hover:shadow-md transition-shadow">
-                      <ShoppingBag className="w-5 h-5 text-blue-500 mb-3" />
-                      <p className="text-[11px] font-bold text-muted-foreground/80 uppercase tracking-wider mb-2">
-                        Sipariş Sayısı
+                    <div className="group bg-gradient-to-br from-blue-500/10 to-background border p-3.5 rounded-[1.5rem] flex flex-col items-center text-center shadow-sm hover:shadow-lg transition-all duration-300 border-blue-500/20">
+                      <div className="p-1.5 bg-blue-500/20 rounded-xl mb-2 group-hover:scale-110 transition-transform">
+                        <ShoppingBag className="w-4 h-4 text-blue-500" />
+                      </div>
+                      <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">
+                        Sipariş
                       </p>
-                      <p className="text-xl font-extrabold text-blue-600 tabular-nums tracking-tight">
+                      <p className="text-xl font-black text-blue-500 tabular-nums tracking-tight">
                         {selectedReport.orderCount}
                       </p>
                     </div>
 
-                    <div className="bg-card border p-5 rounded-[2.5rem] flex flex-col items-center text-center shadow-sm hover:shadow-md transition-shadow">
-                      <Banknote className="w-5 h-5 text-amber-500 mb-3" />
-                      <p className="text-[11px] font-bold text-muted-foreground/80 uppercase tracking-wider mb-2">
-                        Nakit Toplam
+                    <div className="group bg-gradient-to-br from-orange-500/10 to-background border p-3.5 rounded-[1.5rem] flex flex-col items-center text-center shadow-sm hover:shadow-lg transition-all duration-300 border-orange-500/20">
+                      <div className="p-1.5 bg-orange-500/20 rounded-xl mb-2 group-hover:scale-110 transition-transform">
+                        <Banknote className="w-4 h-4 text-orange-500" />
+                      </div>
+                      <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">
+                        Nakit
                       </p>
-                      <p className="text-xl font-extrabold text-amber-600 tabular-nums tracking-tight">
+                      <p className="text-xl font-black text-orange-500 tabular-nums tracking-tight">
                         {formatCurrency(selectedReport.totalCash)}
                       </p>
                     </div>
 
-                    <div className="bg-card border p-5 rounded-[2.5rem] flex flex-col items-center text-center shadow-sm hover:shadow-md transition-shadow">
-                      <CreditCard className="w-5 h-5 text-purple-500 mb-3" />
-                      <p className="text-[11px] font-bold text-muted-foreground/80 uppercase tracking-wider mb-2">
-                        Kart Toplam
+                    <div className="group bg-gradient-to-br from-purple-500/10 to-background border p-3.5 rounded-[1.5rem] flex flex-col items-center text-center shadow-sm hover:shadow-lg transition-all duration-300 border-purple-500/20">
+                      <div className="p-1.5 bg-purple-500/20 rounded-xl mb-2 group-hover:scale-110 transition-transform">
+                        <CreditCard className="w-4 h-4 text-purple-500" />
+                      </div>
+                      <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">
+                        Kart
                       </p>
-                      <p className="text-xl font-extrabold text-purple-600 tabular-nums tracking-tight">
+                      <p className="text-xl font-black text-purple-500 tabular-nums tracking-tight">
                         {formatCurrency(selectedReport.totalCard)}
                       </p>
                     </div>
                   </div>
 
-                  <div className="mt-8 space-y-5">
-                    <div className="bg-muted/20 rounded-[2rem] p-6 border border-dashed border-muted-foreground/20">
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-muted-foreground font-semibold">Net Satışlar</span>
-                          <span className="font-extrabold tabular-nums text-foreground">
-                            {formatCurrency(selectedReport.totalRevenue - selectedReport.totalVat)}
-                          </span>
+                  <div className="space-y-4">
+                    <Card className="bg-muted/30 border-none shadow-inner overflow-hidden">
+                      <div className="p-4 space-y-3">
+                        <div className="flex justify-between items-end">
+                          <div className="space-y-1">
+                            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest text-opacity-80">
+                              Net Satışlar
+                            </span>
+                            <p className="text-xl font-black tabular-nums text-foreground">
+                              {formatCurrency(
+                                selectedReport.totalRevenue - selectedReport.totalVat
+                              )}
+                            </p>
+                          </div>
+                          <div className="text-right space-y-1">
+                            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest text-opacity-80">
+                              KDV (%10)
+                            </span>
+                            <p className="text-xl font-bold tabular-nums text-muted-foreground">
+                              {formatCurrency(selectedReport.totalVat)}
+                            </p>
+                          </div>
                         </div>
-                        <div className="h-px bg-muted-foreground/5" />
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-muted-foreground font-semibold">
-                            Toplam KDV (%10)
-                          </span>
-                          <span className="font-extrabold tabular-nums text-foreground">
-                            {formatCurrency(selectedReport.totalVat)}
-                          </span>
-                        </div>
+
+                        <div className="h-px bg-gradient-to-r from-transparent via-muted-foreground/10 to-transparent" />
+
                         {selectedReport.cancelCount > 0 && (
-                          <>
-                            <div className="h-px bg-muted-foreground/5" />
-                            <div className="flex justify-between items-center text-sm text-red-600">
-                              <span className="font-semibold flex items-center gap-2">
-                                <AlertCircle className="w-4 h-4" /> İptal Sayısı
-                              </span>
-                              <span className="font-extrabold">{selectedReport.cancelCount}</span>
-                            </div>
-                          </>
+                          <div className="flex justify-between items-center text-xs text-red-500/80 bg-red-500/5 px-3 py-2 rounded-xl border border-red-500/10">
+                            <span className="font-bold flex items-center gap-2 uppercase tracking-tight">
+                              <AlertCircle className="w-4 h-4" /> İptal Edilenler
+                            </span>
+                            <span className="font-black text-sm">{selectedReport.cancelCount}</span>
+                          </div>
                         )}
                       </div>
-                    </div>
+                    </Card>
 
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="w-full text-[10px] text-muted-foreground/60 flex justify-between px-2 font-mono">
-                        <span>ID: {selectedReport.id.slice(0, 12)}...</span>
-                        <span>{new Date(selectedReport.createdAt).toLocaleString('tr-TR')}</span>
-                      </div>
+                    <div className="flex flex-col items-center gap-4 pt-2">
                       <Button
-                        className="w-full h-12 rounded-2xl font-bold gap-2 text-base shadow-lg shadow-primary/10"
+                        className="w-full h-12 rounded-2xl font-black uppercase tracking-widest gap-3 text-sm shadow-xl hover:shadow-primary/20 transition-all active:scale-[0.98]"
                         onClick={() => setSelectedReport(null)}
                       >
-                        <X className="w-4 h-4" />
+                        <X className="w-5 h-5" />
                         Pencereyi Kapat
                       </Button>
                     </div>

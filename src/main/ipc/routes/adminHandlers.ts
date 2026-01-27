@@ -2,7 +2,7 @@ import { ipcMain } from 'electron'
 import { IPC_CHANNELS } from '../../../shared/types'
 import { adminService } from '../../services/AdminService'
 
-export function registerAdminHandlers() {
+export function registerAdminHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.ADMIN_VERIFY_PIN, (_, pin) => adminService.verifyPin(pin))
 
   ipcMain.handle(IPC_CHANNELS.ADMIN_CHECK_STATUS, () => adminService.checkStatus())

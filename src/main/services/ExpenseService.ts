@@ -2,7 +2,11 @@ import { prisma } from '../db/prisma'
 import { logger } from '../lib/logger'
 
 export class ExpenseService {
-  async createExpense(data: { description: string; amount: number; category?: string }) {
+  async createExpense(data: {
+    description: string
+    amount: number
+    category?: string
+  }): Promise<{ success: boolean; data?: unknown; error?: string }> {
     try {
       const expense = await prisma.expense.create({
         data
@@ -28,7 +32,7 @@ export class ExpenseService {
     }
   }
 
-  async getAllExpenses() {
+  async getAllExpenses(): Promise<{ success: boolean; data?: unknown[]; error?: string }> {
     try {
       const thirtyDaysAgo = new Date()
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
@@ -44,7 +48,9 @@ export class ExpenseService {
     }
   }
 
-  async deleteExpense(id: string) {
+  async deleteExpense(
+    id: string
+  ): Promise<{ success: boolean; data?: null | unknown; error?: string }> {
     try {
       await prisma.expense.delete({ where: { id } })
       return { success: true, data: null }
