@@ -1,5 +1,5 @@
 import { useState, useEffect, Suspense, lazy } from 'react'
-import { Coffee, LayoutGrid, Settings, Loader2 } from 'lucide-react'
+import { LayoutGrid, Settings, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { TablesView } from '@/features/tables/TablesView'
 import { OrderView } from '@/features/orders/OrderView'
@@ -80,9 +80,19 @@ function App(): React.JSX.Element {
   return (
     <>
       <div className="fixed inset-0 flex bg-background">
-        <aside className="w-20 h-full flex flex-col items-center py-8 px-2 bg-card/80 backdrop-blur-xl border-r gap-8 z-50">
-          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0 border border-primary/20 shadow-sm transition-transform hover:scale-105 active:scale-95 cursor-pointer">
-            <Coffee className="w-6 h-6 text-primary" />
+        <aside className="w-20 h-full flex flex-col items-center py-6 px-2 bg-card/80 backdrop-blur-xl border-r z-50">
+          <div className="flex flex-col items-center mb-8 group cursor-default select-none">
+            <div className="flex flex-col items-center gap-2 transition-transform duration-700 group-hover:scale-110">
+              <div className="flex items-center justify-center gap-1.5 backdrop-blur-sm px-3 py-1 rounded-full group-hover:bg-rose-500/5 transition-colors">
+                <span className="text-2xl font-black text-rose-500 leading-none">7</span>
+                <span className="text-2xl font-black text-rose-500/60 leading-none">7</span>
+                <span className="text-2xl font-black text-rose-500/30 leading-none">7</span>
+              </div>
+              <div className="w-10 h-px bg-gradient-to-r from-transparent via-rose-500/30 to-transparent" />
+              <span className="text-[9px] font-black text-rose-500/80 uppercase tracking-[0.4em] leading-none text-center pl-1">
+                Cafe
+              </span>
+            </div>
           </div>
 
           <nav className="flex-1 flex flex-col gap-6 pt-4">

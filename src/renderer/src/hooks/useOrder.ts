@@ -247,7 +247,10 @@ export function useOrder(tableId: string | null): UseOrderResult {
       queryClient.setQueryData(queryKey, context?.previousOrder)
       toast({ title: 'Hata', description: 'Kilit işlemi başarısız', variant: 'destructive' })
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey })
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey })
+      queryClient.invalidateQueries({ queryKey: ['tables'] })
+    }
   })
 
   // 6. Delete Order

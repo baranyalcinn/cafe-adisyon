@@ -67,12 +67,6 @@ export default defineConfig({
         '@': resolve('src/renderer/src')
       }
     },
-    plugins: [react(), tailwindcss()],
-    test: {
-      globals: true,
-      environment: 'jsdom',
-      setupFiles: './src/renderer/src/test/setup.ts',
-      css: true
-    }
+    plugins: [react(), tailwindcss()]
   }
 })

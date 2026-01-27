@@ -3,10 +3,13 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { cafeApi } from '@/lib/api'
 import { toast } from '@/store/useToastStore'
-import { useTableStore } from '@/store/useTableStore'
+import { useTables } from '@/hooks/useTables'
 
 export function TablesTab(): React.JSX.Element {
-  const { tables, addTable, removeTable } = useTableStore()
+  const { data: tables = [], refetch } = useTables()
+  // We can keep useTableStore if needed for other things, but here we just need data.
+  // const { tables, addTable, removeTable } = useTableStore() // Removed
+
 
   const handleAddTable = async (): Promise<void> => {
     try {
@@ -18,8 +21,8 @@ export function TablesTab(): React.JSX.Element {
       const nextNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 1
       const newTableName = `Masa ${nextNumber}`
 
-      const newTable = await cafeApi.tables.create(newTableName)
-      addTable(newTable)
+      await cafeApi.tables.create(newTableName)
+      refetch() // Refresh list
       toast({ title: 'Başarılı', description: 'Yeni masa oluşturuldu', variant: 'success' })
     } catch (error) {
       console.error('Failed to add table:', error)
@@ -34,7 +37,7 @@ export function TablesTab(): React.JSX.Element {
   const handleDeleteTable = async (id: string): Promise<void> => {
     try {
       await cafeApi.tables.delete(id)
-      removeTable(id)
+      refetch() // Refresh list
     } catch (error) {
       console.error('Failed to delete table:', error)
       toast({

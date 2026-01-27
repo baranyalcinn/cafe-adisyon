@@ -95,10 +95,8 @@ export function PaymentModal({
         // Deduct generic credit from selected total
         return Math.max(0, selectedTotal - genericCredit)
       case 'split': {
-        // FIX: Calculate split based on TOTAL, not remaining.
-        // Cap at remainingAmount to ensure we don't overpay on the last split.
-        const splitShare = Math.ceil(total / splitCount)
-        return Math.min(splitShare, remainingAmount)
+        const splitShare = Math.ceil(remainingAmount / splitCount)
+        return splitShare
       }
       case 'custom':
         return Math.round((parseFloat(customAmount) || 0) * 100)
@@ -112,8 +110,18 @@ export function PaymentModal({
   const effectivePayment = Math.min(paymentAmount, remainingAmount)
 
   const tendered = Math.round((parseFloat(tenderedAmount) || 0) * 100)
+  
+  // Smart UX: If in custom mode and entered amount > remaining amount,
+  // treat the custom amount as "Tendered" (Received) cash if no explicit tendered amount is set.
+  let effectiveTendered = tendered
+  const rawCustomAmount = paymentMode === 'custom' ? Math.round((parseFloat(customAmount) || 0) * 100) : 0
+  
+  if (paymentMode === 'custom' && effectiveTendered === 0 && rawCustomAmount > remainingAmount) {
+    effectiveTendered = rawCustomAmount
+  }
+
   // Calculate change based on what we are REALLY taking (effectivePayment)
-  const currentChange = Math.max(0, tendered - effectivePayment)
+  const currentChange = Math.max(0, effectiveTendered - effectivePayment)
 
   const updateQuantity = (itemId: string, delta: number, max: number): void => {
     setSelectedQuantities((prev) => {
@@ -389,8 +397,7 @@ export function PaymentModal({
                     Kişi Başı
                   </p>
                   <p className="text-4xl font-extrabold text-primary tabular-nums">
-                    {/* Fixed Logic: Use Total, not Remaining */}
-                    {formatCurrency(Math.min(remainingAmount, Math.ceil(total / splitCount)))}
+                    {formatCurrency(Math.ceil(remainingAmount / splitCount))}
                   </p>
                 </div>
               </div>
@@ -626,68 +633,124 @@ export function PaymentModal({
               )}
             </div>
 
-            <div className="mt-4 space-y-3">
-              <div className="flex items-center justify-between px-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">
-                  NAKİT HESAPLAYICI
-                </label>
-                {tenderedAmount && (
-                  <button
-                    onClick={() => setTenderedAmount('')}
-                    className="text-[9px] font-black text-primary hover:opacity-80 transition-opacity"
-                  >
-                    SIFIRLA
-                  </button>
+            {paymentMode !== 'custom' ? (
+              <div className="mt-4 space-y-3">
+                <div className="flex items-center justify-between px-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">
+                    NAKİT HESAPLAYICI
+                  </label>
+                  {tenderedAmount && (
+                    <button
+                      onClick={() => setTenderedAmount('')}
+                      className="text-[9px] font-black text-primary hover:opacity-80 transition-opacity"
+                    >
+                      SIFIRLA
+                    </button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-5 gap-1.5 px-1">
+                  {[10, 20, 50, 100, 200].map((val) => {
+                    const isDisabled = val * 100 < effectivePayment
+                    return (
+                      <Button
+                        key={val}
+                        variant="outline"
+                        size="sm"
+                        disabled={isDisabled}
+                        className={cn(
+                          'h-9 border-none bg-background/50 text-[11px] font-black transition-all hover:bg-primary hover:text-primary-foreground rounded-xl shadow-sm',
+                          isDisabled && 'opacity-20 backdrop-blur-none'
+                        )}
+                        onClick={() => handleTenderedChange(val.toString())}
+                      >
+                        ₺{val}
+                      </Button>
+                    )
+                  })}
+                </div>
+
+                <div className="relative group">
+                  <Input
+                    className="h-14 border-none bg-background/40 text-right font-mono text-2xl font-black rounded-2xl focus-visible:ring-2 focus-visible:ring-primary/20 transition-all shadow-inner"
+                    placeholder="₺0.00"
+                    value={tenderedAmount}
+                    onChange={(e) => handleTenderedChange(e.target.value)}
+                    type="number"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+
+                {tendered > 0 && (
+                  <div className="mt-2 p-4 bg-amber-500/10 border border-amber-500/20 rounded-[1.5rem] animate-in zoom-in-95 duration-300">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest">
+                        PARA ÜSTÜ
+                      </span>
+                      <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                    </div>
+                    <div className="text-3xl font-extrabold text-amber-600 tabular-nums text-right tracking-tight">
+                      {formatCurrency(currentChange)}
+                    </div>
+                  </div>
                 )}
               </div>
-
-              <div className="grid grid-cols-5 gap-1.5 px-1">
-                {[10, 20, 50, 100, 200].map((val) => {
-                  const isDisabled = val * 100 < effectivePayment
-                  return (
-                    <Button
-                      key={val}
-                      variant="outline"
-                      size="sm"
-                      disabled={isDisabled}
-                      className={cn(
-                        'h-9 border-none bg-background/50 text-[11px] font-black transition-all hover:bg-primary hover:text-primary-foreground rounded-xl shadow-sm',
-                        isDisabled && 'opacity-20 backdrop-blur-none'
+            ) : (
+              <div className="mt-4">
+                {rawCustomAmount > 0 && (
+                  <div
+                    className={cn(
+                      'p-6 rounded-[2rem] border animate-in zoom-in-95 duration-500',
+                      rawCustomAmount > remainingAmount
+                        ? 'bg-amber-500/10 border-amber-500/20'
+                        : rawCustomAmount < remainingAmount
+                          ? 'bg-blue-500/10 border-blue-500/20'
+                          : 'bg-emerald-500/10 border-emerald-500/20'
+                    )}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span
+                        className={cn(
+                          'text-[10px] font-black uppercase tracking-widest',
+                          rawCustomAmount > remainingAmount
+                            ? 'text-amber-600'
+                            : rawCustomAmount < remainingAmount
+                              ? 'text-blue-600'
+                              : 'text-emerald-600'
+                        )}
+                      >
+                        {rawCustomAmount > remainingAmount
+                          ? 'PARA ÜSTÜ'
+                          : rawCustomAmount < remainingAmount
+                            ? 'EKSİK KALAN'
+                            : 'TAM ÖDEME'}
+                      </span>
+                      {rawCustomAmount !== remainingAmount && (
+                        <span
+                          className={cn(
+                            'h-2 w-2 rounded-full animate-pulse',
+                            rawCustomAmount > remainingAmount ? 'bg-amber-500' : 'bg-blue-500'
+                          )}
+                        />
                       )}
-                      onClick={() => handleTenderedChange(val.toString())}
+                    </div>
+                    <div
+                      className={cn(
+                        'text-4xl font-extrabold tabular-nums tracking-tighter',
+                        rawCustomAmount > remainingAmount
+                          ? 'text-amber-600'
+                          : rawCustomAmount < remainingAmount
+                            ? 'text-blue-600'
+                            : 'text-emerald-600'
+                      )}
                     >
-                      ₺{val}
-                    </Button>
-                  )
-                })}
-              </div>
-
-              <div className="relative group">
-                <Input
-                  className="h-14 border-none bg-background/40 text-right font-mono text-2xl font-black rounded-2xl focus-visible:ring-2 focus-visible:ring-primary/20 transition-all shadow-inner"
-                  placeholder="₺0.00"
-                  value={tenderedAmount}
-                  onChange={(e) => handleTenderedChange(e.target.value)}
-                  type="number"
-                  min="0"
-                  step="0.01"
-                />
-              </div>
-
-              {tendered > 0 && (
-                <div className="mt-2 p-4 bg-amber-500/10 border border-amber-500/20 rounded-[1.5rem] animate-in zoom-in-95 duration-300">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest">
-                      PARA ÜSTÜ
-                    </span>
-                    <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                      {formatCurrency(Math.abs(rawCustomAmount - remainingAmount))}
+                    </div>
                   </div>
-                  <div className="text-3xl font-extrabold text-amber-600 tabular-nums text-right tracking-tight">
-                    {formatCurrency(currentChange)}
-                  </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="mt-8 space-y-3">

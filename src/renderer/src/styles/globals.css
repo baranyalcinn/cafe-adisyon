@@ -277,7 +277,7 @@ textarea,
 
 /* Premium UI Utilities */
 .glass-panel {
-  @apply bg-card/60 backdrop-blur-md border-white/5;
+  @apply bg-card/90 border-white/5;
 }
 
 .premium-card {

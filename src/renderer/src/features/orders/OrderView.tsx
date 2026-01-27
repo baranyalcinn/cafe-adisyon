@@ -79,7 +79,7 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
   }
 
   return (
-    <div className="flex h-full bg-background/95">
+    <div className="flex h-full bg-background">
       {/* Left Panel - Categories & Search */}
       <div className="w-72 glass-panel flex flex-col h-full min-h-0 animate-in slide-in-from-left duration-300">
         <div className="p-6">
@@ -179,23 +179,20 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
 
       {/* Center Panel - Products Grid */}
       <div className="flex-1 flex flex-col overflow-hidden bg-background/50">
-        <div className="p-8 pb-4 flex items-center justify-between">
-          <div className="space-y-1">
-            <h2 className="text-3xl font-black tracking-tight text-foreground drop-shadow-sm uppercase italic">
-              {selectedTable?.name || 'Masa'}
-              <span className="text-primary ml-3 inline-block not-italic tracking-normal">
-                Sipariş
-              </span>
-            </h2>
-            <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
-                {filteredProducts.length} Ürün Listeleniyor
-              </p>
+        <div className="sticky top-0 z-20 px-8 py-5 flex items-center justify-between bg-background/80 backdrop-blur-md border-b border-white/5">
+          <div className="flex items-center gap-4">
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-3">
+                <h2 className="text-2xl font-black tracking-tight text-foreground uppercase italic pb-0.5">
+                  {selectedTable?.name || 'Masa'}
+                </h2>
+                <div className="h-6 w-px bg-border/40 mx-1" />
+                <span className="text-primary font-bold tracking-tight text-xl">Sipariş</span>
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center bg-muted/30 p-1 rounded-xl border border-border/50">
+          <div className="flex items-center bg-muted/30 p-1.5 rounded-2xl border border-border/40 shadow-inner">
             <Button
               variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
               size="sm"
@@ -204,8 +201,8 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
                 localStorage.setItem('orderViewMode', 'grid')
               }}
               className={cn(
-                'rounded-lg px-3 gap-2 h-9 font-bold transition-all',
-                viewMode === 'grid' && 'shadow-sm'
+                'rounded-xl px-4 gap-2 h-9 font-bold',
+                viewMode === 'grid' ? 'bg-background shadow-md text-primary' : 'text-muted-foreground'
               )}
             >
               <Grid className="w-4 h-4" />
@@ -219,14 +216,14 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
                 localStorage.setItem('orderViewMode', 'list')
               }}
               className={cn(
-                'rounded-lg px-3 gap-2 h-9 font-bold transition-all',
-                viewMode === 'list' && 'shadow-sm'
+                'rounded-xl px-4 gap-2 h-9 font-bold',
+                viewMode === 'list' ? 'bg-background shadow-md text-primary' : 'text-muted-foreground'
               )}
             >
               <div className="flex flex-col gap-0.5 items-center justify-center">
-                <div className="w-4 h-0.5 bg-current rounded-full" />
-                <div className="w-4 h-0.5 bg-current rounded-full" />
-                <div className="w-4 h-0.5 bg-current rounded-full" />
+                <div className="w-3.5 h-0.5 bg-current rounded-full" />
+                <div className="w-3.5 h-0.5 bg-current rounded-full" />
+                <div className="w-3.5 h-0.5 bg-current rounded-full" />
               </div>
               <span className="hidden sm:inline">Liste</span>
             </Button>
@@ -245,9 +242,9 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
             ) : (
               <div
                 className={cn(
-                  'gap-2.5 transition-all duration-500',
+                  'gap-2.5',
                   viewMode === 'grid'
-                    ? 'grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))]'
+                    ? 'grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))]'
                     : 'flex flex-col max-w-4xl mx-auto px-4'
                 )}
               >

@@ -43,32 +43,28 @@ function ProductCardComponent({
         onClick={handleClick}
         disabled={isLocked}
         className={cn(
-          'flex items-center gap-4 p-4 rounded-[1.25rem] bg-card/60 border border-white/5 transition-all w-full text-left group relative overflow-hidden',
+          'flex items-center gap-3 p-3 rounded-2xl bg-card border border-white/5 transition-all w-full text-left group relative overflow-hidden',
           isLocked
             ? 'opacity-50 cursor-not-allowed'
-            : 'hover:bg-primary/5 hover:border-primary/20 active:scale-[0.99] shadow-sm hover:shadow-lg'
+            : 'hover:bg-primary/[0.03] hover:border-primary/20 active:scale-[0.98] shadow-sm'
         )}
       >
-        <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 group-hover:rotate-6 transition-all duration-500 shadow-inner">
-          {getCategoryIcon(product.category?.icon, 'w-6 h-6 text-primary')}
+        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 shadow-inner">
+          {getCategoryIcon(product.category?.icon, 'w-5 h-5 text-primary')}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-bold text-sm md:text-base truncate text-foreground/90 group-hover:text-primary transition-colors">
+          <p className="font-bold text-[15px] line-clamp-2 text-foreground/90 group-hover:text-primary transition-colors leading-tight mb-0.5">
             {product.name.replace(/([a-z])([A-Z])/g, '$1 $2')}
           </p>
-          <div className="flex items-center gap-1.5 mt-0.5">
-            <span className="w-1 h-1 rounded-full bg-emerald-500" />
-            <p className="text-sm font-black text-emerald-600 tabular-nums">
+          <div className="px-2.5 py-1 rounded-lg bg-emerald-500/[0.08] border border-emerald-500/10 group-hover:bg-emerald-500/15 group-hover:border-emerald-500/20 transition-all w-fit">
+            <p className="text-xs font-black text-emerald-500 tabular-nums tracking-tight">
               {formatCurrency(product.price)}
             </p>
           </div>
         </div>
-        <div className="w-10 h-10 rounded-full flex items-center justify-center bg-primary/5 group-hover:bg-primary text-primary group-hover:text-primary-foreground transition-all duration-300 shadow-sm">
-          <Plus className="w-5 h-5 pointer-events-none" />
+        <div className="w-8 h-8 rounded-full flex items-center justify-center bg-primary/5 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all">
+          <Plus className="w-4 h-4" />
         </div>
-
-        {/* Subtle Inner Glow */}
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
       </button>
     )
   }
@@ -78,44 +74,44 @@ function ProductCardComponent({
       onClick={handleClick}
       disabled={isLocked}
       className={cn(
-        'group relative flex flex-col items-center p-6 rounded-[2rem] border bg-card/60 transition-all duration-500 w-full shadow-sm hover:shadow-2xl active:scale-[0.96] cursor-pointer h-full min-h-[180px] overflow-hidden',
+        'group relative flex items-center gap-4 p-4 rounded-3xl border bg-card w-full shadow-sm hover:shadow-xl active:scale-95 cursor-pointer transition-all duration-300',
         isLocked
           ? 'opacity-50 cursor-not-allowed'
-          : 'hover:bg-primary/[0.02] hover:border-primary/20',
-        product.isFavorite && 'border-amber-500/30 shadow-amber-500/5'
+          : 'hover:bg-primary/[0.01] hover:border-primary/30',
+        product.isFavorite && 'border-amber-500/40'
       )}
     >
       {product.isFavorite && (
-        <div className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-amber-500/15 flex items-center justify-center border border-amber-500/20 backdrop-blur-md text-amber-500 shadow-sm animate-in zoom-in duration-500">
-          <Star className="w-5 h-5 fill-amber-500" />
+        <div className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-amber-500/10 flex items-center justify-center border border-amber-500/20 text-amber-500">
+          <Star className="w-3 h-3 fill-amber-500" />
         </div>
       )}
 
-      {/* Background Decorative Element */}
-      <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl group-hover:bg-primary/10 transition-colors" />
+      {/* Modern Gradient Backdrop */}
+      <div className="absolute inset-0 bg-gradient-to-r from-primary/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
-      <div className="flex-1 flex flex-col items-center justify-center w-full min-h-0 relative z-10">
-        <div className="w-16 h-16 rounded-[1.5rem] bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center mb-5 shadow-inner transition-all duration-500 group-hover:scale-110 group-hover:rotate-3">
-          {getCategoryIcon(
-            product.category?.icon,
-            'w-8 h-8 text-primary transition-colors duration-300'
-          )}
+      {/* Left side - Icon */}
+      <div className="relative z-10 shrink-0">
+        <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center group-hover:scale-105 transition-transform duration-500 shadow-inner">
+          {getCategoryIcon(product.category?.icon, 'w-7 h-7 text-primary')}
         </div>
+      </div>
 
-        <h3 className="font-bold text-sm md:text-base text-center line-clamp-2 leading-tight w-full px-2 text-foreground/80 group-hover:text-primary transition-colors duration-300">
+      {/* Right side - Content */}
+      <div className="relative z-10 flex-1 flex flex-col items-start min-w-0 py-1">
+        <h3 className={cn(
+          "font-bold text-sm leading-tight text-left line-clamp-2 w-full text-foreground/90 group-hover:text-primary transition-colors mb-2",
+          product.isFavorite && "pr-6"
+        )}>
           {product.name.replace(/([a-z])([A-Z])/g, '$1 $2')}
         </h3>
+        
+        <div className="px-3 py-1 rounded-xl bg-emerald-500/[0.08] border border-emerald-500/10 shadow-sm backdrop-blur-md group-hover:bg-emerald-500/20 group-hover:border-emerald-500/30 transition-all duration-500">
+          <span className="text-[13px] font-black text-emerald-500 tabular-nums tracking-tighter drop-shadow-[0_0_8px_rgba(16,185,129,0.1)]">
+            {formatCurrency(product.price)}
+          </span>
+        </div>
       </div>
-
-      {/* Price Badge */}
-      <div className="mt-5 px-5 py-2 rounded-2xl bg-primary/5 border border-primary/10 transition-all duration-500 group-hover:bg-primary group-hover:text-primary-foreground group-hover:scale-105 shadow-sm group-hover:shadow-primary/20">
-        <span className="text-sm font-black tabular-nums tracking-tight italic">
-          {formatCurrency(product.price)}
-        </span>
-      </div>
-
-      {/* Subtle Bottom Glow */}
-      <div className="absolute bottom-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
     </button>
   )
 }

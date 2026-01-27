@@ -3,7 +3,7 @@ import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { cafeApi } from '@/lib/api'
-import { useInventoryStore } from '@/store/useInventoryStore'
+import { useInventory } from '@/hooks/useInventory'
 import { toast } from '@/store/useToastStore'
 import {
   Dialog,
@@ -18,14 +18,7 @@ import { ProductCard } from './components/ProductCard'
 import { Input } from '@/components/ui/input'
 
 export function ProductsTab(): React.JSX.Element {
-  const products = useInventoryStore((state) => state.products)
-  const categories = useInventoryStore((state) => state.categories)
-  const addProduct = useInventoryStore((state) => state.addProduct)
-  const updateProduct = useInventoryStore((state) => state.updateProduct)
-  const removeProduct = useInventoryStore((state) => state.removeProduct)
-  const addCategory = useInventoryStore((state) => state.addCategory)
-  const updateCategory = useInventoryStore((state) => state.updateCategory)
-  const removeCategory = useInventoryStore((state) => state.removeCategory)
+  const { products, categories, refetchProducts, refetchCategories } = useInventory()
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
 
   // Category Delete State
@@ -51,8 +44,8 @@ export function ProductsTab(): React.JSX.Element {
   // --- Category Handlers ---
   const handleAddCategory = async (name: string): Promise<void> => {
     try {
-      const category = await cafeApi.categories.create(name)
-      addCategory(category)
+      await cafeApi.categories.create(name)
+      refetchCategories()
     } catch {
       toast({ title: 'Hata', description: 'Kategori eklenemedi', variant: 'destructive' })
     }
@@ -60,8 +53,8 @@ export function ProductsTab(): React.JSX.Element {
 
   const handleUpdateCategory = async (id: string, name: string): Promise<void> => {
     try {
-      const category = await cafeApi.categories.update(id, { name })
-      updateCategory(category)
+      await cafeApi.categories.update(id, { name })
+      refetchCategories()
     } catch {
       toast({ title: 'Hata', description: 'Kategori güncellenemedi', variant: 'destructive' })
     }
@@ -79,7 +72,7 @@ export function ProductsTab(): React.JSX.Element {
       if (selectedCategoryId === deleteCategoryId) {
         setSelectedCategoryId(categories.length > 1 ? categories[0].id : null)
       }
-      removeCategory(deleteCategoryId)
+      refetchCategories()
       toast({ title: 'Başarılı', description: 'Kategori silindi', variant: 'success' })
     } catch {
       toast({ title: 'Hata', description: 'Kategori silinemedi', variant: 'destructive' })
@@ -93,13 +86,13 @@ export function ProductsTab(): React.JSX.Element {
   const handleAddProduct = async (): Promise<void> => {
     if (!newProductName.trim() || !newProductPrice || !selectedCategoryId) return
     try {
-      const product = await cafeApi.products.create({
+      await cafeApi.products.create({
         name: newProductName,
         price: Math.round(parseFloat(newProductPrice) * 100),
         categoryId: selectedCategoryId,
         isFavorite: false
       })
-      addProduct(product)
+      refetchProducts()
       setNewProductName('')
       setNewProductPrice('')
       setIsAddingProduct(false)
@@ -114,8 +107,8 @@ export function ProductsTab(): React.JSX.Element {
     data: { name: string; price: number }
   ): Promise<void> => {
     try {
-      const product = await cafeApi.products.update(id, data)
-      updateProduct(product)
+      await cafeApi.products.update(id, data)
+      refetchProducts()
       toast({ title: 'Başarılı', description: 'Ürün güncellendi', variant: 'success' })
     } catch {
       toast({ title: 'Hata', description: 'Ürün güncellenemedi', variant: 'destructive' })
@@ -126,7 +119,7 @@ export function ProductsTab(): React.JSX.Element {
     if (!confirm('Bu ürünü silmek istediğinize emin misiniz?')) return
     try {
       await cafeApi.products.delete(id)
-      removeProduct(id)
+      refetchProducts()
       toast({ title: 'Başarılı', description: 'Ürün silindi', variant: 'success' })
     } catch {
       toast({ title: 'Hata', description: 'Ürün silinemedi', variant: 'destructive' })
@@ -135,8 +128,8 @@ export function ProductsTab(): React.JSX.Element {
 
   const handleToggleFavorite = async (id: string, current: boolean): Promise<void> => {
     try {
-      const product = await cafeApi.products.update(id, { isFavorite: !current })
-      updateProduct(product)
+      await cafeApi.products.update(id, { isFavorite: !current })
+      refetchProducts()
     } catch (error) {
       console.error(error)
     }

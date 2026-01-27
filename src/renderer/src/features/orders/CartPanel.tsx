@@ -8,7 +8,6 @@ import {
   Lock,
   LockOpen,
   ShoppingBag,
-  ReceiptText
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -94,14 +93,20 @@ export function CartPanel({
   return (
     <div className="w-96 glass-panel border-l flex flex-col h-full animate-in slide-in-from-right duration-700 relative overflow-hidden shadow-2xl">
       {/* Premium Glass Effect Background */}
-      <div className="absolute top-0 right-0 w-80 h-80 bg-primary/5 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-500/5 blur-[100px] rounded-full translate-y-1/2 -translate-x-1/2 pointer-events-none" />
 
-      <div className="p-8 border-b relative z-10 bg-background/60 backdrop-blur-md">
+
+      <div className="p-4 border-b relative z-10 bg-background/95 border-l-4 border-l-primary/30">
         <div className="flex justify-between items-center mb-1.5">
-          <h3 className="text-2xl font-black tracking-tighter text-foreground/90 uppercase italic">
-            {tableName}
-          </h3>
+          <div className="flex items-center gap-3">
+            <h3 className="text-xl font-black tracking-tighter text-foreground/90 uppercase italic">
+              {tableName}
+            </h3>
+            {order?.items && order.items.length > 0 && (
+              <span className="px-2.5 py-1 bg-primary/10 text-primary text-xs font-black rounded-full border border-primary/20">
+                {order.items.reduce((sum, item) => sum + item.quantity, 0)} Ürün
+              </span>
+            )}
+          </div>
           {order?.items && order.items.length > 0 && (
             <Button
               variant={isLocked ? 'default' : 'secondary'}
@@ -128,14 +133,6 @@ export function CartPanel({
             </Button>
           )}
         </div>
-        <div className="flex items-center gap-2.5">
-          <div className="w-5 h-5 bg-primary/10 rounded-lg flex items-center justify-center">
-            <ReceiptText className="w-3 h-3 text-primary" />
-          </div>
-          <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.25em]">
-            Adisyon Detayı
-          </p>
-        </div>
       </div>
 
       <div className="flex-1 min-h-0 overflow-hidden relative z-10 flex flex-col">
@@ -161,65 +158,68 @@ export function CartPanel({
                     <div
                       key={item.id}
                       className={cn(
-                        'flex items-center gap-4 p-4 rounded-[1.5rem] border transition-all duration-300 relative overflow-hidden',
+                        'flex items-center gap-3 py-2 px-3 rounded-xl border transition-all duration-300 relative overflow-hidden hover:shadow-md hover:scale-[1.01]',
                         item.isPaid
-                          ? 'bg-emerald-500/[0.03] border-emerald-500/10 opacity-60'
-                          : 'bg-card/60 border-white/5 hover:bg-card/80 hover:border-primary/10 group/item'
+                          ? 'bg-emerald-500/[0.05] border-emerald-500/10 opacity-60 border-l-4 border-l-emerald-500/50'
+                          : 'bg-card/90 border-white/5 hover:bg-card hover:border-primary/10 border-l-4 border-l-primary/40 shadow-sm'
                       )}
                     >
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2.5">
+                      <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
                           {item.isPaid && (
-                            <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                            <CheckCircle className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
                           )}
-                          <p
-                            className={cn(
-                              'font-bold text-sm tracking-normal leading-tight',
-                              item.isPaid ? 'text-muted-foreground' : 'text-foreground/90'
-                            )}
-                          >
-                            {productName.replace(/([a-z])([A-Z])/g, '$1 $2')}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2 mt-2">
-                          <p className="text-xs font-black text-muted-foreground/60 tabular-nums">
-                            {formatCurrency(item.unitPrice)}
-                          </p>
-                          <span className="text-xs font-black text-primary/30">×</span>
-                          <div className="px-2 py-0.5 bg-primary/5 rounded-md">
-                            <p className="text-xs font-black text-primary tabular-nums">
-                              {item.quantity}
+                          <div className="flex flex-col min-w-0">
+                            <p
+                              className={cn(
+                                'font-bold text-[15px] tracking-tight leading-snug line-clamp-2',
+                                item.isPaid ? 'text-muted-foreground' : 'text-foreground/90'
+                              )}
+                            >
+                              {productName.replace(/([a-z])([A-Z])/g, '$1 $2')}
+                              {item.quantity > 1 && (
+                                <span className="ml-2 text-[13px] font-black text-rose-500 tabular-nums">
+                                  x{item.quantity}
+                                </span>
+                              )}
                             </p>
                           </div>
                         </div>
+                        
+                        <div className="text-right min-w-[75px] shrink-0">
+                          <p className="text-sm font-black text-foreground/80 tabular-nums">
+                            {formatCurrency(item.unitPrice * item.quantity)}
+                          </p>
+                        </div>
                       </div>
 
+                      {/* Always visible quantity controls for unpaid items */}
                       {!item.isPaid && (
-                        <div className="flex items-center gap-1.5 bg-background/40 rounded-2xl p-1.5 border border-white/5 opacity-0 group-hover/item:opacity-100 transition-all duration-300">
+                        <div className="flex items-center gap-1 bg-background/90 rounded-xl p-0.5 border border-white/10 shrink-0">
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="h-8 w-8 rounded-xl hover:bg-red-500/10 text-red-500/60 hover:text-red-500"
+                            className="h-7 w-7 rounded-lg hover:bg-red-500/10 text-red-500/60 hover:text-red-500"
                             onClick={() =>
                               handleUpdateQuantity(item.id, item.productId, item.quantity - 1)
                             }
                             disabled={isLocked}
                           >
-                            <Minus className="w-3.5 h-3.5" />
+                            <Minus className="w-3 h-3" />
                           </Button>
-                          <span className="w-6 text-center font-black text-sm tabular-nums">
+                          <span className="w-5 text-center font-black text-[11px] tabular-nums">
                             {item.quantity}
                           </span>
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="h-8 w-8 rounded-xl hover:bg-emerald-500/10 text-emerald-500/60 hover:text-emerald-500"
+                            className="h-7 w-7 rounded-lg hover:bg-emerald-500/10 text-emerald-500/60 hover:text-emerald-500"
                             onClick={() =>
                               handleUpdateQuantity(item.id, item.productId, item.quantity + 1)
                             }
                             disabled={isLocked}
                           >
-                            <Plus className="w-3.5 h-3.5" />
+                            <Plus className="w-3 h-3" />
                           </Button>
                         </div>
                       )}
@@ -253,10 +253,13 @@ export function CartPanel({
         )}
       </div>
 
-      <div className="p-8 border-t space-y-6 glass-panel relative z-10">
-        <div className="space-y-3">
+      <div className="p-2 border-t space-y-2 glass-panel relative z-10">
+        {/* Decorative gradient divider */}
+        <div className="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+        
+        <div className="space-y-2">
           {paidAmount > 0 && (
-            <div className="flex justify-between items-center px-2 py-2 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
+            <div className="flex justify-between items-center px-4 py-3 rounded-2xl bg-emerald-500/5 border border-emerald-500/10">
               <span className="text-[10px] font-bold text-emerald-600/80 uppercase tracking-widest">
                 Ara Toplam (Ödenen)
               </span>
@@ -266,34 +269,37 @@ export function CartPanel({
             </div>
           )}
 
-          <div className="flex justify-between items-end px-2 pt-2">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-bold text-primary uppercase tracking-widest mb-1">
-                {paidAmount > 0 ? 'Ödenecek Kalan' : 'Genel Toplam'}
-              </span>
-            </div>
-            <div className="flex items-baseline gap-1">
-              <span className="text-lg font-bold text-primary">₺</span>
-              <span className="text-4xl font-bold text-foreground tabular-nums tracking-tighter">
-                {formatCurrency(remainingAmount).replace('₺', '')}
-              </span>
+          {/* Total Amount Card with Gradient */}
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 p-4">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+            <div className="flex justify-between items-end relative z-10">
+              <div className="flex flex-col">
+                <span className="text-[10px] font-bold text-primary uppercase tracking-widest mb-0.5">
+                  {paidAmount > 0 ? 'Ödenecek Kalan' : 'Genel Toplam'}
+                </span>
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-lg font-black text-primary">₺</span>
+                <span className="text-3xl font-black text-foreground tabular-nums tracking-tighter">
+                  {formatCurrency(remainingAmount).replace('₺', '')}
+                </span>
+              </div>
             </div>
           </div>
         </div>
 
         <Button
           className={cn(
-            'w-full gap-5 h-20 text-lg font-black uppercase tracking-[0.25em] rounded-[1.5rem] shadow-2xl transition-all hover:scale-[1.02] active:scale-[0.98] group/pay relative overflow-hidden',
+            'w-full gap-5 h-16 text-lg font-black uppercase tracking-[0.25em] rounded-[1.25rem] shadow-2xl transition-all active:scale-[0.98] group/pay relative overflow-hidden',
             remainingAmount > 0
-              ? 'bg-primary text-primary-foreground hover:shadow-primary/30'
+              ? 'bg-primary text-primary-foreground hover:shadow-primary/40'
               : 'bg-muted text-muted-foreground outline-none'
           )}
           size="lg"
           disabled={!order?.items || order.items.length === 0 || remainingAmount <= 0}
           onClick={onPaymentClick}
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/pay:animate-[shimmer_2s_infinite] pointer-events-none" />
-          <CreditCard className="w-7 h-7 group-hover/pay:rotate-12 transition-transform duration-500" />
+          <CreditCard className="w-7 h-7" />
           <span>ÖDEME AL</span>
         </Button>
       </div>

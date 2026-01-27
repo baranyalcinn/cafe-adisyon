@@ -12,11 +12,11 @@ import {
   DialogTitle
 } from '@/components/ui/dialog'
 import { cafeApi } from '@/lib/api'
-import { useInventoryStore } from '@/store/useInventoryStore'
+import { useInventory } from '@/hooks/useInventory'
 import { toast } from '@/store/useToastStore'
 
 export function CategoriesTab(): React.JSX.Element {
-  const { categories, products, addCategory, updateCategory, removeCategory } = useInventoryStore()
+  const { categories, products, refetchCategories } = useInventory()
   const [newCategoryName, setNewCategoryName] = useState('')
   const [deleteCategoryId, setDeleteCategoryId] = useState<string | null>(null)
   const [showDeleteCategoryDialog, setShowDeleteCategoryDialog] = useState(false)
@@ -27,8 +27,8 @@ export function CategoriesTab(): React.JSX.Element {
       return
     }
     try {
-      const category = await cafeApi.categories.create(newCategoryName)
-      addCategory(category)
+      await cafeApi.categories.create(newCategoryName)
+      refetchCategories()
       setNewCategoryName('')
       toast({ title: 'Başarılı', description: 'Kategori başarıyla eklendi', variant: 'success' })
     } catch (error) {
@@ -50,7 +50,7 @@ export function CategoriesTab(): React.JSX.Element {
     if (!deleteCategoryId) return
     try {
       await cafeApi.categories.delete(deleteCategoryId)
-      removeCategory(deleteCategoryId)
+      refetchCategories()
     } catch (error) {
       console.error('Failed to delete category:', error)
       toast({
@@ -132,10 +132,10 @@ export function CategoriesTab(): React.JSX.Element {
                     className="bg-muted border rounded-md px-2 py-1 text-sm outline-none focus:ring-1 focus:ring-primary"
                     value={cat.icon || 'utensils'}
                     onChange={async (e) => {
-                      const updated = await cafeApi.categories.update(cat.id, {
+                      await cafeApi.categories.update(cat.id, {
                         icon: e.target.value
                       })
-                      updateCategory(updated)
+                      refetchCategories()
                     }}
                   >
                     <option value="coffee">☕ Kahveler</option>

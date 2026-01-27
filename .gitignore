@@ -24,3 +24,6 @@ succes build.txt
 portable build succes.txt
 succes build github action.txt
 github action build log.txt
+
+*storybook.log
+storybook-static
