@@ -130,42 +130,47 @@ export function CartPanel({ onPaymentClick, tableName }: CartPanelProps): React.
   }
 
   return (
-    <div className="w-96 glass-panel border-l flex flex-col h-full animate-in slide-in-from-right duration-500 relative overflow-hidden">
-      {/* Subtle background detail */}
-      <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[100px] rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+    <div className="w-96 glass-panel border-l flex flex-col h-full animate-in slide-in-from-right duration-700 relative overflow-hidden shadow-2xl">
+      {/* Premium Glass Effect Background */}
+      <div className="absolute top-0 right-0 w-80 h-80 bg-primary/5 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-500/5 blur-[100px] rounded-full translate-y-1/2 -translate-x-1/2 pointer-events-none" />
 
-      <div className="p-8 border-b relative z-10 bg-background/50">
-        <div className="flex justify-between items-center mb-1">
-          <h3 className="text-xl font-bold tracking-tight text-foreground/90">{tableName}</h3>
+      <div className="p-8 border-b relative z-10 bg-background/60 backdrop-blur-md">
+        <div className="flex justify-between items-center mb-1.5">
+          <h3 className="text-2xl font-black tracking-tighter text-foreground/90 uppercase italic">
+            {tableName}
+          </h3>
           {currentOrder?.items && currentOrder.items.length > 0 && (
             <Button
               variant={isLocked ? 'default' : 'secondary'}
               size="sm"
               onClick={toggleLock}
               className={cn(
-                'h-8 gap-2 rounded-full px-4 text-[10px] font-bold uppercase tracking-wider transition-all',
+                'h-9 gap-2.5 rounded-2xl px-5 text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300',
                 isLocked
-                  ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-lg shadow-amber-500/20'
-                  : 'bg-accent/50 text-muted-foreground hover:text-foreground'
+                  ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-lg shadow-amber-500/30 ring-2 ring-amber-500/20'
+                  : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground border border-border/50'
               )}
             >
               {isLocked ? (
                 <>
-                  <Lock className="w-3 h-3" />
+                  <Lock className="w-3.5 h-3.5" />
                   Kilitli
                 </>
               ) : (
                 <>
-                  <LockOpen className="w-3 h-3" />
+                  <LockOpen className="w-3.5 h-3.5" />
                   Kilitle
                 </>
               )}
             </Button>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          <ReceiptText className="w-3 h-3 text-muted-foreground" />
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+        <div className="flex items-center gap-2.5">
+          <div className="w-5 h-5 bg-primary/10 rounded-lg flex items-center justify-center">
+            <ReceiptText className="w-3 h-3 text-primary" />
+          </div>
+          <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.25em]">
             Adisyon Detayı
           </p>
         </div>
@@ -191,55 +196,57 @@ export function CartPanel({ onPaymentClick, tableName }: CartPanelProps): React.
                     <div
                       key={item.id}
                       className={cn(
-                        'flex items-center gap-4 p-4 rounded-2xl border transition-all duration-200',
+                        'flex items-center gap-4 p-4 rounded-[1.5rem] border transition-all duration-300 relative overflow-hidden',
                         item.isPaid
-                          ? 'bg-emerald-500/5 border-emerald-500/10 opacity-50 grayscale-[0.5]'
-                          : 'bg-background border-white/5 hover:bg-accent/5 group/item'
+                          ? 'bg-emerald-500/[0.03] border-emerald-500/10 opacity-60'
+                          : 'bg-card/60 border-white/5 hover:bg-card/80 hover:border-primary/10 group/item'
                       )}
                     >
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2.5">
                           {item.isPaid && (
-                            <CheckCircle className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+                            <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
                           )}
                           <p
                             className={cn(
-                              'font-bold text-sm uppercase tracking-tight leading-tight',
-                              item.isPaid && 'line-through text-muted-foreground'
+                              'font-bold text-sm tracking-normal leading-tight',
+                              item.isPaid ? 'text-muted-foreground' : 'text-foreground/90'
                             )}
                           >
-                            {item.product?.name || 'Ürün'}
+                            {(item.product?.name || 'Ürün').replace(/([a-z])([A-Z])/g, '$1 $2')}
                           </p>
                         </div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <p className="text-[10px] font-bold text-muted-foreground/60 tabular-nums">
+                        <div className="flex items-center gap-2 mt-2">
+                          <p className="text-xs font-black text-muted-foreground/60 tabular-nums">
                             {formatCurrency(item.unitPrice)}
                           </p>
-                          <span className="text-[10px] font-bold text-primary/40">×</span>
-                          <p className="text-[10px] font-bold text-primary/80 tabular-nums">
-                            {item.quantity} Adet
-                          </p>
+                          <span className="text-xs font-black text-primary/30">×</span>
+                          <div className="px-2 py-0.5 bg-primary/5 rounded-md">
+                            <p className="text-xs font-black text-primary tabular-nums">
+                              {item.quantity}
+                            </p>
+                          </div>
                         </div>
                       </div>
 
                       {!item.isPaid && (
-                        <div className="flex items-center gap-1 bg-background/50 rounded-2xl p-1 border border-white/5 group-hover/item:border-primary/20 transition-all">
+                        <div className="flex items-center gap-1.5 bg-background/40 rounded-2xl p-1.5 border border-white/5 opacity-0 group-hover/item:opacity-100 transition-all duration-300">
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="h-8 w-8 rounded-xl hover:bg-primary/10 text-primary/60 hover:text-primary"
+                            className="h-8 w-8 rounded-xl hover:bg-red-500/10 text-red-500/60 hover:text-red-500"
                             onClick={() => handleUpdateQuantity(item.productId, item.quantity - 1)}
                             disabled={isLocked}
                           >
                             <Minus className="w-3.5 h-3.5" />
                           </Button>
-                          <span className="w-7 text-center font-bold text-sm tabular-nums">
+                          <span className="w-6 text-center font-black text-sm tabular-nums">
                             {item.quantity}
                           </span>
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="h-8 w-8 rounded-xl hover:bg-primary/10 text-primary/60 hover:text-primary"
+                            className="h-8 w-8 rounded-xl hover:bg-emerald-500/10 text-emerald-500/60 hover:text-emerald-500"
                             onClick={() => handleUpdateQuantity(item.productId, item.quantity + 1)}
                             disabled={isLocked}
                           >
@@ -307,17 +314,18 @@ export function CartPanel({ onPaymentClick, tableName }: CartPanelProps): React.
 
         <Button
           className={cn(
-            'w-full gap-4 h-16 text-base font-bold uppercase tracking-widest rounded-2xl shadow-xl transition-all hover:scale-[1.01] active:scale-[0.99]',
+            'w-full gap-5 h-20 text-lg font-black uppercase tracking-[0.25em] rounded-[1.5rem] shadow-2xl transition-all hover:scale-[1.02] active:scale-[0.98] group/pay relative overflow-hidden',
             remainingAmount > 0
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-muted text-muted-foreground'
+              ? 'bg-primary text-primary-foreground hover:shadow-primary/30'
+              : 'bg-muted text-muted-foreground outline-none'
           )}
           size="lg"
           disabled={!currentOrder?.items || currentOrder.items.length === 0 || remainingAmount <= 0}
           onClick={onPaymentClick}
         >
-          <CreditCard className="w-6 h-6" />
-          ÖDEME AL
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/pay:animate-[shimmer_2s_infinite] pointer-events-none" />
+          <CreditCard className="w-7 h-7 group-hover/pay:rotate-12 transition-transform duration-500" />
+          <span>ÖDEME AL</span>
         </Button>
       </div>
 

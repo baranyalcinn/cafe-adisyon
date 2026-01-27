@@ -28,6 +28,9 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
   const [searchQuery, setSearchQuery] = useState('')
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [isPaymentOpen, setIsPaymentOpen] = useState(false)
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
+    return (localStorage.getItem('orderViewMode') as 'grid' | 'list') || 'grid'
+  })
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   const selectedTable = tables.find((t) => t.id === selectedTableId)
@@ -159,22 +162,73 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
       </div>
 
       {/* Center Panel - Products Grid */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="p-8 pb-4 bg-transparent">
-          <h2 className="text-2xl font-bold tracking-tight text-foreground/90 leading-none">
-            {selectedTable?.name || 'Masa'}
-            <span className="text-primary ml-2 inline-block">Sipariş</span>
-          </h2>
-          <p className="text-[10px] font-bold text-muted-foreground mt-2 uppercase tracking-widest">
-            {filteredProducts.length} Ürün Listeleniyor
-          </p>
+      <div className="flex-1 flex flex-col overflow-hidden bg-background/50">
+        <div className="p-8 pb-4 flex items-center justify-between">
+          <div className="space-y-1">
+            <h2 className="text-3xl font-black tracking-tight text-foreground drop-shadow-sm uppercase italic">
+              {selectedTable?.name || 'Masa'}
+              <span className="text-primary ml-3 inline-block not-italic tracking-normal">
+                Sipariş
+              </span>
+            </h2>
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
+                {filteredProducts.length} Ürün Listeleniyor
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center bg-muted/30 p-1 rounded-xl border border-border/50">
+            <Button
+              variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => {
+                setViewMode('grid')
+                localStorage.setItem('orderViewMode', 'grid')
+              }}
+              className={cn(
+                'rounded-lg px-3 gap-2 h-9 font-bold transition-all',
+                viewMode === 'grid' && 'shadow-sm'
+              )}
+            >
+              <Grid className="w-4 h-4" />
+              <span className="hidden sm:inline">Grid</span>
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => {
+                setViewMode('list')
+                localStorage.setItem('orderViewMode', 'list')
+              }}
+              className={cn(
+                'rounded-lg px-3 gap-2 h-9 font-bold transition-all',
+                viewMode === 'list' && 'shadow-sm'
+              )}
+            >
+              <div className="flex flex-col gap-0.5 items-center justify-center">
+                <div className="w-4 h-0.5 bg-current rounded-full" />
+                <div className="w-4 h-0.5 bg-current rounded-full" />
+                <div className="w-4 h-0.5 bg-current rounded-full" />
+              </div>
+              <span className="hidden sm:inline">Liste</span>
+            </Button>
+          </div>
         </div>
 
         <ScrollArea className="flex-1 h-full">
           <div className="p-4 pb-24">
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-2.5">
+            <div
+              className={cn(
+                'gap-2.5 transition-all duration-500',
+                viewMode === 'grid'
+                  ? 'grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))]'
+                  : 'flex flex-col max-w-4xl mx-auto px-4'
+              )}
+            >
               {filteredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
+                <ProductCard key={product.id} product={product} compact={viewMode === 'list'} />
               ))}
             </div>
 

@@ -114,7 +114,7 @@ function PaymentTooltip({ active, payload }: CustomTooltipProps): React.JSX.Elem
 function MonthlyTooltip({ active, payload, label }: CustomTooltipProps): React.JSX.Element | null {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-card text-card-foreground border border-border rounded-xl px-4 py-3 shadow-xl backdrop-blur-md">
+      <div className="bg-card text-card-foreground border border-border rounded-xl px-4 py-3 shadow-xl">
         <p className="text-sm font-bold mb-2 text-muted-foreground">{label}</p>
         <div className="space-y-1.5">
           {payload.map((entry, index) => (
@@ -237,71 +237,87 @@ export function DashboardView(): React.JSX.Element {
           </div>
         </div>
 
-        {/* Main KPI Cards Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="relative overflow-hidden bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent border-emerald-500/20">
-            <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-500/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Günlük Ciro
-              </CardTitle>
-              <div className="p-2 bg-emerald-500/20 rounded-lg">
-                <TrendingUp className="w-4 h-4 text-emerald-500" />
+        {/* Main KPI Bento Grid Row */}
+        <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-12 gap-4">
+          {/* Daily Revenue - The Hero Card */}
+          <Card className="lg:col-span-6 relative overflow-hidden bg-gradient-to-br from-emerald-500/15 via-emerald-500/5 to-transparent border-emerald-500/20 shadow-xl group hover:shadow-emerald-500/10 transition-all duration-300">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl group-hover:bg-emerald-500/10 transition-colors" />
+            <CardHeader className="flex flex-row items-center justify-between pb-4">
+              <div className="space-y-1">
+                <CardTitle className="text-sm font-black text-muted-foreground uppercase tracking-[0.15em]">
+                  Bugünkü Toplam Ciro
+                </CardTitle>
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-xs font-bold text-emerald-500/80">Canlı Veri</span>
+                </div>
+              </div>
+              <div className="p-3 bg-emerald-500/20 rounded-2xl shadow-inner group-hover:scale-110 transition-transform duration-500">
+                <TrendingUp className="w-6 h-6 text-emerald-500" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold tabular-nums">
+              <div className="text-5xl font-black tabular-nums tracking-tighter text-foreground drop-shadow-sm">
                 {formatCurrency(stats?.dailyRevenue || 0)}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">Bugünkü toplam</p>
+              <div className="flex items-center gap-2 mt-4">
+                <div className="px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-[10px] font-black text-emerald-600 uppercase tracking-widest">
+                  Hedefe Yakın
+                </div>
+                <p className="text-xs text-muted-foreground font-medium italic">
+                  Son güncelleme: {new Date().toLocaleTimeString('tr-TR')}
+                </p>
+              </div>
             </CardContent>
           </Card>
 
-          <Card className="relative overflow-hidden bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent border-blue-500/20">
-            <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+          {/* Total Orders */}
+          <Card className="lg:col-span-3 relative overflow-hidden bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent border-blue-500/20 group hover:shadow-lg transition-all">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Toplam Sipariş
+              <CardTitle className="text-xs font-black text-muted-foreground uppercase tracking-widest">
+                Sipariş Sayısı
               </CardTitle>
-              <div className="p-2 bg-blue-500/20 rounded-lg">
+              <div className="p-2 bg-blue-500/20 rounded-xl">
                 <ShoppingBag className="w-4 h-4 text-blue-500" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold tabular-nums">{stats?.totalOrders || 0}</div>
-              <p className="text-xs text-muted-foreground mt-1">Bugün tamamlanan</p>
+              <div className="text-3xl font-black tabular-nums">{stats?.totalOrders || 0}</div>
+              <p className="text-[10px] text-muted-foreground mt-1 font-bold uppercase tracking-tight">
+                Günlük tamamlanan
+              </p>
             </CardContent>
           </Card>
 
-          <Card className="relative overflow-hidden bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent border-orange-500/20">
-            <div className="absolute top-0 right-0 w-20 h-20 bg-orange-500/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Açık Masa</CardTitle>
-              <div className="p-2 bg-orange-500/20 rounded-lg">
-                <Users className="w-4 h-4 text-orange-500" />
+          {/* Open Tables & Pending Orders Container */}
+          <div className="lg:col-span-3 grid grid-rows-2 gap-4">
+            <Card className="relative overflow-hidden bg-gradient-to-br from-orange-500/10 to-transparent border-orange-500/20 flex flex-col justify-center">
+              <div className="px-4 py-3 flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-black text-orange-600 uppercase tracking-widest">
+                    Dolu Masa
+                  </p>
+                  <p className="text-2xl font-black">{stats?.openTables || 0}</p>
+                </div>
+                <div className="p-2 bg-orange-500/20 rounded-xl">
+                  <Users className="w-4 h-4 text-orange-500" />
+                </div>
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.openTables || 0}</div>
-              <p className="text-xs text-muted-foreground mt-1">Şu an dolu</p>
-            </CardContent>
-          </Card>
-
-          <Card className="relative overflow-hidden bg-gradient-to-br from-purple-500/10 via-purple-500/5 to-transparent border-purple-500/20">
-            <div className="absolute top-0 right-0 w-20 h-20 bg-purple-500/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Açık Hesap
-              </CardTitle>
-              <div className="p-2 bg-purple-500/20 rounded-lg">
-                <ReceiptText className="w-4 h-4 text-purple-500" />
+            </Card>
+            <Card className="relative overflow-hidden bg-gradient-to-br from-purple-500/10 to-transparent border-purple-500/20 flex flex-col justify-center">
+              <div className="px-4 py-3 flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest">
+                    Açık Hesap
+                  </p>
+                  <p className="text-2xl font-black text-foreground">{stats?.pendingOrders || 0}</p>
+                </div>
+                <div className="p-2 bg-purple-500/20 rounded-xl">
+                  <ReceiptText className="w-4 h-4 text-purple-500" />
+                </div>
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.pendingOrders || 0}</div>
-              <p className="text-xs text-muted-foreground mt-1">Ödemesi beklenen</p>
-            </CardContent>
-          </Card>
+            </Card>
+          </div>
         </div>
 
         {/* Payment Summary Cards */}
@@ -557,8 +573,8 @@ export function DashboardView(): React.JSX.Element {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-            <Card className="xl:col-span-2">
+          <div className="grid grid-cols-1 xl:grid-cols-4 lg:grid-rows-2 gap-6">
+            <Card className="xl:col-span-3 lg:row-span-2">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base font-bold flex items-center gap-2">
                   <TrendingUp className="w-4 h-4 text-primary" />
@@ -567,7 +583,7 @@ export function DashboardView(): React.JSX.Element {
               </CardHeader>
               <CardContent>
                 {monthlyReports.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={320}>
+                  <ResponsiveContainer width="100%" height={380}>
                     <ComposedChart
                       data={[...monthlyReports].reverse().map((r) => ({
                         name: new Date(r.monthDate).toLocaleDateString('tr-TR', {
@@ -580,76 +596,79 @@ export function DashboardView(): React.JSX.Element {
                       }))}
                       margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
                     >
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.2} />
+                      <XAxis dataKey="name" fontSize={11} tickLine={false} axisLine={false} />
                       <YAxis
                         fontSize={10}
                         tickLine={false}
                         axisLine={false}
-                        tickFormatter={(val) => `₺${(val / 100000).toFixed(0)}k`}
+                        tickFormatter={(val) => `₺${(val / 1000).toFixed(0)}k`}
                       />
                       <Tooltip content={<MonthlyTooltip />} />
-                      <Legend />
+                      <Legend verticalAlign="top" height={36} iconType="pill" />
                       <Bar
                         dataKey="revenue"
                         name="Ciro"
                         fill="#10b981"
-                        radius={[4, 4, 0, 0]}
-                        maxBarSize={30}
+                        radius={[6, 6, 0, 0]}
+                        maxBarSize={40}
                       />
                       <Bar
                         dataKey="expenses"
                         name="Gider"
                         fill="#ef4444"
-                        radius={[4, 4, 0, 0]}
-                        maxBarSize={30}
+                        radius={[6, 6, 0, 0]}
+                        maxBarSize={40}
                       />
                       <Line
                         type="monotone"
                         dataKey="profit"
                         name="Net Kar"
                         stroke="var(--color-primary)"
-                        strokeWidth={3}
-                        dot={{ r: 4, fill: 'var(--color-primary)' }}
+                        strokeWidth={4}
+                        dot={{ r: 5, fill: 'var(--color-primary)', strokeWidth: 2, stroke: '#fff' }}
                       />
                     </ComposedChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="flex items-center justify-center h-[320px] text-muted-foreground">
-                    Henüz aylık veri yok
+                  <div className="flex items-center justify-center h-[380px] text-muted-foreground italic">
+                    Henüz aylık analiz verisi toplanmadı
                   </div>
                 )}
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="xl:col-span-1 lg:row-span-2 flex flex-col">
               <CardHeader className="pb-2">
-                <CardTitle className="text-base font-bold">Aylık Kar Özeti</CardTitle>
+                <CardTitle className="text-base font-bold text-primary">Aylık Kar Özeti</CardTitle>
               </CardHeader>
-              <CardContent className="p-0">
-                <ScrollArea className="h-[320px]">
+              <CardContent className="p-0 flex-1 min-h-0">
+                <ScrollArea className="h-full max-h-[420px]">
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-muted/30">
-                        <TableHead className="font-bold">Ay</TableHead>
-                        <TableHead className="text-right font-bold">Ciro</TableHead>
-                        <TableHead className="text-right font-bold">Kâr</TableHead>
+                      <TableRow className="bg-muted/30 border-none">
+                        <TableHead className="font-black text-[10px] uppercase tracking-widest pl-4">
+                          Ay
+                        </TableHead>
+                        <TableHead className="text-right font-black text-[10px] uppercase tracking-widest pr-4">
+                          Kâr
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {monthlyReports.map((report) => (
-                        <TableRow key={report.id} className="hover:bg-muted/50">
-                          <TableCell className="font-medium uppercase">
+                        <TableRow
+                          key={report.id}
+                          className="hover:bg-primary/5 transition-colors border-none group"
+                        >
+                          <TableCell className="font-bold uppercase text-xs pl-4">
                             {new Date(report.monthDate).toLocaleDateString('tr-TR', {
                               month: 'long'
                             })}
                           </TableCell>
-                          <TableCell className="text-right tabular-nums">
-                            {formatCurrency(report.totalRevenue)}
-                          </TableCell>
                           <TableCell
                             className={cn(
-                              'text-right font-bold tabular-nums',
+                              'text-right font-black tabular-nums text-sm pr-4 group-hover:scale-105 transition-transform origin-right',
                               report.netProfit >= 0 ? 'text-emerald-600' : 'text-red-600'
                             )}
                           >
@@ -660,10 +679,10 @@ export function DashboardView(): React.JSX.Element {
                       {monthlyReports.length === 0 && (
                         <TableRow>
                           <TableCell
-                            colSpan={3}
+                            colSpan={2}
                             className="h-24 text-center text-muted-foreground italic"
                           >
-                            Veri henüz toplanmadı
+                            Veri yok
                           </TableCell>
                         </TableRow>
                       )}
@@ -757,7 +776,7 @@ export function DashboardView(): React.JSX.Element {
         {/* Z-Report Detail Modal */}
         {/* Z-Report Detail Modal - Redesigned for better fit and visuals */}
         <Dialog open={!!selectedReport} onOpenChange={(open) => !open && setSelectedReport(null)}>
-          <DialogContent className="sm:max-w-[480px] max-h-[96vh] p-0 overflow-hidden border-primary/20 bg-background/95 backdrop-blur-xl">
+          <DialogContent className="sm:max-w-[480px] max-h-[96vh] p-0 overflow-hidden border-primary/20 bg-background/95 backdrop-blur-md">
             {selectedReport && (
               <div className="flex flex-col">
                 <div className="bg-gradient-to-br from-primary/20 via-primary/10 to-background p-4 border-b border-primary/10 relative overflow-hidden">
