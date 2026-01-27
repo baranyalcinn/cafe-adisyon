@@ -12,91 +12,54 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { useCartStore } from '@/store/useCartStore'
-import { useOrderStore } from '@/store/useOrderStore'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { cn, formatCurrency } from '@/lib/utils'
 import { soundManager } from '@/lib/sound'
+import { Order } from '@/lib/api'
 
 interface CartPanelProps {
-  onPaymentClick: () => void
+  order: Order | null | undefined
   tableName: string
+  isLocked: boolean
+  onPaymentClick: () => void
+  onUpdateItem: (orderItemId: string, quantity: number) => void
+  onRemoveItem: (orderItemId: string) => void
+  onToggleLock: () => void
+  onDeleteOrder: (orderId: string) => void
 }
 
-export function CartPanel({ onPaymentClick, tableName }: CartPanelProps): React.JSX.Element {
-  const { items, getTotal } = useCartStore()
-  const { currentOrder, updateOrderItem, removeOrderItem, deleteOrder, isLocked, toggleLock } =
-    useOrderStore()
+export function CartPanel({
+  order,
+  tableName,
+  isLocked,
+  onPaymentClick,
+  onUpdateItem,
+  onRemoveItem,
+  onToggleLock,
+  onDeleteOrder
+}: CartPanelProps): React.JSX.Element {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
   // Debounce refs for quantity updates
   const debounceTimers = useRef<Map<string, NodeJS.Timeout>>(new Map())
 
-  const total = getTotal()
-  const paidAmount = currentOrder?.payments?.reduce((sum, p) => sum + p.amount, 0) || 0
+  // Calculate totals from order data
+  const total = order?.totalAmount || 0
+  const paidAmount = order?.payments?.reduce((sum, p) => sum + p.amount, 0) || 0
   const remainingAmount = total - paidAmount
 
-  // Get orderItem from currentOrder by productId
-  const getOrderItem = useCallback(
-    (productId: string): { id: string; isPaid?: boolean; productId: string } | undefined => {
-      return currentOrder?.items?.find((item) => item.productId === productId)
-    },
-    [currentOrder?.items]
-  )
-
-  const getOrderItemId = useCallback(
-    (productId: string): string | null => {
-      const orderItem = getOrderItem(productId)
-      return orderItem?.id || null
-    },
-    [getOrderItem]
-  )
-
-  const isItemPaid = useCallback(
-    (productId: string): boolean => {
-      const orderItem = getOrderItem(productId)
-      return orderItem?.isPaid ?? false
-    },
-    [getOrderItem]
-  )
-
-  const handleRemoveItem = useCallback(
-    (productId: string): void => {
-      if (isLocked) {
-        soundManager.playError()
-        return
-      }
-      if (isItemPaid(productId)) {
-        soundManager.playError()
-        return
-      }
-
-      if (items.length === 1 && currentOrder) {
-        setShowDeleteDialog(true)
-      } else {
-        const orderItemId = getOrderItemId(productId)
-        if (orderItemId) {
-          removeOrderItem(orderItemId)
-        }
-      }
-    },
-    [isLocked, isItemPaid, items.length, currentOrder, getOrderItemId, removeOrderItem]
-  )
-
-  // Debounced quantity update (300ms delay)
   const handleUpdateQuantity = useCallback(
-    (productId: string, newQuantity: number): void => {
+    (orderItemId: string, productId: string, newQuantity: number): void => {
       if (isLocked) {
         soundManager.playError()
         return
       }
-      if (isItemPaid(productId)) {
+
+      const item = order?.items?.find((i) => i.id === orderItemId)
+      if (item?.isPaid) {
         soundManager.playError()
         return
       }
-
-      const orderItemId = getOrderItemId(productId)
-      if (!orderItemId) return
 
       soundManager.playBeep()
 
@@ -107,24 +70,23 @@ export function CartPanel({ onPaymentClick, tableName }: CartPanelProps): React.
       }
 
       if (newQuantity <= 0) {
-        // Immediate removal, no debounce
-        handleRemoveItem(productId)
+        // Assume removal
+        onRemoveItem(orderItemId)
       } else {
-        // Set new debounced call
-        const timer = setTimeout(async () => {
-          await updateOrderItem(orderItemId, newQuantity)
+        const timer = setTimeout(() => {
+          onUpdateItem(orderItemId, newQuantity)
           debounceTimers.current.delete(productId)
         }, 300)
 
         debounceTimers.current.set(productId, timer)
       }
     },
-    [isLocked, isItemPaid, getOrderItemId, updateOrderItem, handleRemoveItem]
+    [isLocked, order?.items, onRemoveItem, onUpdateItem]
   )
 
   const handleConfirmDelete = async (): Promise<void> => {
-    if (currentOrder) {
-      await deleteOrder(currentOrder.id)
+    if (order) {
+      onDeleteOrder(order.id)
       setShowDeleteDialog(false)
     }
   }
@@ -140,11 +102,11 @@ export function CartPanel({ onPaymentClick, tableName }: CartPanelProps): React.
           <h3 className="text-2xl font-black tracking-tighter text-foreground/90 uppercase italic">
             {tableName}
           </h3>
-          {currentOrder?.items && currentOrder.items.length > 0 && (
+          {order?.items && order.items.length > 0 && (
             <Button
               variant={isLocked ? 'default' : 'secondary'}
               size="sm"
-              onClick={toggleLock}
+              onClick={onToggleLock}
               className={cn(
                 'h-9 gap-2.5 rounded-2xl px-5 text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300',
                 isLocked
@@ -177,10 +139,10 @@ export function CartPanel({ onPaymentClick, tableName }: CartPanelProps): React.
       </div>
 
       <div className="flex-1 min-h-0 overflow-hidden relative z-10 flex flex-col">
-        {currentOrder?.items && currentOrder.items.length > 0 ? (
+        {order?.items && order.items.length > 0 ? (
           <ScrollArea className="flex-1 min-h-0">
             <div className="p-6 flex flex-col gap-3">
-              {[...currentOrder.items]
+              {[...order.items]
                 .sort((a, b) => {
                   const aIsPaid = a.isPaid ? 1 : 0
                   const bIsPaid = b.isPaid ? 1 : 0
@@ -192,6 +154,9 @@ export function CartPanel({ onPaymentClick, tableName }: CartPanelProps): React.
                   )
                 })
                 .map((item) => {
+                  // If product field is missing in optimistic update, use what we have or placeholder
+                  const productName = item.product?.name || 'Yeni Ürün'
+
                   return (
                     <div
                       key={item.id}
@@ -213,7 +178,7 @@ export function CartPanel({ onPaymentClick, tableName }: CartPanelProps): React.
                               item.isPaid ? 'text-muted-foreground' : 'text-foreground/90'
                             )}
                           >
-                            {(item.product?.name || 'Ürün').replace(/([a-z])([A-Z])/g, '$1 $2')}
+                            {productName.replace(/([a-z])([A-Z])/g, '$1 $2')}
                           </p>
                         </div>
                         <div className="flex items-center gap-2 mt-2">
@@ -235,7 +200,9 @@ export function CartPanel({ onPaymentClick, tableName }: CartPanelProps): React.
                             size="icon"
                             variant="ghost"
                             className="h-8 w-8 rounded-xl hover:bg-red-500/10 text-red-500/60 hover:text-red-500"
-                            onClick={() => handleUpdateQuantity(item.productId, item.quantity - 1)}
+                            onClick={() =>
+                              handleUpdateQuantity(item.id, item.productId, item.quantity - 1)
+                            }
                             disabled={isLocked}
                           >
                             <Minus className="w-3.5 h-3.5" />
@@ -247,7 +214,9 @@ export function CartPanel({ onPaymentClick, tableName }: CartPanelProps): React.
                             size="icon"
                             variant="ghost"
                             className="h-8 w-8 rounded-xl hover:bg-emerald-500/10 text-emerald-500/60 hover:text-emerald-500"
-                            onClick={() => handleUpdateQuantity(item.productId, item.quantity + 1)}
+                            onClick={() =>
+                              handleUpdateQuantity(item.id, item.productId, item.quantity + 1)
+                            }
                             disabled={isLocked}
                           >
                             <Plus className="w-3.5 h-3.5" />
@@ -320,7 +289,7 @@ export function CartPanel({ onPaymentClick, tableName }: CartPanelProps): React.
               : 'bg-muted text-muted-foreground outline-none'
           )}
           size="lg"
-          disabled={!currentOrder?.items || currentOrder.items.length === 0 || remainingAmount <= 0}
+          disabled={!order?.items || order.items.length === 0 || remainingAmount <= 0}
           onClick={onPaymentClick}
         >
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/pay:animate-[shimmer_2s_infinite] pointer-events-none" />

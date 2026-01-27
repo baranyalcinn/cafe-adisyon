@@ -36,6 +36,18 @@ function createWindow(): void {
     return { action: 'deny' }
   })
 
+  // Content Security Policy (CSP)
+  mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [
+          "default-src 'self' 'unsafe-inline' data:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: resource: blob: file:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://api.caffio.app;"
+        ]
+      }
+    })
+  })
+
   // HMR for renderer base on electron-vite cli.
   // Load the remote URL for development or the local html file for production.
   if (process.env.NODE_ENV === 'development' && process.env['ELECTRON_RENDERER_URL']) {

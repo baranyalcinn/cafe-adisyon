@@ -4,11 +4,11 @@ import { Button } from '@/components/ui/button'
 import { TablesView } from '@/features/tables/TablesView'
 import { OrderView } from '@/features/orders/OrderView'
 import { useTableStore } from '@/store/useTableStore'
-import { useInventoryStore } from '@/store/useInventoryStore'
+import { useInventoryPrefetch } from '@/hooks/useInventory'
 import { cn } from '@/lib/utils'
 import '@/styles/globals.css'
 import { Toaster } from '@/components/ui/toaster'
-import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 
 // Lazy load SettingsView (not used frequently)
 const SettingsView = lazy(() =>
@@ -37,20 +37,22 @@ function App(): React.JSX.Element {
     const saved = localStorage.getItem('colorScheme')
     return (saved as ColorScheme) || 'emerald'
   })
-  const { selectTable, fetchTables } = useTableStore()
-  const { fetchInventory } = useInventoryStore()
-
-  // Pre-fetch all essential data on mount
-  useEffect(() => {
-    fetchTables()
-    fetchInventory()
-  }, [fetchTables, fetchInventory])
+  // Pre-fetch calls removed in frame of React Query migration
+  // Data is now fetched by components using useQuery hooks
 
   // Apply theme and color scheme to document
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDark)
     localStorage.setItem('theme', isDark ? 'dark' : 'light')
   }, [isDark])
+
+  const { selectTable } = useTableStore()
+  const { prefetchAll } = useInventoryPrefetch()
+
+  // Prefetch menu data on mount
+  useEffect(() => {
+    prefetchAll()
+  }, [prefetchAll])
 
   useEffect(() => {
     document.documentElement.setAttribute('data-scheme', colorScheme)
@@ -76,7 +78,7 @@ function App(): React.JSX.Element {
   }
 
   return (
-    <ErrorBoundary>
+    <>
       <div className="fixed inset-0 flex bg-background">
         <aside className="w-20 h-full flex flex-col items-center py-8 px-2 bg-card/80 backdrop-blur-xl border-r gap-8 z-50">
           <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0 border border-primary/20 shadow-sm transition-transform hover:scale-105 active:scale-95 cursor-pointer">
@@ -155,7 +157,8 @@ function App(): React.JSX.Element {
         </main>
         <Toaster />
       </div>
-    </ErrorBoundary>
+      <ReactQueryDevtools initialIsOpen={false} />
+    </>
   )
 }
 

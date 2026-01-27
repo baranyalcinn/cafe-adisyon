@@ -5,13 +5,15 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
 import { useTableStore } from '@/store/useTableStore'
-import { useOrderStore } from '@/store/useOrderStore'
-import { useInventoryStore } from '@/store/useInventoryStore'
+import { useInventory } from '@/hooks/useInventory'
+import { useOrder } from '@/hooks/useOrder'
+import { useTables } from '@/hooks/useTables'
 import { ProductCard } from './ProductCard'
 import { getCategoryIcon } from './order-icons'
 import { CartPanel } from './CartPanel'
 import { PaymentModal } from '../payments/PaymentModal'
 import { cn } from '@/lib/utils'
+import { Product } from '@/lib/api'
 
 interface OrderViewProps {
   onBack: () => void
@@ -19,11 +21,21 @@ interface OrderViewProps {
 
 export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
   const selectedTableId = useTableStore((state) => state.selectedTableId)
-  const tables = useTableStore((state) => state.tables)
-  const loadOrderForTable = useOrderStore((state) => state.loadOrderForTable)
-  const products = useInventoryStore((state) => state.products)
-  const categories = useInventoryStore((state) => state.categories)
-  const fetchInventory = useInventoryStore((state) => state.fetchInventory)
+
+  // Hooks
+  const { products, categories, isLoading: isInventoryLoading } = useInventory()
+  const { data: tables = [] } = useTables()
+  const {
+    order,
+    addItem,
+    updateItem,
+    removeItem,
+    toggleLock,
+    deleteOrder,
+    processPayment,
+    markItemsPaid,
+    isLocked
+  } = useOrder(selectedTableId)
 
   const [searchQuery, setSearchQuery] = useState('')
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
@@ -34,16 +46,6 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   const selectedTable = tables.find((t) => t.id === selectedTableId)
-
-  useEffect(() => {
-    fetchInventory() // Uses cache if possible
-  }, [fetchInventory])
-
-  useEffect(() => {
-    if (selectedTableId) {
-      loadOrderForTable(selectedTableId)
-    }
-  }, [selectedTableId, loadOrderForTable])
 
   // Ctrl+F shortcut
   useEffect(() => {
@@ -66,7 +68,15 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
     return matchesSearch && matchesCategory
   })
 
+  // Group by category if needed, or just sort
+  filteredProducts.sort((a, b) => a.name.localeCompare(b.name))
+
   const favoriteProducts = products.filter((p) => p.isFavorite)
+
+  const handleAddToCart = (product: Product): void => {
+    // Optimistic update handled in useOrder
+    addItem({ product, quantity: 1 })
+  }
 
   return (
     <div className="flex h-full bg-background/95">
@@ -150,7 +160,13 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
             <ScrollArea className="h-full w-full">
               <div className="flex flex-col gap-2 pr-5">
                 {favoriteProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} compact />
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    compact
+                    isLocked={isLocked}
+                    onAdd={handleAddToCart}
+                  />
                 ))}
                 {favoriteProducts.length === 0 && (
                   <p className="text-sm text-muted-foreground text-center py-4">Favori ürün yok</p>
@@ -219,20 +235,35 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
 
         <ScrollArea className="flex-1 h-full">
           <div className="p-4 pb-24">
-            <div
-              className={cn(
-                'gap-2.5 transition-all duration-500',
-                viewMode === 'grid'
-                  ? 'grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))]'
-                  : 'flex flex-col max-w-4xl mx-auto px-4'
-              )}
-            >
-              {filteredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} compact={viewMode === 'list'} />
-              ))}
-            </div>
+            {isInventoryLoading ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {/* Product Skeletons */}
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div key={i} className="h-48 bg-muted/20 animate-pulse rounded-[2rem]" />
+                ))}
+              </div>
+            ) : (
+              <div
+                className={cn(
+                  'gap-2.5 transition-all duration-500',
+                  viewMode === 'grid'
+                    ? 'grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))]'
+                    : 'flex flex-col max-w-4xl mx-auto px-4'
+                )}
+              >
+                {filteredProducts.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    compact={viewMode === 'list'}
+                    isLocked={isLocked}
+                    onAdd={handleAddToCart}
+                  />
+                ))}
+              </div>
+            )}
 
-            {filteredProducts.length === 0 && (
+            {!isInventoryLoading && filteredProducts.length === 0 && (
               <div className="text-center py-12 text-muted-foreground">
                 <p>Ürün bulunamadı</p>
               </div>
@@ -243,8 +274,14 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
 
       {/* Right Panel - Cart */}
       <CartPanel
-        onPaymentClick={() => setIsPaymentOpen(true)}
+        order={order}
         tableName={selectedTable?.name || 'Masa'}
+        isLocked={isLocked}
+        onPaymentClick={() => setIsPaymentOpen(true)}
+        onUpdateItem={(itemId, qty) => updateItem({ orderItemId: itemId, quantity: qty })}
+        onRemoveItem={(itemId) => removeItem(itemId)}
+        onToggleLock={() => toggleLock()}
+        onDeleteOrder={(orderId) => deleteOrder(orderId)}
       />
 
       {/* Payment Modal */}
@@ -252,6 +289,11 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
         open={isPaymentOpen}
         onClose={() => setIsPaymentOpen(false)}
         onPaymentComplete={onBack}
+        order={order}
+        onProcessPayment={async (amount, method) => {
+          await processPayment({ amount, method })
+        }}
+        onMarkItemsPaid={markItemsPaid}
       />
     </div>
   )

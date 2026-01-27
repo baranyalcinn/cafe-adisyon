@@ -2,20 +2,24 @@ import React, { memo, useCallback } from 'react'
 import { Plus, Star } from 'lucide-react'
 import { getCategoryIcon } from './order-icons'
 import { cn, formatCurrency } from '@/lib/utils'
-import { useOrderStore } from '@/store/useOrderStore'
-import { toast } from '@/store/useToastStore'
 import { soundManager } from '@/lib/sound'
+import { toast } from '@/store/useToastStore'
 import type { Product } from '@/lib/api'
 
 interface ProductCardProps {
   product: Product
   compact?: boolean
+  isLocked?: boolean
+  onAdd?: (product: Product) => void
 }
 
-function ProductCardComponent({ product, compact = false }: ProductCardProps): React.JSX.Element {
-  const { addItemToOrder, isLocked } = useOrderStore()
-
-  const handleClick = useCallback(async (): Promise<void> => {
+function ProductCardComponent({
+  product,
+  compact = false,
+  isLocked = false,
+  onAdd
+}: ProductCardProps): React.JSX.Element {
+  const handleClick = useCallback((): void => {
     if (isLocked) {
       soundManager.playError()
       toast({
@@ -26,9 +30,12 @@ function ProductCardComponent({ product, compact = false }: ProductCardProps): R
       })
       return
     }
-    await addItemToOrder(product.id, 1, product.price)
-    soundManager.playClick()
-  }, [isLocked, addItemToOrder, product.id, product.price])
+
+    if (onAdd) {
+      onAdd(product)
+      soundManager.playClick()
+    }
+  }, [isLocked, onAdd, product])
 
   if (compact) {
     return (
@@ -120,6 +127,10 @@ export const ProductCard = memo(ProductCardComponent, (prevProps, nextProps) => 
     prevProps.product.price === nextProps.product.price &&
     prevProps.product.name === nextProps.product.name &&
     prevProps.product.isFavorite === nextProps.product.isFavorite &&
-    prevProps.compact === nextProps.compact
+    prevProps.compact === nextProps.compact &&
+    prevProps.isLocked === nextProps.isLocked // Added isLocked check
+    // onAdd function reference might change, but typically we want to avoid re-render if logic hasn't changed.
+    // However, if we pass a new anonymous function every time, this memo breaks.
+    // Parent should use useCallback for onAdd.
   )
 })

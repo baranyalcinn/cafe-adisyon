@@ -57,7 +57,9 @@ export const productSchemas = {
       isFavorite: z.boolean().optional()
     })
   }),
-  delete: z.object({ id: cuidSchema })
+  delete: z.object({ id: cuidSchema }),
+  getByCategory: z.object({ categoryId: cuidSchema }),
+  search: z.object({ query: z.string() })
 }
 
 export const orderSchemas = {
@@ -95,7 +97,19 @@ export const orderSchemas = {
       id: cuidSchema,
       quantity: z.number().int().positive()
     })
-  )
+  ),
+  delete: z.object({ orderId: cuidSchema }),
+  toggleLock: z.object({
+    orderId: cuidSchema,
+    isLocked: z.boolean()
+  }),
+  getHistory: z
+    .object({
+      date: z.string().optional(),
+      limit: z.number().optional(),
+      offset: z.number().optional()
+    })
+    .optional()
 }
 
 export const paymentSchemas = {

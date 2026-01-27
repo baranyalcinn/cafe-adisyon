@@ -9,10 +9,8 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { useOrderStore } from '@/store/useOrderStore'
 import { useTableStore } from '@/store/useTableStore'
-import { useCartStore } from '@/store/useCartStore'
-import { type PaymentMethod } from '@/lib/api'
+import { type Order, type PaymentMethod } from '@/lib/api'
 import { cn, formatCurrency } from '@/lib/utils'
 import { soundManager } from '@/lib/sound'
 
@@ -20,6 +18,9 @@ interface PaymentModalProps {
   open: boolean
   onClose: () => void
   onPaymentComplete?: () => void
+  order: Order | null | undefined
+  onProcessPayment: (amount: number, method: PaymentMethod) => Promise<unknown>
+  onMarkItemsPaid: (items: { id: string; quantity: number }[]) => Promise<unknown>
 }
 
 type PaymentMode = 'full' | 'items' | 'split' | 'custom'
@@ -27,11 +28,12 @@ type PaymentMode = 'full' | 'items' | 'split' | 'custom'
 export function PaymentModal({
   open,
   onClose,
-  onPaymentComplete
-}: Omit<PaymentModalProps, 'order'>): React.JSX.Element {
-  const { currentOrder, processPayment, markItemsPaid, loadOrderForTable } = useOrderStore()
-  const { selectedTableId, selectTable } = useTableStore()
-  const { getTotal } = useCartStore()
+  onPaymentComplete,
+  order,
+  onProcessPayment,
+  onMarkItemsPaid
+}: PaymentModalProps): React.JSX.Element {
+  const { selectTable } = useTableStore()
 
   const [paymentMode, setPaymentMode] = useState<PaymentMode>('full')
   const [selectedQuantities, setSelectedQuantities] = useState<Record<string, number>>({})
@@ -44,14 +46,14 @@ export function PaymentModal({
   // Split State
   const [splitCount, setSplitCount] = useState(2)
 
-  const total = getTotal()
-  const paidAmount = currentOrder?.payments?.reduce((sum, p) => sum + p.amount, 0) || 0
+  const total = order?.totalAmount || 0
+  const paidAmount = order?.payments?.reduce((sum, p) => sum + p.amount, 0) || 0
   const remainingAmount = total - paidAmount
 
   // Filter out paid items for display
   const unpaidItems = useMemo(() => {
-    return currentOrder?.items?.filter((item) => !item.isPaid) || []
-  }, [currentOrder?.items])
+    return order?.items?.filter((item) => !item.isPaid) || []
+  }, [order?.items])
 
   // Calculate selected items total
   const selectedTotal = useMemo(() => {
@@ -152,41 +154,20 @@ export function PaymentModal({
     setIsProcessing(true)
 
     try {
-      let isComplete = false
-
       // FIX: Only call processPayment if there is an actual amount to pay.
       // If amount is 0 (covered by credit), we skip this and just mark items.
       if (actualAmount > 0) {
-        isComplete = await processPayment(actualAmount, method)
-        // If payment failed (returned false/undefined), stop here
-        if (!isComplete && actualAmount > 0) {
-          // In current store implementation, processPayment returns boolean success
-          // However, we need to be careful. The store implementation might return true for partial?
-          // Checking store code (via memory/inference): usually returns true on success.
-          // If it failed, isComplete is false.
-        }
+        await onProcessPayment(actualAmount, method)
       }
 
       // If in items mode, mark selected items as paid
       // We do this if payment succeeded OR if payment was 0 (skipped)
       if (paymentMode === 'items' && Object.keys(selectedQuantities).length > 0) {
-        // If actualAmount > 0 and payment failed, don't mark items
-        if (actualAmount > 0 && !isComplete) {
-          throw new Error('Ödeme işlemi başarısız oldu.')
-        }
-
         const itemsToPay = Object.entries(selectedQuantities).map(([id, quantity]) => ({
           id,
           quantity
         }))
-        await markItemsPaid(itemsToPay)
-
-        // Items marked paid. If we processed a payment (actualAmount > 0) it should be fine.
-        // If we didn't (actualAmount == 0), we assume this "payment" is effectively done for these items.
-      }
-
-      if (selectedTableId) {
-        await loadOrderForTable(selectedTableId)
+        await onMarkItemsPaid(itemsToPay)
       }
 
       // Determine if we should close modal
@@ -199,7 +180,7 @@ export function PaymentModal({
       setIsProcessing(false)
       soundManager.playSuccess()
 
-      if (shouldClose || isComplete) {
+      if (shouldClose) {
         setPaymentComplete(true)
         setTimeout(() => {
           onClose()

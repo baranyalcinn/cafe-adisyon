@@ -1,10 +1,11 @@
-import { useEffect, useState, memo } from 'react'
+import { useState, memo } from 'react'
 import { cn } from '@/lib/utils'
 import { Coffee, ArrowRightLeft, Combine } from 'lucide-react'
-import { useTableStore } from '@/store/useTableStore'
 import { useCartStore } from '@/store/useCartStore'
 import { cafeApi } from '@/lib/api'
 import { toast } from '@/store/useToastStore'
+import { useTables } from '@/hooks/useTables'
+import { TableCardSkeleton } from './TableCardSkeleton'
 import {
   Dialog,
   DialogContent,
@@ -152,9 +153,8 @@ interface TablesViewProps {
 }
 
 export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Element {
-  const tables = useTableStore((state) => state.tables)
-  const isLoading = useTableStore((state) => state.isLoading)
-  const fetchTables = useTableStore((state) => state.fetchTables)
+  // Use React Query hook instead of store for fetching
+  const { data: tables = [], isLoading, refetch } = useTables()
 
   const [transferModal, setTransferModal] = useState<{
     open: boolean
@@ -169,10 +169,6 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
   }>({ open: false, sourceTableId: null, sourceOrderId: null })
 
   const [isProcessing, setIsProcessing] = useState(false)
-
-  useEffect(() => {
-    fetchTables()
-  }, [fetchTables])
 
   const handleTransferClick = async (tableId: string): Promise<void> => {
     try {
@@ -205,7 +201,7 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
       const sourceTable = tables.find((t) => t.id === transferModal.sourceTableId)
       setTransferModal({ open: false, sourceTableId: null, sourceOrderId: null })
       useCartStore.getState().clearCart() // Clear cart state after transfer
-      fetchTables()
+      refetch() // Refresh tables immediately
       toast({
         title: 'Transfer Başarılı',
         description: `${sourceTable?.name || 'Kaynak masa'} siparişi ${targetTable?.name || 'hedef masaya'} aktarıldı!`,
@@ -238,7 +234,7 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
       await cafeApi.orders.merge(mergeModal.sourceOrderId, targetOrder.id)
       setMergeModal({ open: false, sourceTableId: null, sourceOrderId: null })
       useCartStore.getState().clearCart() // Clear cart state after merge
-      fetchTables()
+      refetch() // Refresh tables
     } catch (error) {
       toast({
         title: 'Birleştirme Hatası',
@@ -248,14 +244,6 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
     } finally {
       setIsProcessing(false)
     }
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
-      </div>
-    )
   }
 
   const sourceTableName = tables.find((t) => t.id === transferModal.sourceTableId)?.name
@@ -276,31 +264,41 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
       </div>
 
       <div className="flex-1 overflow-y-auto p-8 pb-32">
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-6">
-          {tables.map((table) => (
-            <TableCard
-              key={table.id}
-              id={table.id}
-              name={table.name}
-              hasOpenOrder={table.hasOpenOrder}
-              isLocked={table.isLocked}
-              onClick={() => onTableSelect(table.id)}
-              onTransfer={() => handleTransferClick(table.id)}
-              onMerge={() => handleMergeClick(table.id)}
-            />
-          ))}
-        </div>
-
-        {tables.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-64 text-center">
-            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-              <Coffee className="w-8 h-8 text-muted-foreground/50" />
-            </div>
-            <h3 className="text-lg font-semibold">Henüz masa yok</h3>
-            <p className="text-muted-foreground max-w-sm mt-2">
-              İşletmenizi yapılandırmak için ayarlar sayfasından masalar oluşturun.
-            </p>
+        {isLoading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-6">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <TableCardSkeleton key={i} />
+            ))}
           </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-6">
+              {tables.map((table) => (
+                <TableCard
+                  key={table.id}
+                  id={table.id}
+                  name={table.name}
+                  hasOpenOrder={!!table.hasOpenOrder}
+                  isLocked={table.isLocked}
+                  onClick={() => onTableSelect(table.id)}
+                  onTransfer={() => handleTransferClick(table.id)}
+                  onMerge={() => handleMergeClick(table.id)}
+                />
+              ))}
+            </div>
+
+            {tables.length === 0 && (
+              <div className="flex flex-col items-center justify-center h-64 text-center">
+                <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                  <Coffee className="w-8 h-8 text-muted-foreground/50" />
+                </div>
+                <h3 className="text-lg font-semibold">Henüz masa yok</h3>
+                <p className="text-muted-foreground max-w-sm mt-2">
+                  İşletmenizi yapılandırmak için ayarlar sayfasından masalar oluşturun.
+                </p>
+              </div>
+            )}
+          </>
         )}
       </div>
 

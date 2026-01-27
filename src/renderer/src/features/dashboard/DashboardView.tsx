@@ -605,7 +605,7 @@ export function DashboardView(): React.JSX.Element {
                         tickFormatter={(val) => `₺${(val / 1000).toFixed(0)}k`}
                       />
                       <Tooltip content={<MonthlyTooltip />} />
-                      <Legend verticalAlign="top" height={36} iconType="pill" />
+                      <Legend verticalAlign="top" height={36} iconType="circle" />
                       <Bar
                         dataKey="revenue"
                         name="Ciro"
