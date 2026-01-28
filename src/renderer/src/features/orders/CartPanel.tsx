@@ -1,7 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react'
 import {
-  Minus,
-  Plus,
   Trash2,
   CreditCard,
   CheckCircle,
@@ -15,6 +13,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { cn, formatCurrency } from '@/lib/utils'
 import { soundManager } from '@/lib/sound'
 import { Order } from '@/lib/api'
+import { QuantitySelector } from '@/components/ui/QuantitySelector'
 
 interface CartPanelProps {
   order: Order | null | undefined
@@ -217,35 +216,15 @@ export function CartPanel({
                         </div>
                       </div>
 
-                      {/* Always visible quantity controls for unpaid items */}
+                      {/* Premium Quantity Selector for unpaid items */}
                       {!item.isPaid && (
-                        <div className="flex items-center gap-0.5 bg-background/80 rounded-lg p-0.5 border border-white/5 shrink-0">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-6 w-6 rounded-md hover:bg-destructive/10 text-destructive/50 hover:text-destructive"
-                            onClick={() =>
-                              handleUpdateQuantity(item.id, item.productId, item.quantity - 1)
-                            }
-                            disabled={isLocked}
-                          >
-                            <Minus className="w-2.5 h-2.5" />
-                          </Button>
-                          <span className="w-4 text-center font-bold text-[10px] tabular-nums">
-                            {item.quantity}
-                          </span>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-6 w-6 rounded-md hover:bg-success/10 text-success/50 hover:text-success"
-                            onClick={() =>
-                              handleUpdateQuantity(item.id, item.productId, item.quantity + 1)
-                            }
-                            disabled={isLocked}
-                          >
-                            <Plus className="w-2.5 h-2.5" />
-                          </Button>
-                        </div>
+                        <QuantitySelector
+                          quantity={item.quantity}
+                          onUpdate={(newQty) =>
+                            handleUpdateQuantity(item.id, item.productId, newQty)
+                          }
+                          isLocked={isLocked}
+                        />
                       )}
 
                       {item.isPaid && (
