@@ -91,54 +91,55 @@ export function CartPanel({
   }
 
   return (
-    <div className="w-96 glass-panel border-l flex flex-col h-full animate-in slide-in-from-right duration-700 relative overflow-hidden shadow-2xl">
+    <div className="w-96 glass-panel border-l !border-t-0 flex flex-col h-full animate-in slide-in-from-right duration-700 relative overflow-hidden shadow-2xl">
       {/* Premium Glass Effect Background */}
 
 
-      <div className="p-4 border-b relative z-10 bg-background/95 border-l-4 border-l-primary/30">
-        <div className="flex justify-between items-center mb-1.5">
-          <div className="flex items-center gap-3">
-            <h3 className="text-xl font-black tracking-tighter text-foreground/90 uppercase italic">
-              {tableName}
-            </h3>
-            {order?.items && order.items.length > 0 && (
-              <span className="px-2.5 py-1 bg-primary/10 text-primary text-xs font-black rounded-full border border-primary/20">
-                {order.items.reduce((sum, item) => sum + item.quantity, 0)} Ürün
-              </span>
-            )}
-          </div>
+      <div className="z-10 relative h-16 px-6 border-b border-white/10 bg-gradient-to-r from-background via-background/95 to-background flex items-center justify-between flex-shrink-0">
+        {/* Premium top accent line */}
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
+        
+        <div className="flex items-center gap-3">
+          <h3 className="text-xl font-black tracking-tight text-foreground uppercase">
+            {tableName}
+          </h3>
           {order?.items && order.items.length > 0 && (
-            <Button
-              variant={isLocked ? 'default' : 'secondary'}
-              size="sm"
-              onClick={onToggleLock}
-              className={cn(
-                'h-9 gap-2.5 rounded-2xl px-5 text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300',
-                isLocked
-                  ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-lg shadow-amber-500/30 ring-2 ring-amber-500/20'
-                  : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground border border-border/50'
-              )}
-            >
-              {isLocked ? (
-                <>
-                  <Lock className="w-3.5 h-3.5" />
-                  Kilitli
-                </>
-              ) : (
-                <>
-                  <LockOpen className="w-3.5 h-3.5" />
-                  Kilitle
-                </>
-              )}
-            </Button>
+            <span className="px-2.5 py-0.5 bg-primary/5 text-primary text-[11px] font-bold rounded-full border border-primary/10 shadow-[0_0_10px_rgba(var(--primary),0.1)]">
+              {order.items.reduce((sum, item) => sum + item.quantity, 0)} Ürün
+            </span>
           )}
         </div>
+        {order?.items && order.items.length > 0 && (
+          <Button
+            variant={isLocked ? 'default' : 'ghost'}
+            size="sm"
+            onClick={onToggleLock}
+            className={cn(
+              'h-8 gap-2 rounded-xl px-4 text-[10px] font-bold uppercase tracking-wider transition-all duration-300',
+              isLocked
+                ? 'bg-amber-500/90 hover:bg-amber-500 text-white shadow-md shadow-amber-500/20'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+            )}
+          >
+            {isLocked ? (
+              <>
+                <Lock className="w-3 h-3" />
+                Kilitli
+              </>
+            ) : (
+              <>
+                <LockOpen className="w-3 h-3" />
+                Kilitle
+              </>
+            )}
+          </Button>
+        )}
       </div>
 
       <div className="flex-1 min-h-0 overflow-hidden relative z-10 flex flex-col">
         {order?.items && order.items.length > 0 ? (
           <ScrollArea className="flex-1 min-h-0">
-            <div className="p-6 flex flex-col gap-3">
+            <div className="p-4 flex flex-col gap-2">
               {[...order.items]
                 .sort((a, b) => {
                   const aIsPaid = a.isPaid ? 1 : 0
@@ -158,10 +159,10 @@ export function CartPanel({
                     <div
                       key={item.id}
                       className={cn(
-                        'flex items-center gap-3 py-2 px-3 rounded-xl border transition-all duration-300 relative overflow-hidden hover:shadow-md hover:scale-[1.01]',
+                        'flex items-center gap-2 py-2 px-2.5 rounded-xl border transition-all duration-200 relative overflow-hidden',
                         item.isPaid
-                          ? 'bg-emerald-500/[0.05] border-emerald-500/10 opacity-60 border-l-4 border-l-emerald-500/50'
-                          : 'bg-card/90 border-white/5 hover:bg-card hover:border-primary/10 border-l-4 border-l-primary/40 shadow-sm'
+                          ? 'bg-emerald-500/[0.03] border-emerald-500/10 opacity-50 border-l-2 border-l-emerald-500/40'
+                          : 'bg-card/80 border-white/5 hover:bg-card hover:border-primary/10 border-l-2 border-l-primary/30 hover:shadow-sm'
                       )}
                     >
                       <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
@@ -170,24 +171,26 @@ export function CartPanel({
                             <CheckCircle className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
                           )}
                           <div className="flex flex-col min-w-0">
-                            <p
-                              className={cn(
-                                'font-bold text-[15px] tracking-tight leading-snug line-clamp-2',
-                                item.isPaid ? 'text-muted-foreground' : 'text-foreground/90'
-                              )}
-                            >
-                              {productName.replace(/([a-z])([A-Z])/g, '$1 $2')}
+                            <div className="flex items-center gap-1.5">
+                              <p
+                                className={cn(
+                                  'font-semibold text-sm tracking-tight leading-snug line-clamp-1',
+                                  item.isPaid ? 'text-muted-foreground' : 'text-foreground/90'
+                                )}
+                              >
+                                {productName.replace(/([a-z])([A-Z])/g, '$1 $2')}
+                              </p>
                               {item.quantity > 1 && (
-                                <span className="ml-2 text-[13px] font-black text-rose-500 tabular-nums">
+                                <span className="text-sm font-black text-rose-500 tabular-nums shrink-0">
                                   x{item.quantity}
                                 </span>
                               )}
-                            </p>
+                            </div>
                           </div>
                         </div>
                         
-                        <div className="text-right min-w-[75px] shrink-0">
-                          <p className="text-sm font-black text-foreground/80 tabular-nums">
+                        <div className="text-right min-w-[65px] shrink-0">
+                          <p className="text-[13px] font-bold text-foreground/80 tabular-nums">
                             {formatCurrency(item.unitPrice * item.quantity)}
                           </p>
                         </div>
@@ -195,40 +198,40 @@ export function CartPanel({
 
                       {/* Always visible quantity controls for unpaid items */}
                       {!item.isPaid && (
-                        <div className="flex items-center gap-1 bg-background/90 rounded-xl p-0.5 border border-white/10 shrink-0">
+                        <div className="flex items-center gap-0.5 bg-background/80 rounded-lg p-0.5 border border-white/5 shrink-0">
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="h-7 w-7 rounded-lg hover:bg-red-500/10 text-red-500/60 hover:text-red-500"
+                            className="h-6 w-6 rounded-md hover:bg-red-500/10 text-red-500/50 hover:text-red-500"
                             onClick={() =>
                               handleUpdateQuantity(item.id, item.productId, item.quantity - 1)
                             }
                             disabled={isLocked}
                           >
-                            <Minus className="w-3 h-3" />
+                            <Minus className="w-2.5 h-2.5" />
                           </Button>
-                          <span className="w-5 text-center font-black text-[11px] tabular-nums">
+                          <span className="w-4 text-center font-bold text-[10px] tabular-nums">
                             {item.quantity}
                           </span>
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="h-7 w-7 rounded-lg hover:bg-emerald-500/10 text-emerald-500/60 hover:text-emerald-500"
+                            className="h-6 w-6 rounded-md hover:bg-emerald-500/10 text-emerald-500/50 hover:text-emerald-500"
                             onClick={() =>
                               handleUpdateQuantity(item.id, item.productId, item.quantity + 1)
                             }
                             disabled={isLocked}
                           >
-                            <Plus className="w-3 h-3" />
+                            <Plus className="w-2.5 h-2.5" />
                           </Button>
                         </div>
                       )}
 
                       {item.isPaid && (
-                        <div className="px-3 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20 flex items-center gap-1.5">
-                          <CheckCircle className="w-3 h-3 text-emerald-500" />
-                          <span className="text-[10px] font-bold text-emerald-500 tabular-nums">
-                            ÖDENDİ
+                        <div className="px-2 py-0.5 bg-emerald-500/10 rounded-md border border-emerald-500/15 flex items-center gap-1">
+                          <CheckCircle className="w-2.5 h-2.5 text-emerald-500" />
+                          <span className="text-[9px] font-bold text-emerald-500 uppercase">
+                            Ödendi
                           </span>
                         </div>
                       )}

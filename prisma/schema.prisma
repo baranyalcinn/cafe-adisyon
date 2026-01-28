@@ -14,11 +14,13 @@ model Product {
   price      Int
   categoryId String
   isFavorite Boolean     @default(false)
+  isDeleted  Boolean     @default(false)
   orderItems OrderItem[]
   category   Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
   @@index([categoryId])
   @@index([isFavorite])
+  @@index([isDeleted])
 }
 
 model Category {

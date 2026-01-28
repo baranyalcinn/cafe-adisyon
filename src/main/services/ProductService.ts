@@ -7,7 +7,10 @@ export class ProductService {
   async getAllProducts(): Promise<ApiResponse<Product[]>> {
     try {
       const products = await prisma.product.findMany({
-        where: { categoryId: { not: undefined } }, // Valid categories
+        where: {
+          categoryId: { not: undefined },
+          isDeleted: false
+        }, // Valid categories and not deleted
         include: { category: true }
       })
       return { success: true, data: products as unknown as Product[] }
@@ -42,7 +45,10 @@ export class ProductService {
 
   async deleteProduct(id: string): Promise<ApiResponse<null>> {
     try {
-      await prisma.product.delete({ where: { id } })
+      await prisma.product.update({
+        where: { id },
+        data: { isDeleted: true }
+      })
       return { success: true, data: null }
     } catch (error) {
       logger.error('ProductService.deleteProduct', error)
@@ -62,7 +68,10 @@ export class ProductService {
   async getProductsByCategory(categoryId: string): Promise<ApiResponse<Product[]>> {
     try {
       const products = await prisma.product.findMany({
-        where: { categoryId },
+        where: {
+          categoryId,
+          isDeleted: false
+        },
         include: { category: true }
       })
       return { success: true, data: products as unknown as Product[] }
@@ -75,7 +84,10 @@ export class ProductService {
   async getFavorites(): Promise<ApiResponse<Product[]>> {
     try {
       const products = await prisma.product.findMany({
-        where: { isFavorite: true },
+        where: {
+          isFavorite: true,
+          isDeleted: false
+        },
         include: { category: true }
       })
       return { success: true, data: products as unknown as Product[] }
@@ -89,7 +101,8 @@ export class ProductService {
     try {
       const products = await prisma.product.findMany({
         where: {
-          name: { contains: query }
+          name: { contains: query },
+          isDeleted: false
         },
         include: { category: true }
       })

@@ -86,8 +86,10 @@ export function useOrder(tableId: string | null): UseOrderResult {
           } // No cast needed if type matches Order interface
         }
 
-        // Existing order
-        const existingItemIndex = old.items?.findIndex((i) => i.productId === product.id)
+        // Existing order - find only UNPAID items to increment
+        const existingItemIndex = old.items?.findIndex(
+          (i) => i.productId === product.id && !i.isPaid
+        )
         const newItems = [...(old.items || [])]
 
         if (existingItemIndex !== undefined && existingItemIndex > -1) {
