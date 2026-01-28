@@ -47,6 +47,22 @@ export function CartPanel({
   const paidAmount = order?.payments?.reduce((sum, p) => sum + p.amount, 0) || 0
   const remainingAmount = total - paidAmount
 
+  // Enter key to confirm delete dialog
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent): void => {
+      if (showDeleteDialog && e.key === 'Enter') {
+        e.preventDefault()
+        if (order) {
+          onDeleteOrder(order.id)
+          setShowDeleteDialog(false)
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [showDeleteDialog, order, onDeleteOrder])
+
   const handleUpdateQuantity = useCallback(
     (orderItemId: string, productId: string, newQuantity: number): void => {
       if (isLocked) {
@@ -69,8 +85,17 @@ export function CartPanel({
       }
 
       if (newQuantity <= 0) {
-        // Assume removal
-        onRemoveItem(orderItemId)
+        // Check if this is the last unpaid item
+        const unpaidItems = order?.items?.filter((i) => !i.isPaid) || []
+        const isLastUnpaidItem = unpaidItems.length === 1 && unpaidItems[0].id === orderItemId
+        
+        if (isLastUnpaidItem) {
+          // Show confirmation dialog for closing the table
+          setShowDeleteDialog(true)
+        } else {
+          // Just remove the item normally
+          onRemoveItem(orderItemId)
+        }
       } else {
         const timer = setTimeout(() => {
           onUpdateItem(orderItemId, newQuantity)
@@ -91,14 +116,11 @@ export function CartPanel({
   }
 
   return (
-    <div className="w-96 glass-panel border-l !border-t-0 flex flex-col h-full animate-in slide-in-from-right duration-700 relative overflow-hidden shadow-2xl">
+    <div className="w-96 glass-panel cart-panel-accent border-l border-white/10 !border-t-0 flex flex-col h-full animate-in slide-in-from-right duration-700 relative overflow-hidden shadow-2xl">
       {/* Premium Glass Effect Background */}
 
 
       <div className="z-10 relative h-16 px-6 border-b border-white/10 bg-gradient-to-r from-background via-background/95 to-background flex items-center justify-between flex-shrink-0">
-        {/* Premium top accent line */}
-        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
-        
         <div className="flex items-center gap-3">
           <h3 className="text-xl font-black tracking-tight text-foreground uppercase">
             {tableName}

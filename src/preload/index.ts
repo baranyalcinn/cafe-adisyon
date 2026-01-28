@@ -142,6 +142,13 @@ const api = {
   // Reports
   reports: {
     getMonthly: (limit: number = 12) => ipcRenderer.invoke(IPC_CHANNELS.REPORTS_GET_MONTHLY, limit)
+  },
+
+  // Window Controls
+  window: {
+    minimize: () => ipcRenderer.send(IPC_CHANNELS.WINDOW_MINIMIZE),
+    maximize: () => ipcRenderer.send(IPC_CHANNELS.WINDOW_MAXIMIZE),
+    close: () => ipcRenderer.send(IPC_CHANNELS.WINDOW_CLOSE)
   }
 }
 

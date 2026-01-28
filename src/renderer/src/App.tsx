@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils'
 import '@/styles/globals.css'
 import { Toaster } from '@/components/ui/toaster'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import { TitleBar } from '@/components/TitleBar'
 
 // Lazy load SettingsView (not used frequently)
 const SettingsView = lazy(() =>
@@ -79,7 +80,8 @@ function App(): React.JSX.Element {
 
   return (
     <>
-      <div className="fixed inset-0 flex bg-background">
+      <TitleBar />
+      <div className="fixed inset-0 top-10 flex bg-background">
         <aside className="w-20 h-full flex flex-col items-center py-6 px-2 bg-card/80 backdrop-blur-xl border-r z-50">
           <div className="flex flex-col items-center mb-8 group cursor-default select-none">
             <div className="flex flex-col items-center gap-2 transition-transform duration-700 group-hover:scale-110">

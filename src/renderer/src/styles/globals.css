@@ -226,6 +226,15 @@ textarea,
   box-sizing: border-box;
 }
 
+/* Title Bar Drag Regions */
+.titlebar-drag {
+  -webkit-app-region: drag;
+}
+
+.titlebar-no-drag {
+  -webkit-app-region: no-drag;
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;
@@ -277,13 +286,80 @@ textarea,
 
 /* Premium UI Utilities */
 .glass-panel {
-  @apply bg-card/90 border-white/5;
+  @apply bg-card/95 backdrop-blur-md border-white/10;
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.03);
+}
+
+.section-panel {
+  @apply relative;
+  background: linear-gradient(
+    180deg,
+    rgba(var(--color-card), 0.98) 0%,
+    rgba(var(--color-background), 0.95) 100%
+  );
+}
+
+.section-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at 50% 0%,
+    rgba(var(--color-primary), 0.03) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+.section-divider {
+  @apply relative;
+}
+
+.section-divider::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 100%
+  );
 }
 
 .premium-card {
-  @apply rounded-[1.5rem] md:rounded-[2rem] border-white/5 transition-all duration-200;
+  @apply rounded-[1.5rem] md:rounded-[2rem] border-white/10 transition-all duration-200;
 }
 
 .premium-card:hover {
   @apply translate-y-[-2px] shadow-xl;
+}
+
+/* Cart panel accent */
+.cart-panel-accent {
+  @apply relative;
+  background: linear-gradient(
+    135deg,
+    rgba(var(--color-card), 1) 0%,
+    rgba(var(--color-card), 0.95) 50%,
+    rgba(var(--color-primary), 0.02) 100%
+  );
+}
+
+.cart-panel-accent::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(
+    180deg,
+    rgba(var(--color-primary), 0.5) 0%,
+    rgba(var(--color-primary), 0.2) 50%,
+    transparent 100%
+  );
 }

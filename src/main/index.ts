@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow } from 'electron'
+import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { registerAllHandlers } from './ipc'
 import { logger } from './lib/logger'
@@ -13,6 +13,8 @@ function createWindow(): void {
     minHeight: 768,
     title: 'Caffio',
     show: false,
+    frame: false,
+    titleBarStyle: 'hidden',
     autoHideMenuBar: true,
     icon:
       process.env.NODE_ENV === 'development'
@@ -24,6 +26,17 @@ function createWindow(): void {
       sandbox: false
     }
   })
+
+  // Window control IPC handlers
+  ipcMain.on('window:minimize', () => mainWindow.minimize())
+  ipcMain.on('window:maximize', () => {
+    if (mainWindow.isMaximized()) {
+      mainWindow.unmaximize()
+    } else {
+      mainWindow.maximize()
+    }
+  })
+  ipcMain.on('window:close', () => mainWindow.close())
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()

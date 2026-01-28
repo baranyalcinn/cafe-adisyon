@@ -252,5 +252,10 @@ export const IPC_CHANNELS = {
   SEED_DATABASE: 'seed:database',
 
   // System
-  SYSTEM_CHECK: 'system:check'
+  SYSTEM_CHECK: 'system:check',
+
+  // Window Controls
+  WINDOW_MINIMIZE: 'window:minimize',
+  WINDOW_MAXIMIZE: 'window:maximize',
+  WINDOW_CLOSE: 'window:close'
 } as const

@@ -47,18 +47,27 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
 
   const selectedTable = tables.find((t) => t.id === selectedTableId)
 
-  // Ctrl+F shortcut
+  // Keyboard shortcuts: Ctrl+F for search, ESC to go back
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
+      // Ctrl+F → Focus search
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
         e.preventDefault()
         searchInputRef.current?.focus()
+      }
+      // ESC → Go back to tables (only if not in an input/textarea)
+      if (e.key === 'Escape') {
+        const activeElement = document.activeElement
+        const isInInput = activeElement instanceof HTMLInputElement || activeElement instanceof HTMLTextAreaElement
+        if (!isInInput) {
+          onBack()
+        }
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
+  }, [onBack])
 
   const filteredProducts = products.filter((product) => {
     const matchesSearch = searchQuery
@@ -81,7 +90,7 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
   return (
     <div className="flex h-full bg-background">
       {/* Left Panel - Categories & Search */}
-      <div className="w-72 glass-panel border-r !border-t-0 !border-b-0 flex flex-col h-full min-h-0 animate-in slide-in-from-left duration-300">
+      <div className="w-72 glass-panel border-r border-white/10 !border-t-0 !border-b-0 flex flex-col h-full min-h-0 animate-in slide-in-from-left duration-300">
         <div className="p-6">
           <Button
             variant="ghost"
@@ -177,11 +186,8 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
       </div>
 
       {/* Center Panel - Products Grid */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden glass-panel !border-t-0 !border-b-0">
+      <div className="flex-1 flex flex-col h-full overflow-hidden section-panel glass-panel !border-t-0 !border-b-0">
         <div className="z-10 relative h-16 px-6 border-b border-white/10 bg-gradient-to-r from-background via-background/95 to-background flex items-center justify-between flex-shrink-0">
-          {/* Premium top accent line - matching cart panel */}
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
-          
           <div className="flex items-center gap-3">
             <h2 className="text-xl font-black tracking-tight text-foreground uppercase">
               {selectedTable?.name || 'Masa'}
