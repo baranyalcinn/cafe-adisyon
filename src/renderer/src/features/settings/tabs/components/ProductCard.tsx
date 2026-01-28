@@ -76,7 +76,7 @@ export const ProductCard = memo(function ProductCard({
             <Button
               size="sm"
               variant="outline"
-              className="h-8 w-8 px-0 hover:bg-red-500/10 hover:text-red-500 transition-all duration-300"
+              className="h-8 w-8 px-0 hover:bg-destructive/10 hover:text-destructive transition-all duration-300"
               onClick={() => setIsEditing(false)}
             >
               <X className="w-4 h-4" />
@@ -92,7 +92,7 @@ export const ProductCard = memo(function ProductCard({
       className={cn(
         'group relative flex flex-col p-5 bg-card border rounded-2xl transition-all duration-300',
         'hover:shadow-lg hover:-translate-y-1 hover:border-primary/20',
-        product.isFavorite && 'border-amber-200 bg-amber-50/30 dark:bg-amber-900/10'
+        product.isFavorite && 'border-warning/20 bg-warning/5 dark:bg-warning/10'
       )}
     >
       {/* Favorite Badge */}
@@ -101,8 +101,8 @@ export const ProductCard = memo(function ProductCard({
         className={cn(
           'absolute top-3 right-3 p-1.5 rounded-full transition-all duration-200 z-10',
           product.isFavorite
-            ? 'text-amber-500 bg-amber-100 dark:bg-amber-900/30 opacity-100 scale-100'
-            : 'text-muted-foreground/30 hover:text-amber-500 hover:bg-amber-50 opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100'
+            ? 'text-warning bg-warning/10 dark:bg-warning/30 opacity-100 scale-100'
+            : 'text-muted-foreground/30 hover:text-warning hover:bg-warning/5 opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100'
         )}
       >
         <Star className={cn('w-4 h-4', product.isFavorite && 'fill-current')} />

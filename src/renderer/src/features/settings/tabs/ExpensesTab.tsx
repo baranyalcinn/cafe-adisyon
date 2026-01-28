@@ -96,7 +96,7 @@ const ExpenseList = React.memo(
                     <span className="text-muted-foreground text-xs italic">-</span>
                   )}
                 </td>
-                <td className="px-6 py-4 align-middle text-right font-black text-red-600 font-mono text-base">
+                <td className="px-6 py-4 align-middle text-right font-black text-destructive font-mono text-base">
                   -{formatCurrency(expense.amount)}
                 </td>
                 <td className="px-6 py-4 align-middle text-right">
@@ -105,7 +105,7 @@ const ExpenseList = React.memo(
                     size="icon"
                     onClick={(e) => onDelete(expense.id, e)}
                     disabled={isDeleting === expense.id}
-                    className="h-8 w-8 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20"
+                    className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 dark:hover:bg-destructive/20"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -255,11 +255,11 @@ const ExpenseDetailModal = ({
 
         {expense && (
           <div className="space-y-6 pt-4">
-            <div className="flex flex-col items-center justify-center p-8 bg-red-50 dark:bg-red-950/20 rounded-2xl border border-red-100 dark:border-red-900/30">
-              <span className="text-[10px] font-black text-red-600/60 uppercase tracking-[0.2em] mb-2">
+            <div className="flex flex-col items-center justify-center p-8 bg-destructive/5 dark:bg-destructive/10 rounded-2xl border border-destructive/10">
+              <span className="text-[10px] font-black text-destructive/60 uppercase tracking-[0.2em] mb-2">
                 Toplam Tutar
               </span>
-              <span className="text-4xl font-black text-red-600 tabular-nums">
+              <span className="text-4xl font-black text-destructive tabular-nums">
                 -{formatCurrency(expense.amount)}
               </span>
             </div>
@@ -437,18 +437,18 @@ export function ExpensesTab(): React.JSX.Element {
         <div className="max-w-6xl mx-auto space-y-8">
           {/* Analytics Summary Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="relative overflow-hidden bg-gradient-to-br from-red-500/10 via-red-500/5 to-transparent border-red-500/20 shadow-sm transition-all hover:shadow-md">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-red-500/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+            <Card className="relative overflow-hidden bg-gradient-to-br from-destructive/10 via-destructive/5 to-transparent border-destructive/20 shadow-sm transition-all hover:shadow-md">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-destructive/5 rounded-full -translate-y-1/2 translate-x-1/2" />
               <CardContent className="p-6">
                 <div className="flex items-center gap-4">
-                  <div className="p-3 bg-red-500/20 rounded-2xl">
-                    <TrendingDown className="w-6 h-6 text-red-600" />
+                  <div className="p-3 bg-destructive/20 rounded-2xl">
+                    <TrendingDown className="w-6 h-6 text-destructive" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-red-600/80 uppercase tracking-wider mb-1">
+                    <p className="text-xs font-bold text-destructive/80 uppercase tracking-wider mb-1">
                       Bugünkü Gider
                     </p>
-                    <p className="text-2xl font-extrabold text-red-600 tabular-nums">
+                    <p className="text-2xl font-extrabold text-destructive tabular-nums">
                       {formatCurrency(todayTotal)}
                     </p>
                   </div>
@@ -456,18 +456,18 @@ export function ExpensesTab(): React.JSX.Element {
               </CardContent>
             </Card>
 
-            <Card className="relative overflow-hidden bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent border-amber-500/20 shadow-sm transition-all hover:shadow-md">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+            <Card className="relative overflow-hidden bg-gradient-to-br from-warning/10 via-warning/5 to-transparent border-warning/20 shadow-sm transition-all hover:shadow-md">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-warning/5 rounded-full -translate-y-1/2 translate-x-1/2" />
               <CardContent className="p-6">
                 <div className="flex items-center gap-4">
-                  <div className="p-3 bg-amber-500/20 rounded-2xl">
-                    <Calendar className="w-6 h-6 text-amber-600" />
+                  <div className="p-3 bg-warning/20 rounded-2xl">
+                    <Calendar className="w-6 h-6 text-warning" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-amber-600/80 uppercase tracking-wider mb-1">
+                    <p className="text-xs font-bold text-warning/80 uppercase tracking-wider mb-1">
                       Bu Ayki Toplam
                     </p>
-                    <p className="text-2xl font-extrabold text-amber-600 tabular-nums">
+                    <p className="text-2xl font-extrabold text-warning tabular-nums">
                       {formatCurrency(monthTotal)}
                     </p>
                   </div>

@@ -133,8 +133,8 @@ export function MaintenanceTab(): React.JSX.Element {
               className={cn(
                 'p-4 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300',
                 lastResult.success
-                  ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-600'
-                  : 'bg-red-500/10 border border-red-500/20 text-red-600'
+                  ? 'bg-success/10 border border-success/20 text-success'
+                  : 'bg-destructive/10 border border-destructive/20 text-destructive'
               )}
             >
               {lastResult.success ? (
@@ -171,14 +171,14 @@ export function MaintenanceTab(): React.JSX.Element {
               <div className="grid gap-4">
                 <div className="p-5 rounded-2xl border bg-card/40 hover:bg-card transition-colors group">
                   <div className="flex items-start justify-between mb-4">
-                    <div className="p-2.5 bg-blue-500/10 rounded-xl text-blue-500 border border-blue-500/20">
+                    <div className="p-2.5 bg-primary/10 rounded-xl text-primary border border-primary/20">
                       <HardDrive className="w-5 h-5" />
                     </div>
                     <Button
                       onClick={handleBackup}
                       disabled={isBacking}
                       size="sm"
-                      className="bg-blue-600 hover:bg-blue-700"
+                      className="bg-primary hover:bg-primary/90"
                     >
                       {isBacking ? 'Yedekleniyor...' : 'Yedekle'}
                     </Button>
@@ -192,7 +192,7 @@ export function MaintenanceTab(): React.JSX.Element {
 
                 <div className="p-5 rounded-2xl border bg-card/40 hover:bg-card transition-colors group">
                   <div className="flex items-start justify-between mb-4">
-                    <div className="p-2.5 bg-indigo-500/10 rounded-xl text-indigo-500 border border-indigo-500/20">
+                    <div className="p-2.5 bg-info/10 rounded-xl text-info border border-info/20">
                       <Download className="w-5 h-5" />
                     </div>
                     <div className="flex gap-2">
@@ -203,7 +203,7 @@ export function MaintenanceTab(): React.JSX.Element {
                         disabled={isExporting}
                         className="gap-2"
                       >
-                        <FileJson className="w-4 h-4 text-orange-500" /> JSON
+                        <FileJson className="w-4 h-4 text-warning" /> JSON
                       </Button>
                       <Button
                         variant="outline"
@@ -212,7 +212,7 @@ export function MaintenanceTab(): React.JSX.Element {
                         disabled={isExporting}
                         className="gap-2"
                       >
-                        <FileSpreadsheet className="w-4 h-4 text-emerald-500" /> CSV
+                        <FileSpreadsheet className="w-4 h-4 text-success" /> CSV
                       </Button>
                     </div>
                   </div>
@@ -235,7 +235,7 @@ export function MaintenanceTab(): React.JSX.Element {
               <div className="grid gap-4">
                 <div className="p-5 rounded-2xl border bg-card/40 hover:bg-card transition-colors group">
                   <div className="flex items-start justify-between mb-4">
-                    <div className="p-2.5 bg-emerald-500/10 rounded-xl text-emerald-500 border border-emerald-500/20">
+                    <div className="p-2.5 bg-success/10 rounded-xl text-success border border-success/20">
                       <DatabaseZap className="w-5 h-5" />
                     </div>
                     <Button
@@ -254,9 +254,9 @@ export function MaintenanceTab(): React.JSX.Element {
                   </p>
                 </div>
 
-                <div className="p-5 rounded-2xl border bg-red-500/5 hover:bg-red-500/10 transition-colors group border-red-500/10">
+                <div className="p-5 rounded-2xl border bg-destructive/5 hover:bg-destructive/10 transition-colors group border-destructive/10">
                   <div className="flex items-start justify-between mb-4">
-                    <div className="p-2.5 bg-red-500/10 rounded-xl text-red-500 border border-red-500/20">
+                    <div className="p-2.5 bg-destructive/10 rounded-xl text-destructive border border-destructive/20">
                       <Archive className="w-5 h-5" />
                     </div>
                     <Button
@@ -264,12 +264,14 @@ export function MaintenanceTab(): React.JSX.Element {
                       onClick={handleArchive}
                       disabled={isArchiving}
                       size="sm"
-                      className="bg-red-600 hover:bg-red-700"
+                      className="bg-destructive hover:bg-destructive/90"
                     >
                       {isArchiving ? 'Temizleniyor...' : 'Verileri Temizle'}
                     </Button>
                   </div>
-                  <h4 className="font-bold text-base mb-1 text-red-600">Eski Verileri Arşivle</h4>
+                  <h4 className="font-bold text-base mb-1 text-destructive">
+                    Eski Verileri Arşivle
+                  </h4>
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     **1 yıldan eski** sipariş ve işlemleri kalıcı olarak siler. Z-Raporlarınız bu
                     işlemden etkilenmez.

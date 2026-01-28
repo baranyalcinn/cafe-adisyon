@@ -40,8 +40,8 @@ const ACTION_CONFIG: Record<string, { label: string; color: string; badge: strin
   },
   ARCHIVE_DATA: {
     label: 'Arşivleme',
-    color: 'text-amber-600',
-    badge: 'bg-amber-100 text-amber-700'
+    color: 'text-warning',
+    badge: 'bg-warning/10 text-warning'
   },
   BACKUP_DATABASE: {
     label: 'Yedekleme',
@@ -57,8 +57,8 @@ const ACTION_CONFIG: Record<string, { label: string; color: string; badge: strin
   // Table
   OPEN_TABLE: {
     label: 'Masa Açıldı',
-    color: 'text-emerald-600',
-    badge: 'bg-emerald-100 text-emerald-700'
+    color: 'text-success',
+    badge: 'bg-success/10 text-success'
   },
   CLOSE_TABLE: {
     label: 'Masa Kapatıldı',
@@ -70,14 +70,18 @@ const ACTION_CONFIG: Record<string, { label: string; color: string; badge: strin
   // Order
   ADD_ITEM: {
     label: 'Sipariş',
-    color: 'text-emerald-600',
-    badge: 'bg-emerald-50 text-emerald-700'
+    color: 'text-success',
+    badge: 'bg-success/5 text-success'
   },
-  CANCEL_ITEM: { label: 'İptal', color: 'text-red-600', badge: 'bg-red-100 text-red-700' },
+  CANCEL_ITEM: {
+    label: 'İptal',
+    color: 'text-destructive',
+    badge: 'bg-destructive/10 text-destructive'
+  },
   PAYMENT_CASH: {
     label: 'Nakit Ödeme',
-    color: 'text-emerald-600 font-bold',
-    badge: 'bg-emerald-100 text-emerald-800'
+    color: 'text-success font-bold',
+    badge: 'bg-success/10 text-success'
   },
   PAYMENT_CARD: {
     label: 'Kart Ödeme',
@@ -273,7 +277,7 @@ export function LogsTab(): React.JSX.Element {
                         <TableCell>
                           {log.tableName ? (
                             <div className="flex items-center gap-1.5 font-medium text-sm">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-success" />
                               {log.tableName}
                             </div>
                           ) : (
@@ -344,7 +348,7 @@ export function LogsTab(): React.JSX.Element {
                                   </span>
                                   <div className="flex items-center gap-2">
                                     {log.tableName ? (
-                                      <div className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 text-xs font-black uppercase ring-1 ring-emerald-500/20">
+                                      <div className="px-2 py-0.5 rounded-md bg-success/10 text-success text-xs font-black uppercase ring-1 ring-success/20">
                                         {log.tableName}
                                       </div>
                                     ) : (
@@ -384,7 +388,7 @@ export function LogsTab(): React.JSX.Element {
                                         {log.details}
                                       </p>
                                       {log.action.includes('PAYMENT') && (
-                                        <p className="text-xs font-bold text-emerald-600/80 uppercase tracking-wide">
+                                        <p className="text-xs font-bold text-success/80 uppercase tracking-wide">
                                           Finansal İşlem Onaylandı
                                         </p>
                                       )}

@@ -12,7 +12,7 @@ export function getCategoryIcon(iconName?: string, className?: string): React.Re
     case 'cookie':
       return <Cookie className={cn(baseClass, 'text-yellow-500')} />
     case 'wine':
-      return <Wine className={cn(baseClass, 'text-rose-500')} />
+      return <Wine className={cn(baseClass, 'text-sky-400')} />
     case 'cake':
       return <Cake className={cn(baseClass, 'text-pink-400')} />
     case 'sandwich':

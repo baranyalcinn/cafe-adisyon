@@ -90,7 +90,7 @@ export const CategorySidebar = memo(
               <Button
                 size="icon"
                 variant="ghost"
-                className="h-8 w-8 shrink-0 hover:bg-red-500/10 hover:text-red-500 transition-all duration-300"
+                className="h-8 w-8 shrink-0 hover:bg-destructive/10 hover:text-destructive transition-all duration-300"
                 onClick={() => setIsAdding(false)}
               >
                 <X className="w-4 h-4" />
@@ -129,7 +129,7 @@ export const CategorySidebar = memo(
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="h-7 w-7 text-green-500 hover:text-green-600 hover:bg-green-100 dark:hover:bg-green-900/20"
+                      className="h-7 w-7 text-success hover:text-success active:bg-success/20 hover:bg-success/10"
                       onClick={handleUpdate}
                     >
                       <Check className="w-3 h-3" />

@@ -138,7 +138,7 @@ export function CartPanel({
             className={cn(
               'h-8 gap-2 rounded-xl px-4 text-[10px] font-bold uppercase tracking-wider transition-all duration-300',
               isLocked
-                ? 'bg-amber-500/90 hover:bg-amber-500 text-white shadow-md shadow-amber-500/20'
+                ? 'bg-warning/90 hover:bg-warning text-white shadow-md shadow-warning/20'
                 : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
             )}
           >
@@ -182,14 +182,14 @@ export function CartPanel({
                       className={cn(
                         'flex items-center gap-2 py-2 px-2.5 rounded-xl border transition-all duration-200 relative overflow-hidden',
                         item.isPaid
-                          ? 'bg-emerald-500/[0.03] border-emerald-500/10 opacity-50 border-l-2 border-l-emerald-500/40'
+                          ? 'bg-success/[0.03] border-success/10 opacity-50 border-l-2 border-l-success/40'
                           : 'bg-card/80 border-white/5 hover:bg-card hover:border-primary/10 border-l-2 border-l-primary/30 hover:shadow-sm'
                       )}
                     >
                       <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0 flex-1">
                           {item.isPaid && (
-                            <CheckCircle className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+                            <CheckCircle className="w-3.5 h-3.5 text-success flex-shrink-0" />
                           )}
                           <div className="flex flex-col min-w-0">
                             <div className="flex items-center gap-1.5">
@@ -202,7 +202,7 @@ export function CartPanel({
                                 {productName.replace(/([a-z])([A-Z])/g, '$1 $2')}
                               </p>
                               {item.quantity > 1 && (
-                                <span className="text-sm font-black text-rose-500 tabular-nums shrink-0">
+                                <span className="text-sm font-black text-destructive tabular-nums shrink-0">
                                   x{item.quantity}
                                 </span>
                               )}
@@ -223,7 +223,7 @@ export function CartPanel({
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="h-6 w-6 rounded-md hover:bg-red-500/10 text-red-500/50 hover:text-red-500"
+                            className="h-6 w-6 rounded-md hover:bg-destructive/10 text-destructive/50 hover:text-destructive"
                             onClick={() =>
                               handleUpdateQuantity(item.id, item.productId, item.quantity - 1)
                             }
@@ -237,7 +237,7 @@ export function CartPanel({
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="h-6 w-6 rounded-md hover:bg-emerald-500/10 text-emerald-500/50 hover:text-emerald-500"
+                            className="h-6 w-6 rounded-md hover:bg-success/10 text-success/50 hover:text-success"
                             onClick={() =>
                               handleUpdateQuantity(item.id, item.productId, item.quantity + 1)
                             }
@@ -249,9 +249,9 @@ export function CartPanel({
                       )}
 
                       {item.isPaid && (
-                        <div className="px-2 py-0.5 bg-emerald-500/10 rounded-md border border-emerald-500/15 flex items-center gap-1">
-                          <CheckCircle className="w-2.5 h-2.5 text-emerald-500" />
-                          <span className="text-[9px] font-bold text-emerald-500 uppercase">
+                        <div className="px-2 py-0.5 bg-success/10 rounded-md border border-success/15 flex items-center gap-1">
+                          <CheckCircle className="w-2.5 h-2.5 text-success" />
+                          <span className="text-[9px] font-bold text-success uppercase">
                             Ödendi
                           </span>
                         </div>
@@ -283,11 +283,11 @@ export function CartPanel({
 
         <div className="space-y-2">
           {paidAmount > 0 && (
-            <div className="flex justify-between items-center px-4 py-3 rounded-2xl bg-emerald-500/5 border border-emerald-500/10">
-              <span className="text-[10px] font-bold text-emerald-600/80 uppercase tracking-widest">
+            <div className="flex justify-between items-center px-4 py-3 rounded-2xl bg-success/5 border border-success/10">
+              <span className="text-[10px] font-bold text-success/80 uppercase tracking-widest">
                 Ara Toplam (Ödenen)
               </span>
-              <span className="text-sm font-bold text-emerald-600 tabular-nums">
+              <span className="text-sm font-bold text-success tabular-nums">
                 {formatCurrency(paidAmount)}
               </span>
             </div>

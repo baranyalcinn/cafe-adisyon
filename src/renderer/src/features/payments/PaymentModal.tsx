@@ -267,8 +267,8 @@ export function PaymentModal({
             <div className="absolute inset-0 bg-primary/20 blur-[80px] rounded-full" />
             {/* Main Content Card */}
             <div className="relative bg-card/80 backdrop-blur-2xl border border-white/10 rounded-[3rem] p-10 flex flex-col items-center text-center shadow-2xl">
-              <div className="w-24 h-24 rounded-full bg-emerald-500/20 flex items-center justify-center mb-6 animate-bounce duration-[2000ms]">
-                <CheckCircle className="w-14 h-14 text-emerald-500" />
+              <div className="w-24 h-24 rounded-full bg-success/20 flex items-center justify-center mb-6 animate-bounce duration-[2000ms]">
+                <CheckCircle className="w-14 h-14 text-success" />
               </div>
               <h3 className="text-3xl font-black text-foreground tracking-tight mb-2">
                 ÖDEME BAŞARILI
@@ -290,14 +290,14 @@ export function PaymentModal({
                         {formatCurrency(finalChange).replace('₺', '')}
                       </p>
                     </div>
-                    <p className="mt-4 text-xs font-bold text-amber-500/80 uppercase tracking-widest">
+                    <p className="mt-4 text-xs font-bold text-warning uppercase tracking-widest">
                       PARA ÜSTÜNÜ VERMEYİ UNUTMAYIN
                     </p>
                   </div>
                   <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
                 </div>
               ) : (
-                <div className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-emerald-500/10 rounded-full border border-emerald-500/20 text-emerald-500 font-bold text-sm">
+                <div className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-success/10 rounded-full border border-success/20 text-success font-bold text-sm">
                   <span>TAM ÖDEME ALINDI</span>
                 </div>
               )}
@@ -421,8 +421,8 @@ export function PaymentModal({
                 </div>
 
                 {genericCredit > 0 && (
-                  <div className="mb-2 px-3 py-2 bg-blue-500/10 border border-blue-500/20 rounded-lg text-xs text-blue-600 flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
+                  <div className="mb-2 px-3 py-2 bg-info/10 border border-info/20 rounded-lg text-xs text-info flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-info shrink-0" />
                     <span>
                       Önceden yapılan <b>{formatCurrency(genericCredit)}</b> genel ödeme
                       seçilenlerden düşülecektir.
@@ -585,10 +585,10 @@ export function PaymentModal({
                   <p className="text-lg font-bold tabular-nums">{formatCurrency(total)}</p>
                 </div>
                 <div className="text-right">
-                  <p className="mb-1 text-[10px] font-bold uppercase leading-none tracking-widest text-emerald-500/80">
+                  <p className="mb-1 text-[10px] font-bold uppercase leading-none tracking-widest text-success/80">
                     Tahsil Edilen
                   </p>
-                  <p className="text-lg font-bold text-emerald-500 tabular-nums">
+                  <p className="text-lg font-bold text-success tabular-nums">
                     {formatCurrency(paidAmount)}
                   </p>
                 </div>
@@ -684,14 +684,14 @@ export function PaymentModal({
                 </div>
 
                 {tendered > 0 && (
-                  <div className="mt-2 p-4 bg-amber-500/10 border border-amber-500/20 rounded-[1.5rem] animate-in zoom-in-95 duration-300">
+                  <div className="mt-2 p-4 bg-warning/10 border border-warning/20 rounded-[1.5rem] animate-in zoom-in-95 duration-300">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest">
+                      <span className="text-[10px] font-black text-warning uppercase tracking-widest">
                         PARA ÜSTÜ
                       </span>
-                      <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                      <span className="h-2 w-2 rounded-full bg-warning animate-pulse" />
                     </div>
-                    <div className="text-3xl font-extrabold text-amber-600 tabular-nums text-right tracking-tight">
+                    <div className="text-3xl font-extrabold text-warning tabular-nums text-right tracking-tight">
                       {formatCurrency(currentChange)}
                     </div>
                   </div>
@@ -700,25 +700,25 @@ export function PaymentModal({
             ) : (
               <div className="mt-4">
                 {rawCustomAmount > 0 && (
-                  <div
-                    className={cn(
-                      'p-6 rounded-[2rem] border animate-in zoom-in-95 duration-500',
-                      rawCustomAmount > remainingAmount
-                        ? 'bg-amber-500/10 border-amber-500/20'
-                        : rawCustomAmount < remainingAmount
-                          ? 'bg-blue-500/10 border-blue-500/20'
-                          : 'bg-emerald-500/10 border-emerald-500/20'
-                    )}
-                  >
+                    <div
+                      className={cn(
+                        'p-6 rounded-[2rem] border animate-in zoom-in-95 duration-500',
+                        rawCustomAmount > remainingAmount
+                          ? 'bg-warning/10 border-warning/20'
+                          : rawCustomAmount < remainingAmount
+                            ? 'bg-info/10 border-info/20'
+                            : 'bg-success/10 border-success/20'
+                      )}
+                    >
                     <div className="flex items-center justify-between mb-2">
                       <span
                         className={cn(
                           'text-[10px] font-black uppercase tracking-widest',
                           rawCustomAmount > remainingAmount
-                            ? 'text-amber-600'
+                            ? 'text-warning'
                             : rawCustomAmount < remainingAmount
-                              ? 'text-blue-600'
-                              : 'text-emerald-600'
+                              ? 'text-info'
+                              : 'text-success'
                         )}
                       >
                         {rawCustomAmount > remainingAmount
@@ -731,7 +731,7 @@ export function PaymentModal({
                         <span
                           className={cn(
                             'h-2 w-2 rounded-full animate-pulse',
-                            rawCustomAmount > remainingAmount ? 'bg-amber-500' : 'bg-blue-500'
+                            rawCustomAmount > remainingAmount ? 'bg-warning' : 'bg-info'
                           )}
                         />
                       )}
@@ -740,10 +740,10 @@ export function PaymentModal({
                       className={cn(
                         'text-4xl font-extrabold tabular-nums tracking-tighter',
                         rawCustomAmount > remainingAmount
-                          ? 'text-amber-600'
+                          ? 'text-warning'
                           : rawCustomAmount < remainingAmount
-                            ? 'text-blue-600'
-                            : 'text-emerald-600'
+                            ? 'text-info'
+                            : 'text-success'
                       )}
                     >
                       {formatCurrency(Math.abs(rawCustomAmount - remainingAmount))}
@@ -781,7 +781,7 @@ export function PaymentModal({
               }
               onClick={() => handlePayment('CARD')}
             >
-              <CreditCard className="w-5 h-5 text-blue-500" />
+              <CreditCard className="w-5 h-5 text-info" />
               {paymentMode === 'items' && paymentAmount === 0 && selectedTotal > 0
                 ? 'KART (0 TL)'
                 : 'KART İLE ÖDE'}

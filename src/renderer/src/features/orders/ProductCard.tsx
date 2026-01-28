@@ -56,8 +56,8 @@ function ProductCardComponent({
           <p className="font-bold text-[15px] line-clamp-2 text-foreground/90 group-hover:text-primary transition-colors leading-tight mb-0.5">
             {product.name.replace(/([a-z])([A-Z])/g, '$1 $2')}
           </p>
-          <div className="px-2.5 py-1 rounded-lg bg-emerald-500/[0.08] border border-emerald-500/10 group-hover:bg-emerald-500/15 group-hover:border-emerald-500/20 transition-all w-fit">
-            <p className="text-xs font-black text-emerald-500 tabular-nums tracking-tight">
+          <div className="px-2.5 py-1 rounded-lg bg-success/[0.08] border border-success/10 group-hover:bg-success/15 group-hover:border-success/20 transition-all w-fit">
+            <p className="text-xs font-black text-success tabular-nums tracking-tight">
               {formatCurrency(product.price)}
             </p>
           </div>
@@ -108,8 +108,8 @@ function ProductCardComponent({
           {product.name.replace(/([a-z])([A-Z])/g, '$1 $2')}
         </h3>
 
-        <div className="px-3 py-1 rounded-xl bg-emerald-500/[0.08] border border-emerald-500/10 shadow-sm backdrop-blur-md group-hover:bg-emerald-500/20 group-hover:border-emerald-500/30 transition-all duration-500">
-          <span className="text-[13px] font-black text-emerald-500 tabular-nums tracking-tighter drop-shadow-[0_0_8px_rgba(16,185,129,0.1)]">
+        <div className="px-3 py-1 rounded-xl bg-success/[0.08] border border-success/10 shadow-sm backdrop-blur-md group-hover:bg-success/20 group-hover:border-success/30 transition-all duration-500">
+          <span className="text-[13px] font-black text-success tabular-nums tracking-tighter drop-shadow-[0_0_8px_rgba(16,185,129,0.1)]">
             {formatCurrency(product.price)}
           </span>
         </div>

@@ -70,7 +70,7 @@ function RevenueTooltip({ active, payload, label }: CustomTooltipProps): React.J
     return (
       <div className="bg-card text-card-foreground border border-border rounded-lg px-4 py-3 shadow-lg">
         <p className="text-sm font-semibold mb-1">{label}</p>
-        <p className="text-lg font-bold text-emerald-500 tabular-nums">
+        <p className="text-lg font-bold text-success tabular-nums">
           {formatCurrency(payload[0].value)}
         </p>
       </div>
@@ -85,9 +85,7 @@ function ProductTooltip({ active, payload }: CustomTooltipProps): React.JSX.Elem
     return (
       <div className="bg-card text-card-foreground border border-border rounded-lg px-4 py-3 shadow-lg">
         <p className="text-sm font-semibold mb-1">{data.fullName || data.name}</p>
-        <p className="text-lg font-bold text-emerald-500 tabular-nums">
-          {payload[0].value} adet satış
-        </p>
+        <p className="text-lg font-bold text-success tabular-nums">{payload[0].value} adet satış</p>
       </div>
     )
   }
@@ -101,7 +99,9 @@ function PaymentTooltip({ active, payload }: CustomTooltipProps): React.JSX.Elem
         <p className="text-sm font-semibold mb-1">{payload[0].name}</p>
         <p
           className="text-lg font-bold tabular-nums"
-          style={{ color: payload[0].name === 'Nakit' ? '#10b981' : '#3b82f6' }}
+          style={{
+            color: payload[0].name === 'Nakit' ? 'var(--color-success)' : 'var(--color-info)'
+          }}
         >
           {formatCurrency(Number(payload[0].value))}
         </p>
@@ -135,8 +135,8 @@ function MonthlyTooltip({ active, payload, label }: CustomTooltipProps): React.J
                   'text-sm font-bold tabular-nums',
                   entry.dataKey === 'profit'
                     ? (entry.value as number) >= 0
-                      ? 'text-emerald-500'
-                      : 'text-red-500'
+                      ? 'text-success'
+                      : 'text-destructive'
                     : 'text-foreground'
                 )}
               >
@@ -195,8 +195,8 @@ export function DashboardView(): React.JSX.Element {
 
   const paymentData = stats
     ? [
-        { name: 'Nakit', value: stats.paymentMethodBreakdown.cash, fill: '#10b981' },
-        { name: 'Kart', value: stats.paymentMethodBreakdown.card, fill: '#3b82f6' }
+        { name: 'Nakit', value: stats.paymentMethodBreakdown.cash, fill: 'var(--color-success)' },
+        { name: 'Kart', value: stats.paymentMethodBreakdown.card, fill: 'var(--color-info)' }
       ]
     : []
 
@@ -240,20 +240,20 @@ export function DashboardView(): React.JSX.Element {
         {/* Main KPI Bento Grid Row */}
         <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-12 gap-4">
           {/* Daily Revenue - The Hero Card */}
-          <Card className="lg:col-span-6 relative overflow-hidden bg-gradient-to-br from-emerald-500/15 via-emerald-500/5 to-transparent border-emerald-500/20 shadow-xl group hover:shadow-emerald-500/10 transition-all duration-300">
-            <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl group-hover:bg-emerald-500/10 transition-colors" />
+          <Card className="lg:col-span-6 relative overflow-hidden bg-gradient-to-br from-success/20 via-success/10 to-transparent border-success/30 shadow-xl group hover:shadow-success/20 transition-all duration-300">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-success/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl group-hover:bg-success/20 transition-colors" />
             <CardHeader className="flex flex-row items-center justify-between pb-4">
               <div className="space-y-1">
                 <CardTitle className="text-sm font-black text-muted-foreground uppercase tracking-[0.15em]">
                   Bugünkü Toplam Ciro
                 </CardTitle>
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-xs font-bold text-emerald-500/80">Canlı Veri</span>
+                  <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
+                  <span className="text-xs font-bold text-success">Canlı Veri</span>
                 </div>
               </div>
-              <div className="p-3 bg-emerald-500/20 rounded-2xl shadow-inner group-hover:scale-110 transition-transform duration-500">
-                <TrendingUp className="w-6 h-6 text-emerald-500" />
+              <div className="p-3 bg-success/20 rounded-2xl shadow-inner group-hover:scale-110 transition-transform duration-500">
+                <TrendingUp className="w-6 h-6 text-success" />
               </div>
             </CardHeader>
             <CardContent>
@@ -261,7 +261,7 @@ export function DashboardView(): React.JSX.Element {
                 {formatCurrency(stats?.dailyRevenue || 0)}
               </div>
               <div className="flex items-center gap-2 mt-4">
-                <div className="px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-[10px] font-black text-emerald-600 uppercase tracking-widest">
+                <div className="px-2.5 py-1 bg-success/15 border border-success/30 rounded-full text-[10px] font-black text-success uppercase tracking-widest">
                   Hedefe Yakın
                 </div>
                 <p className="text-xs text-muted-foreground font-medium italic">
@@ -272,13 +272,13 @@ export function DashboardView(): React.JSX.Element {
           </Card>
 
           {/* Total Orders */}
-          <Card className="lg:col-span-3 relative overflow-hidden bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent border-blue-500/20 group hover:shadow-lg transition-all">
+          <Card className="lg:col-span-3 relative overflow-hidden bg-gradient-to-br from-info/20 via-info/10 to-transparent border-info/30 group hover:shadow-lg transition-all">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-xs font-black text-muted-foreground uppercase tracking-widest">
                 Sipariş Sayısı
               </CardTitle>
-              <div className="p-2 bg-blue-500/20 rounded-xl">
-                <ShoppingBag className="w-4 h-4 text-blue-500" />
+              <div className="p-2 bg-info/20 rounded-xl">
+                <ShoppingBag className="w-4 h-4 text-info" />
               </div>
             </CardHeader>
             <CardContent>
@@ -291,29 +291,29 @@ export function DashboardView(): React.JSX.Element {
 
           {/* Open Tables & Pending Orders Container */}
           <div className="lg:col-span-3 grid grid-rows-2 gap-4">
-            <Card className="relative overflow-hidden bg-gradient-to-br from-orange-500/10 to-transparent border-orange-500/20 flex flex-col justify-center">
+            <Card className="relative overflow-hidden bg-gradient-to-br from-warning/20 to-transparent border-warning/30 flex flex-col justify-center">
               <div className="px-4 py-3 flex items-center justify-between">
                 <div>
-                  <p className="text-[10px] font-black text-orange-600 uppercase tracking-widest">
+                  <p className="text-[10px] font-black text-warning uppercase tracking-widest">
                     Dolu Masa
                   </p>
                   <p className="text-2xl font-black">{stats?.openTables || 0}</p>
                 </div>
-                <div className="p-2 bg-orange-500/20 rounded-xl">
-                  <Users className="w-4 h-4 text-orange-500" />
+                <div className="p-2 bg-warning/20 rounded-xl">
+                  <Users className="w-4 h-4 text-warning" />
                 </div>
               </div>
             </Card>
-            <Card className="relative overflow-hidden bg-gradient-to-br from-purple-500/10 to-transparent border-purple-500/20 flex flex-col justify-center">
+            <Card className="relative overflow-hidden bg-gradient-to-br from-primary/20 to-transparent border-primary/30 flex flex-col justify-center">
               <div className="px-4 py-3 flex items-center justify-between">
                 <div>
-                  <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest">
+                  <p className="text-[10px] font-black text-primary uppercase tracking-widest">
                     Açık Hesap
                   </p>
                   <p className="text-2xl font-black text-foreground">{stats?.pendingOrders || 0}</p>
                 </div>
-                <div className="p-2 bg-purple-500/20 rounded-xl">
-                  <ReceiptText className="w-4 h-4 text-purple-500" />
+                <div className="p-2 bg-primary/20 rounded-xl">
+                  <ReceiptText className="w-4 h-4 text-primary" />
                 </div>
               </div>
             </Card>
@@ -322,11 +322,11 @@ export function DashboardView(): React.JSX.Element {
 
         {/* Payment Summary Cards */}
         <div className="grid grid-cols-2 gap-4">
-          <Card className="border-l-4 border-l-emerald-500">
+          <Card className="border-l-4 border-l-success">
             <CardContent className="flex items-center justify-between p-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-emerald-500/20 rounded-lg">
-                  <Banknote className="w-5 h-5 text-emerald-500" />
+                <div className="p-2 bg-success/20 rounded-lg">
+                  <Banknote className="w-5 h-5 text-success" />
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Nakit Tahsilat</p>
@@ -336,7 +336,7 @@ export function DashboardView(): React.JSX.Element {
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-2xl font-bold text-emerald-500">
+                <p className="text-2xl font-bold text-success">
                   {totalPayment > 0
                     ? (((stats?.paymentMethodBreakdown.cash || 0) / totalPayment) * 100).toFixed(0)
                     : 0}
@@ -346,11 +346,11 @@ export function DashboardView(): React.JSX.Element {
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-blue-500">
+          <Card className="border-l-4 border-l-info">
             <CardContent className="flex items-center justify-between p-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-500/20 rounded-lg">
-                  <CreditCard className="w-5 h-5 text-blue-500" />
+                <div className="p-2 bg-info/20 rounded-lg">
+                  <CreditCard className="w-5 h-5 text-info" />
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Kart Tahsilat</p>
@@ -360,7 +360,7 @@ export function DashboardView(): React.JSX.Element {
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-2xl font-bold text-blue-500">
+                <p className="text-2xl font-bold text-info">
                   {totalPayment > 0
                     ? (((stats?.paymentMethodBreakdown.card || 0) / totalPayment) * 100).toFixed(0)
                     : 0}
@@ -546,7 +546,7 @@ export function DashboardView(): React.JSX.Element {
                     />
                     <Bar
                       dataKey="quantity"
-                      fill="#10b981"
+                      fill="var(--color-success)"
                       radius={[0, 4, 4, 0]}
                       maxBarSize={24}
                       isAnimationActive={false}
@@ -609,14 +609,14 @@ export function DashboardView(): React.JSX.Element {
                       <Bar
                         dataKey="revenue"
                         name="Ciro"
-                        fill="#10b981"
+                        fill="var(--color-success)"
                         radius={[6, 6, 0, 0]}
                         maxBarSize={40}
                       />
                       <Bar
                         dataKey="expenses"
                         name="Gider"
-                        fill="#ef4444"
+                        fill="var(--color-destructive)"
                         radius={[6, 6, 0, 0]}
                         maxBarSize={40}
                       />
@@ -741,10 +741,10 @@ export function DashboardView(): React.JSX.Element {
                         <TableCell className="font-medium">
                           {new Date(report.date).toLocaleDateString('tr-TR')}
                         </TableCell>
-                        <TableCell className="text-right text-emerald-600 tabular-nums">
+                        <TableCell className="text-right text-success tabular-nums">
                           {formatCurrency(report.totalCash)}
                         </TableCell>
-                        <TableCell className="text-right text-blue-600 tabular-nums">
+                        <TableCell className="text-right text-info tabular-nums">
                           {formatCurrency(report.totalCard)}
                         </TableCell>
                         <TableCell className="text-right font-bold tabular-nums">

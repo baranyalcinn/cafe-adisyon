@@ -14,7 +14,7 @@
   --color-popover-foreground: oklch(0.22 0.02 60);
 
   /* Primary Colors - Emerald Default */
-  --color-primary: oklch(0.55 0.17 155);
+  --color-primary: oklch(0.48 0.17 155);
   --color-primary-foreground: oklch(0.98 0.005 75);
 
   /* Secondary & Muted - Warm tones */
@@ -48,7 +48,13 @@
 
   /* Table Status Colors */
   --color-table-empty: oklch(0.55 0.17 155);
-  --color-table-occupied: oklch(0.55 0.2 25);
+  --color-table-occupied: oklch(0.55 0.18 260);
+
+  /* Semantic Status Colors */
+  --color-success: oklch(0.48 0.17 155);
+  --color-warning: oklch(0.58 0.16 60);
+  --color-info: oklch(0.48 0.18 260);
+  --color-pending: oklch(0.58 0.16 40);
 
   /* Chart Colors */
   --color-chart-1: oklch(0.55 0.2 260);
@@ -98,18 +104,24 @@
   --color-sidebar-ring: oklch(0.5 0 0);
 
   --color-table-empty: oklch(0.65 0.18 155);
-  --color-table-occupied: oklch(0.55 0.2 25);
+  --color-table-occupied: oklch(0.6 0.16 260);
+
+  /* Semantic Status Colors - Dark */
+  --color-success: oklch(0.65 0.18 155);
+  --color-warning: oklch(0.75 0.14 60);
+  --color-info: oklch(0.6 0.16 260);
+  --color-pending: oklch(0.75 0.14 40);
 }
 
 /* ===== COLOR SCHEMES ===== */
 
 /* Emerald (Default) */
 [data-scheme='emerald'] {
-  --color-primary: oklch(0.55 0.17 155);
-  --color-ring: oklch(0.55 0.17 155);
-  --color-sidebar-primary: oklch(0.55 0.17 155);
-  --color-sidebar-ring: oklch(0.55 0.17 155);
-  --color-table-empty: oklch(0.55 0.17 155);
+  --color-primary: oklch(0.48 0.17 155);
+  --color-ring: oklch(0.48 0.17 155);
+  --color-sidebar-primary: oklch(0.48 0.17 155);
+  --color-sidebar-ring: oklch(0.48 0.17 155);
+  --color-table-empty: oklch(0.48 0.17 155);
 }
 [data-scheme='emerald'].dark,
 .dark[data-scheme='emerald'] {
@@ -122,11 +134,11 @@
 
 /* Ocean - Blue Theme */
 [data-scheme='ocean'] {
-  --color-primary: oklch(0.55 0.18 240);
-  --color-ring: oklch(0.55 0.18 240);
-  --color-sidebar-primary: oklch(0.55 0.18 240);
-  --color-sidebar-ring: oklch(0.55 0.18 240);
-  --color-table-empty: oklch(0.55 0.18 240);
+  --color-primary: oklch(0.48 0.18 240);
+  --color-ring: oklch(0.48 0.18 240);
+  --color-sidebar-primary: oklch(0.48 0.18 240);
+  --color-sidebar-ring: oklch(0.48 0.18 240);
+  --color-table-empty: oklch(0.48 0.18 240);
 }
 [data-scheme='ocean'].dark,
 .dark[data-scheme='ocean'] {
@@ -139,11 +151,11 @@
 
 /* Violet - Purple Theme */
 [data-scheme='violet'] {
-  --color-primary: oklch(0.55 0.2 290);
-  --color-ring: oklch(0.55 0.2 290);
-  --color-sidebar-primary: oklch(0.55 0.2 290);
-  --color-sidebar-ring: oklch(0.55 0.2 290);
-  --color-table-empty: oklch(0.55 0.2 290);
+  --color-primary: oklch(0.48 0.2 290);
+  --color-ring: oklch(0.48 0.2 290);
+  --color-sidebar-primary: oklch(0.48 0.2 290);
+  --color-sidebar-ring: oklch(0.48 0.2 290);
+  --color-table-empty: oklch(0.48 0.2 290);
 }
 [data-scheme='violet'].dark,
 .dark[data-scheme='violet'] {
@@ -156,11 +168,11 @@
 
 /* Amber - Warm Coffee Theme */
 [data-scheme='amber'] {
-  --color-primary: oklch(0.6 0.16 60);
-  --color-ring: oklch(0.6 0.16 60);
-  --color-sidebar-primary: oklch(0.6 0.16 60);
-  --color-sidebar-ring: oklch(0.6 0.16 60);
-  --color-table-empty: oklch(0.6 0.16 60);
+  --color-primary: oklch(0.52 0.16 60);
+  --color-ring: oklch(0.52 0.16 60);
+  --color-sidebar-primary: oklch(0.52 0.16 60);
+  --color-sidebar-ring: oklch(0.52 0.16 60);
+  --color-table-empty: oklch(0.52 0.16 60);
 }
 [data-scheme='amber'].dark,
 .dark[data-scheme='amber'] {
@@ -173,11 +185,11 @@
 
 /* Rose - Pink Theme */
 [data-scheme='rose'] {
-  --color-primary: oklch(0.55 0.18 350);
-  --color-ring: oklch(0.55 0.18 350);
-  --color-sidebar-primary: oklch(0.55 0.18 350);
-  --color-sidebar-ring: oklch(0.55 0.18 350);
-  --color-table-empty: oklch(0.55 0.18 350);
+  --color-primary: oklch(0.48 0.18 350);
+  --color-ring: oklch(0.48 0.18 350);
+  --color-sidebar-primary: oklch(0.48 0.18 350);
+  --color-sidebar-ring: oklch(0.48 0.18 350);
+  --color-table-empty: oklch(0.48 0.18 350);
 }
 [data-scheme='rose'].dark,
 .dark[data-scheme='rose'] {

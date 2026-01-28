@@ -50,23 +50,23 @@ const TableCard = memo(
               'group relative flex flex-col items-center justify-center gap-4 p-8 rounded-2xl border transition-all duration-300 cursor-pointer overflow-hidden',
               'hover:shadow-lg active:scale-95',
               hasOpenOrder
-                ? 'bg-red-500/5 border-red-500/20 hover:border-red-400/40'
-                : 'bg-emerald-500/5 border-emerald-500/20 hover:border-emerald-400/40',
-              isLocked && 'bg-amber-500/5 border-amber-500/20 hover:border-amber-400/40'
+                ? 'bg-info/8 border-info/30 hover:border-info/50'
+                : 'bg-success/8 border-success/30 hover:border-success/50',
+              isLocked && 'bg-warning/8 border-warning/30 hover:border-warning/50'
             )}
           >
             {/* Subtle Glow Effect */}
             <div
               className={cn(
                 'absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl -z-10',
-                hasOpenOrder ? 'bg-red-500/5' : 'bg-emerald-500/5',
-                isLocked && 'bg-amber-500/5'
+                hasOpenOrder ? 'bg-info/8' : 'bg-success/8',
+                isLocked && 'bg-warning/8'
               )}
             />
 
             {isLocked && (
-              <div className="absolute top-4 left-4 bg-amber-500/20 p-2 rounded-xl ring-1 ring-amber-500/50 animate-in fade-in zoom-in duration-500">
-                <div className="w-4 h-4 text-amber-500">
+              <div className="absolute top-4 left-4 bg-warning/20 p-2 rounded-xl ring-1 ring-warning/50 animate-in fade-in zoom-in duration-500">
+                <div className="w-4 h-4 text-warning">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 24 24"
@@ -89,17 +89,17 @@ const TableCard = memo(
               className={cn(
                 'absolute top-5 right-5 w-2.5 h-2.5 rounded-full shadow-[0_0_10px_currentColor]',
                 hasOpenOrder
-                  ? 'bg-red-400 text-red-400 animate-pulse'
-                  : 'bg-emerald-400 text-emerald-400 shadow-none',
-                isLocked && 'bg-amber-400 text-amber-400'
+                  ? 'bg-info text-info animate-pulse'
+                  : 'bg-success text-success shadow-none',
+                isLocked && 'bg-warning text-warning'
               )}
             />
 
             <div
               className={cn(
                 'p-4 rounded-2xl transition-all duration-300 group-hover:scale-105',
-                hasOpenOrder ? 'bg-red-500/10 text-red-500' : 'bg-emerald-500/10 text-emerald-500',
-                isLocked && 'bg-amber-500/10 text-amber-500'
+                hasOpenOrder ? 'bg-info/10 text-info' : 'bg-success/10 text-success',
+                isLocked && 'bg-warning/10 text-warning'
               )}
             >
               <Coffee className="w-10 h-10" />
@@ -112,10 +112,8 @@ const TableCard = memo(
               <div
                 className={cn(
                   'text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md border bg-background/50',
-                  hasOpenOrder
-                    ? 'border-red-500/20 text-red-500'
-                    : 'border-emerald-500/20 text-emerald-500',
-                  isLocked && 'border-amber-500/20 text-amber-500'
+                  hasOpenOrder ? 'border-info/30 text-info' : 'border-success/30 text-success',
+                  isLocked && 'border-warning/30 text-warning'
                 )}
               >
                 {isLocked ? 'KİLİTLİ' : hasOpenOrder ? 'DOLU' : 'BOŞ'}
@@ -129,14 +127,14 @@ const TableCard = memo(
               onClick={onTransfer}
               className="gap-3 py-2.5 rounded-lg font-medium cursor-pointer"
             >
-              <ArrowRightLeft className="w-4 h-4 text-blue-500" />
+              <ArrowRightLeft className="w-4 h-4 text-info" />
               Başka Masaya Aktar
             </ContextMenuItem>
             <ContextMenuItem
               onClick={onMerge}
               className="gap-3 py-2.5 rounded-lg font-medium cursor-pointer"
             >
-              <Combine className="w-4 h-4 text-purple-500" />
+              <Combine className="w-4 h-4 text-primary" />
               Başka Masa ile Birleştir
             </ContextMenuItem>
           </ContextMenuContent>

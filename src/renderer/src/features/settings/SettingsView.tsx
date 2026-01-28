@@ -404,7 +404,7 @@ export function SettingsView({
                 <Card className="shadow-sm border-muted/60 overflow-hidden rounded-xl">
                   <CardHeader className="bg-muted/10 pb-4 pt-5 px-6">
                     <CardTitle className="flex items-center gap-2 text-base font-bold">
-                      <Palette className="w-5 h-5 text-amber-600" />
+                      <Palette className="w-5 h-5 text-primary" />
                       Görünüm ve Tercihler
                     </CardTitle>
                   </CardHeader>
@@ -426,7 +426,7 @@ export function SettingsView({
                               : 'border-border bg-card hover:bg-accent/50 hover:border-accent'
                           )}
                         >
-                          <div className="p-3 rounded-full bg-amber-100 text-amber-600">
+                          <div className="p-3 rounded-full bg-primary/10 text-primary">
                             <Sun className="w-6 h-6" />
                           </div>
                           <span className={cn('text-sm font-bold', !isDark && 'text-primary')}>
@@ -536,10 +536,10 @@ export function SettingsView({
                   <CardHeader className="bg-muted/10 pb-4 pt-5 px-6">
                     <div className="flex items-center justify-between">
                       <CardTitle className="flex items-center gap-2 text-base font-bold">
-                        <ShieldCheck className="w-5 h-5 text-emerald-500" />
+                        <ShieldCheck className="w-5 h-5 text-success" />
                         Güvenlik Merkezi
                       </CardTitle>
-                      <div className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                      <div className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-success/10 text-success border border-success/20">
                         GÜVENLİ
                       </div>
                     </div>
@@ -779,8 +779,8 @@ export function SettingsView({
                         </div>
                         <div className="space-y-0.5">
                           <p className="font-bold text-sm">Veritabanı</p>
-                          <p className="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                          <p className="text-[10px] font-bold text-success flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
                             GÜNCEL
                           </p>
                         </div>
