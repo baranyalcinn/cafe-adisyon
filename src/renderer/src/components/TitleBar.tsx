@@ -19,10 +19,7 @@ export function TitleBar(): React.JSX.Element {
     <div className="titlebar-drag h-10 bg-background/95 border-b border-white/5 flex items-center justify-between px-4 select-none backdrop-blur-md">
       {/* App Title */}
       <div className="flex items-center gap-3 titlebar-no-drag">
-        <div className="w-6 h-6 rounded-lg bg-primary/20 flex items-center justify-center">
-          <span className="text-primary font-black text-xs">C</span>
-        </div>
-        <span className="text-sm font-bold text-foreground/80 tracking-wide">Caffio</span>
+        <span className="text-sm font-bold text-foreground/80 tracking-wide pl-2">Caffio</span>
       </div>
 
       {/* Window Controls */}

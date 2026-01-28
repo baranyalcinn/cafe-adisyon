@@ -110,12 +110,13 @@ export function PaymentModal({
   const effectivePayment = Math.min(paymentAmount, remainingAmount)
 
   const tendered = Math.round((parseFloat(tenderedAmount) || 0) * 100)
-  
+
   // Smart UX: If in custom mode and entered amount > remaining amount,
   // treat the custom amount as "Tendered" (Received) cash if no explicit tendered amount is set.
   let effectiveTendered = tendered
-  const rawCustomAmount = paymentMode === 'custom' ? Math.round((parseFloat(customAmount) || 0) * 100) : 0
-  
+  const rawCustomAmount =
+    paymentMode === 'custom' ? Math.round((parseFloat(customAmount) || 0) * 100) : 0
+
   if (paymentMode === 'custom' && effectiveTendered === 0 && rawCustomAmount > remainingAmount) {
     effectiveTendered = rawCustomAmount
   }

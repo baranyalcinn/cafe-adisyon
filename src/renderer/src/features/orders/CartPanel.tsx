@@ -7,7 +7,7 @@ import {
   CheckCircle,
   Lock,
   LockOpen,
-  ShoppingBag,
+  ShoppingBag
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -88,7 +88,7 @@ export function CartPanel({
         // Check if this is the last unpaid item
         const unpaidItems = order?.items?.filter((i) => !i.isPaid) || []
         const isLastUnpaidItem = unpaidItems.length === 1 && unpaidItems[0].id === orderItemId
-        
+
         if (isLastUnpaidItem) {
           // Show confirmation dialog for closing the table
           setShowDeleteDialog(true)
@@ -118,7 +118,6 @@ export function CartPanel({
   return (
     <div className="w-96 glass-panel cart-panel-accent border-l border-white/10 !border-t-0 flex flex-col h-full animate-in slide-in-from-right duration-700 relative overflow-hidden shadow-2xl">
       {/* Premium Glass Effect Background */}
-
 
       <div className="z-10 relative h-16 px-6 border-b border-white/10 bg-gradient-to-r from-background via-background/95 to-background flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3">
@@ -210,7 +209,7 @@ export function CartPanel({
                             </div>
                           </div>
                         </div>
-                        
+
                         <div className="text-right min-w-[65px] shrink-0">
                           <p className="text-[13px] font-bold text-foreground/80 tabular-nums">
                             {formatCurrency(item.unitPrice * item.quantity)}
@@ -281,7 +280,7 @@ export function CartPanel({
       <div className="p-2 border-t space-y-2 glass-panel relative z-10">
         {/* Decorative gradient divider */}
         <div className="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-        
+
         <div className="space-y-2">
           {paidAmount > 0 && (
             <div className="flex justify-between items-center px-4 py-3 rounded-2xl bg-emerald-500/5 border border-emerald-500/10">

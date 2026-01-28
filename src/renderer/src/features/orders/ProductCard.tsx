@@ -99,13 +99,15 @@ function ProductCardComponent({
 
       {/* Right side - Content */}
       <div className="relative z-10 flex-1 flex flex-col items-start min-w-0 py-1">
-        <h3 className={cn(
-          "font-bold text-sm leading-tight text-left line-clamp-2 w-full text-foreground/90 group-hover:text-primary transition-colors mb-2",
-          product.isFavorite && "pr-6"
-        )}>
+        <h3
+          className={cn(
+            'font-bold text-sm leading-tight text-left line-clamp-2 w-full text-foreground/90 group-hover:text-primary transition-colors mb-2',
+            product.isFavorite && 'pr-6'
+          )}
+        >
           {product.name.replace(/([a-z])([A-Z])/g, '$1 $2')}
         </h3>
-        
+
         <div className="px-3 py-1 rounded-xl bg-emerald-500/[0.08] border border-emerald-500/10 shadow-sm backdrop-blur-md group-hover:bg-emerald-500/20 group-hover:border-emerald-500/30 transition-all duration-500">
           <span className="text-[13px] font-black text-emerald-500 tabular-nums tracking-tighter drop-shadow-[0_0_8px_rgba(16,185,129,0.1)]">
             {formatCurrency(product.price)}

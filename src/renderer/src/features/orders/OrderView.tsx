@@ -58,7 +58,8 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
       // ESC → Go back to tables (only if not in an input/textarea)
       if (e.key === 'Escape') {
         const activeElement = document.activeElement
-        const isInInput = activeElement instanceof HTMLInputElement || activeElement instanceof HTMLTextAreaElement
+        const isInInput =
+          activeElement instanceof HTMLInputElement || activeElement instanceof HTMLTextAreaElement
         if (!isInInput) {
           onBack()
         }
@@ -115,10 +116,16 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
         <div className="px-2 pb-2">
           <Tabs defaultValue="categories" className="w-full">
             <TabsList className="w-full grid grid-cols-2 p-1 bg-background/40 h-10 mb-2">
-              <TabsTrigger value="categories" className="text-xs font-bold data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+              <TabsTrigger
+                value="categories"
+                className="text-xs font-bold data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+              >
                 Kategoriler
               </TabsTrigger>
-              <TabsTrigger value="favorites" className="text-xs font-bold data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+              <TabsTrigger
+                value="favorites"
+                className="text-xs font-bold data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+              >
                 <Star className="w-3 h-3 mr-1.5 fill-current" />
                 Favoriler
               </TabsTrigger>
@@ -176,7 +183,9 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
                     />
                   ))}
                   {favoriteProducts.length === 0 && (
-                    <p className="text-sm text-muted-foreground text-center py-4">Favori ürün yok</p>
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      Favori ürün yok
+                    </p>
                   )}
                 </div>
               </ScrollArea>

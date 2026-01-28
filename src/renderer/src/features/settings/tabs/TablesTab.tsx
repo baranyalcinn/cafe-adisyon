@@ -10,7 +10,6 @@ export function TablesTab(): React.JSX.Element {
   // We can keep useTableStore if needed for other things, but here we just need data.
   // const { tables, addTable, removeTable } = useTableStore() // Removed
 
-
   const handleAddTable = async (): Promise<void> => {
     try {
       // Auto-generate table name based on existing tables
