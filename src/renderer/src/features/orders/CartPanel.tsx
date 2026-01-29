@@ -237,36 +237,32 @@ export function CartPanel({
         )}
       </div>
 
-      <div className="p-2 border-t space-y-2 glass-panel relative z-10">
-        {/* Decorative gradient divider */}
-        <div className="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-
+      <div className="p-4 border-t border-border/10 space-y-3 bg-background/50 relative z-10">
         <div className="space-y-2">
           {paidAmount > 0 && (
-            <div className="flex justify-between items-center px-4 py-3 rounded-2xl bg-success/10 border border-success/10 backdrop-blur-sm">
-              <span className="text-[10px] font-bold text-success/80 uppercase tracking-widest">
-                Ara Toplam (Ödenen)
-              </span>
-              <span className="text-sm font-bold text-success tabular-nums">
+            <div className="flex justify-between items-center px-4 py-2.5 rounded-xl bg-success/5 border border-success/10">
+              <span className="text-[11px] font-bold text-success/70">Ödenen Ara Toplam</span>
+              <span className="text-[13px] font-bold text-success tabular-nums">
                 {formatCurrency(paidAmount)}
               </span>
             </div>
           )}
 
-          {/* Total Amount Card with Improved Gradient */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-background/40 to-muted/20 border border-primary/20 p-4 backdrop-blur-md shadow-sm">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+          {/* Total Amount Card - Minimalist Version */}
+          <div className="relative overflow-hidden rounded-2xl bg-muted/20 border border-border/5 p-4 transition-all">
             <div className="flex justify-between items-end relative z-10">
               <div className="flex flex-col">
-                <span className="text-[10px] font-bold text-primary/80 uppercase tracking-[0.15em] mb-0.5">
-                  {paidAmount > 0 ? 'Ödenecek Kalan' : 'Genel Toplam'}
+                <span className="text-[12px] font-semibold text-muted-foreground/80 mb-0.5">
+                  {paidAmount > 0 ? 'Ödenecek Kalan' : 'Toplam'}
                 </span>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-black text-foreground tabular-nums tracking-tight">
+                    {formatCurrency(remainingAmount)}
+                  </span>
+                </div>
               </div>
-              <div className="flex items-baseline gap-1">
-                <span className="text-lg font-black text-primary/70">₺</span>
-                <span className="text-3xl font-black text-foreground tabular-nums tracking-tighter">
-                  {formatCurrency(remainingAmount).replace('₺', '')}
-                </span>
+              <div className="p-2 rounded-xl bg-background/50 border border-border/5">
+                <CreditCard className="w-5 h-5 text-muted-foreground/40" />
               </div>
             </div>
           </div>
@@ -274,17 +270,19 @@ export function CartPanel({
 
         <Button
           className={cn(
-            'w-full gap-5 h-16 text-lg font-black uppercase tracking-[0.25em] rounded-[1.25rem] shadow-2xl transition-all active:scale-[0.98] group/pay relative overflow-hidden',
+            'w-full gap-3 h-14 text-base font-bold rounded-2xl transition-all active:scale-[0.98] group/pay relative overflow-hidden shadow-lg',
             remainingAmount > 0
-              ? 'bg-primary text-primary-foreground hover:shadow-primary/40'
-              : 'bg-muted text-muted-foreground outline-none'
+              ? 'bg-primary text-primary-foreground shadow-primary/20 hover:shadow-primary/30'
+              : 'bg-muted text-muted-foreground'
           )}
           size="lg"
           disabled={!order?.items || order.items.length === 0 || remainingAmount <= 0}
           onClick={onPaymentClick}
         >
-          <CreditCard className="w-7 h-7" />
-          <span>ÖDEME AL</span>
+          <span>Ödeme Al</span>
+          <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center group-hover/pay:bg-white/20 transition-colors">
+            <CheckCircle className="w-3.5 h-3.5" />
+          </div>
         </Button>
       </div>
 
