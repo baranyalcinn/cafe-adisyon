@@ -94,7 +94,8 @@ const api = {
   zReport: {
     generate: (actualCash?: number) =>
       ipcRenderer.invoke(IPC_CHANNELS.ZREPORT_GENERATE, actualCash),
-    getHistory: (limit: number = 30) => ipcRenderer.invoke(IPC_CHANNELS.ZREPORT_GET_HISTORY, limit)
+    getHistory: (limit: number, startDate?: string, endDate?: string) =>
+      ipcRenderer.invoke(IPC_CHANNELS.ZREPORT_GET_HISTORY, limit, startDate, endDate)
   },
 
   // Activity Logs

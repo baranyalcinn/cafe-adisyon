@@ -94,6 +94,13 @@ export interface DashboardStats {
 export interface ExtendedDashboardStats extends DashboardStats {
   openTables: number
   pendingOrders: number
+  hourlyActivity: HourlyActivityItem[]
+}
+
+export interface HourlyActivityItem {
+  hour: string
+  revenue: number
+  orderCount: number
 }
 
 // Revenue trend data for charts

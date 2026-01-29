@@ -276,6 +276,31 @@ export class ReportingService {
         }
       })
 
+      // Calculate Hourly Activity
+      const hourlyStats = new Map<number, { revenue: number; count: number }>()
+
+      // Initialize all hours with 0
+      for (let i = 0; i < 24; i++) {
+        hourlyStats.set(i, { revenue: 0, count: 0 })
+      }
+
+      todayOrders.forEach((order) => {
+        const hour = order.createdAt.getHours()
+        const current = hourlyStats.get(hour) || { revenue: 0, count: 0 }
+        hourlyStats.set(hour, {
+          revenue: current.revenue + order.totalAmount,
+          count: current.count + 1
+        })
+      })
+
+      const hourlyActivity = Array.from(hourlyStats.entries())
+        .map(([hour, stats]) => ({
+          hour: `${hour.toString().padStart(2, '0')}:00`,
+          revenue: stats.revenue,
+          orderCount: stats.count
+        }))
+        .sort((a, b) => a.hour.localeCompare(b.hour))
+
       return {
         success: true,
         data: {
@@ -284,7 +309,8 @@ export class ReportingService {
           paymentMethodBreakdown,
           topProducts,
           openTables,
-          pendingOrders
+          pendingOrders,
+          hourlyActivity
         }
       }
     } catch (error) {
@@ -371,12 +397,38 @@ export class ReportingService {
     }
   }
 
-  async getReportsHistory(limit: number = 30): Promise<ApiResponse<DailySummary[]>> {
+  async getReportsHistory(
+    limit: number = 30,
+    startDate?: Date | string,
+    endDate?: Date | string
+  ): Promise<ApiResponse<DailySummary[]>> {
     try {
+      // Explicitly convert to Date objects to ensure IPC reliability
+      const start =
+        startDate && !isNaN(new Date(startDate).getTime()) ? new Date(startDate) : undefined
+      const end = endDate && !isNaN(new Date(endDate).getTime()) ? new Date(endDate) : undefined
+
+      logger.info(
+        'ReportingService.getReportsHistory',
+        `Fetching reports: limit=${limit}, start=${start ? start.toISOString() : 'any'}, end=${end ? end.toISOString() : 'any'}`
+      )
+
       const reports = await prisma.dailySummary.findMany({
+        where: {
+          ...(start || end
+            ? {
+                date: {
+                  ...(start && { gte: start }),
+                  ...(end && { lte: end })
+                }
+              }
+            : {})
+        },
         orderBy: { date: 'desc' },
         take: limit
       })
+
+      logger.info('ReportingService.getReportsHistory', `Found ${reports.length} reports`)
       return { success: true, data: reports }
     } catch (error) {
       logger.error('ReportingService.getReportsHistory', error)

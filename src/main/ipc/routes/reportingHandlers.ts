@@ -17,8 +17,10 @@ export function registerReportingHandlers(): void {
     reportingService.generateZReport(actualCash)
   )
 
-  ipcMain.handle(IPC_CHANNELS.ZREPORT_GET_HISTORY, (_, limit) =>
-    reportingService.getReportsHistory(limit)
+  ipcMain.handle(
+    IPC_CHANNELS.ZREPORT_GET_HISTORY,
+    (_, limit: number, startDate?: string, endDate?: string) =>
+      reportingService.getReportsHistory(limit, startDate, endDate)
   )
 
   ipcMain.handle(IPC_CHANNELS.REPORTS_GET_MONTHLY, (_, limit) =>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   TrendingUp,
   CreditCard,
@@ -6,19 +6,26 @@ import {
   ShoppingBag,
   Users,
   RefreshCw,
-  Eye,
   X,
   ReceiptText,
   Moon,
   Calendar,
   AlertCircle,
   History,
-  PieChart as PieChartIcon
+  PieChart as PieChartIcon,
+  BarChart3
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
 import {
   Table,
   TableBody,
@@ -35,20 +42,17 @@ import {
 } from '@/lib/api'
 import { formatCurrency, cn } from '@/lib/utils'
 import {
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar,
   LineChart,
   Line,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
-  Legend,
-  ComposedChart
+  ComposedChart,
+  Legend
 } from 'recharts'
 import { EndOfDayModal } from '@/components/modals/EndOfDayModal'
 import { OrderHistoryModal } from '@/components/modals/OrderHistoryModal'
@@ -87,25 +91,6 @@ function ProductTooltip({ active, payload }: CustomTooltipProps): React.JSX.Elem
       <div className="bg-card text-card-foreground border border-border rounded-lg px-4 py-3 shadow-lg">
         <p className="text-sm font-semibold mb-1">{data.fullName || data.name}</p>
         <p className="text-lg font-bold text-success tabular-nums">{payload[0].value} adet satış</p>
-      </div>
-    )
-  }
-  return null
-}
-
-function PaymentTooltip({ active, payload }: CustomTooltipProps): React.JSX.Element | null {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-card text-card-foreground border border-border rounded-lg px-4 py-3 shadow-lg">
-        <p className="text-sm font-semibold mb-1">{payload[0].name}</p>
-        <p
-          className="text-lg font-bold tabular-nums"
-          style={{
-            color: payload[0].name === 'Nakit' ? 'var(--color-success)' : 'var(--color-info)'
-          }}
-        >
-          {formatCurrency(Number(payload[0].value))}
-        </p>
       </div>
     )
   }
@@ -161,30 +146,58 @@ export function DashboardView(): React.JSX.Element {
   const [selectedReport, setSelectedReport] = useState<DailySummary | null>(null)
   const [showEndOfDayModal, setShowEndOfDayModal] = useState(false)
 
-  const loadStats = async (): Promise<void> => {
+  // Filtering state
+  const [filterMonth, setFilterMonth] = useState<string>('all')
+  const [filterYear, setFilterYear] = useState<string>(new Date().getFullYear().toString())
+
+  const loadStats = useCallback(async (): Promise<void> => {
     try {
-      const [statsData, trendData, historyData, monthlyData] = await Promise.all([
+      let zReportOptions: { limit?: number; startDate?: Date; endDate?: Date } = { limit: 30 }
+
+      if (filterMonth !== 'all') {
+        const month = parseInt(filterMonth)
+        const year = parseInt(filterYear)
+        const startDate = new Date(year, month, 1, 0, 0, 0)
+        const endDate = new Date(year, month + 1, 0, 23, 59, 59)
+        zReportOptions = { startDate, endDate, limit: 100 } // Increase limit for month view
+      }
+
+      const results = await Promise.allSettled([
         cafeApi.dashboard.getExtendedStats(),
         cafeApi.dashboard.getRevenueTrend(7),
-        cafeApi.zReport.getHistory(30),
+        cafeApi.zReport.getHistory(zReportOptions),
         cafeApi.reports.getMonthly(12)
       ])
-      setStats(statsData)
-      setRevenueTrend(trendData)
-      setZReportHistory(historyData)
-      setMonthlyReports(monthlyData)
+
+      const [statsResult, trendResult, historyResult, monthlyResult] = results
+
+      if (statsResult.status === 'fulfilled') setStats(statsResult.value)
+      else console.error('Failed to load stats:', statsResult.reason)
+
+      if (trendResult.status === 'fulfilled') setRevenueTrend(trendResult.value)
+      else console.error('Failed to load revenue trend:', trendResult.reason)
+
+      if (historyResult.status === 'fulfilled') {
+        setZReportHistory(historyResult.value)
+      } else {
+        console.error('Failed to load Z-report history:', historyResult.reason)
+        setZReportHistory([]) // Clear history on error to prevent stale data
+      }
+
+      if (monthlyResult.status === 'fulfilled') setMonthlyReports(monthlyResult.value)
+      else console.error('Failed to load monthly reports:', monthlyResult.reason)
     } catch (error) {
-      console.error('Failed to load dashboard stats:', error)
+      console.error('Critical error in loadStats:', error)
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [filterMonth, filterYear])
 
   useEffect(() => {
     loadStats()
     const interval = setInterval(loadStats, 30000)
     return () => clearInterval(interval)
-  }, [])
+  }, [loadStats])
 
   if (isLoading) {
     return (
@@ -193,15 +206,6 @@ export function DashboardView(): React.JSX.Element {
       </div>
     )
   }
-
-  const paymentData = stats
-    ? [
-        { name: 'Nakit', value: stats.paymentMethodBreakdown.cash, fill: 'var(--color-success)' },
-        { name: 'Kart', value: stats.paymentMethodBreakdown.card, fill: 'var(--color-info)' }
-      ]
-    : []
-
-  const totalPayment = paymentData.reduce((sum, item) => sum + item.value, 0)
 
   const productData =
     stats?.topProducts.map((p) => ({
@@ -335,53 +339,127 @@ export function DashboardView(): React.JSX.Element {
           </div>
         </div>
 
-        {/* Payment Summary Cards */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="premium-card ambient-glow p-5 flex items-center justify-between group">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-success/10 rounded-2xl group-hover:scale-110 transition-transform duration-300">
-                <Banknote className="w-6 h-6 text-success" />
+        {/* Hourly Activity & Payment Summary Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Hourly Activity Chart */}
+          <div className="lg:col-span-2 premium-card ambient-glow p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <BarChart3 className="w-4 h-4 text-primary" />
               </div>
               <div>
-                <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-0.5">
-                  Nakit Tahsilat
-                </p>
-                <p className="text-2xl font-black text-foreground tabular-nums">
-                  {formatCurrency(stats?.paymentMethodBreakdown.cash || 0)}
+                <h3 className="text-sm font-black text-foreground uppercase tracking-wider">
+                  Saatlik Satış Yoğunluğu
+                </h3>
+                <p className="text-[10px] font-medium text-muted-foreground/60">
+                  Günün en yoğun saatleri
                 </p>
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-3xl font-black text-success/20 group-hover:text-success/40 transition-colors">
-                {totalPayment > 0
-                  ? (((stats?.paymentMethodBreakdown.cash || 0) / totalPayment) * 100).toFixed(0)
-                  : 0}
-                %
-              </p>
+            <div className="h-[200px] w-full">
+              {stats?.hourlyActivity && stats.hourlyActivity.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={stats.hourlyActivity.filter((h) => h.revenue > 0)}
+                    margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                  >
+                    <defs>
+                      <linearGradient id="hourlyGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
+                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="var(--color-border)"
+                      vertical={false}
+                    />
+                    <XAxis
+                      dataKey="hour"
+                      stroke="currentColor"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                      className="fill-muted-foreground"
+                    />
+                    <YAxis
+                      stroke="currentColor"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(value) => `₺${value}`}
+                      className="fill-muted-foreground"
+                    />
+                    <Tooltip
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div className="bg-background/95 backdrop-blur-md border border-white/10 p-3 rounded-xl shadow-xl">
+                              <p className="text-xs font-bold text-foreground mb-1">
+                                {payload[0].payload.hour}
+                              </p>
+                              <p className="text-sm font-black text-primary">
+                                {formatCurrency(payload[0].value as number)}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground mt-1">
+                                {payload[0].payload.orderCount} Sipariş
+                              </p>
+                            </div>
+                          )
+                        }
+                        return null
+                      }}
+                    />
+                    <Bar
+                      dataKey="revenue"
+                      fill="url(#hourlyGradient)"
+                      radius={[4, 4, 0, 0]}
+                      barSize={20}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
+                  Henüz veri yok
+                </div>
+              )}
             </div>
           </div>
 
-          <div className="premium-card ambient-glow p-5 flex items-center justify-between group">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-info/10 rounded-2xl group-hover:scale-110 transition-transform duration-300">
-                <CreditCard className="w-6 h-6 text-info" />
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-0.5">
-                  Kart Tahsilat
-                </p>
-                <p className="text-2xl font-black text-foreground tabular-nums">
-                  {formatCurrency(stats?.paymentMethodBreakdown.card || 0)}
-                </p>
+          {/* Compact Payment Summary */}
+          <div className="premium-card ambient-glow p-5 flex flex-col justify-center gap-6">
+            <div className="flex items-center justify-between group">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-success/10 rounded-xl group-hover:scale-110 transition-transform">
+                  <Banknote className="w-5 h-5 text-success" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">
+                    Nakit
+                  </p>
+                  <p className="text-xl font-black text-foreground tabular-nums">
+                    {formatCurrency(stats?.paymentMethodBreakdown?.cash || 0)}
+                  </p>
+                </div>
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-3xl font-black text-info/20 group-hover:text-info/40 transition-colors">
-                {totalPayment > 0
-                  ? (((stats?.paymentMethodBreakdown.card || 0) / totalPayment) * 100).toFixed(0)
-                  : 0}
-                %
-              </p>
+
+            <div className="w-full h-px bg-border/50" />
+
+            <div className="flex items-center justify-between group">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-info/10 rounded-xl group-hover:scale-110 transition-transform">
+                  <CreditCard className="w-5 h-5 text-info" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">
+                    Kredi Kartı
+                  </p>
+                  <p className="text-xl font-black text-foreground tabular-nums">
+                    {formatCurrency(stats?.paymentMethodBreakdown?.card || 0)}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -446,77 +524,8 @@ export function DashboardView(): React.JSX.Element {
           </div>
         </div>
 
-        {/* Charts Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Payment Distribution - Donut Chart */}
-          <div className="premium-card ambient-glow p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="h-8 w-8 rounded-lg bg-info/10 flex items-center justify-center">
-                <CreditCard className="w-4 h-4 text-info" />
-              </div>
-              <h3 className="text-sm font-black text-foreground uppercase tracking-wider">
-                Ödeme Yöntemi Dağılımı
-              </h3>
-            </div>
-            <div className="h-[280px] w-full">
-              {totalPayment > 0 ? (
-                <div className="flex items-center justify-center h-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={paymentData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={70}
-                        outerRadius={100}
-                        paddingAngle={4}
-                        dataKey="value"
-                        isAnimationActive={false}
-                      >
-                        {paymentData.map((entry, index) => (
-                          <Cell
-                            key={`cell-${index}`}
-                            fill={entry.fill}
-                            stroke="none"
-                            style={{ outline: 'none' }}
-                          />
-                        ))}
-                      </Pie>
-                      <Tooltip content={<PaymentTooltip />} />
-                      <Legend
-                        verticalAlign="bottom"
-                        iconType="circle"
-                        formatter={(value) => <span className="text-foreground">{value}</span>}
-                      />
-                      <text
-                        x="50%"
-                        y="45%"
-                        textAnchor="middle"
-                        dominantBaseline="middle"
-                        className="fill-foreground text-2xl font-bold"
-                      >
-                        {formatCurrency(totalPayment)}
-                      </text>
-                      <text
-                        x="50%"
-                        y="55%"
-                        textAnchor="middle"
-                        dominantBaseline="middle"
-                        className="fill-muted-foreground text-xs"
-                      >
-                        Toplam
-                      </text>
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <div className="flex items-center justify-center h-full text-muted-foreground">
-                  Henüz ödeme verisi yok
-                </div>
-              )}
-            </div>
-          </div>
-
+        {/* Product Performance - Full Width */}
+        <div className="grid grid-cols-1 gap-6">
           {/* Top Products - Horizontal Bar Chart */}
           <div className="premium-card ambient-glow p-6">
             <div className="flex items-center gap-3 mb-6">
@@ -674,10 +683,12 @@ export function DashboardView(): React.JSX.Element {
 
               <div className="flex-1 flex flex-col justify-center gap-8">
                 <div>
-                  <p className="text-sm text-muted-foreground font-medium mb-1">Toplam Ciro</p>
+                  <p className="text-sm text-muted-foreground font-medium mb-1">
+                    {filterMonth !== 'all' ? 'Seçili Dönem Ciro' : 'Görüntülenen Ciro'}
+                  </p>
                   <div className="text-3xl font-black text-success tabular-nums">
                     {formatCurrency(
-                      monthlyReports.reduce((acc, curr) => acc + curr.totalRevenue, 0)
+                      zReportHistory.reduce((acc, curr) => acc + curr.totalRevenue, 0)
                     )}
                   </div>
                 </div>
@@ -686,9 +697,9 @@ export function DashboardView(): React.JSX.Element {
                   <p className="text-sm text-muted-foreground font-medium mb-1">Ortalama Günlük</p>
                   <div className="text-3xl font-black text-foreground tabular-nums">
                     {formatCurrency(
-                      monthlyReports.length > 0
-                        ? monthlyReports.reduce((acc, curr) => acc + curr.totalRevenue, 0) /
-                            monthlyReports.length
+                      zReportHistory.length > 0
+                        ? zReportHistory.reduce((acc, curr) => acc + curr.totalRevenue, 0) /
+                            zReportHistory.length
                         : 0
                     )}
                   </div>
@@ -697,7 +708,7 @@ export function DashboardView(): React.JSX.Element {
                 <div>
                   <p className="text-sm text-muted-foreground font-medium mb-1">En Yüksek Gün</p>
                   <div className="text-3xl font-black text-primary tabular-nums">
-                    {formatCurrency(Math.max(...monthlyReports.map((s) => s.totalRevenue), 0))}
+                    {formatCurrency(Math.max(...zReportHistory.map((s) => s.totalRevenue), 0))}
                   </div>
                 </div>
               </div>
@@ -707,14 +718,92 @@ export function DashboardView(): React.JSX.Element {
 
         {/* Z-Report History */}
         <div className="premium-card ambient-glow p-6">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
             <div className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                <History className="w-4 h-4 text-primary" />
+              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shadow-sm">
+                <History className="w-5 h-5 text-primary" />
               </div>
-              <h3 className="text-sm font-black text-foreground uppercase tracking-wider">
-                Son Z-Raporları
-              </h3>
+              <div>
+                <h3 className="text-sm font-black text-foreground uppercase tracking-wider">
+                  Z-Raporu Geçmişi
+                </h3>
+                <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mt-0.5">
+                  Arşiv ve Kayıtlar
+                </p>
+              </div>
+            </div>
+
+            {/* Premium Filter Bar */}
+            <div className="flex items-center gap-2 bg-muted/20 p-1.5 rounded-2xl border border-white/5 shadow-inner">
+              <div className="flex items-center gap-2 px-3 border-r border-white/10 mr-1">
+                <Calendar className="w-3.5 h-3.5 text-muted-foreground/60" />
+                <span className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest">
+                  Filtrele
+                </span>
+              </div>
+
+              <div className="flex gap-2">
+                <Select value={filterYear} onValueChange={setFilterYear}>
+                  <SelectTrigger className="h-9 w-[100px] rounded-xl border-none bg-background/50 backdrop-blur-sm text-[11px] font-bold shadow-sm focus:ring-primary/20">
+                    <SelectValue placeholder="Yıl" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl border-white/10 bg-background/95 backdrop-blur-md">
+                    {[2024, 2025, 2026].map((year) => (
+                      <SelectItem
+                        key={year}
+                        value={year.toString()}
+                        className="text-[11px] font-bold rounded-lg"
+                      >
+                        {year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={filterMonth} onValueChange={setFilterMonth}>
+                  <SelectTrigger className="h-9 w-[140px] rounded-xl border-none bg-background/50 backdrop-blur-sm text-[11px] font-bold shadow-sm focus:ring-primary/20">
+                    <SelectValue placeholder="Ay Seçin" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl border-white/10 bg-background/95 backdrop-blur-md">
+                    <SelectItem value="all" className="text-[11px] font-bold rounded-lg">
+                      Son 30 Gün
+                    </SelectItem>
+                    {[
+                      'Ocak',
+                      'Şubat',
+                      'Mart',
+                      'Nisan',
+                      'Mayıs',
+                      'Haziran',
+                      'Temmuz',
+                      'Ağustos',
+                      'Eylül',
+                      'Ekim',
+                      'Kasım',
+                      'Aralık'
+                    ].map((month, index) => (
+                      <SelectItem
+                        key={month}
+                        value={index.toString()}
+                        className="text-[11px] font-bold rounded-lg"
+                      >
+                        {month}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {filterMonth !== 'all' && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setFilterMonth('all')}
+                    className="h-9 w-9 rounded-xl hover:bg-destructive/10 hover:text-destructive transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
           {zReportHistory.length === 0 ? (
@@ -739,9 +828,6 @@ export function DashboardView(): React.JSX.Element {
                     </TableHead>
                     <TableHead className="text-right font-medium text-muted-foreground">
                       Sipariş
-                    </TableHead>
-                    <TableHead className="text-center font-medium text-muted-foreground">
-                      Detay
                     </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -774,9 +860,7 @@ export function DashboardView(): React.JSX.Element {
                             setSelectedReport(report)
                           }}
                           className="hover:bg-primary/10"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
+                        ></Button>
                       </TableCell>
                     </TableRow>
                   ))}

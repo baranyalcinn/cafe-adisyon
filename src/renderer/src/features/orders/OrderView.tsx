@@ -331,7 +331,7 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
         onPaymentComplete={() => {
           setIsPaymentOpen(false)
           playSuccess()
-          // Optional: onBack() if we want to leave order view after full payment
+          onBack() // Navigate back to table list after successful payment
         }}
       />
     </div>

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Banknote, CreditCard, CheckCircle, Plus, Minus, Delete } from 'lucide-react'
 import {
@@ -45,6 +45,7 @@ export function PaymentModal({
   const [isProcessing, setIsProcessing] = useState(false)
   const [paymentComplete, setPaymentComplete] = useState(false)
   const [finalChange, setFinalChange] = useState(0)
+  const timerRef = useRef<NodeJS.Timeout | null>(null)
 
   // Split State
   const [splitCount, setSplitCount] = useState(2)
@@ -86,7 +87,10 @@ export function PaymentModal({
       }, 0)
       return () => clearTimeout(timer)
     }
-    return undefined
+    // Clean up success timer on unmount
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
   }, [open])
 
   // Get the payment amount based on mode
@@ -194,7 +198,7 @@ export function PaymentModal({
 
       if (shouldClose) {
         setPaymentComplete(true)
-        setTimeout(() => {
+        timerRef.current = setTimeout(() => {
           onClose()
           if (onPaymentComplete) {
             onPaymentComplete()
@@ -237,6 +241,16 @@ export function PaymentModal({
   }
 
   const handleClose = (): void => {
+    // Check if we are closing a completed payment manually
+    if (paymentComplete) {
+      if (timerRef.current) clearTimeout(timerRef.current)
+      if (onPaymentComplete) {
+        onPaymentComplete()
+      } else {
+        selectTable(null)
+      }
+    }
+
     setPaymentMode('full')
     setSelectedQuantities({})
     setCustomAmount('')

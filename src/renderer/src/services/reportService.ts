@@ -10,8 +10,17 @@ export const reportService = {
       if (!result.success) throw new Error(result.error)
       return result.data
     },
-    async getHistory(limit: number = 30): Promise<DailySummary[]> {
-      const result = await api.zReport.getHistory(limit)
+    async getHistory(options?: {
+      limit?: number
+      startDate?: Date
+      endDate?: Date
+    }): Promise<DailySummary[]> {
+      const limit = options?.limit ?? 30
+      // Serialize dates to strings to ensure safe IPC transmission
+      const startDateStr = options?.startDate?.toISOString()
+      const endDateStr = options?.endDate?.toISOString()
+
+      const result = await api.zReport.getHistory(limit, startDateStr, endDateStr)
       if (!result.success) throw new Error(result.error)
       return result.data
     }
