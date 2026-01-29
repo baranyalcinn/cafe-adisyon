@@ -84,7 +84,11 @@ jobs:
             "formdata-polyfill",
             "bufferutil",
             "utf-8-validate",
-            "detect-libc"
+            "detect-libc",
+            "@prisma/client",
+            "@prisma/adapter-libsql",
+            "@prisma/driver-adapter-utils",
+            ".prisma"
           )
 
           Write-Host "Starting manual surgery - keeping ONLY runtime deps..."
