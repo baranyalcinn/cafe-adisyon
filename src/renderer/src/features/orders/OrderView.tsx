@@ -196,13 +196,13 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
 
       {/* Center Panel - Products Grid */}
       <div className="flex-1 flex flex-col h-full overflow-hidden section-panel glass-panel !border-t-0 !border-b-0">
-        <div className="z-10 relative h-16 px-6 border-b border-white/10 bg-gradient-to-r from-background via-background/95 to-background flex items-center justify-between flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <h2 className="text-xl font-black tracking-tight text-foreground uppercase">
+        <div className="z-10 relative h-14 px-4 border-b border-white/10 bg-gradient-to-r from-background via-background/95 to-background flex items-center justify-between flex-shrink-0">
+          <div className="flex items-center gap-2.5">
+            <h2 className="text-lg font-bold tracking-tight text-foreground/90">
               {selectedTable?.name || 'Masa'}
             </h2>
-            <div className="h-5 w-px bg-border/30" />
-            <span className="text-primary/80 font-semibold tracking-tight text-base">Sipariş</span>
+            <div className="h-4 w-px bg-border/20" />
+            <span className="text-primary/70 font-semibold tracking-tight text-sm">Sipariş</span>
           </div>
 
           <div className="flex items-center bg-muted/20 p-1 rounded-xl border border-white/5 shadow-inner backdrop-blur-sm">
@@ -255,7 +255,7 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
                 className={cn(
                   'gap-2.5',
                   viewMode === 'grid'
-                    ? 'grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))]'
+                    ? 'grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))]'
                     : 'flex flex-col max-w-4xl mx-auto px-4'
                 )}
               >

@@ -109,11 +109,11 @@ export function CartPanel({
     <div className="w-96 glass-panel cart-panel-accent border-l border-border/30 !border-t-0 flex flex-col h-full animate-in slide-in-from-right duration-700 relative overflow-hidden shadow-2xl">
       {/* Premium Glass Effect Background */}
 
-      <div className="z-10 relative h-16 px-6 border-b border-border/30 bg-gradient-to-r from-background/40 via-background/60 to-background/40 flex items-center justify-between flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <h3 className="text-xl font-black tracking-tight text-foreground uppercase">Adisyon</h3>
+      <div className="z-10 relative h-14 px-5 border-b border-border/10 bg-background/50 flex items-center justify-between flex-shrink-0">
+        <div className="flex items-center gap-2.5">
+          <h3 className="text-[17px] font-bold tracking-tight text-foreground/90">Adisyon</h3>
           {order?.items && order.items.length > 0 && (
-            <span className="px-2.5 py-0.5 bg-primary/5 text-primary text-[11px] font-bold rounded-full border border-primary/10 shadow-[0_0_10px_rgba(var(--primary),0.1)]">
+            <span className="px-2 py-0.5 bg-muted/40 text-muted-foreground text-[11px] font-semibold rounded-lg border border-border/5">
               {order.items.reduce((sum, item) => sum + item.quantity, 0)} Ürün
             </span>
           )}
@@ -124,20 +124,20 @@ export function CartPanel({
             size="sm"
             onClick={onToggleLock}
             className={cn(
-              'h-8 gap-2 rounded-xl px-4 text-[10px] font-bold uppercase tracking-wider transition-all duration-300',
+              'h-8 gap-2 rounded-lg px-3 text-[11px] font-semibold transition-all duration-300',
               isLocked
-                ? 'bg-warning/90 hover:bg-warning text-white shadow-md shadow-warning/20'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                ? 'bg-warning/90 hover:bg-warning text-white shadow-sm'
+                : 'text-muted-foreground/60 hover:text-foreground hover:bg-muted/50'
             )}
           >
             {isLocked ? (
               <>
-                <Lock className="w-3 h-3" />
+                <Lock className="w-3.5 h-3.5" />
                 Kilitli
               </>
             ) : (
               <>
-                <LockOpen className="w-3 h-3" />
+                <LockOpen className="w-3.5 h-3.5" />
                 Kilitle
               </>
             )}
