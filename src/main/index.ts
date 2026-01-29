@@ -77,6 +77,10 @@ function createWindow(): void {
   }
 }
 
+// Force GPU acceleration features for maximum performance
+app.commandLine.appendSwitch('enable-gpu-rasterization')
+app.commandLine.appendSwitch('ignore-gpu-blocklist')
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.

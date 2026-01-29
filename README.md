@@ -74,17 +74,17 @@
 
 ## 🛠️ Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| **Framework** | [Electron](https://www.electronjs.org/) 40 + [electron-vite](https://electron-vite.org/) |
-| **Frontend** | [React](https://react.dev/) 19 + [TypeScript](https://www.typescriptlang.org/) 5.9 |
-| **Styling** | [Tailwind CSS](https://tailwindcss.com/) 4 + [Radix UI](https://www.radix-ui.com/) |
-| **State** | [Zustand](https://zustand.docs.pmnd.rs/) + [TanStack Query](https://tanstack.com/query) |
-| **Database** | [Prisma](https://www.prisma.io/) ORM + [LibSQL](https://turso.tech/libsql) (SQLite) |
-| **Animations** | [Framer Motion](https://www.framer.com/motion/) |
-| **Validation** | [Zod](https://zod.dev/) |
-| **Testing** | [Vitest](https://vitest.dev/) + [Playwright](https://playwright.dev/) |
-| **Documentation** | [Storybook](https://storybook.js.org/) 10 |
+| Layer             | Technology                                                                               |
+| ----------------- | ---------------------------------------------------------------------------------------- |
+| **Framework**     | [Electron](https://www.electronjs.org/) 40 + [electron-vite](https://electron-vite.org/) |
+| **Frontend**      | [React](https://react.dev/) 19 + [TypeScript](https://www.typescriptlang.org/) 5.9       |
+| **Styling**       | [Tailwind CSS](https://tailwindcss.com/) 4 + [Radix UI](https://www.radix-ui.com/)       |
+| **State**         | [Zustand](https://zustand.docs.pmnd.rs/) + [TanStack Query](https://tanstack.com/query)  |
+| **Database**      | [Prisma](https://www.prisma.io/) ORM + [LibSQL](https://turso.tech/libsql) (SQLite)      |
+| **Animations**    | [Framer Motion](https://www.framer.com/motion/)                                          |
+| **Validation**    | [Zod](https://zod.dev/)                                                                  |
+| **Testing**       | [Vitest](https://vitest.dev/) + [Playwright](https://playwright.dev/)                    |
+| **Documentation** | [Storybook](https://storybook.js.org/) 10                                                |
 
 ---
 
@@ -164,20 +164,20 @@ cafe-adisyon/
 
 ## 📜 Available Scripts
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server with HMR |
-| `npm run build` | Build for production (all platforms) |
-| `npm run build:win` | Build Windows executable |
-| `npm run build:mac` | Build macOS application |
-| `npm run build:linux` | Build Linux AppImage |
-| `npm run lint` | Run ESLint code analysis |
-| `npm run format` | Format code with Prettier |
-| `npm run test` | Run unit tests with Vitest |
-| `npm run typecheck` | Run TypeScript type checking |
-| `npm run storybook` | Launch Storybook on port 6006 |
-| `npm run db:reset` | Reset database (destructive) |
-| `npm run db:soft-reset` | Soft reset database |
+| Command                 | Description                          |
+| ----------------------- | ------------------------------------ |
+| `npm run dev`           | Start development server with HMR    |
+| `npm run build`         | Build for production (all platforms) |
+| `npm run build:win`     | Build Windows executable             |
+| `npm run build:mac`     | Build macOS application              |
+| `npm run build:linux`   | Build Linux AppImage                 |
+| `npm run lint`          | Run ESLint code analysis             |
+| `npm run format`        | Format code with Prettier            |
+| `npm run test`          | Run unit tests with Vitest           |
+| `npm run typecheck`     | Run TypeScript type checking         |
+| `npm run storybook`     | Launch Storybook on port 6006        |
+| `npm run db:reset`      | Reset database (destructive)         |
+| `npm run db:soft-reset` | Soft reset database                  |
 
 ---
 

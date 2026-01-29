@@ -6,7 +6,7 @@ directories:
   buildResources: build
   output: dist
 
-compression: store
+compression: normal
 asar: true
 detectUpdateChannel: false
 files:

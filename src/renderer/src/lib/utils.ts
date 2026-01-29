@@ -9,6 +9,9 @@ export function formatCurrency(amountInCents: number): string {
   return new Intl.NumberFormat('tr-TR', {
     style: 'currency',
     currency: 'TRY',
-    minimumFractionDigits: 2
-  }).format(amountInCents / 100)
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  })
+    .format(amountInCents / 100)
+    .replace('₺', '₺ ')
 }

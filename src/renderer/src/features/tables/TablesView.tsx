@@ -56,7 +56,7 @@ const TableCard = memo(
               } as React.CSSProperties
             }
             className={cn(
-              'group relative flex flex-col items-center justify-center gap-4 p-8 premium-card ambient-glow cursor-pointer overflow-hidden active:scale-95 transition-all duration-300',
+              'group relative flex flex-col items-center justify-center gap-4 p-8 premium-card ambient-glow cursor-pointer overflow-hidden active:scale-95 transition-all duration-300 gpu-accelerated',
               'hover:shadow-2xl hover:-translate-y-1',
               hasOpenOrder
                 ? 'bg-info/[0.04] hover:shadow-info/20'

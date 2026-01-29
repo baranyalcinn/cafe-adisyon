@@ -266,9 +266,8 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
               </div>
             ) : (
               <motion.div
-                layout
                 className={cn(
-                  'gap-2.5',
+                  'gap-2.5 gpu-accelerated',
                   viewMode === 'grid'
                     ? 'grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))]'
                     : 'flex flex-col max-w-4xl mx-auto px-4'
@@ -277,12 +276,18 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
                 <AnimatePresence mode="popLayout">
                   {filteredProducts.map((product) => (
                     <motion.div
-                      layout
+                      layout="position"
                       key={product.id}
-                      initial={{ opacity: 0, scale: 0.8 }}
+                      initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.8 }}
-                      transition={{ duration: 0.2 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      transition={{
+                        type: 'spring',
+                        stiffness: 400,
+                        damping: 30,
+                        opacity: { duration: 0.2 }
+                      }}
+                      className="gpu-accelerated"
                     >
                       <ProductCard
                         product={product}

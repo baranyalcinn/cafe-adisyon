@@ -16,6 +16,7 @@ import { useTableStore } from '@/store/useTableStore'
 import { type Order, type PaymentMethod } from '@/lib/api'
 import { cn, formatCurrency } from '@/lib/utils'
 import { soundManager } from '@/lib/sound'
+import { PremiumAmount } from '@/components/PremiumAmount'
 
 interface PaymentModalProps {
   open: boolean
@@ -302,9 +303,7 @@ export function PaymentModal({
                       Müşteriye Verilecek
                     </span>
                     <div className="relative inline-block px-8 py-4 bg-warning/5 rounded-2xl border border-warning/10">
-                      <p className="text-5xl font-black text-warning tabular-nums tracking-tight">
-                        {formatCurrency(finalChange)}
-                      </p>
+                      <PremiumAmount amount={finalChange} size="3xl" color="warning" />
                     </div>
                     <p className="mt-4 text-xs font-semibold text-warning/80">
                       Para üstünü vermeyi unutmayın
@@ -393,9 +392,7 @@ export function PaymentModal({
                     <p className="text-sm font-semibold text-muted-foreground/60">
                       Kalan Tutarın Tamamı
                     </p>
-                    <div className="text-6xl font-black tabular-nums text-primary tracking-tighter">
-                      {formatCurrency(remainingAmount)}
-                    </div>
+                    <PremiumAmount amount={remainingAmount} size="3xl" color="primary" />
                   </div>
 
                   <div className="px-6 py-4 premium-card ambient-glow flex items-center gap-3">
@@ -446,9 +443,11 @@ export function PaymentModal({
                     <p className="text-[12px] font-semibold text-muted-foreground/60 mb-1">
                       Kişi Başı Düşen
                     </p>
-                    <p className="text-5xl font-extrabold text-primary tabular-nums tracking-tighter">
-                      {formatCurrency(Math.ceil(remainingAmount / splitCount))}
-                    </p>
+                    <PremiumAmount
+                      amount={Math.ceil(remainingAmount / splitCount)}
+                      size="2xl"
+                      color="primary"
+                    />
                   </div>
                 </motion.div>
               )}
@@ -591,9 +590,7 @@ export function PaymentModal({
                     <span className="text-[11px] font-semibold text-muted-foreground/60">
                       Seçilen Tutar
                     </span>
-                    <span className="text-2xl font-bold text-primary tabular-nums">
-                      {formatCurrency(selectedTotal)}
-                    </span>
+                    <PremiumAmount amount={selectedTotal} size="xl" color="primary" />
                   </div>
                 </motion.div>
               )}
@@ -610,12 +607,10 @@ export function PaymentModal({
                   {/* Amount Display - Simple Underlined Aesthetic */}
                   <div className="mb-6 pt-4 text-center">
                     <div className="inline-flex items-end justify-center min-w-[200px] pb-3 border-b-2 border-border/10">
-                      <span className="text-5xl font-black tabular-nums text-foreground/60 mr-1.5">
-                        ₺
-                      </span>
-                      <span className="text-6xl font-black tabular-nums tracking-tighter text-foreground">
-                        {customAmount || '0'}
-                      </span>
+                      <PremiumAmount
+                        amount={Math.round((parseFloat(customAmount) || 0) * 100)}
+                        size="3xl"
+                      />
                     </div>
                   </div>
 
@@ -650,29 +645,29 @@ export function PaymentModal({
           <div className="flex flex-col gap-3 mb-4">
             {/* Paid Amount Area - Only if there are previous payments */}
             {paidAmount > 0 && (
-              <div className="p-4 rounded-3xl bg-success/10 border border-success/10 flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-2 duration-500">
-                <span className="text-xs font-bold text-success uppercase tracking-widest">
-                  Ödenen Ara Toplam
-                </span>
-                <span className="text-lg font-black text-success tabular-nums">
-                  {formatCurrency(paidAmount)}
-                </span>
+              <div className="premium-item p-4 relative animate-in fade-in slide-in-from-top-2 duration-500 shadow-[0_4px_20px_-8px_rgba(var(--color-success-rgb),0.35)]">
+                {/* Background Tint Layer */}
+                <div className="absolute inset-0 bg-primary/[0.08]" />
+
+                <div className="relative w-full flex items-center justify-between">
+                  <span className="text-[11px] font-black text-primary uppercase tracking-[0.15em]">
+                    Ödenen Ara Toplam
+                  </span>
+                  <PremiumAmount amount={paidAmount} size="lg" color="primary" />
+                </div>
               </div>
             )}
 
             {/* Remaining Amount Area - Primary Focus */}
-            <div className="relative group p-6 premium-card ambient-glow overflow-hidden">
-              {/* Background Glow */}
-              <div className="absolute right-0 top-0 h-32 w-32 translate-x-12 -translate-y-12 rounded-full bg-primary/5 blur-3xl" />
+            <div className="relative group p-6 premium-card ambient-glow overflow-hidden shadow-[0_15px_40px_-15px_rgba(0,0,0,0.2)] hover:scale-[1.01] transition-transform duration-300">
+              <div className="absolute right-0 top-0 h-32 w-32 translate-x-12 -translate-y-12 rounded-full bg-primary/10 blur-3xl opacity-50" />
 
               <div className="relative z-10 flex items-center justify-between">
                 <div className="flex flex-col text-left">
-                  <span className="text-xs font-bold text-muted-foreground/60 uppercase tracking-widest mb-1">
+                  <span className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-[0.2em] mb-1">
                     Ödenecek Kalan
                   </span>
-                  <span className="text-4xl font-black text-foreground tabular-nums tracking-tight">
-                    {formatCurrency(remainingAmount)}
-                  </span>
+                  <PremiumAmount amount={remainingAmount} size="2xl" />
                 </div>
               </div>
             </div>
@@ -681,13 +676,13 @@ export function PaymentModal({
           <div className="mb-auto space-y-2.5">
             <div
               style={{ '--color-border': 'var(--color-primary)' } as React.CSSProperties}
-              className="mt-0.5 animate-in fade-in slide-in-from-top-2 duration-500 premium-card ambient-glow p-5 flex items-center justify-between"
+              className="mt-0.5 animate-in fade-in slide-in-from-top-2 duration-500 premium-card ambient-glow p-5 flex items-center justify-between shadow-[0_10px_30px_-10px_rgba(var(--color-primary-rgb),0.25)] hover:scale-[1.02] transition-all"
             >
-              <span className="text-[12px] font-bold text-primary/60 uppercase tracking-widest leading-none">
-                Tahsil Edilecek
-              </span>
-              <div className="text-2xl font-black text-primary tabular-nums tracking-tighter leading-none">
-                {formatCurrency(effectivePayment)}
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black text-primary uppercase tracking-[0.15em] mb-1">
+                  Tahsil Edilecek
+                </span>
+                <PremiumAmount amount={effectivePayment} size="xl" color="primary" />
               </div>
             </div>
 
@@ -722,7 +717,7 @@ export function PaymentModal({
                         )}
                         onClick={() => handleTenderedChange(val.toString())}
                       >
-                        ₺{val}
+                        ₺ {val}
                       </Button>
                     )
                   })}
@@ -743,9 +738,7 @@ export function PaymentModal({
                     <span className="text-[11px] font-bold text-warning/70 uppercase">
                       Para Üstü
                     </span>
-                    <span className="text-xl font-black text-warning tabular-nums">
-                      {formatCurrency(currentChange)}
-                    </span>
+                    <PremiumAmount amount={currentChange} size="lg" color="warning" />
                   </div>
                 )}
               </div>
