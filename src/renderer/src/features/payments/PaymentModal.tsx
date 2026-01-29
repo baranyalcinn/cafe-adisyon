@@ -700,16 +700,16 @@ export function PaymentModal({
             ) : (
               <div className="mt-4">
                 {rawCustomAmount > 0 && (
-                    <div
-                      className={cn(
-                        'p-6 rounded-[2rem] border animate-in zoom-in-95 duration-500',
-                        rawCustomAmount > remainingAmount
-                          ? 'bg-warning/10 border-warning/20'
-                          : rawCustomAmount < remainingAmount
-                            ? 'bg-info/10 border-info/20'
-                            : 'bg-success/10 border-success/20'
-                      )}
-                    >
+                  <div
+                    className={cn(
+                      'p-6 rounded-[2rem] border animate-in zoom-in-95 duration-500',
+                      rawCustomAmount > remainingAmount
+                        ? 'bg-warning/10 border-warning/20'
+                        : rawCustomAmount < remainingAmount
+                          ? 'bg-info/10 border-info/20'
+                          : 'bg-success/10 border-success/20'
+                    )}
+                  >
                     <div className="flex items-center justify-between mb-2">
                       <span
                         className={cn(

@@ -35,11 +35,7 @@ export function QuantitySelector({
             : 'hover:bg-muted text-foreground/40 hover:text-foreground'
         )}
       >
-        {quantity === 1 ? (
-          <Trash2 className="w-3 h-3" />
-        ) : (
-          <Minus className="w-3 h-3" />
-        )}
+        {quantity === 1 ? <Trash2 className="w-3 h-3" /> : <Minus className="w-3 h-3" />}
       </button>
 
       <span className="w-5 text-center font-black text-[10px] tabular-nums text-foreground/90 select-none">

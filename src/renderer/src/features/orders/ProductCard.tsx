@@ -43,27 +43,24 @@ function ProductCardComponent({
         onClick={handleClick}
         disabled={isLocked}
         className={cn(
-          'flex items-center gap-3 p-3 rounded-2xl bg-card border border-white/5 transition-all w-full text-left group relative overflow-hidden',
+          'flex items-center gap-2 py-2 px-3 rounded-xl bg-card transition-all w-full text-left group relative overflow-hidden shadow-soft border border-border/10',
           isLocked
             ? 'opacity-50 cursor-not-allowed'
-            : 'hover:bg-primary/[0.03] hover:border-primary/20 active:scale-[0.98] shadow-sm'
+            : 'hover:bg-primary/[0.04] hover:shadow-premium hover:border-primary/20 active:bg-muted/50 active:scale-[0.98]'
         )}
       >
-        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 shadow-inner">
-          {getCategoryIcon(product.category?.icon, 'w-5 h-5 text-primary')}
-        </div>
         <div className="flex-1 min-w-0">
-          <p className="font-bold text-[15px] line-clamp-2 text-foreground/90 group-hover:text-primary transition-colors leading-tight mb-0.5">
+          <p className="font-bold text-[14px] line-clamp-2 text-foreground/90 group-hover:text-primary transition-colors leading-tight mb-1">
             {product.name.replace(/([a-z])([A-Z])/g, '$1 $2')}
           </p>
-          <div className="px-2.5 py-1 rounded-lg bg-success/[0.08] border border-success/10 group-hover:bg-success/15 group-hover:border-success/20 transition-all w-fit">
-            <p className="text-xs font-black text-success tabular-nums tracking-tight">
+          <div className="px-2 py-0.5 rounded-lg bg-success/[0.06] border border-success/10 group-hover:bg-success/15 group-hover:border-success/20 transition-all w-fit">
+            <p className="text-[10px] font-black text-success tabular-nums tracking-tight">
               {formatCurrency(product.price)}
             </p>
           </div>
         </div>
-        <div className="w-8 h-8 rounded-full flex items-center justify-center bg-primary/5 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all">
-          <Plus className="w-4 h-4" />
+        <div className="w-7 h-7 rounded-full flex items-center justify-center bg-primary/5 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all shrink-0">
+          <Plus className="w-3.5 h-3.5" />
         </div>
       </button>
     )
@@ -74,11 +71,11 @@ function ProductCardComponent({
       onClick={handleClick}
       disabled={isLocked}
       className={cn(
-        'group relative flex items-center gap-4 p-4 rounded-3xl border bg-card w-full shadow-sm hover:shadow-xl active:scale-95 cursor-pointer transition-all duration-300',
+        'group relative flex items-center gap-4 p-4 rounded-3xl bg-card w-full shadow-soft border border-border/10 hover:shadow-premium active:bg-muted/50 active:scale-95 cursor-pointer transition-all duration-300',
         isLocked
           ? 'opacity-50 cursor-not-allowed'
-          : 'hover:bg-primary/[0.01] hover:border-primary/30',
-        product.isFavorite && 'border-amber-500/40'
+          : 'hover:bg-primary/[0.02] hover:border-primary/30',
+        product.isFavorite && 'border-amber-500/20 bg-amber-500/[0.01]'
       )}
     >
       {product.isFavorite && (

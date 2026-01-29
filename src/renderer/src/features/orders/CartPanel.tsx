@@ -1,12 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react'
-import {
-  Trash2,
-  CreditCard,
-  CheckCircle,
-  Lock,
-  LockOpen,
-  ShoppingBag
-} from 'lucide-react'
+import { Trash2, CreditCard, CheckCircle, Lock, LockOpen, ShoppingBag } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
@@ -17,7 +10,6 @@ import { QuantitySelector } from '@/components/ui/QuantitySelector'
 
 interface CartPanelProps {
   order: Order | null | undefined
-  tableName: string
   isLocked: boolean
   onPaymentClick: () => void
   onUpdateItem: (orderItemId: string, quantity: number) => void
@@ -28,7 +20,6 @@ interface CartPanelProps {
 
 export function CartPanel({
   order,
-  tableName,
   isLocked,
   onPaymentClick,
   onUpdateItem,
@@ -115,14 +106,12 @@ export function CartPanel({
   }
 
   return (
-    <div className="w-96 glass-panel cart-panel-accent border-l border-white/10 !border-t-0 flex flex-col h-full animate-in slide-in-from-right duration-700 relative overflow-hidden shadow-2xl">
+    <div className="w-96 glass-panel cart-panel-accent border-l border-border/30 !border-t-0 flex flex-col h-full animate-in slide-in-from-right duration-700 relative overflow-hidden shadow-2xl">
       {/* Premium Glass Effect Background */}
 
-      <div className="z-10 relative h-16 px-6 border-b border-white/10 bg-gradient-to-r from-background via-background/95 to-background flex items-center justify-between flex-shrink-0">
+      <div className="z-10 relative h-16 px-6 border-b border-border/30 bg-gradient-to-r from-background/40 via-background/60 to-background/40 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3">
-          <h3 className="text-xl font-black tracking-tight text-foreground uppercase">
-            {tableName}
-          </h3>
+          <h3 className="text-xl font-black tracking-tight text-foreground uppercase">Adisyon</h3>
           {order?.items && order.items.length > 0 && (
             <span className="px-2.5 py-0.5 bg-primary/5 text-primary text-[11px] font-bold rounded-full border border-primary/10 shadow-[0_0_10px_rgba(var(--primary),0.1)]">
               {order.items.reduce((sum, item) => sum + item.quantity, 0)} Ürün
@@ -179,62 +168,54 @@ export function CartPanel({
                     <div
                       key={item.id}
                       className={cn(
-                        'flex items-center gap-2 py-2 px-2.5 rounded-xl border transition-all duration-200 relative overflow-hidden',
+                        'flex flex-wrap items-center justify-between gap-x-2 gap-y-2 py-2 px-2.5 rounded-xl border transition-all duration-200 relative overflow-hidden',
                         item.isPaid
                           ? 'bg-success/[0.03] border-success/10 opacity-50 border-l-2 border-l-success/40'
                           : 'bg-card/80 border-white/5 hover:bg-card hover:border-primary/10 border-l-2 border-l-primary/30 hover:shadow-sm'
                       )}
                     >
-                      <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 min-w-0 flex-1">
-                          {item.isPaid && (
-                            <CheckCircle className="w-3.5 h-3.5 text-success flex-shrink-0" />
+                      {/* Name and Quantity Group */}
+                      <div className="flex items-baseline gap-1 flex-1 min-w-[160px]">
+                        <div className="shrink-0 flex justify-start min-w-[1.1rem]">
+                          {item.quantity > 1 && (
+                            <span className="text-[13px] font-black text-rose-600 tabular-nums">
+                              x{item.quantity}
+                            </span>
                           )}
-                          <div className="flex flex-col min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <p
-                                className={cn(
-                                  'font-semibold text-sm tracking-tight leading-snug line-clamp-1',
-                                  item.isPaid ? 'text-muted-foreground' : 'text-foreground/90'
-                                )}
-                              >
-                                {productName.replace(/([a-z])([A-Z])/g, '$1 $2')}
-                              </p>
-                              {item.quantity > 1 && (
-                                <span className="text-sm font-black text-destructive tabular-nums shrink-0">
-                                  x{item.quantity}
-                                </span>
-                              )}
-                            </div>
-                          </div>
                         </div>
-
-                        <div className="text-right min-w-[65px] shrink-0">
-                          <p className="text-[13px] font-bold text-foreground/80 tabular-nums">
-                            {formatCurrency(item.unitPrice * item.quantity)}
-                          </p>
-                        </div>
+                        <p
+                          className={cn(
+                            'font-bold text-[14px] tracking-tight leading-snug break-words',
+                            item.isPaid ? 'text-muted-foreground' : 'text-foreground/90'
+                          )}
+                        >
+                          {productName.replace(/([a-z])([A-Z])/g, '$1 $2')}
+                        </p>
                       </div>
 
-                      {/* Premium Quantity Selector for unpaid items */}
-                      {!item.isPaid && (
-                        <QuantitySelector
-                          quantity={item.quantity}
-                          onUpdate={(newQty) =>
-                            handleUpdateQuantity(item.id, item.productId, newQty)
-                          }
-                          isLocked={isLocked}
-                        />
-                      )}
+                      {/* Price and Controls Group */}
+                      <div className="flex items-center gap-3 ml-auto">
+                        <p className="text-[13px] font-bold text-foreground/80 tabular-nums">
+                          {formatCurrency(item.unitPrice * item.quantity)}
+                        </p>
 
-                      {item.isPaid && (
-                        <div className="px-2 py-0.5 bg-success/10 rounded-md border border-success/15 flex items-center gap-1">
-                          <CheckCircle className="w-2.5 h-2.5 text-success" />
-                          <span className="text-[9px] font-bold text-success uppercase">
-                            Ödendi
-                          </span>
-                        </div>
-                      )}
+                        {!item.isPaid ? (
+                          <QuantitySelector
+                            quantity={item.quantity}
+                            onUpdate={(newQty) =>
+                              handleUpdateQuantity(item.id, item.productId, newQty)
+                            }
+                            isLocked={isLocked}
+                          />
+                        ) : (
+                          <div className="px-2 py-0.5 bg-success/10 rounded-md border border-success/15 flex items-center gap-1">
+                            <CheckCircle className="w-2.5 h-2.5 text-success" />
+                            <span className="text-[9px] font-bold text-success uppercase">
+                              Ödendi
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )
                 })}
@@ -262,7 +243,7 @@ export function CartPanel({
 
         <div className="space-y-2">
           {paidAmount > 0 && (
-            <div className="flex justify-between items-center px-4 py-3 rounded-2xl bg-success/5 border border-success/10">
+            <div className="flex justify-between items-center px-4 py-3 rounded-2xl bg-success/10 border border-success/10 backdrop-blur-sm">
               <span className="text-[10px] font-bold text-success/80 uppercase tracking-widest">
                 Ara Toplam (Ödenen)
               </span>
@@ -272,17 +253,17 @@ export function CartPanel({
             </div>
           )}
 
-          {/* Total Amount Card with Gradient */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 p-4">
+          {/* Total Amount Card with Improved Gradient */}
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-background/40 to-muted/20 border border-primary/20 p-4 backdrop-blur-md shadow-sm">
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
             <div className="flex justify-between items-end relative z-10">
               <div className="flex flex-col">
-                <span className="text-[10px] font-bold text-primary uppercase tracking-widest mb-0.5">
+                <span className="text-[10px] font-bold text-primary/80 uppercase tracking-[0.15em] mb-0.5">
                   {paidAmount > 0 ? 'Ödenecek Kalan' : 'Genel Toplam'}
                 </span>
               </div>
               <div className="flex items-baseline gap-1">
-                <span className="text-lg font-black text-primary">₺</span>
+                <span className="text-lg font-black text-primary/70">₺</span>
                 <span className="text-3xl font-black text-foreground tabular-nums tracking-tighter">
                   {formatCurrency(remainingAmount).replace('₺', '')}
                 </span>
