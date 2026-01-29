@@ -4,6 +4,7 @@ import { getCategoryIcon } from './order-icons'
 import { cn, formatCurrency } from '@/lib/utils'
 import { soundManager } from '@/lib/sound'
 import { toast } from '@/store/useToastStore'
+
 import type { Product } from '@/lib/api'
 
 interface ProductCardProps {
@@ -19,6 +20,8 @@ function ProductCardComponent({
   isLocked = false,
   onAdd
 }: ProductCardProps): React.JSX.Element {
+  const cardRef = React.useRef<HTMLButtonElement>(null)
+
   const handleClick = useCallback((): void => {
     if (isLocked) {
       soundManager.playError()
@@ -40,6 +43,7 @@ function ProductCardComponent({
   if (compact) {
     return (
       <button
+        ref={cardRef}
         onClick={handleClick}
         disabled={isLocked}
         className={cn(
@@ -56,7 +60,7 @@ function ProductCardComponent({
           )}
         </div>
         <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-          <p className="font-bold text-[13px] line-clamp-1 text-foreground/90 group-hover:text-primary transition-colors leading-tight">
+          <p className="font-bold text-[15px] line-clamp-1 text-foreground/90 group-hover:text-primary transition-colors leading-tight">
             {product.name.replace(/([a-z])([A-Z])/g, '$1 $2')}
           </p>
           <p className="text-[12px] font-black text-emerald-600 tabular-nums">
@@ -72,11 +76,12 @@ function ProductCardComponent({
 
   return (
     <button
+      ref={cardRef}
       onClick={handleClick}
       disabled={isLocked}
       className={cn(
-        'group relative flex flex-col p-3 rounded-[1.75rem] bg-card w-full shadow-soft border border-border/5 hover:shadow-premium hover:-translate-y-1 active:scale-95 cursor-pointer transition-all duration-300',
-        isLocked ? 'opacity-50 cursor-not-allowed' : 'hover:border-primary/20'
+        'group premium-card ambient-glow relative flex flex-col p-3 w-full active:scale-95 cursor-pointer',
+        isLocked ? 'opacity-50 cursor-not-allowed' : ''
       )}
     >
       {product.isFavorite && (
@@ -96,7 +101,7 @@ function ProductCardComponent({
 
       {/* Bottom Section - Content */}
       <div className="flex flex-col items-start gap-1 px-1 min-h-[3.4rem]">
-        <h3 className="font-bold text-[14px] leading-tight text-left line-clamp-2 text-foreground/90 group-hover:text-primary transition-colors">
+        <h3 className="font-bold text-[16px] leading-tight text-left line-clamp-2 text-foreground/90 group-hover:text-primary transition-colors">
           {product.name.replace(/([a-z])([A-Z])/g, '$1 $2')}
         </h3>
         <p className="text-[15px] font-black text-emerald-600 tabular-nums tracking-tight mt-auto">

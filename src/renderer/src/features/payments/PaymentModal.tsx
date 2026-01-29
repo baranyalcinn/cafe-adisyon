@@ -1,12 +1,15 @@
 import { useState, useMemo, useEffect } from 'react'
-import { Banknote, CreditCard, CheckCircle, Delete, Plus, Minus } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { Banknote, CreditCard, CheckCircle, Plus, Minus, Delete } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription
+  DialogDescription,
+  DialogClose
 } from '@/components/ui/dialog'
+
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useTableStore } from '@/store/useTableStore'
@@ -264,46 +267,46 @@ export function PaymentModal({
         <DialogContent className="sm:max-w-md border-none p-0 overflow-hidden bg-transparent shadow-none">
           <div className="relative animate-in zoom-in-95 duration-500">
             {/* Background Glow */}
-            <div className="absolute inset-0 bg-primary/20 blur-[80px] rounded-full" />
+            <div className="absolute inset-0 bg-success/10 blur-[60px] rounded-full" />
             {/* Main Content Card */}
-            <div className="relative bg-card/80 backdrop-blur-2xl border border-white/10 rounded-[3rem] p-10 flex flex-col items-center text-center shadow-2xl">
-              <div className="w-24 h-24 rounded-full bg-success/20 flex items-center justify-center mb-6 animate-bounce duration-[2000ms]">
-                <CheckCircle className="w-14 h-14 text-success" />
+            <div className="relative bg-card/90 backdrop-blur-2xl border border-border/10 rounded-[2.5rem] p-10 flex flex-col items-center text-center shadow-2xl">
+              <div className="w-20 h-20 rounded-full bg-success/10 flex items-center justify-center mb-5">
+                <CheckCircle className="w-10 h-10 text-success" />
               </div>
-              <h3 className="text-3xl font-black text-foreground tracking-tight mb-2">
-                ÖDEME BAŞARILI
+              <h3 className="text-2xl font-bold text-foreground tracking-tight mb-1">
+                Ödeme Başarılı
               </h3>
-              <p className="text-muted-foreground font-medium mb-8">
+              <p className="text-muted-foreground/70 text-sm mb-6">
                 İşlem kaydedildi ve masa boşaltıldı.
               </p>
 
               {finalChange > 0 ? (
                 <div className="w-full space-y-4">
-                  <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+                  <div className="h-px w-full bg-gradient-to-r from-transparent via-border/20 to-transparent" />
                   <div className="py-4">
-                    <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-3 block">
-                      MÜŞTERİYE VERİLECEK
+                    <span className="text-[11px] font-semibold text-muted-foreground/60 mb-3 block">
+                      Müşteriye Verilecek
                     </span>
-                    <div className="relative inline-block px-8 py-4 bg-primary/10 rounded-[2rem] border border-primary/20">
-                      <p className="text-6xl font-black text-primary tabular-nums tracking-tighter">
-                        <span className="text-3xl font-bold mr-1">₺</span>
-                        {formatCurrency(finalChange).replace('₺', '')}
+                    <div className="relative inline-block px-8 py-4 bg-warning/5 rounded-2xl border border-warning/10">
+                      <p className="text-5xl font-black text-warning tabular-nums tracking-tight">
+                        {formatCurrency(finalChange)}
                       </p>
                     </div>
-                    <p className="mt-4 text-xs font-bold text-warning uppercase tracking-widest">
-                      PARA ÜSTÜNÜ VERMEYİ UNUTMAYIN
+                    <p className="mt-4 text-xs font-semibold text-warning/80">
+                      Para üstünü vermeyi unutmayın
                     </p>
                   </div>
-                  <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+                  <div className="h-px w-full bg-gradient-to-r from-transparent via-border/20 to-transparent" />
                 </div>
               ) : (
-                <div className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-success/10 rounded-full border border-success/20 text-success font-bold text-sm">
-                  <span>TAM ÖDEME ALINDI</span>
+                <div className="w-full flex items-center justify-center gap-2 px-5 py-2.5 bg-success/5 rounded-2xl border border-success/10 text-success font-semibold text-sm">
+                  <CheckCircle className="w-4 h-4" />
+                  <span>Tam ödeme alındı</span>
                 </div>
               )}
 
-              <div className="mt-10 text-[10px] font-bold text-muted-foreground/40 uppercase tracking-[0.2em]">
-                BU PENCERE OTOMATİK KAPANACAKTIR
+              <div className="mt-8 text-[10px] font-medium text-muted-foreground/40">
+                Bu pencere otomatik kapanacaktır
               </div>
             </div>
           </div>
@@ -314,354 +317,394 @@ export function PaymentModal({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-4xl p-0 gap-0 overflow-hidden h-[600px] flex flex-col md:flex-row">
+      <DialogContent className="sm:max-w-4xl p-0 gap-0 overflow-hidden h-[620px] flex flex-col md:flex-row rounded-[2.5rem] border-border/10 shadow-3xl bg-background [&>button]:hidden duration-500 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-bottom-12">
         {/* Left Side: Payment Methods and Modes */}
-        <div className="flex-1 flex flex-col p-6 bg-background">
-          <DialogHeader className="mb-4">
-            <DialogTitle className="text-2xl font-bold">Ödeme Al</DialogTitle>
-            <DialogDescription>Ödeme yöntemini seçin</DialogDescription>
+        <div className="flex-1 flex flex-col p-8 pb-6 bg-background">
+          <DialogHeader className="mb-6 flex flex-row items-start justify-between">
+            <div className="space-y-1">
+              <DialogTitle className="text-[22px] font-bold tracking-tight">Ödeme Al</DialogTitle>
+              <DialogDescription className="text-muted-foreground/60">
+                Ödeme yöntemini seçin
+              </DialogDescription>
+            </div>
+            <DialogClose asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 px-5 rounded-xl -mt-1 -mr-2 bg-destructive/10 text-destructive hover:bg-destructive/20 font-bold transition-all duration-300 border border-destructive/10 shadow-sm"
+              >
+                İptal
+              </Button>
+            </DialogClose>
           </DialogHeader>
 
-          {/* Mode Selection Tabs */}
-          <div className="grid grid-cols-4 gap-2 mb-6 bg-muted/50 p-1 rounded-xl">
-            <Button
-              variant={paymentMode === 'full' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setPaymentMode('full')}
-              className="rounded-lg text-xs md:text-sm font-medium transition-all"
-            >
-              Tamamı
-            </Button>
-            <Button
-              variant={paymentMode === 'split' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setPaymentMode('split')}
-              className="rounded-lg text-xs md:text-sm font-medium transition-all"
-            >
-              Bölüşmeli
-            </Button>
-            <Button
-              variant={paymentMode === 'items' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setPaymentMode('items')}
-              className="rounded-lg text-xs md:text-sm font-medium transition-all"
-            >
-              Ürün Seç
-            </Button>
-            <Button
-              variant={paymentMode === 'custom' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setPaymentMode('custom')}
-              className="rounded-lg text-xs md:text-sm font-medium transition-all"
-            >
-              Tutar
-            </Button>
+          {/* Mode Selection Tabs - Theme Sync */}
+          <div className="flex p-1.5 premium-card mb-6 gap-2 self-start">
+            {[
+              { id: 'full', label: 'Tamamı' },
+              { id: 'split', label: 'Bölüşmeli' },
+              { id: 'items', label: 'Ürün Seç' },
+              { id: 'custom', label: 'Tutar' }
+            ].map((mode) => (
+              <Button
+                key={mode.id}
+                variant="ghost"
+                size="sm"
+                onClick={() => setPaymentMode(mode.id as PaymentMode)}
+                className={cn(
+                  'h-10 px-6 rounded-xl text-sm font-bold transition-all duration-300',
+                  paymentMode === mode.id
+                    ? 'bg-primary text-primary-foreground shadow-md'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
+                )}
+              >
+                {mode.label}
+              </Button>
+            ))}
           </div>
 
           {/* Dynamic Content Based on Mode */}
-          <div className="flex-1 overflow-auto">
-            {paymentMode === 'full' && (
-              <div className="h-full flex flex-col items-center justify-center space-y-2 text-center">
-                <p className="text-muted-foreground">Kalan Tutarın Tamamı</p>
-                <div className="text-5xl font-bold tabular-nums text-primary">
-                  {formatCurrency(remainingAmount)}
-                </div>
-              </div>
-            )}
-
-            {paymentMode === 'split' && (
-              <div className="space-y-6">
-                <div className="text-center">
-                  <p className="text-muted-foreground mb-2">Kaça bölünecek?</p>
-                  <div className="flex justify-center gap-4 items-center">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-12 w-12 rounded-full"
-                      onClick={() => setSplitCount(Math.max(2, splitCount - 1))}
-                    >
-                      -
-                    </Button>
-                    <span className="text-4xl font-bold w-12 text-center">{splitCount}</span>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-12 w-12 rounded-full"
-                      onClick={() => setSplitCount(Math.min(10, splitCount + 1))}
-                    >
-                      +
-                    </Button>
-                  </div>
-                </div>
-                <div className="p-4 bg-primary/5 rounded-xl text-center border-2 border-primary/10">
-                  <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-1">
-                    Kişi Başı
-                  </p>
-                  <p className="text-4xl font-extrabold text-primary tabular-nums">
-                    {formatCurrency(Math.ceil(remainingAmount / splitCount))}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {paymentMode === 'items' && (
-              <div className="h-full flex flex-col">
-                <div className="flex justify-between items-center mb-2 px-1">
-                  <span className="text-xs uppercase font-bold text-muted-foreground">
-                    Ödenecekler
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={selectAllItems}
-                    className="h-6 text-xs"
-                  >
-                    Tümünü Seç
-                  </Button>
-                </div>
-
-                {genericCredit > 0 && (
-                  <div className="mb-2 px-3 py-2 bg-info/10 border border-info/20 rounded-lg text-xs text-info flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-info shrink-0" />
-                    <span>
-                      Önceden yapılan <b>{formatCurrency(genericCredit)}</b> genel ödeme
-                      seçilenlerden düşülecektir.
-                    </span>
-                  </div>
-                )}
-
-                <div className="flex-1 border rounded-lg overflow-y-auto p-2 space-y-1">
-                  {unpaidItems.length === 0 ? (
-                    <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
-                      Liste boş
+          <div className="flex-1 overflow-visible relative">
+            <AnimatePresence mode="wait" initial={false}>
+              {paymentMode === 'full' && (
+                <motion.div
+                  key="full"
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
+                  className="h-full flex flex-col items-center justify-center space-y-4 p-4 text-center absolute inset-0"
+                >
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-muted-foreground/60">
+                      Kalan Tutarın Tamamı
+                    </p>
+                    <div className="text-6xl font-black tabular-nums text-primary tracking-tighter">
+                      {formatCurrency(remainingAmount)}
                     </div>
-                  ) : (
-                    unpaidItems.map((item) => {
-                      const selected = selectedQuantities[item.id] || 0
-                      return (
-                        <div
-                          key={item.id}
-                          role="button"
-                          tabIndex={0}
-                          aria-label={`${item.product?.name || 'Ürün'}, ${item.quantity} adet`}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault()
+                  </div>
+
+                  <div className="px-6 py-4 premium-card ambient-glow flex items-center gap-3">
+                    <p className="text-xs text-primary/70 font-bold flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4" />
+                      Tek seferde hızlı ödeme
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+
+              {paymentMode === 'split' && (
+                <motion.div
+                  key="split"
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
+                  className="space-y-6 absolute inset-0 overflow-auto p-4"
+                >
+                  <div className="text-center mt-8">
+                    <p className="text-muted-foreground/70 mb-3 text-sm">Kaça bölünecek?</p>
+                    <div className="flex justify-center gap-3 items-center">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-12 w-12 rounded-2xl bg-muted/30 hover:bg-muted/50 text-foreground/70 hover:text-foreground transition-all text-xl font-bold"
+                        onClick={() => setSplitCount(Math.max(2, splitCount - 1))}
+                      >
+                        −
+                      </Button>
+                      <div className="w-16 h-16 rounded-2xl bg-background border border-border/10 flex items-center justify-center shadow-sm">
+                        <span className="text-3xl font-bold text-foreground tabular-nums">
+                          {splitCount}
+                        </span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-12 w-12 rounded-2xl bg-muted/30 hover:bg-muted/50 text-foreground/70 hover:text-foreground transition-all text-xl font-bold"
+                        onClick={() => setSplitCount(Math.min(10, splitCount + 1))}
+                      >
+                        +
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="p-6 premium-card ambient-glow text-center mx-4">
+                    <p className="text-[12px] font-semibold text-muted-foreground/60 mb-1">
+                      Kişi Başı Düşen
+                    </p>
+                    <p className="text-5xl font-extrabold text-primary tabular-nums tracking-tighter">
+                      {formatCurrency(Math.ceil(remainingAmount / splitCount))}
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+
+              {paymentMode === 'items' && (
+                <motion.div
+                  key="items"
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
+                  className="h-full flex flex-col absolute inset-0 p-4"
+                >
+                  <div className="flex justify-between items-center mb-3 px-1">
+                    <span className="text-[11px] font-semibold text-muted-foreground/60">
+                      Ödenecek Ürünler
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={selectAllItems}
+                      className="h-6 text-[11px] font-semibold text-primary/70 hover:text-primary px-2"
+                    >
+                      Tümünü Seç
+                    </Button>
+                  </div>
+
+                  {genericCredit > 0 && (
+                    <div className="mb-3 px-3 py-2.5 bg-info/5 border border-info/10 rounded-xl text-[11px] text-info/80 flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-info/60 shrink-0" />
+                      <span>
+                        Önceden yapılan{' '}
+                        <span className="font-semibold">{formatCurrency(genericCredit)}</span> genel
+                        ödeme seçilenlerden düşülecektir.
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="flex-1 rounded-2xl overflow-y-auto p-1 space-y-1">
+                    {unpaidItems.length === 0 ? (
+                      <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
+                        Liste boş
+                      </div>
+                    ) : (
+                      unpaidItems.map((item) => {
+                        const selected = selectedQuantities[item.id] || 0
+                        return (
+                          <div
+                            key={item.id}
+                            role="button"
+                            tabIndex={0}
+                            aria-label={`${item.product?.name || 'Ürün'}, ${item.quantity} adet`}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault()
+                                updateQuantity(
+                                  item.id,
+                                  selected < item.quantity ? 1 : 0,
+                                  item.quantity
+                                )
+                              }
+                            }}
+                            className={cn(
+                              'flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer select-none focus:outline-none focus:ring-1 focus:ring-primary/20',
+                              selected > 0
+                                ? 'bg-primary/[0.04] border-primary/20 shadow-sm'
+                                : 'border-transparent hover:bg-muted/30'
+                            )}
+                            onClick={() =>
                               updateQuantity(
                                 item.id,
                                 selected < item.quantity ? 1 : 0,
                                 item.quantity
                               )
                             }
-                          }}
-                          className={cn(
-                            'flex items-center justify-between p-2 rounded-md border transition-all cursor-pointer select-none focus:outline-none focus:ring-2 focus:ring-primary',
-                            selected > 0
-                              ? 'bg-primary/10 border-primary'
-                              : 'border-transparent hover:bg-muted'
-                          )}
-                          onClick={() =>
-                            updateQuantity(item.id, selected < item.quantity ? 1 : 0, item.quantity)
-                          }
-                        >
-                          <div className="flex items-center gap-2 overflow-hidden flex-1">
-                            <div
-                              className={cn(
-                                'w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors shrink-0',
-                                selected > 0
-                                  ? 'bg-primary text-primary-foreground'
-                                  : 'bg-muted text-muted-foreground'
-                              )}
-                            >
-                              {item.quantity}
-                            </div>
-                            <span className="truncate font-medium">
-                              {item.product?.name || 'Ürün'}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-bold tabular-nums">
-                                {formatCurrency(selected * item.unitPrice)}
+                          >
+                            <div className="flex items-center gap-2 overflow-hidden flex-1">
+                              <div
+                                className={cn(
+                                  'w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors shrink-0',
+                                  selected > 0
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-muted text-muted-foreground'
+                                )}
+                              >
+                                {item.quantity}
+                              </div>
+                              <span className="truncate font-medium">
+                                {item.product?.name || 'Ürün'}
                               </span>
                             </div>
 
-                            {selected > 0 && (
-                              <div
-                                className="flex items-center bg-background rounded-md border shadow-sm"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7 rounded-none rounded-l-md hover:bg-muted"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    updateQuantity(item.id, -1, item.quantity)
-                                  }}
-                                >
-                                  <Minus className="w-3 h-3" />
-                                </Button>
-                                <div className="w-8 h-7 flex items-center justify-center text-xs font-bold border-x bg-muted/20 tabular-nums">
-                                  {selected}/{item.quantity}
-                                </div>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7 rounded-none rounded-r-md hover:bg-muted"
-                                  disabled={selected >= item.quantity}
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    updateQuantity(item.id, 1, item.quantity)
-                                  }}
-                                >
-                                  <Plus className="w-3 h-3" />
-                                </Button>
+                            <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-bold tabular-nums">
+                                  {formatCurrency(selected * item.unitPrice)}
+                                </span>
                               </div>
-                            )}
-                          </div>
-                        </div>
-                      )
-                    })
-                  )}
-                </div>
-                <div className="mt-2 text-right">
-                  <span className="text-2xl font-bold text-primary tabular-nums">
-                    {formatCurrency(selectedTotal)}
-                  </span>
-                </div>
-              </div>
-            )}
 
-            {paymentMode === 'custom' && (
-              <div className="h-full flex flex-col">
-                <div className="mb-4 text-center">
-                  <div className="text-4xl font-bold tabular-nums text-foreground border-b-2 border-primary/20 pb-2 inline-block min-w-[200px]">
-                    {customAmount ? (
-                      `₺${customAmount}`
-                    ) : (
-                      <span className="text-muted-foreground/30">₺0.00</span>
+                              {selected > 0 && (
+                                <div
+                                  className="flex items-center bg-background/80 backdrop-blur-sm rounded-lg border border-border/10 shadow-sm overflow-hidden"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 rounded-none hover:bg-muted/50"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      updateQuantity(item.id, -1, item.quantity)
+                                    }}
+                                  >
+                                    <Minus className="w-3 h-3" />
+                                  </Button>
+                                  <div className="px-2 h-8 flex items-center justify-center text-[11px] font-bold border-x border-border/5 tabular-nums min-w-[32px]">
+                                    {selected}
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 rounded-none hover:bg-muted/50"
+                                    disabled={selected >= item.quantity}
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      updateQuantity(item.id, 1, item.quantity)
+                                    }}
+                                  >
+                                    <Plus className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })
                     )}
                   </div>
-                </div>
-                {/* Keypad */}
-                <div className="grid grid-cols-3 gap-2 flex-1">
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, '.', 0].map((n) => (
+                  <div className="mt-3 pt-3 border-t border-border/5 flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-muted-foreground/60">
+                      Seçilen Tutar
+                    </span>
+                    <span className="text-2xl font-bold text-primary tabular-nums">
+                      {formatCurrency(selectedTotal)}
+                    </span>
+                  </div>
+                </motion.div>
+              )}
+
+              {paymentMode === 'custom' && (
+                <motion.div
+                  key="custom"
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
+                  className="h-full flex flex-col px-1 absolute inset-0 p-4"
+                >
+                  {/* Amount Display - Simple Underlined Aesthetic */}
+                  <div className="mb-6 pt-4 text-center">
+                    <div className="inline-flex items-end justify-center min-w-[200px] pb-3 border-b-2 border-border/10">
+                      <span className="text-5xl font-black tabular-nums text-foreground/60 mr-1.5">
+                        ₺
+                      </span>
+                      <span className="text-6xl font-black tabular-nums tracking-tighter text-foreground">
+                        {customAmount || '0'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Keypad - Dark & Minimal (Exact Reference) */}
+                  <div className="grid grid-cols-3 gap-2 flex-1 pb-1">
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, '.', 0].map((n) => (
+                      <Button
+                        key={n}
+                        variant="ghost"
+                        className="text-2xl font-bold h-full min-h-[52px] rounded-xl bg-card hover:bg-[#1a1a1a] border border-border/5 shadow-sm active:scale-[0.97] transition-all"
+                        onClick={() => handleKeypad(n.toString())}
+                      >
+                        {n}
+                      </Button>
+                    ))}
                     <Button
-                      key={n}
-                      variant="outline"
-                      className="text-2xl font-semibold h-full"
-                      onClick={() => handleKeypad(n.toString())}
+                      variant="ghost"
+                      className="h-full min-h-[52px] rounded-xl bg-destructive/80 text-white hover:bg-destructive shadow-sm active:scale-[0.97] transition-all"
+                      onClick={() => handleKeypad('backspace')}
                     >
-                      {n}
+                      <Delete className="w-6 h-6" />
                     </Button>
-                  ))}
-                  <Button
-                    variant="destructive"
-                    className="h-full"
-                    onClick={() => handleKeypad('backspace')}
-                  >
-                    <Delete className="w-6 h-6" />
-                  </Button>
-                </div>
-              </div>
-            )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
 
         {/* Right Side: Summary & Actions */}
-        <div className="flex flex-col w-full border-l md:w-[350px] bg-muted/20 p-6 overflow-y-auto">
-          {/* Hero Balance Card */}
-          <div className="relative mb-4 overflow-hidden border border-primary/30 rounded-[2.5rem] bg-card p-6 shadow-2xl shadow-primary/10">
-            <div className="absolute right-0 top-0 h-32 w-32 translate-x-12 -translate-y-12 rounded-full bg-primary/10 blur-3xl" />
-
-            <div className="relative z-10">
-              <div className="mb-5 flex items-center justify-between">
-                <div>
-                  <p className="mb-1 text-[10px] font-bold uppercase leading-none tracking-widest text-muted-foreground/60">
-                    Toplam
-                  </p>
-                  <p className="text-lg font-bold tabular-nums">{formatCurrency(total)}</p>
-                </div>
-                <div className="text-right">
-                  <p className="mb-1 text-[10px] font-bold uppercase leading-none tracking-widest text-success/80">
-                    Tahsil Edilen
-                  </p>
-                  <p className="text-lg font-bold text-success tabular-nums">
-                    {formatCurrency(paidAmount)}
-                  </p>
-                </div>
+        <div className="flex flex-col w-full border-l md:w-[380px] bg-muted/20 p-4 h-full">
+          <div className="flex flex-col gap-3 mb-4">
+            {/* Paid Amount Area - Only if there are previous payments */}
+            {paidAmount > 0 && (
+              <div className="p-4 rounded-3xl bg-success/10 border border-success/10 flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-2 duration-500">
+                <span className="text-xs font-bold text-success uppercase tracking-widest">
+                  Ödenen Ara Toplam
+                </span>
+                <span className="text-lg font-black text-success tabular-nums">
+                  {formatCurrency(paidAmount)}
+                </span>
               </div>
+            )}
 
-              {/* Progress Bar */}
-              <div className="mb-6 h-1.5 w-full overflow-hidden rounded-full bg-muted/50">
-                <div
-                  className="h-full bg-primary shadow-[0_0_12px_rgba(var(--primary),0.6)] transition-all duration-1000 ease-out"
-                  style={{ width: `${Math.min(100, (paidAmount / total) * 100)}%` }}
-                />
-              </div>
+            {/* Remaining Amount Area - Primary Focus */}
+            <div className="relative group p-6 premium-card ambient-glow overflow-hidden">
+              {/* Background Glow */}
+              <div className="absolute right-0 top-0 h-32 w-32 translate-x-12 -translate-y-12 rounded-full bg-primary/5 blur-3xl" />
 
-              <div className="space-y-1 text-center">
-                <p className="text-[11px] font-black uppercase tracking-[0.25em] text-primary/70">
-                  KALAN BAKİYE
-                </p>
-                <p className="text-5xl font-extrabold tracking-tighter text-foreground tabular-nums">
-                  {formatCurrency(remainingAmount)}
-                </p>
+              <div className="relative z-10 flex items-center justify-between">
+                <div className="flex flex-col text-left">
+                  <span className="text-xs font-bold text-muted-foreground/60 uppercase tracking-widest mb-1">
+                    Ödenecek Kalan
+                  </span>
+                  <span className="text-4xl font-black text-foreground tabular-nums tracking-tight">
+                    {formatCurrency(remainingAmount)}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="mb-auto space-y-4">
-            <div className="mt-2 animate-in fade-in slide-in-from-top-2 duration-500 rounded-[2rem] border border-primary/10 bg-primary/5 p-6 text-center">
-              <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-primary">
-                ŞİMDİ TAHSİL EDİLECEK
-              </p>
-              <div className="flex items-center justify-center gap-2">
-                <p className="text-4xl font-extrabold tracking-tight text-primary tabular-nums">
-                  {formatCurrency(effectivePayment)}
-                </p>
+          <div className="mb-auto space-y-2.5">
+            <div
+              style={{ '--color-border': 'var(--color-primary)' } as React.CSSProperties}
+              className="mt-0.5 animate-in fade-in slide-in-from-top-2 duration-500 premium-card ambient-glow p-5 flex items-center justify-between"
+            >
+              <span className="text-[12px] font-bold text-primary/60 uppercase tracking-widest leading-none">
+                Tahsil Edilecek
+              </span>
+              <div className="text-2xl font-black text-primary tabular-nums tracking-tighter leading-none">
+                {formatCurrency(effectivePayment)}
               </div>
-
-              {effectivePayment < remainingAmount && (
-                <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-muted/50 px-3 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                  <span>SONA KALAN:</span>
-                  <span className="tabular-nums">
-                    {formatCurrency(remainingAmount - effectivePayment)}
-                  </span>
-                </div>
-              )}
             </div>
 
             {paymentMode !== 'custom' ? (
-              <div className="mt-4 space-y-3">
-                <div className="flex items-center justify-between px-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">
-                    NAKİT HESAPLAYICI
+              <div className="mt-2.5 space-y-2">
+                <div className="flex items-center justify-between px-1">
+                  <label className="text-[11px] font-semibold text-muted-foreground/50">
+                    Nakit Hesaplayıcı
                   </label>
                   {tenderedAmount && (
                     <button
                       onClick={() => setTenderedAmount('')}
-                      className="text-[9px] font-black text-primary hover:opacity-80 transition-opacity"
+                      className="text-[11px] font-bold text-primary/80 hover:text-primary transition-colors"
                     >
-                      SIFIRLA
+                      Sıfırla
                     </button>
                   )}
                 </div>
 
-                <div className="grid grid-cols-5 gap-1.5 px-1">
+                <div className="grid grid-cols-5 gap-1">
                   {[10, 20, 50, 100, 200].map((val) => {
                     const isDisabled = val * 100 < effectivePayment
                     return (
                       <Button
                         key={val}
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
                         disabled={isDisabled}
                         className={cn(
-                          'h-9 border-none bg-background/50 text-[11px] font-black transition-all hover:bg-primary hover:text-primary-foreground rounded-xl shadow-sm',
-                          isDisabled && 'opacity-20 backdrop-blur-none'
+                          'h-9 bg-background/50 text-[12px] font-bold transition-all border border-border/5 rounded-xl shadow-sm hover:bg-primary hover:text-primary-foreground',
+                          isDisabled && 'opacity-20'
                         )}
                         onClick={() => handleTenderedChange(val.toString())}
                       >
@@ -671,29 +714,24 @@ export function PaymentModal({
                   })}
                 </div>
 
-                <div className="relative group">
+                <div className="relative">
                   <Input
-                    className="h-14 border-none bg-background/40 text-right font-mono text-2xl font-black rounded-2xl focus-visible:ring-2 focus-visible:ring-primary/20 transition-all shadow-inner"
-                    placeholder="₺0.00"
+                    className="h-12 border-border/5 bg-background text-right font-mono text-xl font-bold rounded-xl focus-visible:ring-1 focus-visible:ring-primary/20 transition-all"
+                    placeholder="₺0,00"
                     value={tenderedAmount}
                     onChange={(e) => handleTenderedChange(e.target.value)}
                     type="number"
-                    min="0"
-                    step="0.01"
                   />
                 </div>
 
                 {tendered > 0 && (
-                  <div className="mt-2 p-4 bg-warning/10 border border-warning/20 rounded-[1.5rem] animate-in zoom-in-95 duration-300">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-[10px] font-black text-warning uppercase tracking-widest">
-                        PARA ÜSTÜ
-                      </span>
-                      <span className="h-2 w-2 rounded-full bg-warning animate-pulse" />
-                    </div>
-                    <div className="text-3xl font-extrabold text-warning tabular-nums text-right tracking-tight">
+                  <div className="mt-2 p-2 px-3 bg-warning/5 border border-warning/10 rounded-xl flex items-center justify-between animate-in fade-in zoom-in-95">
+                    <span className="text-[11px] font-bold text-warning/70 uppercase">
+                      Para Üstü
+                    </span>
+                    <span className="text-xl font-black text-warning tabular-nums">
                       {formatCurrency(currentChange)}
-                    </div>
+                    </span>
                   </div>
                 )}
               </div>
@@ -701,36 +739,46 @@ export function PaymentModal({
               <div className="mt-4">
                 {rawCustomAmount > 0 && (
                   <div
+                    style={
+                      {
+                        '--color-border':
+                          rawCustomAmount > remainingAmount
+                            ? 'var(--color-warning)'
+                            : rawCustomAmount < remainingAmount
+                              ? 'var(--color-info)'
+                              : 'var(--color-success)'
+                      } as React.CSSProperties
+                    }
                     className={cn(
-                      'p-6 rounded-[2rem] border animate-in zoom-in-95 duration-500',
+                      'premium-card ambient-glow p-5 animate-in fade-in zoom-in-95 duration-300',
                       rawCustomAmount > remainingAmount
-                        ? 'bg-warning/10 border-warning/20'
+                        ? 'bg-warning/5'
                         : rawCustomAmount < remainingAmount
-                          ? 'bg-info/10 border-info/20'
-                          : 'bg-success/10 border-success/20'
+                          ? 'bg-info/5'
+                          : 'bg-success/5'
                     )}
                   >
                     <div className="flex items-center justify-between mb-2">
                       <span
                         className={cn(
-                          'text-[10px] font-black uppercase tracking-widest',
+                          'text-[11px] font-semibold',
                           rawCustomAmount > remainingAmount
-                            ? 'text-warning'
+                            ? 'text-warning/80'
                             : rawCustomAmount < remainingAmount
-                              ? 'text-info'
-                              : 'text-success'
+                              ? 'text-info/80'
+                              : 'text-success/80'
                         )}
                       >
                         {rawCustomAmount > remainingAmount
-                          ? 'PARA ÜSTÜ'
+                          ? 'Para Üstü'
                           : rawCustomAmount < remainingAmount
-                            ? 'EKSİK KALAN'
-                            : 'TAM ÖDEME'}
+                            ? 'Eksik Kalan'
+                            : 'Tam Ödeme'}
                       </span>
                       {rawCustomAmount !== remainingAmount && (
-                        <span
+                        <div
                           className={cn(
-                            'h-2 w-2 rounded-full animate-pulse',
+                            'h-1.5 w-1.5 rounded-full animate-pulse',
                             rawCustomAmount > remainingAmount ? 'bg-warning' : 'bg-info'
                           )}
                         />
@@ -738,7 +786,7 @@ export function PaymentModal({
                     </div>
                     <div
                       className={cn(
-                        'text-4xl font-extrabold tabular-nums tracking-tighter',
+                        'text-3xl font-bold tabular-nums tracking-tight',
                         rawCustomAmount > remainingAmount
                           ? 'text-warning'
                           : rawCustomAmount < remainingAmount
@@ -754,26 +802,27 @@ export function PaymentModal({
             )}
           </div>
 
-          <div className="mt-8 space-y-3">
+          <div className="mt-3 grid grid-cols-2 gap-3.5">
             <Button
-              className="w-full h-16 text-lg gap-3 shadow-2xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all font-black tracking-widest rounded-2xl border-b-4 border-primary/30"
-              variant="default"
-              size="lg"
+              className="group relative h-16 overflow-hidden rounded-2xl bg-gradient-to-br from-primary/95 to-primary/60 p-0 shadow-lg transition-all duration-300 hover:shadow-primary/20 hover:shadow-2xl active:scale-[0.96]"
+              onClick={() => handlePayment('CASH')}
               disabled={
                 isProcessing ||
                 (paymentAmount <= 0 && !(paymentMode === 'items' && selectedTotal > 0))
               }
-              onClick={() => handlePayment('CASH')}
             >
-              <Banknote className="w-6 h-6" />
-              {paymentMode === 'items' && paymentAmount === 0 && selectedTotal > 0
-                ? 'ÜRÜNLERİ KAPAT'
-                : 'NAKİT TAHSİLAT'}
+              <div className="flex w-full items-center justify-center gap-3 text-white">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 transition-transform duration-300 group-hover:scale-110 group-active:scale-95">
+                  <Banknote className="h-5 w-5" />
+                </div>
+                <div className="flex flex-col items-start leading-none text-left">
+                  <span className="text-base font-black tracking-tight">NAKİT</span>
+                </div>
+              </div>
             </Button>
+
             <Button
-              className="w-full h-14 text-base gap-3 font-bold tracking-wide rounded-2xl bg-muted/50 hover:bg-muted hover:text-foreground transition-all"
-              variant="secondary"
-              size="lg"
+              className="group h-16 rounded-2xl border border-white/5 bg-[#0c0c0c] p-0 shadow-xl transition-all duration-300 hover:border-primary/30 hover:bg-[#151515] active:scale-[0.96]"
               disabled={
                 isProcessing ||
                 (paymentAmount <= 0 && !(paymentMode === 'items' && selectedTotal > 0)) ||
@@ -781,10 +830,14 @@ export function PaymentModal({
               }
               onClick={() => handlePayment('CARD')}
             >
-              <CreditCard className="w-5 h-5 text-info" />
-              {paymentMode === 'items' && paymentAmount === 0 && selectedTotal > 0
-                ? 'KART (0 TL)'
-                : 'KART İLE ÖDE'}
+              <div className="flex w-full items-center justify-center gap-3 text-white">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary transition-transform duration-300 group-hover:scale-110 group-active:scale-95 shadow-[0_0_15px_rgba(var(--primary),0.1)]">
+                  <CreditCard className="h-5 w-5" />
+                </div>
+                <div className="flex flex-col items-start leading-none text-left">
+                  <span className="text-base font-black tracking-tight">Kart</span>
+                </div>
+              </div>
             </Button>
           </div>
         </div>

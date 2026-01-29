@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { PaymentModal } from '@/features/payments/PaymentModal'
 import { Toaster } from '@/components/ui/toaster'
+import { Order } from '@/lib/api'
 
 // Mock wrapper for modal state
 const meta: Meta<typeof PaymentModal> = {
@@ -68,7 +69,7 @@ const mockOrder = {
 export const Default: Story = {
   args: {
     open: true,
-    order: mockOrder as any, // Type cast for simplified mock
+    order: mockOrder as unknown as Order,
     onProcessPayment: async () => new Promise((resolve) => setTimeout(resolve, 1000)),
     onMarkItemsPaid: async () => new Promise((resolve) => setTimeout(resolve, 500))
   }
@@ -80,6 +81,6 @@ export const PartialPayment: Story = {
     order: {
       ...mockOrder,
       payments: [{ id: 'pay1', amount: 500, method: 'CASH', createdAt: new Date() }]
-    } as any
+    } as unknown as Order
   }
 }

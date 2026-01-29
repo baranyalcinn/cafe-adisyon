@@ -1,5 +1,3 @@
-import React from 'react'
-
 import './button.css'
 
 export interface ButtonProps {
@@ -22,7 +20,7 @@ export const Button = ({
   backgroundColor,
   label,
   ...props
-}: ButtonProps) => {
+}: ButtonProps): React.JSX.Element => {
   const mode = primary ? 'storybook-button--primary' : 'storybook-button--secondary'
   return (
     <button

@@ -33,6 +33,7 @@
     "@tanstack/react-query-devtools": "^5.91.2",
     "bufferutil": "^4.1.0",
     "detect-libc": "^2.0.2",
+    "framer-motion": "^12.29.2",
     "js-base64": "^3.7.7",
     "libsql": "^0.5.22",
     "react-error-boundary": "^6.1.0",

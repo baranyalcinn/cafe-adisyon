@@ -1,5 +1,7 @@
 import React, { useState, useCallback, useRef } from 'react'
-import { Trash2, CreditCard, CheckCircle, Lock, LockOpen, ShoppingBag } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { Trash2, CheckCircle, Lock, LockOpen, ShoppingBag } from 'lucide-react'
+import { useSound } from '@/hooks/useSound'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
@@ -7,6 +9,7 @@ import { cn, formatCurrency } from '@/lib/utils'
 import { soundManager } from '@/lib/sound'
 import { Order } from '@/lib/api'
 import { QuantitySelector } from '@/components/ui/QuantitySelector'
+import { useFlyingCartStore } from '@/stores/useFlyingCartStore'
 
 interface CartPanelProps {
   order: Order | null | undefined
@@ -31,6 +34,26 @@ export function CartPanel({
 
   // Debounce refs for quantity updates
   const debounceTimers = useRef<Map<string, NodeJS.Timeout>>(new Map())
+  const cartTargetRef = useRef<HTMLDivElement>(null)
+  const setTargetRect = useFlyingCartStore((state) => state.setTargetRect)
+  const { playAdd, playRemove, playClick } = useSound()
+
+  React.useEffect((): (() => void) => {
+    const updateRect = (): void => {
+      if (cartTargetRef.current) {
+        setTargetRect(cartTargetRef.current.getBoundingClientRect())
+      }
+    }
+
+    // Initial update with a small delay to ensure layout is stable
+    const timer = setTimeout(updateRect, 100)
+    window.addEventListener('resize', updateRect)
+
+    return () => {
+      window.removeEventListener('resize', updateRect)
+      clearTimeout(timer)
+    }
+  }, [setTargetRect])
 
   // Calculate totals from order data
   const total = order?.totalAmount || 0
@@ -66,7 +89,15 @@ export function CartPanel({
         return
       }
 
-      soundManager.playBeep()
+      // Determine if it's an increment or decrement for sound feedback
+      const currentQuantity = item?.quantity || 0
+      const isIncrease = newQuantity > currentQuantity
+
+      if (isIncrease) {
+        playAdd()
+      } else {
+        playRemove()
+      }
 
       // Clear existing timer for this product
       const existingTimer = debounceTimers.current.get(productId)
@@ -95,7 +126,7 @@ export function CartPanel({
         debounceTimers.current.set(productId, timer)
       }
     },
-    [isLocked, order?.items, onRemoveItem, onUpdateItem]
+    [isLocked, order?.items, onUpdateItem, onRemoveItem, playAdd, playRemove]
   )
 
   const handleConfirmDelete = async (): Promise<void> => {
@@ -106,119 +137,156 @@ export function CartPanel({
   }
 
   return (
-    <div className="w-96 glass-panel cart-panel-accent border-l border-border/30 !border-t-0 flex flex-col h-full animate-in slide-in-from-right duration-700 relative overflow-hidden shadow-2xl">
+    <div
+      className="w-96 glass-panel cart-panel-accent border-l border-border/30 !border-t-0 flex flex-col h-full animate-in slide-in-from-right duration-700 relative overflow-hidden shadow-2xl"
+      style={{ willChange: 'transform' }}
+    >
       {/* Premium Glass Effect Background */}
 
-      <div className="z-10 relative h-14 px-5 border-b border-border/10 bg-background/50 flex items-center justify-between flex-shrink-0">
-        <div className="flex items-center gap-2.5">
-          <h3 className="text-[17px] font-bold tracking-tight text-foreground/90">Adisyon</h3>
-          {order?.items && order.items.length > 0 && (
-            <span className="px-2 py-0.5 bg-muted/40 text-muted-foreground text-[11px] font-semibold rounded-lg border border-border/5">
-              {order.items.reduce((sum, item) => sum + item.quantity, 0)} Ürün
-            </span>
-          )}
+      <div className="shrink-0 p-4 pb-2 z-20">
+        <div className="relative rounded-2xl bg-muted/30 border border-white/5 p-3.5 pr-2.5 flex items-center justify-between gap-3 overflow-hidden shadow-sm">
+          {/* Ambient Background */}
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-transparent pointer-events-none" />
+
+          {/* Left: Icon & Info */}
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div className="flex flex-col min-w-0 relative z-10">
+              <div className="flex items-center gap-2 mb-0.5">
+                <h2 className="text-sm font-bold leading-none tracking-tight text-foreground">
+                  Adisyon
+                </h2>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                <span>{order?.items?.length || 0} Ürün</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Actions */}
+          <div className="flex items-center gap-0.5 relative z-10">
+            {/* Toggle Lock Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onToggleLock}
+              className={cn(
+                'h-8 w-8 rounded-lg transition-colors',
+                isLocked
+                  ? 'text-amber-500 bg-amber-500/10 hover:bg-amber-500/20'
+                  : 'text-muted-foreground/40 hover:text-foreground hover:bg-muted/60'
+              )}
+              title={isLocked ? 'Masayı Aç' : 'Masayı Kilitle'}
+            >
+              {isLocked ? <Lock className="w-4 h-4" /> : <LockOpen className="w-4 h-4" />}
+            </Button>
+
+            {/* Clear Table Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn(
+                'h-8 w-8 rounded-lg transition-colors',
+                !order?.items?.length
+                  ? 'opacity-0 pointer-events-none'
+                  : 'text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10'
+              )}
+              onClick={() => setShowDeleteDialog(true)}
+              disabled={!order?.items || order.items.length === 0}
+              title="Masayı Boşalt"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
-        {order?.items && order.items.length > 0 && (
-          <Button
-            variant={isLocked ? 'default' : 'ghost'}
-            size="sm"
-            onClick={onToggleLock}
-            className={cn(
-              'h-8 gap-2 rounded-lg px-3 text-[11px] font-semibold transition-all duration-300',
-              isLocked
-                ? 'bg-warning/90 hover:bg-warning text-white shadow-sm'
-                : 'text-muted-foreground/60 hover:text-foreground hover:bg-muted/50'
-            )}
-          >
-            {isLocked ? (
-              <>
-                <Lock className="w-3.5 h-3.5" />
-                Kilitli
-              </>
-            ) : (
-              <>
-                <LockOpen className="w-3.5 h-3.5" />
-                Kilitle
-              </>
-            )}
-          </Button>
-        )}
       </div>
 
       <div className="flex-1 min-h-0 overflow-hidden relative z-10 flex flex-col">
         {order?.items && order.items.length > 0 ? (
           <ScrollArea className="flex-1 min-h-0">
             <div className="p-4 flex flex-col gap-2">
-              {[...order.items]
-                .sort((a, b) => {
-                  const aIsPaid = a.isPaid ? 1 : 0
-                  const bIsPaid = b.isPaid ? 1 : 0
-                  return (
-                    aIsPaid - bIsPaid ||
-                    (a.product?.name || '').localeCompare(b.product?.name || '', undefined, {
-                      numeric: true
-                    })
-                  )
-                })
-                .map((item) => {
-                  // If product field is missing in optimistic update, use what we have or placeholder
-                  const productName = item.product?.name || 'Yeni Ürün'
+              <AnimatePresence mode="popLayout" initial={false}>
+                {[...order.items]
+                  .sort((a, b) => {
+                    const aIsPaid = a.isPaid ? 1 : 0
+                    const bIsPaid = b.isPaid ? 1 : 0
+                    return (
+                      aIsPaid - bIsPaid ||
+                      (a.product?.name || '').localeCompare(b.product?.name || '', undefined, {
+                        numeric: true
+                      })
+                    )
+                  })
+                  .map((item) => {
+                    // If product field is missing in optimistic update, use what we have or placeholder
+                    const productName = item.product?.name || 'Yeni Ürün'
 
-                  return (
-                    <div
-                      key={item.id}
-                      className={cn(
-                        'flex flex-wrap items-center justify-between gap-x-2 gap-y-2 py-2 px-2.5 rounded-xl border transition-all duration-200 relative overflow-hidden',
-                        item.isPaid
-                          ? 'bg-success/[0.03] border-success/10 opacity-50 border-l-2 border-l-success/40'
-                          : 'bg-card/80 border-white/5 hover:bg-card hover:border-primary/10 border-l-2 border-l-primary/30 hover:shadow-sm'
-                      )}
-                    >
-                      {/* Name and Quantity Group */}
-                      <div className="flex items-baseline gap-1 flex-1 min-w-[160px]">
-                        <div className="shrink-0 flex justify-start min-w-[1.1rem]">
-                          {item.quantity > 1 && (
-                            <span className="text-[13px] font-black text-rose-600 tabular-nums">
-                              x{item.quantity}
-                            </span>
+                    return (
+                      <motion.div
+                        layout
+                        key={item.id}
+                        initial={{ opacity: 0, x: -20, scale: 0.95 }}
+                        animate={{ opacity: 1, x: 0, scale: 1 }}
+                        exit={{ opacity: 0, x: 20, scale: 0.95, transition: { duration: 0.2 } }}
+                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                        className={cn(
+                          'premium-item flex flex-wrap items-center justify-between gap-x-2 gap-y-2 py-2 px-2.5 pl-3.5',
+                          item.isPaid ? 'opacity-50' : ''
+                        )}
+                      >
+                        {/* Premium Status Strip */}
+                        <div
+                          className={cn(
+                            'absolute left-0 top-0 bottom-0 w-1 transition-colors duration-300',
+                            item.isPaid ? 'bg-success/50' : 'bg-primary/50'
+                          )}
+                        />
+
+                        {/* Name and Quantity Group */}
+                        <div className="flex items-baseline gap-1 flex-1 min-w-[160px]">
+                          <div className="shrink-0 flex justify-start min-w-[1.1rem]">
+                            {item.quantity > 1 && (
+                              <span className="text-[13px] font-black text-rose-600 tabular-nums">
+                                x{item.quantity}
+                              </span>
+                            )}
+                          </div>
+                          <p
+                            className={cn(
+                              'font-bold text-[14px] tracking-tight leading-snug break-words',
+                              item.isPaid ? 'text-muted-foreground' : 'text-foreground/90'
+                            )}
+                          >
+                            {productName.replace(/([a-z])([A-Z])/g, '$1 $2')}
+                          </p>
+                        </div>
+
+                        {/* Price and Controls Group */}
+                        <div className="flex items-center gap-3 ml-auto">
+                          <p className="text-[13px] font-bold text-foreground/80 tabular-nums">
+                            {formatCurrency(item.unitPrice * item.quantity)}
+                          </p>
+
+                          {!item.isPaid ? (
+                            <QuantitySelector
+                              quantity={item.quantity}
+                              onUpdate={(newQty) =>
+                                handleUpdateQuantity(item.id, item.productId, newQty)
+                              }
+                              isLocked={isLocked}
+                            />
+                          ) : (
+                            <div className="px-2.5 py-1 bg-success/15 rounded-lg border border-success/20 flex items-center gap-1.5 shadow-sm">
+                              <CheckCircle className="w-3 h-3 text-success animate-in zoom-in duration-300" />
+                              <span className="text-[10px] font-black text-success uppercase tracking-tighter">
+                                ÖDENDİ
+                              </span>
+                            </div>
                           )}
                         </div>
-                        <p
-                          className={cn(
-                            'font-bold text-[14px] tracking-tight leading-snug break-words',
-                            item.isPaid ? 'text-muted-foreground' : 'text-foreground/90'
-                          )}
-                        >
-                          {productName.replace(/([a-z])([A-Z])/g, '$1 $2')}
-                        </p>
-                      </div>
-
-                      {/* Price and Controls Group */}
-                      <div className="flex items-center gap-3 ml-auto">
-                        <p className="text-[13px] font-bold text-foreground/80 tabular-nums">
-                          {formatCurrency(item.unitPrice * item.quantity)}
-                        </p>
-
-                        {!item.isPaid ? (
-                          <QuantitySelector
-                            quantity={item.quantity}
-                            onUpdate={(newQty) =>
-                              handleUpdateQuantity(item.id, item.productId, newQty)
-                            }
-                            isLocked={isLocked}
-                          />
-                        ) : (
-                          <div className="px-2 py-0.5 bg-success/10 rounded-md border border-success/15 flex items-center gap-1">
-                            <CheckCircle className="w-2.5 h-2.5 text-success" />
-                            <span className="text-[9px] font-bold text-success uppercase">
-                              Ödendi
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
+                      </motion.div>
+                    )
+                  })}
+              </AnimatePresence>
             </div>
           </ScrollArea>
         ) : (
@@ -237,51 +305,48 @@ export function CartPanel({
         )}
       </div>
 
-      <div className="p-4 border-t border-border/10 space-y-3 bg-background/50 relative z-10">
-        <div className="space-y-2">
-          {paidAmount > 0 && (
-            <div className="flex justify-between items-center px-4 py-2.5 rounded-xl bg-success/5 border border-success/10">
-              <span className="text-[11px] font-bold text-success/70">Ödenen Ara Toplam</span>
-              <span className="text-[13px] font-bold text-success tabular-nums">
-                {formatCurrency(paidAmount)}
-              </span>
-            </div>
-          )}
+      <div className="p-4 border-t border-border/10 bg-background/50 relative z-10">
+        <div className="flex flex-col gap-3.5 mb-3.5">
+          {/* Combined Balance Card - Paid & Remaining in same box */}
+          <div className="relative group p-6 premium-card ambient-glow overflow-hidden">
+            <div className="absolute right-0 top-0 h-24 w-24 translate-x-8 -translate-y-8 rounded-full bg-primary/5 blur-2xl" />
 
-          {/* Total Amount Card - Minimalist Version */}
-          <div className="relative overflow-hidden rounded-2xl bg-muted/20 border border-border/5 p-4 transition-all">
-            <div className="flex justify-between items-end relative z-10">
-              <div className="flex flex-col">
-                <span className="text-[12px] font-semibold text-muted-foreground/80 mb-0.5">
+            <div className="relative z-10 flex items-end justify-between">
+              <div className="flex flex-col text-left">
+                <span className="text-[11px] font-bold text-muted-foreground/50 uppercase tracking-[0.1em] mb-1">
                   {paidAmount > 0 ? 'Ödenecek Kalan' : 'Toplam'}
                 </span>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-black text-foreground tabular-nums tracking-tight">
-                    {formatCurrency(remainingAmount)}
+                <span className="text-4xl font-black text-foreground tabular-nums tracking-tighter leading-none pt-1">
+                  {formatCurrency(remainingAmount)}
+                </span>
+              </div>
+
+              {/* Paid Status inside the same box on the right */}
+              {paidAmount > 0 && (
+                <div className="flex flex-col items-end text-right animate-in fade-in slide-in-from-right-2 duration-500">
+                  <span className="text-[10px] font-bold text-success/60 uppercase tracking-widest mb-1">
+                    Ödenen
+                  </span>
+                  <span className="text-lg font-black text-success tabular-nums leading-none">
+                    {formatCurrency(paidAmount)}
                   </span>
                 </div>
-              </div>
-              <div className="p-2 rounded-xl bg-background/50 border border-border/5">
-                <CreditCard className="w-5 h-5 text-muted-foreground/40" />
-              </div>
+              )}
             </div>
           </div>
         </div>
 
         <Button
-          className={cn(
-            'w-full gap-3 h-14 text-base font-bold rounded-2xl transition-all active:scale-[0.98] group/pay relative overflow-hidden shadow-lg',
-            remainingAmount > 0
-              ? 'bg-primary text-primary-foreground shadow-primary/20 hover:shadow-primary/30'
-              : 'bg-muted text-muted-foreground'
-          )}
-          size="lg"
+          className="premium-button group/pay active:scale-95 transition-all hover:scale-[1.02] shadow-xl hover:shadow-primary/25"
           disabled={!order?.items || order.items.length === 0 || remainingAmount <= 0}
-          onClick={onPaymentClick}
+          onClick={() => {
+            playClick()
+            onPaymentClick()
+          }}
         >
-          <span>Ödeme Al</span>
-          <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center group-hover/pay:bg-white/20 transition-colors">
-            <CheckCircle className="w-3.5 h-3.5" />
+          <span className="relative z-10 uppercase tracking-widest text-sm">Ödeme Al</span>
+          <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center transition-transform duration-300 group-hover/pay:scale-110 relative z-10">
+            <CheckCircle className="w-4 h-4" />
           </div>
         </Button>
       </div>

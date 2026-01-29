@@ -289,7 +289,7 @@ export function SettingsView({
               <button
                 key={item.id}
                 onClick={() => setActiveView(item.id)}
-                className="group relative flex h-full min-h-[170px] flex-col items-start rounded-2xl border bg-card p-6 text-left transition-all duration-200 hover:-translate-y-1 hover:shadow-xl hover:bg-accent/50"
+                className="group relative flex h-full min-h-[170px] flex-col items-start premium-card ambient-glow p-6 text-left hover:bg-accent/5"
               >
                 <div
                   className={cn(
@@ -401,7 +401,7 @@ export function SettingsView({
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in slide-in-from-bottom-4 duration-500">
               {/* Left Column: Appearance & Preferences */}
               <div className="space-y-6">
-                <Card className="shadow-sm border-muted/60 overflow-hidden rounded-xl">
+                <Card className="premium-card ambient-glow overflow-hidden">
                   <CardHeader className="bg-muted/10 pb-4 pt-5 px-6">
                     <CardTitle className="flex items-center gap-2 text-base font-bold">
                       <Palette className="w-5 h-5 text-primary" />
@@ -532,7 +532,7 @@ export function SettingsView({
               {/* Right Column: Security & System */}
               <div className="space-y-6">
                 {/* Security Card */}
-                <Card className="shadow-sm border-muted/60 overflow-hidden rounded-xl">
+                <Card className="premium-card ambient-glow overflow-hidden">
                   <CardHeader className="bg-muted/10 pb-4 pt-5 px-6">
                     <div className="flex items-center justify-between">
                       <CardTitle className="flex items-center gap-2 text-base font-bold">
@@ -764,7 +764,7 @@ export function SettingsView({
                 </Card>
 
                 {/* System Actions */}
-                <Card className="shadow-sm border-muted/60 rounded-xl overflow-hidden">
+                <Card className="premium-card ambient-glow overflow-hidden">
                   <CardHeader className="bg-muted/10 pb-4 pt-5 px-6">
                     <CardTitle className="text-base font-bold flex items-center gap-2">
                       <Activity className="w-5 h-5 text-blue-500" />
@@ -866,19 +866,47 @@ export function SettingsView({
             </div>
           )}
 
-          {activeView === 'tables' && <TablesTab />}
+          {activeView === 'tables' && (
+            <div className="animate-in slide-in-from-bottom-4 duration-500">
+              <TablesTab />
+            </div>
+          )}
 
-          {activeView === 'categories' && <CategoriesTab />}
+          {activeView === 'categories' && (
+            <div className="animate-in slide-in-from-bottom-4 duration-500">
+              <CategoriesTab />
+            </div>
+          )}
 
-          {activeView === 'products' && <ProductsTab />}
+          {activeView === 'products' && (
+            <div className="animate-in slide-in-from-bottom-4 duration-500">
+              <ProductsTab />
+            </div>
+          )}
 
-          {activeView === 'expenses' && <ExpensesTab />}
+          {activeView === 'expenses' && (
+            <div className="animate-in slide-in-from-bottom-4 duration-500">
+              <ExpensesTab />
+            </div>
+          )}
 
-          {activeView === 'dashboard' && <DashboardView />}
+          {activeView === 'dashboard' && (
+            <div className="animate-in slide-in-from-bottom-4 duration-500 h-full">
+              <DashboardView />
+            </div>
+          )}
 
-          {activeView === 'logs' && <LogsTab />}
+          {activeView === 'logs' && (
+            <div className="animate-in slide-in-from-bottom-4 duration-500">
+              <LogsTab />
+            </div>
+          )}
 
-          {activeView === 'maintenance' && <MaintenanceTab />}
+          {activeView === 'maintenance' && (
+            <div className="animate-in slide-in-from-bottom-4 duration-500">
+              <MaintenanceTab />
+            </div>
+          )}
         </div>
       </div>
     </div>

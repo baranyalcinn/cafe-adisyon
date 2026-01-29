@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, Search, Star, LayoutGrid, List } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
@@ -14,6 +15,7 @@ import { CartPanel } from './CartPanel'
 import { PaymentModal } from '../payments/PaymentModal'
 import { cn } from '@/lib/utils'
 import { Product } from '@/lib/api'
+import { useSound } from '@/hooks/useSound'
 
 interface OrderViewProps {
   onBack: () => void
@@ -25,6 +27,7 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
   // Hooks
   const { products, categories, isLoading: isInventoryLoading } = useInventory()
   const { data: tables = [] } = useTables()
+  const { playTabChange, playSuccess } = useSound()
   const {
     order,
     addItem,
@@ -70,23 +73,28 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [onBack])
 
-  const filteredProducts = products.filter((product) => {
-    const matchesSearch = searchQuery
-      ? product.name.toLowerCase().includes(searchQuery.toLowerCase())
-      : true
-    const matchesCategory = activeCategory ? product.categoryId === activeCategory : true
-    return matchesSearch && matchesCategory
-  })
+  const filteredProducts = useMemo(() => {
+    const filtered = products.filter((product) => {
+      const matchesSearch = searchQuery
+        ? product.name.toLowerCase().includes(searchQuery.toLowerCase())
+        : true
+      const matchesCategory = activeCategory ? product.categoryId === activeCategory : true
+      return matchesSearch && matchesCategory
+    })
 
-  // Group by category if needed, or just sort
-  filteredProducts.sort((a, b) => a.name.localeCompare(b.name))
+    // Group by category if needed, or just sort
+    return filtered.sort((a, b) => a.name.localeCompare(b.name))
+  }, [products, searchQuery, activeCategory])
 
   const favoriteProducts = products.filter((p) => p.isFavorite)
 
-  const handleAddToCart = (product: Product): void => {
-    // Optimistic update handled in useOrder
-    addItem({ product, quantity: 1 })
-  }
+  const handleAddToCart = useCallback(
+    (product: Product): void => {
+      // Optimistic update handled in useOrder
+      addItem({ product, quantity: 1 })
+    },
+    [addItem]
+  )
 
   return (
     <div className="flex h-full bg-background">
@@ -143,7 +151,10 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
                       'w-full justify-start h-11 rounded-xl gap-3 px-4 font-bold transition-all',
                       activeCategory === null && 'bg-primary/10 text-primary border-primary/20'
                     )}
-                    onClick={() => setActiveCategory(null)}
+                    onClick={() => {
+                      setActiveCategory(null)
+                      playTabChange()
+                    }}
                   >
                     <LayoutGrid className="w-4 h-4" />
                     Tümü
@@ -157,7 +168,10 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
                         activeCategory === category.id &&
                           'bg-primary/10 text-primary border-primary/20'
                       )}
-                      onClick={() => setActiveCategory(category.id)}
+                      onClick={() => {
+                        setActiveCategory(category.id)
+                        playTabChange()
+                      }}
                     >
                       {getCategoryIcon(category.icon, 'w-4 h-4')}
                       {category.name}
@@ -251,7 +265,8 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
                 ))}
               </div>
             ) : (
-              <div
+              <motion.div
+                layout
                 className={cn(
                   'gap-2.5',
                   viewMode === 'grid'
@@ -259,16 +274,26 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
                     : 'flex flex-col max-w-4xl mx-auto px-4'
                 )}
               >
-                {filteredProducts.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    compact={viewMode === 'list'}
-                    isLocked={isLocked}
-                    onAdd={handleAddToCart}
-                  />
-                ))}
-              </div>
+                <AnimatePresence mode="popLayout">
+                  {filteredProducts.map((product) => (
+                    <motion.div
+                      layout
+                      key={product.id}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <ProductCard
+                        product={product}
+                        compact={viewMode === 'list'}
+                        isLocked={isLocked}
+                        onAdd={handleAddToCart}
+                      />
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </motion.div>
             )}
 
             {!isInventoryLoading && filteredProducts.length === 0 && (
@@ -291,16 +316,23 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
         onDeleteOrder={(orderId) => deleteOrder(orderId)}
       />
 
-      {/* Payment Modal */}
       <PaymentModal
         open={isPaymentOpen}
         onClose={() => setIsPaymentOpen(false)}
-        onPaymentComplete={onBack}
         order={order}
         onProcessPayment={async (amount, method) => {
           await processPayment({ amount, method })
+          return Promise.resolve()
         }}
-        onMarkItemsPaid={markItemsPaid}
+        onMarkItemsPaid={async (items) => {
+          await markItemsPaid(items)
+          return Promise.resolve()
+        }}
+        onPaymentComplete={() => {
+          setIsPaymentOpen(false)
+          playSuccess()
+          // Optional: onBack() if we want to leave order view after full payment
+        }}
       />
     </div>
   )

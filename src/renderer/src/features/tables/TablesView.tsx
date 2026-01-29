@@ -46,13 +46,17 @@ const TableCard = memo(
         <ContextMenuTrigger asChild>
           <button
             onClick={onClick}
+            style={
+              {
+                '--color-border': isLocked
+                  ? 'var(--color-warning)'
+                  : hasOpenOrder
+                    ? 'var(--color-info)'
+                    : 'var(--color-success)'
+              } as React.CSSProperties
+            }
             className={cn(
-              'group relative flex flex-col items-center justify-center gap-4 p-8 rounded-2xl border transition-all duration-300 cursor-pointer overflow-hidden',
-              'hover:shadow-lg active:scale-95',
-              hasOpenOrder
-                ? 'bg-info/8 border-info/30 hover:border-info/50'
-                : 'bg-success/8 border-success/30 hover:border-success/50',
-              isLocked && 'bg-warning/8 border-warning/30 hover:border-warning/50'
+              'group relative flex flex-col items-center justify-center gap-4 p-8 premium-card ambient-glow cursor-pointer overflow-hidden active:scale-95'
             )}
           >
             {/* Subtle Glow Effect */}

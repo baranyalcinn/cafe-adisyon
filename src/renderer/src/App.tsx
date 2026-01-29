@@ -10,6 +10,7 @@ import '@/styles/globals.css'
 import { Toaster } from '@/components/ui/toaster'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { TitleBar } from '@/components/TitleBar'
+import { AnimatePresence, motion } from 'framer-motion'
 
 // Lazy load SettingsView (not used frequently)
 const SettingsView = lazy(() =>
@@ -81,6 +82,7 @@ function App(): React.JSX.Element {
   return (
     <>
       <TitleBar />
+
       <div className="fixed inset-0 top-10 flex bg-background">
         <aside className="w-20 h-full flex flex-col items-center py-6 px-2 bg-card/80 backdrop-blur-xl border-r z-50">
           <div className="flex flex-col items-center mb-8 group cursor-default select-none">
@@ -153,19 +155,54 @@ function App(): React.JSX.Element {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 h-full overflow-hidden">
-          {currentView === 'tables' && <TablesView onTableSelect={handleTableSelect} />}
-          {currentView === 'order' && <OrderView onBack={handleBackToTables} />}
-          {currentView === 'settings' && (
-            <Suspense fallback={<LoadingFallback />}>
-              <SettingsView
-                isDark={isDark}
-                onThemeToggle={toggleTheme}
-                colorScheme={colorScheme}
-                onColorSchemeChange={handleColorSchemeChange}
-              />
-            </Suspense>
-          )}
+        <main className="flex-1 h-full overflow-hidden relative bg-muted/10">
+          <AnimatePresence mode="wait" initial={false}>
+            {currentView === 'tables' && (
+              <motion.div
+                key="tables"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
+                className="h-full"
+              >
+                <TablesView onTableSelect={handleTableSelect} />
+              </motion.div>
+            )}
+
+            {currentView === 'order' && (
+              <motion.div
+                key="order"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
+                className="h-full"
+              >
+                <OrderView onBack={handleBackToTables} />
+              </motion.div>
+            )}
+
+            {currentView === 'settings' && (
+              <motion.div
+                key="settings"
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.98 }}
+                transition={{ duration: 0.2 }}
+                className="h-full"
+              >
+                <Suspense fallback={<LoadingFallback />}>
+                  <SettingsView
+                    isDark={isDark}
+                    onThemeToggle={toggleTheme}
+                    colorScheme={colorScheme}
+                    onColorSchemeChange={handleColorSchemeChange}
+                  />
+                </Suspense>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </main>
         <Toaster />
       </div>
