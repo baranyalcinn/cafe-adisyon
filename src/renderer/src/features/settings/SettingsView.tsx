@@ -38,7 +38,7 @@ import {
 } from '@/components/ui/select'
 import { DashboardView } from '@/features/dashboard/DashboardView'
 import { cafeApi } from '@/lib/api'
-import { type ColorScheme } from '@/App'
+import { type ColorScheme } from '@/hooks/useTheme'
 import { TablesTab } from './tabs/TablesTab'
 import { CategoriesTab } from './tabs/CategoriesTab'
 import { ProductsTab } from './tabs/ProductsTab'

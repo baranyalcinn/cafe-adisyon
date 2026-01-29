@@ -43,12 +43,24 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
   const [searchQuery, setSearchQuery] = useState('')
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [isPaymentOpen, setIsPaymentOpen] = useState(false)
+  // Defer rendering of heavy content to allow animation to start smoothly
+  const [isReady, setIsReady] = useState(false)
+
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
     return (localStorage.getItem('orderViewMode') as 'grid' | 'list') || 'grid'
   })
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   const selectedTable = tables.find((t) => t.id === selectedTableId)
+
+  // Use double requestAnimationFrame to ensure the first frame (animation start) is painted
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setIsReady(true)
+      })
+    })
+  }, [])
 
   // Keyboard shortcuts: Ctrl+F for search, ESC to go back
   useEffect(() => {
@@ -257,7 +269,7 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
 
         <ScrollArea className="flex-1 h-full">
           <div className="p-4 pb-10">
-            {isInventoryLoading ? (
+            {isInventoryLoading || !isReady ? (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {/* Product Skeletons */}
                 {Array.from({ length: 8 }).map((_, i) => (

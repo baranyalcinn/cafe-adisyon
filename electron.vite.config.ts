@@ -43,6 +43,8 @@ export default defineConfig({
       })
     ],
     build: {
+      sourcemap: false,
+      target: 'node24', // Electron 40 uses Node 24
       commonjsOptions: {
         ignoreDynamicRequires: true
       },
@@ -58,7 +60,11 @@ export default defineConfig({
     }
   },
   preload: {
-    plugins: [externalizeDepsPlugin({ exclude: ['@electron-toolkit/preload'] })]
+    plugins: [externalizeDepsPlugin({ exclude: ['@electron-toolkit/preload'] })],
+    build: {
+      sourcemap: false,
+      target: 'node24'
+    }
   },
   renderer: {
     resolve: {
@@ -67,6 +73,32 @@ export default defineConfig({
         '@': resolve('src/renderer/src')
       }
     },
-    plugins: [react(), tailwindcss()]
+    plugins: [react(), tailwindcss()],
+    build: {
+      sourcemap: false,
+      target: 'chrome144', // Electron 40 uses Chrome ~134+
+      rollupOptions: {
+        output: {
+          manualChunks(id): string | void {
+            if (id.includes('node_modules')) {
+              if (
+                id.includes('react') ||
+                id.includes('react-dom') ||
+                id.includes('react-router') ||
+                id.includes('framer-motion') ||
+                id.includes('@tanstack') ||
+                id.includes('lucide') ||
+                id.includes('@radix-ui') ||
+                id.includes('clsx') ||
+                id.includes('tailwind-merge')
+              ) {
+                return 'vendor-core'
+              }
+              // Let other dependencies be handled by default splitting
+            }
+          }
+        }
+      }
+    }
   }
 })
