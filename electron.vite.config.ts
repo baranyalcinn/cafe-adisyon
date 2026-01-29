@@ -77,6 +77,10 @@ export default defineConfig({
     build: {
       sourcemap: false,
       target: 'chrome144', // Electron 40 uses Chrome ~134+
+      modulePreload: {
+        polyfill: false
+      },
+      cssCodeSplit: false,
       rollupOptions: {
         output: {
           manualChunks(id): string | void {
