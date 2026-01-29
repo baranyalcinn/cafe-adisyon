@@ -56,27 +56,32 @@ const TableCard = memo(
               } as React.CSSProperties
             }
             className={cn(
-              'group relative flex flex-col items-center justify-center gap-4 p-8 premium-card ambient-glow cursor-pointer overflow-hidden active:scale-95'
+              'group relative flex flex-col items-center justify-center gap-4 p-8 premium-card ambient-glow cursor-pointer overflow-hidden active:scale-95 transition-all duration-300',
+              'hover:shadow-2xl hover:-translate-y-1',
+              hasOpenOrder
+                ? 'bg-info/[0.04] hover:shadow-info/20'
+                : 'bg-success/[0.04] hover:shadow-success/20',
+              isLocked && 'bg-warning/[0.04] hover:shadow-warning/20'
             )}
           >
             {/* Subtle Glow Effect */}
             <div
               className={cn(
-                'absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl -z-10',
-                hasOpenOrder ? 'bg-info/8' : 'bg-success/8',
-                isLocked && 'bg-warning/8'
+                'absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-[80px] -z-10',
+                hasOpenOrder ? 'bg-info/20' : 'bg-success/20',
+                isLocked && 'bg-warning/20'
               )}
             />
 
             {isLocked && (
-              <div className="absolute top-4 left-4 bg-warning/20 p-2 rounded-xl ring-1 ring-warning/50 animate-in fade-in zoom-in duration-500">
-                <div className="w-4 h-4 text-warning">
+              <div className="absolute top-3 left-3 bg-warning/20 p-2 rounded-xl ring-2 ring-warning/30 animate-in fade-in zoom-in duration-500 z-10">
+                <div className="w-3.5 h-3.5 text-warning">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
-                    strokeWidth="2.5"
+                    strokeWidth="3"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     className="w-full h-full"
@@ -88,36 +93,27 @@ const TableCard = memo(
               </div>
             )}
 
-            {/* Status Indicator Dot */}
             <div
               className={cn(
-                'absolute top-5 right-5 w-2.5 h-2.5 rounded-full shadow-[0_0_10px_currentColor]',
-                hasOpenOrder
-                  ? 'bg-info text-info animate-pulse'
-                  : 'bg-success text-success shadow-none',
-                isLocked && 'bg-warning text-warning'
-              )}
-            />
-
-            <div
-              className={cn(
-                'p-4 rounded-2xl transition-all duration-300 group-hover:scale-105',
-                hasOpenOrder ? 'bg-info/10 text-info' : 'bg-success/10 text-success',
-                isLocked && 'bg-warning/10 text-warning'
+                'p-4.5 rounded-[2rem] transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-inner',
+                hasOpenOrder ? 'bg-info/20 text-info' : 'bg-success/20 text-success',
+                isLocked && 'bg-warning/20 text-warning'
               )}
             >
-              <Coffee className="w-10 h-10" />
+              <Coffee className="w-12 h-12" />
             </div>
 
-            <div className="text-center space-y-1">
-              <span className="text-base font-bold text-foreground/90 tracking-tight block">
+            <div className="text-center space-y-2">
+              <span className="text-lg font-black text-foreground tracking-tight block">
                 {name}
               </span>
               <div
                 className={cn(
-                  'text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md border bg-background/50',
-                  hasOpenOrder ? 'border-info/30 text-info' : 'border-success/30 text-success',
-                  isLocked && 'border-warning/30 text-warning'
+                  'text-[12px] uppercase font-black tracking-widest px-4 py-1.5 rounded-xl border-2 transition-colors',
+                  hasOpenOrder
+                    ? 'border-info/40 bg-info/15 text-info'
+                    : 'border-success/40 bg-success/15 text-success',
+                  isLocked && 'border-warning/40 bg-warning/15 text-warning'
                 )}
               >
                 {isLocked ? 'KİLİTLİ' : hasOpenOrder ? 'DOLU' : 'BOŞ'}
@@ -265,7 +261,7 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-8 pb-32">
+      <div className="flex-1 overflow-y-auto p-8 pb-12">
         {isLoading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-6">
             {Array.from({ length: 12 }).map((_, i) => (
