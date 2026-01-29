@@ -1,13 +1,16 @@
 /// <reference types="vitest" />
 import { resolve } from 'path'
-import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
+import { defineConfig } from 'electron-vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   main: {
-    plugins: [
-      externalizeDepsPlugin({
+    plugins: [],
+    build: {
+      sourcemap: false,
+      target: 'node24', // Electron 40 uses Node 24
+      externalizeDeps: {
         exclude: [
           '@electron-toolkit/utils',
           'zod',
@@ -40,11 +43,7 @@ export default defineConfig({
           'promise-limit',
           'node-domexception'
         ]
-      })
-    ],
-    build: {
-      sourcemap: false,
-      target: 'node24', // Electron 40 uses Node 24
+      },
       commonjsOptions: {
         ignoreDynamicRequires: true
       },
@@ -60,10 +59,13 @@ export default defineConfig({
     }
   },
   preload: {
-    plugins: [externalizeDepsPlugin({ exclude: ['@electron-toolkit/preload'] })],
+    plugins: [],
     build: {
       sourcemap: false,
-      target: 'node24'
+      target: 'node24',
+      externalizeDeps: {
+        exclude: ['@electron-toolkit/preload']
+      }
     }
   },
   renderer: {
