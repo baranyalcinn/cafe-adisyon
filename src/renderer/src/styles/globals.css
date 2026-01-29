@@ -408,7 +408,7 @@ textarea,
 
 /* Premium List Item (Compact version of premium-card) */
 .premium-item {
-  @apply relative rounded-xl bg-card/80 transition-all duration-200 overflow-hidden;
+  @apply relative rounded-xl bg-card/80 overflow-hidden;
   border: 1px solid transparent;
   background:
     linear-gradient(
@@ -555,3 +555,5 @@ textarea,
     transparent 100%
   );
 }
+
+

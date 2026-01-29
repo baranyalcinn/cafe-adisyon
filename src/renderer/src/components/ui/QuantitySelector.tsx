@@ -29,7 +29,7 @@ export function QuantitySelector({
           onUpdate(quantity - 1)
         }}
         className={cn(
-          'h-6 w-6 flex items-center justify-center rounded-full transition-all duration-200 active:scale-90',
+          'h-6 w-6 flex items-center justify-center rounded-full transition-all duration-200 active:scale-95',
           quantity === 1
             ? 'hover:bg-destructive/20 text-destructive/60 hover:text-destructive'
             : 'hover:bg-muted text-foreground/40 hover:text-foreground'
