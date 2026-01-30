@@ -278,50 +278,83 @@ export function PaymentModal({
 
   if (paymentComplete) {
     return (
-      <Dialog open={open} onOpenChange={handleClose}>
+      <Dialog open={open} onOpenChange={handleClose} key="success-modal">
         <DialogContent className="sm:max-w-md border-none p-0 overflow-hidden bg-transparent shadow-none">
-          <div className="relative animate-in zoom-in-95 duration-500">
+          <div className="relative">
             {/* Background Glow */}
             <div className="absolute inset-0 bg-success/10 blur-[60px] rounded-full" />
             {/* Main Content Card */}
-            <div className="relative bg-card/90 backdrop-blur-2xl border border-border/10 rounded-[2.5rem] p-10 flex flex-col items-center text-center shadow-2xl">
-              <div className="w-20 h-20 rounded-full bg-success/10 flex items-center justify-center mb-5">
-                <CheckCircle className="w-10 h-10 text-success" />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, filter: 'blur(10px)' }}
+              animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, scale: 0.9, filter: 'blur(10px)' }}
+              transition={{
+                type: 'spring',
+                damping: 25,
+                stiffness: 300,
+                mass: 0.5
+              }}
+              className="relative bg-card/95 backdrop-blur-3xl border border-border/10 dark:border-white/10 rounded-[2.5rem] p-12 flex flex-col items-center text-center shadow-[0_0_100px_-20px_rgba(34,197,94,0.3)]"
+            >
+              {/* Success Icon Animation Container */}
+              <div className="relative mb-8 pt-4">
+                <div className="absolute inset-0 bg-success/20 blur-[40px] rounded-full animate-pulse" />
+                <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-success to-success/50 p-[1px] shadow-[0_0_50px_-10px_rgba(34,197,94,0.5)]">
+                  <div className="w-full h-full rounded-full bg-background/80 dark:bg-black/40 backdrop-blur-xl flex items-center justify-center">
+                    <CheckCircle className="w-12 h-12 text-success drop-shadow-[0_0_15px_rgba(34,197,94,0.8)]" />
+                  </div>
+                </div>
               </div>
-              <h3 className="text-2xl font-bold text-foreground tracking-tight mb-1">
-                Ödeme Başarılı
-              </h3>
-              <p className="text-muted-foreground/70 text-sm mb-6">
-                İşlem kaydedildi ve masa boşaltıldı.
-              </p>
+
+              <div className="space-y-4 mb-10">
+                <h3 className="text-4xl font-black text-foreground dark:text-white tracking-tight drop-shadow-sm dark:drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]">
+                  Ödeme Başarılı
+                </h3>
+                <p className="text-lg text-muted-foreground/80 font-medium tracking-wide">
+                  İşlem onaylandı, masa hazır.
+                </p>
+              </div>
 
               {finalChange > 0 ? (
-                <div className="w-full space-y-4">
-                  <div className="h-px w-full bg-gradient-to-r from-transparent via-border/20 to-transparent" />
-                  <div className="py-4">
-                    <span className="text-[11px] font-semibold text-muted-foreground/60 mb-3 block">
-                      Müşteriye Verilecek
-                    </span>
-                    <div className="relative inline-block px-8 py-4 bg-warning/5 rounded-2xl border border-warning/10">
-                      <PremiumAmount amount={finalChange} size="3xl" color="warning" />
+                <div className="w-full space-y-8 animate-in slide-in-from-bottom-5 duration-700 delay-150">
+                  <div className="relative">
+                    <div className="absolute inset-x-12 top-0 h-px bg-gradient-to-r from-transparent via-border/20 dark:via-white/10 to-transparent" />
+
+                    <div className="py-8 relative">
+                      {/* Glow effect behind amount */}
+                      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-24 bg-warning/10 blur-[50px] rounded-full" />
+
+                      <span className="text-sm font-bold text-warning/90 uppercase tracking-[0.2em] mb-4 block drop-shadow-sm">
+                        Müşteriye Verilecek
+                      </span>
+
+                      <div className="relative inline-flex items-center justify-center p-8 min-w-[280px] bg-background/50 dark:bg-black/40 border border-border/10 dark:border-white/5 rounded-3xl backdrop-blur-md shadow-2xl">
+                        <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-warning/10 to-transparent opacity-50" />
+                        <PremiumAmount amount={finalChange} size="6xl" color="warning" />
+                      </div>
+
+                      <p className="mt-6 text-sm font-semibold text-warning/80 flex items-center justify-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-warning animate-pulse" />
+                        Para üstünü vermeyi unutmayın
+                      </p>
                     </div>
-                    <p className="mt-4 text-xs font-semibold text-warning/80">
-                      Para üstünü vermeyi unutmayın
-                    </p>
+
+                    <div className="absolute inset-x-12 bottom-0 h-px bg-gradient-to-r from-transparent via-border/20 dark:via-white/10 to-transparent" />
                   </div>
-                  <div className="h-px w-full bg-gradient-to-r from-transparent via-border/20 to-transparent" />
                 </div>
               ) : (
-                <div className="w-full flex items-center justify-center gap-2 px-5 py-2.5 bg-success/5 rounded-2xl border border-success/10 text-success font-semibold text-sm">
-                  <CheckCircle className="w-4 h-4" />
+                <div className="w-full flex items-center justify-center gap-3 px-8 py-5 bg-success/10 rounded-2xl border border-success/20 text-success text-lg font-bold shadow-[0_0_30px_-10px_rgba(34,197,94,0.2)]">
+                  <CheckCircle className="w-6 h-6 fill-current text-current/20" />
                   <span>Tam ödeme alındı</span>
                 </div>
               )}
 
-              <div className="mt-8 text-[10px] font-medium text-muted-foreground/40">
-                Bu pencere otomatik kapanacaktır
+              <div className="absolute bottom-6 left-0 right-0 text-center">
+                <p className="text-[11px] font-medium text-muted-foreground/40 dark:text-white/20 uppercase tracking-widest">
+                  Otomatik Kapanıyor
+                </p>
               </div>
-            </div>
+            </motion.div>
           </div>
         </DialogContent>
       </Dialog>
@@ -329,7 +362,7 @@ export function PaymentModal({
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={handleClose} key="payment-modal">
       <DialogContent className="sm:max-w-4xl p-0 gap-0 overflow-hidden h-[620px] flex flex-col md:flex-row rounded-[2.5rem] border-border/10 shadow-3xl bg-background [&>button]:hidden duration-500 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-bottom-12">
         {/* Left Side: Payment Methods and Modes */}
         <div className="flex-1 flex flex-col p-8 pb-6 bg-background">
@@ -725,7 +758,7 @@ export function PaymentModal({
 
                 <div className="relative">
                   <Input
-                    className="h-12 border-border/5 bg-background text-right font-mono text-xl font-bold rounded-xl focus-visible:ring-1 focus-visible:ring-primary/20 transition-all"
+                    className="h-20 border border-border/10 bg-background hover:bg-accent/50 focus:bg-accent/30 text-right font-mono text-3xl md:text-5xl font-bold rounded-2xl shadow-sm transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none placeholder:text-muted-foreground/20"
                     placeholder="₺0,00"
                     value={tenderedAmount}
                     onChange={(e) => handleTenderedChange(e.target.value)}
@@ -833,7 +866,8 @@ export function PaymentModal({
               disabled={
                 isProcessing ||
                 (paymentAmount <= 0 && !(paymentMode === 'items' && selectedTotal > 0)) ||
-                tendered > 0
+                tendered > 0 ||
+                rawCustomAmount > remainingAmount
               }
               onClick={() => handlePayment('CARD')}
             >

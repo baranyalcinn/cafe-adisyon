@@ -50,7 +50,8 @@ function ProductCardComponent({
           'flex items-center gap-3 py-2.5 px-3 rounded-2xl bg-card transition-all w-full text-left group relative overflow-hidden shadow-sm border border-border/5',
           isLocked
             ? 'opacity-50 cursor-not-allowed'
-            : 'hover:bg-primary/[0.02] hover:shadow-md hover:border-primary/10 active:scale-[0.98]'
+            : 'hover:bg-primary/[0.02] hover:shadow-md active:scale-[0.98]',
+          'hover:ring-2 hover:ring-primary hover:ring-offset-2 hover:ring-offset-background'
         )}
       >
         <div className="w-12 h-12 rounded-xl bg-muted/40 shrink-0 flex items-center justify-center group-hover:bg-primary/5 transition-colors">
@@ -80,8 +81,11 @@ function ProductCardComponent({
       onClick={handleClick}
       disabled={isLocked}
       className={cn(
-        'group premium-card ambient-glow relative flex flex-col p-3 w-full active:scale-95 cursor-pointer',
-        isLocked ? 'opacity-50 cursor-not-allowed' : ''
+        'group premium-card ambient-glow relative flex flex-col p-3 w-full active:scale-95 cursor-pointer transition-all duration-300',
+        isLocked ? 'opacity-50 cursor-not-allowed' : '',
+        // Double border effect on hover: Inner White, Outer Orange (using primary color or hardcoded orange if matches design)
+        // User image showed Orange. I'll use ring-orange-500.
+        'hover:ring-[3px] hover:ring-orange-500 hover:ring-offset-[3px] hover:ring-offset-background hover:z-10'
       )}
     >
       {product.isFavorite && (
@@ -120,9 +124,6 @@ export const ProductCard = memo(ProductCardComponent, (prevProps, nextProps) => 
     prevProps.product.name === nextProps.product.name &&
     prevProps.product.isFavorite === nextProps.product.isFavorite &&
     prevProps.compact === nextProps.compact &&
-    prevProps.isLocked === nextProps.isLocked // Added isLocked check
-    // onAdd function reference might change, but typically we want to avoid re-render if logic hasn't changed.
-    // However, if we pass a new anonymous function every time, this memo breaks.
-    // Parent should use useCallback for onAdd.
+    prevProps.isLocked === nextProps.isLocked
   )
 })

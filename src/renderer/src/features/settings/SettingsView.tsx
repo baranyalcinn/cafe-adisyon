@@ -367,7 +367,7 @@ export function SettingsView({
       {/* Detail Content */}
       <div
         className={cn(
-          'flex-1 bg-background',
+          'flex-1 bg-background min-h-0',
           ![
             'products',
             'dashboard',
@@ -867,25 +867,25 @@ export function SettingsView({
           )}
 
           {activeView === 'tables' && (
-            <div className="animate-in slide-in-from-bottom-4 duration-500">
+            <div className="animate-in slide-in-from-bottom-4 duration-500 h-full">
               <TablesTab />
             </div>
           )}
 
           {activeView === 'categories' && (
-            <div className="animate-in slide-in-from-bottom-4 duration-500">
+            <div className="animate-in slide-in-from-bottom-4 duration-500 h-full">
               <CategoriesTab />
             </div>
           )}
 
           {activeView === 'products' && (
-            <div className="animate-in slide-in-from-bottom-4 duration-500">
+            <div className="animate-in slide-in-from-bottom-4 duration-500 h-full">
               <ProductsTab />
             </div>
           )}
 
           {activeView === 'expenses' && (
-            <div className="animate-in slide-in-from-bottom-4 duration-500">
+            <div className="animate-in slide-in-from-bottom-4 duration-500 h-full">
               <ExpensesTab />
             </div>
           )}
@@ -897,13 +897,13 @@ export function SettingsView({
           )}
 
           {activeView === 'logs' && (
-            <div className="animate-in slide-in-from-bottom-4 duration-500">
+            <div className="animate-in slide-in-from-bottom-4 duration-500 h-full">
               <LogsTab />
             </div>
           )}
 
           {activeView === 'maintenance' && (
-            <div className="animate-in slide-in-from-bottom-4 duration-500">
+            <div className="animate-in slide-in-from-bottom-4 duration-500 h-full">
               <MaintenanceTab />
             </div>
           )}

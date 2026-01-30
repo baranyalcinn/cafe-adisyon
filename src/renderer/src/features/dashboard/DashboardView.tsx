@@ -137,6 +137,42 @@ function MonthlyTooltip({ active, payload, label }: CustomTooltipProps): React.J
   return null
 }
 
+interface ChartTickProps {
+  x?: number
+  y?: number
+  payload?: { value: string | number }
+  fontSize?: number
+  formatter?: (value: number) => string
+}
+
+const CustomYAxisTick = ({
+  x,
+  y,
+  payload,
+  fontSize = 11,
+  formatter
+}: ChartTickProps): React.JSX.Element | null => {
+  if (x === undefined || y === undefined || !payload) return null
+
+  const formattedValue = formatter ? formatter(payload.value as number) : payload.value
+
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <text
+        x={-8}
+        y={0}
+        dy={4}
+        textAnchor="end"
+        fill="currentColor"
+        fontSize={fontSize}
+        className="fill-muted-foreground/80 font-medium whitespace-nowrap"
+      >
+        {formattedValue}
+      </text>
+    </g>
+  )
+}
+
 export function DashboardView(): React.JSX.Element {
   const [stats, setStats] = useState<ExtendedDashboardStats | null>(null)
   const [revenueTrend, setRevenueTrend] = useState<RevenueTrendItem[]>([])
@@ -351,7 +387,7 @@ export function DashboardView(): React.JSX.Element {
                 <h3 className="text-sm font-black text-foreground uppercase tracking-wider">
                   Saatlik Satış Yoğunluğu
                 </h3>
-                <p className="text-[10px] font-medium text-muted-foreground/60">
+                <p className="text-[10px] font-bold text-muted-foreground/80">
                   Günün en yoğun saatleri
                 </p>
               </div>
@@ -365,8 +401,8 @@ export function DashboardView(): React.JSX.Element {
                   >
                     <defs>
                       <linearGradient id="hourlyGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
-                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                        <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={1} />
+                        <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.5} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid
@@ -387,7 +423,17 @@ export function DashboardView(): React.JSX.Element {
                       fontSize={11}
                       tickLine={false}
                       axisLine={false}
-                      tickFormatter={(value) => `₺${value}`}
+                      width={85}
+                      tick={
+                        <CustomYAxisTick
+                          formatter={(value: number) =>
+                            `${((value || 0) / 100).toLocaleString('tr-TR', {
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 0
+                            })} ₺`
+                          }
+                        />
+                      }
                       className="fill-muted-foreground"
                     />
                     <Tooltip
@@ -502,7 +548,18 @@ export function DashboardView(): React.JSX.Element {
                     fontSize={13}
                     tickLine={false}
                     axisLine={false}
-                    tickFormatter={(value) => formatCurrency(value)}
+                    width={90}
+                    tick={
+                      <CustomYAxisTick
+                        fontSize={13}
+                        formatter={(value: number) =>
+                          `${((value || 0) / 100).toLocaleString('tr-TR', {
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0
+                          })} ₺`
+                        }
+                      />
+                    }
                     className="fill-foreground"
                   />
                   <Tooltip content={<RevenueTooltip />} />
@@ -634,7 +691,13 @@ export function DashboardView(): React.JSX.Element {
                         fontSize={10}
                         tickLine={false}
                         axisLine={false}
-                        tickFormatter={(val) => `₺${(val / 1000).toFixed(0)}k`}
+                        width={75}
+                        tick={
+                          <CustomYAxisTick
+                            fontSize={10}
+                            formatter={(val: number) => `${(val / 100000).toFixed(0)}k ₺`}
+                          />
+                        }
                       />
                       <Tooltip content={<MonthlyTooltip />} />
                       <Legend verticalAlign="top" height={36} iconType="circle" />

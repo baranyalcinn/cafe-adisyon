@@ -13,7 +13,7 @@ import { ProductCard } from './ProductCard'
 import { getCategoryIcon } from './order-icons'
 import { CartPanel } from './CartPanel'
 import { PaymentModal } from '../payments/PaymentModal'
-import { cn } from '@/lib/utils'
+import { cn, formatCurrency } from '@/lib/utils'
 import { Product } from '@/lib/api'
 import { useSound } from '@/hooks/useSound'
 
@@ -108,6 +108,8 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
     [addItem]
   )
 
+  /* Keyboard navigation removed as per request */
+
   return (
     <div className="flex h-full bg-background">
       {/* Left Panel - Categories & Search */}
@@ -197,24 +199,36 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
               value="favorites"
               className="flex-1 p-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col min-h-0"
             >
-              <ScrollArea className="h-full w-full px-4">
-                <div className="flex flex-col gap-1.5 pr-2">
+              <div className="flex-1 w-full h-full overflow-y-auto px-4 custom-scrollbar">
+                <div className="flex flex-col gap-3 pr-1 pb-4 pt-1">
                   {favoriteProducts.map((product) => (
-                    <ProductCard
+                    <div
                       key={product.id}
-                      product={product}
-                      compact
-                      isLocked={isLocked}
-                      onAdd={handleAddToCart}
-                    />
+                      onClick={() => handleAddToCart(product)}
+                      className="group relative min-h-[4rem] h-auto w-full flex items-center justify-between p-2 rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 to-white/0 hover:from-primary/10 hover:to-primary/5 cursor-pointer transition-all duration-300 overflow-hidden shadow-sm hover:shadow-lg hover:border-primary/20 hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                      {/* Shine Effect */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-[200%] group-hover:animate-shine" />
+
+                      {/* Content */}
+                      <div className="flex-1 min-w-0 px-2.5 py-1 flex flex-col justify-center">
+                        <span className="font-bold text-sm text-foreground/90 leading-tight group-hover:text-primary transition-colors line-clamp-2 break-words">
+                          {product.name}
+                        </span>
+                        <span className="text-[11px] font-medium text-muted-foreground group-hover:text-primary/70 transition-colors">
+                          {formatCurrency(product.price)}
+                        </span>
+                      </div>
+                    </div>
                   ))}
                   {favoriteProducts.length === 0 && (
-                    <p className="text-sm text-muted-foreground text-center py-4">
-                      Favori ürün yok
-                    </p>
+                    <div className="flex flex-col items-center justify-center py-8 text-muted-foreground/50 gap-2">
+                      <Star className="w-8 h-8 opacity-20" />
+                      <p className="text-xs font-medium">Favori ürün yok</p>
+                    </div>
                   )}
                 </div>
-              </ScrollArea>
+              </div>
             </TabsContent>
           </Tabs>
         </div>

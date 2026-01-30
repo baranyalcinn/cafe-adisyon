@@ -4,7 +4,7 @@ import { cn, formatCurrency } from '@/lib/utils'
 interface PremiumAmountProps {
   amount: number
   className?: string
-  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl'
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl' | '7xl'
   color?: 'primary' | 'foreground' | 'muted' | 'success' | 'warning' | 'destructive'
   fontWeight?: 'semibold' | 'bold' | 'extrabold' | 'black'
 }
@@ -28,7 +28,11 @@ export const PremiumAmount: React.FC<PremiumAmountProps> = ({
     lg: 'text-xl',
     xl: 'text-2xl',
     '2xl': 'text-4xl',
-    '3xl': 'text-6xl'
+    '3xl': 'text-5xl',
+    '4xl': 'text-6xl',
+    '5xl': 'text-7xl',
+    '6xl': 'text-8xl',
+    '7xl': 'text-9xl'
   }
 
   const colorClasses = {

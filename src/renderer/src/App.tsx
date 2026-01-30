@@ -109,7 +109,7 @@ function App(): React.JSX.Element {
               initial="initial"
               animate="animate"
               exit="exit"
-              className="absolute inset-0 overflow-auto"
+              className="absolute inset-0 overflow-hidden"
             >
               <Suspense fallback={<LoadingFallback />}>
                 {currentView === 'tables' && <TablesView onTableSelect={handleTableSelect} />}
@@ -179,6 +179,7 @@ function LogoSection(): React.JSX.Element {
       <div className="flex flex-col items-center gap-1">
         <div className="flex items-center justify-center gap-0.5">
           <span className="text-2xl font-black text-rose-500">7</span>
+          <span className="text-2xl font-black text-rose-500/70">7</span>
           <span className="text-2xl font-black text-rose-500/40">7</span>
         </div>
         <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-[0.3em]">

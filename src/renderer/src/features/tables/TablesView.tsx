@@ -46,77 +46,81 @@ const TableCard = memo(
         <ContextMenuTrigger asChild>
           <button
             onClick={onClick}
+            className={cn(
+              'group relative flex flex-col items-center justify-center p-0 cursor-pointer transition-all duration-300',
+              'hover:-translate-y-1 active:scale-95 !overflow-visible'
+            )}
             style={
               {
-                '--color-border': isLocked
-                  ? 'var(--color-warning)'
+                '--focus-color': isLocked
+                  ? '#dc2626' // red-600
                   : hasOpenOrder
-                    ? 'var(--color-info)'
-                    : 'var(--color-success)'
+                    ? '#2563eb' // blue-600
+                    : '#059669' // emerald-600
               } as React.CSSProperties
             }
-            className={cn(
-              'group relative flex flex-col items-center justify-center gap-4 p-8 premium-card ambient-glow cursor-pointer overflow-hidden active:scale-95 transition-all duration-300 gpu-accelerated',
-              'hover:shadow-2xl hover:-translate-y-1',
-              hasOpenOrder
-                ? 'bg-info/[0.04] hover:shadow-info/20'
-                : 'bg-success/[0.04] hover:shadow-success/20',
-              isLocked && 'bg-warning/[0.04] hover:shadow-warning/20'
-            )}
           >
-            {/* Subtle Glow Effect */}
             <div
               className={cn(
-                'absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-[80px] -z-10',
-                hasOpenOrder ? 'bg-info/20' : 'bg-success/20',
-                isLocked && 'bg-warning/20'
-              )}
-            />
-
-            {isLocked && (
-              <div className="absolute top-3 left-3 bg-warning/20 p-2 rounded-xl ring-2 ring-warning/30 animate-in fade-in zoom-in duration-500 z-10">
-                <div className="w-3.5 h-3.5 text-warning">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="w-full h-full"
-                  >
-                    <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                  </svg>
-                </div>
-              </div>
-            )}
-
-            <div
-              className={cn(
-                'p-4.5 rounded-[2rem] transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-inner',
-                hasOpenOrder ? 'bg-info/20 text-info' : 'bg-success/20 text-success',
-                isLocked && 'bg-warning/20 text-warning'
+                'relative w-full h-full flex flex-col items-center justify-center gap-4 p-8 rounded-[2.5rem] overflow-hidden bg-background/50 backdrop-blur-sm',
+                hasOpenOrder ? 'bg-info/[0.04]' : 'bg-success/[0.04]',
+                isLocked && 'bg-warning/[0.04]'
               )}
             >
-              <Coffee className="w-12 h-12" />
-            </div>
-
-            <div className="text-center space-y-2">
-              <span className="text-lg font-black text-foreground tracking-tight block">
-                {name}
-              </span>
+              {/* Subtle Glow Effect */}
               <div
                 className={cn(
-                  'text-[12px] uppercase font-black tracking-widest px-4 py-1.5 rounded-xl border-2 transition-colors',
-                  hasOpenOrder
-                    ? 'border-info/40 bg-info/15 text-info'
-                    : 'border-success/40 bg-success/15 text-success',
-                  isLocked && 'border-warning/40 bg-warning/15 text-warning'
+                  'absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-[80px] -z-10',
+                  hasOpenOrder ? 'bg-info/20' : 'bg-success/20',
+                  isLocked && 'bg-warning/20'
+                )}
+              />
+
+              {isLocked && (
+                <div className="absolute top-3 left-3 bg-warning/20 p-2 rounded-xl ring-2 ring-warning/30 animate-in fade-in zoom-in duration-500 z-10">
+                  <div className="w-3.5 h-3.5 text-warning">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="w-full h-full"
+                    >
+                      <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                  </div>
+                </div>
+              )}
+
+              <div
+                className={cn(
+                  'p-4.5 rounded-[2rem] transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-inner',
+                  hasOpenOrder ? 'bg-info/20 text-info' : 'bg-success/20 text-success',
+                  isLocked && 'bg-warning/20 text-warning'
                 )}
               >
-                {isLocked ? 'KİLİTLİ' : hasOpenOrder ? 'DOLU' : 'BOŞ'}
+                <Coffee className="w-12 h-12" />
+              </div>
+
+              <div className="text-center space-y-2">
+                <span className="text-lg font-black text-foreground tracking-tight block">
+                  {name}
+                </span>
+                <div
+                  className={cn(
+                    'text-[12px] uppercase font-black tracking-widest px-4 py-1.5 rounded-xl border-2 transition-colors',
+                    hasOpenOrder
+                      ? 'border-info/40 bg-info/15 text-info'
+                      : 'border-success/40 bg-success/15 text-success',
+                    isLocked && 'border-warning/40 bg-warning/15 text-warning'
+                  )}
+                >
+                  {isLocked ? 'KİLİTLİ' : hasOpenOrder ? 'DOLU' : 'BOŞ'}
+                </div>
               </div>
             </div>
           </button>
@@ -261,7 +265,12 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-8 pb-12">
+      <div
+        className="flex-1 overflow-y-auto p-8 pb-12 outline-none"
+        role="grid"
+        tabIndex={0}
+        autoFocus
+      >
         {isLoading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-6">
             {Array.from({ length: 12 }).map((_, i) => (
