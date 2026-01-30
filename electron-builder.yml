@@ -6,7 +6,7 @@ directories:
   buildResources: build
   output: dist
 
-compression: normal
+compression: maximum
 asar: true
 detectUpdateChannel: false
 files:
@@ -55,8 +55,18 @@ win:
   executableName: cafe-adisyon
   icon: resources/icon.png
   target:
+    - target: nsis
+      arch: x64
     - target: portable
       arch: x64
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  shortcutName: Caffio
+  artifactName: ${productName}-Setup-${version}.${ext}
+  uninstallDisplayName: ${productName}
+  createDesktopShortcut: always
 
 portable:
   artifactName: ${productName}-Portable-${version}.${ext}
