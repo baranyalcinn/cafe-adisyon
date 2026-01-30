@@ -356,8 +356,9 @@ export class ReportingService {
 
   async updateMonthlyReport(date: Date): Promise<void> {
     try {
-      const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1)
-      const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59)
+      // Normalize to UTC start of the month to prevent timezone-shift-induced separate records
+      const startOfMonth = new Date(Date.UTC(date.getFullYear(), date.getMonth(), 1))
+      const endOfMonth = new Date(Date.UTC(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59))
 
       const monthOrders = await prisma.order.findMany({
         where: {
@@ -376,6 +377,11 @@ export class ReportingService {
       const totalExpenses = monthExpenses.reduce((sum, e) => sum + e.amount, 0)
       const netProfit = totalRevenue - totalExpenses
 
+      logger.info(
+        'ReportingService.updateMonthlyReport',
+        `Updating report for ${startOfMonth.toISOString()}: Revenue=${totalRevenue}, Expenses=${totalExpenses}, Profit=${netProfit}`
+      )
+
       await prisma.monthlyReport.upsert({
         where: { monthDate: startOfMonth },
         update: {
@@ -393,7 +399,7 @@ export class ReportingService {
         }
       })
     } catch (error) {
-      logger.error('updateMonthlyReport', error)
+      logger.error('ReportingService.updateMonthlyReport', error)
     }
   }
 

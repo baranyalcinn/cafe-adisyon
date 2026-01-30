@@ -78,10 +78,10 @@ function App(): React.JSX.Element {
 
       <div className="flex-1 flex overflow-hidden">
         {/* Sidebar - Ayrıştırılmış ve daha temiz */}
-        <aside className="w-20 flex flex-col items-center py-6 bg-card/50 backdrop-blur-xl border-r z-50 transition-colors">
+        <aside className="w-20 flex flex-col items-center py-6 bg-card/40 backdrop-blur-2xl border-r border-border/10 z-50 transition-all duration-500">
           <LogoSection />
 
-          <nav className="flex-1 flex flex-col gap-4 pt-8">
+          <nav className="flex-1 flex flex-col gap-4 pt-10">
             <NavButton
               active={currentView === 'tables'}
               onClick={() => setCurrentView('tables')}
@@ -145,29 +145,32 @@ interface NavButtonProps {
 
 function NavButton({ active, onClick, icon: Icon, label }: NavButtonProps): React.JSX.Element {
   return (
-    <div className="relative group px-2">
-      <AnimatePresence>
-        {active && (
-          <motion.div
-            layoutId="activeNav"
-            className="absolute left-0 w-1 h-8 bg-primary rounded-r-full shadow-[0_0_15px_rgba(var(--primary),0.5)]"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          />
-        )}
-      </AnimatePresence>
+    <div className="relative px-3">
       <Button
         variant="ghost"
         size="icon"
         onClick={onClick}
         className={cn(
-          'w-12 h-12 rounded-2xl transition-all duration-300 relative',
-          active ? 'bg-primary/10 text-primary' : 'hover:bg-accent opacity-70 hover:opacity-100'
+          'w-12 h-12 rounded-2xl transition-all duration-500 relative group overflow-hidden',
+          active
+            ? 'text-primary-foreground shadow-lg shadow-primary/30'
+            : 'text-muted-foreground/30 hover:text-foreground hover:bg-muted/40'
         )}
         title={label}
       >
-        <Icon className={cn('w-5 h-5', active && 'scale-110')} />
+        {active && (
+          <motion.div
+            layoutId="activeNavBackground"
+            className="absolute inset-0 bg-primary z-0"
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+          />
+        )}
+        <Icon
+          className={cn(
+            'w-5 h-5 transition-all duration-500 relative z-10',
+            active ? 'scale-110 opacity-100' : 'scale-100 group-hover:scale-110'
+          )}
+        />
       </Button>
     </div>
   )
@@ -175,16 +178,26 @@ function NavButton({ active, onClick, icon: Icon, label }: NavButtonProps): Reac
 
 function LogoSection(): React.JSX.Element {
   return (
-    <div className="flex flex-col items-center group select-none">
-      <div className="flex flex-col items-center gap-1">
-        <div className="flex items-center justify-center gap-0.5">
-          <span className="text-2xl font-black text-rose-500">7</span>
-          <span className="text-2xl font-black text-rose-500/70">7</span>
-          <span className="text-2xl font-black text-rose-500/40">7</span>
+    <div className="flex flex-col items-center group select-none animate-in fade-in zoom-in duration-700">
+      <div className="relative">
+        <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full scale-150 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+        <div className="flex flex-col items-center gap-1 relative z-10">
+          <div className="flex items-center justify-center gap-0.5">
+            <span className="text-2xl font-black text-rose-500 tracking-tighter transition-all duration-500 group-hover:scale-110">
+              7
+            </span>
+            <span className="text-2xl font-black text-rose-500/70 tracking-tighter transition-all duration-500 group-hover:scale-110 delay-75">
+              7
+            </span>
+            <span className="text-2xl font-black text-rose-500/40 tracking-tighter transition-all duration-500 group-hover:scale-110 delay-150">
+              7
+            </span>
+          </div>
+          <div className="h-0.5 w-5 bg-gradient-to-r from-transparent via-border to-transparent mb-0.5" />
+          <span className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-[0.3em] transition-colors duration-500 group-hover:text-primary/60">
+            Cafe
+          </span>
         </div>
-        <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-[0.3em]">
-          Cafe
-        </span>
       </div>
     </div>
   )

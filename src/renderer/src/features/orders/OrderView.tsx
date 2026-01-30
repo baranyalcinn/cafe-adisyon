@@ -13,7 +13,7 @@ import { ProductCard } from './ProductCard'
 import { getCategoryIcon } from './order-icons'
 import { CartPanel } from './CartPanel'
 import { PaymentModal } from '../payments/PaymentModal'
-import { cn, formatCurrency } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import { Product } from '@/lib/api'
 import { useSound } from '@/hooks/useSound'
 
@@ -157,37 +157,52 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
               value="categories"
               className="flex-1 p-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col min-h-0"
             >
-              <ScrollArea className="h-full w-full px-4">
+              <ScrollArea className="h-full w-full px-3">
                 <div className="flex flex-col gap-1.5 pb-4">
                   <Button
-                    variant={activeCategory === null ? 'secondary' : 'ghost'}
+                    variant="ghost"
                     className={cn(
-                      'w-full justify-start h-11 rounded-xl gap-3 px-4 font-bold transition-all',
-                      activeCategory === null && 'bg-primary/10 text-primary border-primary/20'
+                      'w-full justify-start h-11 rounded-2xl gap-3 px-4 font-bold transition-all relative overflow-hidden group/cat',
+                      activeCategory === null
+                        ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
+                        : 'text-muted-foreground/60 hover:bg-muted/40 hover:text-foreground'
                     )}
                     onClick={() => {
                       setActiveCategory(null)
                       playTabChange()
                     }}
                   >
-                    <LayoutGrid className="w-4 h-4" />
+                    <LayoutGrid
+                      className={cn(
+                        'w-4 h-4 transition-transform duration-300',
+                        activeCategory === null ? 'scale-110' : 'group-hover/cat:scale-110'
+                      )}
+                    />
                     Tümü
                   </Button>
                   {categories.map((category) => (
                     <Button
                       key={category.id}
-                      variant={activeCategory === category.id ? 'secondary' : 'ghost'}
+                      variant="ghost"
                       className={cn(
-                        'w-full justify-start h-11 rounded-xl gap-3 px-4 font-bold transition-all',
-                        activeCategory === category.id &&
-                          'bg-primary/10 text-primary border-primary/20'
+                        'w-full justify-start h-11 rounded-2xl gap-3 px-4 font-bold transition-all relative overflow-hidden group/cat',
+                        activeCategory === category.id
+                          ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
+                          : 'text-muted-foreground/60 hover:bg-muted/40 hover:text-foreground'
                       )}
                       onClick={() => {
                         setActiveCategory(category.id)
                         playTabChange()
                       }}
                     >
-                      {getCategoryIcon(category.icon, 'w-4 h-4')}
+                      <div
+                        className={cn(
+                          'transition-transform duration-300',
+                          activeCategory === category.id ? 'scale-110' : 'group-hover/cat:scale-110'
+                        )}
+                      >
+                        {getCategoryIcon(category.icon, 'w-4 h-4')}
+                      </div>
                       {category.name}
                     </Button>
                   ))}
@@ -199,26 +214,20 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
               value="favorites"
               className="flex-1 p-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col min-h-0"
             >
-              <div className="flex-1 w-full h-full overflow-y-auto px-4 custom-scrollbar">
-                <div className="flex flex-col gap-3 pr-1 pb-4 pt-1">
+              <div className="flex-1 w-full h-full overflow-y-auto px-3 custom-scrollbar">
+                <div className="flex flex-col gap-2 pr-1 pb-4 pt-1">
                   {favoriteProducts.map((product) => (
                     <div
                       key={product.id}
-                      onClick={() => handleAddToCart(product)}
-                      className="group relative min-h-[4rem] h-auto w-full flex items-center justify-between p-2 rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 to-white/0 hover:from-primary/10 hover:to-primary/5 cursor-pointer transition-all duration-300 overflow-hidden shadow-sm hover:shadow-lg hover:border-primary/20 hover:scale-[1.02] active:scale-[0.98]"
+                      className="animate-in fade-in slide-in-from-left-2 duration-300"
                     >
-                      {/* Shine Effect */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-[200%] group-hover:animate-shine" />
-
-                      {/* Content */}
-                      <div className="flex-1 min-w-0 px-2.5 py-1 flex flex-col justify-center">
-                        <span className="font-bold text-sm text-foreground/90 leading-tight group-hover:text-primary transition-colors line-clamp-2 break-words">
-                          {product.name}
-                        </span>
-                        <span className="text-[11px] font-medium text-muted-foreground group-hover:text-primary/70 transition-colors">
-                          {formatCurrency(product.price)}
-                        </span>
-                      </div>
+                      <ProductCard
+                        product={product}
+                        compact={true}
+                        showIcon={false}
+                        isLocked={isLocked}
+                        onAdd={handleAddToCart}
+                      />
                     </div>
                   ))}
                   {favoriteProducts.length === 0 && (

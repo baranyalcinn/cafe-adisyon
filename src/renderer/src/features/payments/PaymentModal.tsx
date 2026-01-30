@@ -281,7 +281,6 @@ export function PaymentModal({
       <Dialog open={open} onOpenChange={handleClose} key="success-modal">
         <DialogContent className="sm:max-w-md border-none p-0 overflow-hidden bg-transparent shadow-none">
           <div className="relative">
-            {/* Background Glow */}
             <div className="absolute inset-0 bg-success/10 blur-[60px] rounded-full" />
             {/* Main Content Card */}
             <motion.div
@@ -866,8 +865,9 @@ export function PaymentModal({
               disabled={
                 isProcessing ||
                 (paymentAmount <= 0 && !(paymentMode === 'items' && selectedTotal > 0)) ||
-                tendered > 0 ||
-                rawCustomAmount > remainingAmount
+                (paymentMode === 'custom'
+                  ? rawCustomAmount > remainingAmount
+                  : tendered > effectivePayment)
               }
               onClick={() => handlePayment('CARD')}
             >

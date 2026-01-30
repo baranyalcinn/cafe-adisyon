@@ -286,7 +286,7 @@ export function DashboardView(): React.JSX.Element {
         <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-12 gap-4">
           {/* Daily Revenue - The Hero Card */}
           <div className="lg:col-span-6 premium-card ambient-glow relative overflow-hidden group p-6 flex flex-col justify-between">
-            <div className="absolute right-0 top-0 h-64 w-64 translate-x-16 -translate-y-16 rounded-full bg-success/10 blur-3xl transition-all duration-700 group-hover:bg-success/15" />
+            <div className="absolute right-0 top-0 h-64 w-64 translate-x-16 -translate-y-16 rounded-full bg-success/10 transition-all duration-700 group-hover:bg-success/15" />
 
             <div className="relative z-10 flex items-start justify-between">
               <div className="space-y-1">
@@ -667,7 +667,7 @@ export function DashboardView(): React.JSX.Element {
                   <Calendar className="w-4 h-4 text-primary" />
                 </div>
                 <h3 className="text-sm font-black text-foreground uppercase tracking-wider">
-                  Bu Ayın Günlük Satışları
+                  Aylık Gelir-Gider Analizi
                 </h3>
               </div>
               <div className="h-[300px] w-full">

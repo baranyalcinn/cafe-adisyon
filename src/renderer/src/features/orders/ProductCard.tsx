@@ -10,6 +10,7 @@ import type { Product } from '@/lib/api'
 interface ProductCardProps {
   product: Product
   compact?: boolean
+  showIcon?: boolean
   isLocked?: boolean
   onAdd?: (product: Product) => void
 }
@@ -17,6 +18,7 @@ interface ProductCardProps {
 function ProductCardComponent({
   product,
   compact = false,
+  showIcon = true,
   isLocked = false,
   onAdd
 }: ProductCardProps): React.JSX.Element {
@@ -47,28 +49,29 @@ function ProductCardComponent({
         onClick={handleClick}
         disabled={isLocked}
         className={cn(
-          'flex items-center gap-3 py-2.5 px-3 rounded-2xl bg-card transition-all w-full text-left group relative overflow-hidden shadow-sm border border-border/5',
+          'flex items-center gap-2.5 py-2.5 px-3.5 rounded-2xl bg-card transition-all w-full text-left group relative overflow-hidden shadow-sm border border-border/10',
           isLocked
             ? 'opacity-50 cursor-not-allowed'
-            : 'hover:bg-primary/[0.02] hover:shadow-md active:scale-[0.98]',
-          'hover:ring-2 hover:ring-primary hover:ring-offset-2 hover:ring-offset-background'
+            : 'hover:bg-primary/[0.04] hover:shadow-md hover:border-primary/20 active:scale-[0.98]'
         )}
       >
-        <div className="w-12 h-12 rounded-xl bg-muted/40 shrink-0 flex items-center justify-center group-hover:bg-primary/5 transition-colors">
-          {getCategoryIcon(
-            product.category?.icon,
-            'w-6 h-6 text-foreground/40 group-hover:text-primary transition-colors'
-          )}
-        </div>
-        <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-          <p className="font-bold text-[15px] line-clamp-1 text-foreground/90 group-hover:text-primary transition-colors leading-tight">
+        {showIcon && (
+          <div className="w-10 h-10 rounded-xl bg-muted/30 shrink-0 flex items-center justify-center group-hover:bg-primary/5 transition-colors">
+            {getCategoryIcon(
+              product.category?.icon,
+              'w-5 h-5 text-foreground/30 group-hover:text-primary transition-colors'
+            )}
+          </div>
+        )}
+        <div className="flex-1 min-w-0 flex flex-col justify-center py-0.5">
+          <p className="font-bold text-[15px] line-clamp-2 text-foreground/90 group-hover:text-primary transition-colors leading-[1.2] mb-0.5">
             {product.name.replace(/([a-z])([A-Z])/g, '$1 $2')}
           </p>
           <p className="text-[12px] font-black text-emerald-600 tabular-nums">
             {formatCurrency(product.price)}
           </p>
         </div>
-        <div className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground/30 group-hover:text-primary transition-all shrink-0">
+        <div className="w-8 h-8 rounded-full flex items-center justify-center bg-muted/20 text-muted-foreground/30 group-hover:bg-primary/10 group-hover:text-primary transition-all shrink-0">
           <Plus className="w-4 h-4" />
         </div>
       </button>
@@ -81,11 +84,10 @@ function ProductCardComponent({
       onClick={handleClick}
       disabled={isLocked}
       className={cn(
-        'group premium-card ambient-glow relative flex flex-col p-3 w-full active:scale-95 cursor-pointer transition-all duration-300',
-        isLocked ? 'opacity-50 cursor-not-allowed' : '',
-        // Double border effect on hover: Inner White, Outer Orange (using primary color or hardcoded orange if matches design)
-        // User image showed Orange. I'll use ring-orange-500.
-        'hover:ring-[3px] hover:ring-orange-500 hover:ring-offset-[3px] hover:ring-offset-background hover:z-10'
+        'group relative flex flex-col p-4 w-full rounded-[1.75rem] bg-card border border-border/10 shadow-sm overflow-hidden transition-all duration-300',
+        isLocked
+          ? 'opacity-50 cursor-not-allowed'
+          : 'hover:border-primary/20 hover:shadow-md hover:scale-[1.02] active:scale-[0.98]'
       )}
     >
       {product.isFavorite && (
@@ -94,18 +96,18 @@ function ProductCardComponent({
         </div>
       )}
 
-      {/* Top Section - Icon/Image Area */}
-      <div className="w-full h-24 rounded-[1.25rem] bg-muted/30 flex items-center justify-center group-hover:bg-primary/5 transition-colors duration-500 mb-2 overflow-hidden relative">
+      {/* Top Section - Icon Area */}
+      <div className="w-full h-24 rounded-[1.25rem] bg-muted/20 flex items-center justify-center group-hover:bg-primary/5 transition-colors duration-500 mb-3 overflow-hidden relative border border-transparent group-hover:border-primary/10">
         <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
         {getCategoryIcon(
           product.category?.icon,
-          'w-8 h-8 text-foreground/20 group-hover:text-primary/40 transition-all duration-500 group-hover:scale-110'
+          'w-10 h-10 text-foreground/15 group-hover:text-primary/30 transition-all duration-500 group-hover:scale-110'
         )}
       </div>
 
       {/* Bottom Section - Content */}
-      <div className="flex flex-col items-start gap-1 px-1 min-h-[3.4rem]">
-        <h3 className="font-bold text-[16px] leading-tight text-left line-clamp-2 text-foreground/90 group-hover:text-primary transition-colors">
+      <div className="flex flex-col items-start gap-1 px-1 min-h-[3.6rem] w-full">
+        <h3 className="font-bold text-[16px] leading-tight text-left line-clamp-2 text-foreground/85 group-hover:text-primary transition-colors">
           {product.name.replace(/([a-z])([A-Z])/g, '$1 $2')}
         </h3>
         <p className="text-[15px] font-black text-emerald-600 tabular-nums tracking-tight mt-auto">
@@ -124,6 +126,7 @@ export const ProductCard = memo(ProductCardComponent, (prevProps, nextProps) => 
     prevProps.product.name === nextProps.product.name &&
     prevProps.product.isFavorite === nextProps.product.isFavorite &&
     prevProps.compact === nextProps.compact &&
+    prevProps.showIcon === nextProps.showIcon &&
     prevProps.isLocked === nextProps.isLocked
   )
 })

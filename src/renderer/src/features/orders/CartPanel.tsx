@@ -1,6 +1,13 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Trash2, CheckCircle, Lock, LockOpen, ShoppingBag } from 'lucide-react'
+import {
+  Trash2,
+  CheckCircle,
+  Lock,
+  LockOpen,
+  ShoppingBag,
+  History as HistoryIcon
+} from 'lucide-react'
 import { useSound } from '@/hooks/useSound'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
@@ -35,12 +42,31 @@ export function CartPanel({
 
   // Memoize sorted items to prevent re-sorting on every render frame
   const items = order?.items
-  const sortedItems = useMemo(() => {
+  // Process items: Group paid items by productId, keep unpaid separate
+  const processedItems = useMemo(() => {
     if (!items) return []
-    return [...items].sort((a, b) => {
-      // Only sort by paid status: unpaid first, paid last
-      return (a.isPaid ? 1 : 0) - (b.isPaid ? 1 : 0)
+
+    const unpaid = items.filter((i) => !i.isPaid)
+    const paid = items.filter((i) => i.isPaid)
+
+    // Aggregate paid items
+    const aggregatedPaidMap = new Map<string, (typeof items)[0]>()
+    paid.forEach((item) => {
+      const existing = aggregatedPaidMap.get(item.productId)
+      if (existing) {
+        aggregatedPaidMap.set(item.productId, {
+          ...existing,
+          quantity: existing.quantity + item.quantity
+        })
+      } else {
+        aggregatedPaidMap.set(item.productId, { ...item })
+      }
     })
+
+    const aggregatedPaid = Array.from(aggregatedPaidMap.values())
+
+    // Return unpaid first, then aggregated paid
+    return [...unpaid, ...aggregatedPaid]
   }, [items])
 
   // Calculate totals from order data
@@ -167,82 +193,65 @@ export function CartPanel({
       </div>
 
       <div className="flex-1 min-h-0 overflow-hidden relative z-10 flex flex-col">
-        {sortedItems.length > 0 ? (
+        {processedItems.length > 0 ? (
           <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-muted-foreground/10 hover:scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent">
-            <div className="p-4 flex flex-col min-h-min">
-              <AnimatePresence initial={false}>
-                {sortedItems.map((item) => {
-                  const productName = item.product?.name || 'Yeni Ürün'
+            <div className="p-4 flex flex-col min-h-min space-y-2">
+              {/* Unpaid Items Group */}
+              <AnimatePresence initial={false} mode="popLayout">
+                {processedItems
+                  .filter((i) => !i.isPaid)
+                  .map((item) => {
+                    const productName = item.product?.name || 'Yeni Ürün'
+                    return (
+                      <motion.div
+                        layout
+                        key={item.id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 20, transition: { duration: 0.2 } }}
+                        whileTap={{ scale: 0.98 }}
+                        transition={{
+                          layout: { type: 'spring', stiffness: 500, damping: 35, mass: 1 },
+                          opacity: { duration: 0.2 },
+                          x: { type: 'spring', stiffness: 500, damping: 35 }
+                        }}
+                        style={{
+                          willChange: 'transform, opacity',
+                          backfaceVisibility: 'hidden',
+                          perspective: 1000
+                        }}
+                        className="relative origin-top flex items-center justify-between gap-x-2 px-3 pl-4.5 group/item rounded-lg border shadow-sm transform-gpu cursor-pointer select-none transition-all duration-300 bg-card/60 border-border/40 hover:bg-card hover:border-border"
+                      >
+                        <div className="w-full flex items-center justify-between py-1">
+                          <div className="absolute left-0 top-0 bottom-0 w-1 transition-all duration-300 group-hover/item:w-1.5 bg-primary/50" />
 
-                  return (
-                    <motion.div
-                      layout
-                      key={`${item.productId}-${item.isPaid}`}
-                      initial={{ opacity: 0, scale: 0.96, y: 15 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.2 } }}
-                      whileTap={{ scale: 0.98 }}
-                      transition={{
-                        layout: { type: 'spring', stiffness: 400, damping: 30, mass: 0.8 },
-                        opacity: { duration: 0.3 },
-                        scale: { duration: 0.4, type: 'spring', stiffness: 400, damping: 30 },
-                        y: { duration: 0.4, type: 'spring', stiffness: 400, damping: 30 }
-                      }}
-                      style={{
-                        willChange: 'transform, opacity',
-                        backfaceVisibility: 'hidden',
-                        perspective: 1000
-                      }}
-                      className={cn(
-                        'premium-item origin-top flex items-center justify-between gap-x-2 px-3 pl-4.5 group/item rounded-lg border border-border/40 bg-card/50 shadow-sm mb-2 transform-gpu cursor-pointer select-none'
-                      )}
-                    >
-                      <div className="w-full flex items-center justify-between py-1">
-                        <div
-                          className={cn(
-                            'absolute left-0 top-0 bottom-0 w-1 transition-all duration-300 group-hover/item:w-1.5',
-                            item.isPaid ? 'bg-success/50' : 'bg-primary/50'
-                          )}
-                        />
-
-                        <div className="flex items-baseline gap-2 flex-1 min-w-0">
-                          <div className="shrink-0 flex justify-start min-w-[1.4rem]">
-                            <AnimatePresence mode="wait">
-                              {item.quantity > 1 && (
-                                <motion.span
-                                  key={`qty-${item.quantity}`}
-                                  initial={{ scale: 0.5, opacity: 0 }}
-                                  animate={{ scale: 1, opacity: 1 }}
-                                  exit={{ scale: 0.5, opacity: 0 }}
-                                  transition={{ duration: 0.15, ease: 'easeOut' }}
-                                  className="text-[14px] font-bold text-rose-600 tabular-nums inline-block"
-                                >
-                                  x{item.quantity}
-                                </motion.span>
-                              )}
-                            </AnimatePresence>
+                          <div className="flex items-baseline gap-2 flex-1 min-w-0">
+                            <div className="shrink-0 flex justify-start min-w-[1.4rem]">
+                              <AnimatePresence mode="wait">
+                                {item.quantity > 1 && (
+                                  <motion.span
+                                    key={`qty-${item.quantity}`}
+                                    initial={{ scale: 0.5, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    exit={{ scale: 0.5, opacity: 0 }}
+                                    transition={{ duration: 0.15, ease: 'easeOut' }}
+                                    className="text-[14px] font-bold text-rose-600 tabular-nums inline-block"
+                                  >
+                                    x{item.quantity}
+                                  </motion.span>
+                                )}
+                              </AnimatePresence>
+                            </div>
+                            <p className="font-semibold text-[15px] tracking-tight leading-snug break-words line-clamp-2 transition-all duration-500 text-foreground">
+                              {productName.replace(/([a-z])([A-Z])/g, '$1 $2')}
+                            </p>
                           </div>
-                          <p
-                            className={cn(
-                              'font-semibold text-[15px] tracking-tight leading-snug break-words line-clamp-2',
-                              item.isPaid ? 'text-muted-foreground' : 'text-foreground'
-                            )}
-                          >
-                            {productName.replace(/([a-z])([A-Z])/g, '$1 $2')}
-                          </p>
-                        </div>
 
-                        <div className="flex items-center gap-4 ml-2">
-                          <p
-                            className={cn(
-                              'text-[14px] font-black tabular-nums transition-colors duration-300',
-                              item.isPaid ? 'text-muted-foreground/40' : 'text-primary'
-                            )}
-                          >
-                            {formatCurrency(item.unitPrice * item.quantity)}
-                          </p>
+                          <div className="flex items-center gap-4 ml-2">
+                            <p className="text-[14px] font-black tabular-nums transition-all duration-500 text-primary">
+                              {formatCurrency(item.unitPrice * item.quantity)}
+                            </p>
 
-                          {!item.isPaid ? (
                             <QuantitySelector
                               quantity={item.quantity}
                               onUpdate={(newQty) =>
@@ -250,20 +259,75 @@ export function CartPanel({
                               }
                               isLocked={isLocked}
                             />
-                          ) : (
-                            <div className="px-2.5 py-1 bg-success/15 rounded-lg border border-success/20 flex items-center gap-1.5 shadow-sm">
-                              <CheckCircle className="w-3 h-3 text-success animate-in zoom-in duration-300" />
-                              <span className="text-[10px] font-black text-success uppercase tracking-tighter">
-                                ÖDENDİ
-                              </span>
-                            </div>
-                          )}
+                          </div>
                         </div>
-                      </div>
-                    </motion.div>
-                  )
-                })}
+                      </motion.div>
+                    )
+                  })}
               </AnimatePresence>
+
+              {/* Paid Items Group (Archived look) */}
+              {processedItems.some((i) => i.isPaid) && (
+                <div className="mt-8 pt-6 border-t border-dashed border-emerald-500/20">
+                  <div className="flex items-center gap-2 mb-4 px-1 text-emerald-500/40">
+                    <HistoryIcon className="w-3.5 h-3.5" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">
+                      Ödenmiş Kalemler
+                    </span>
+                  </div>
+                  <AnimatePresence>
+                    {processedItems
+                      .filter((i) => i.isPaid)
+                      .map((item) => {
+                        const productName = item.product?.name || 'Yeni Ürün'
+                        return (
+                          <motion.div
+                            key={`${item.productId}-paid-group`}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="relative origin-top flex items-center justify-between gap-x-2 px-3 pl-4.5 group/item rounded-lg border shadow-sm mb-2 transform-gpu cursor-pointer select-none transition-all duration-500 ease-out bg-emerald-500/[0.01] border-emerald-500/5 opacity-30 scale-[0.98] hover:opacity-100 hover:scale-100 hover:bg-emerald-500/[0.08] hover:border-emerald-500/20"
+                          >
+                            <div className="w-full flex items-center justify-between py-1">
+                              <div className="absolute left-0 top-0 bottom-0 w-1 transition-all duration-300 group-hover/item:w-1.5 bg-emerald-500/20" />
+
+                              <div className="flex items-baseline gap-2 flex-1 min-w-0">
+                                <div className="shrink-0 flex justify-start min-w-[1.4rem]">
+                                  {item.quantity > 1 && (
+                                    <span className="text-[14px] font-bold text-rose-600/60 tabular-nums inline-block">
+                                      x{item.quantity}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="font-semibold text-[15px] tracking-tight leading-snug break-words line-clamp-2 transition-all duration-500 text-muted-foreground/60">
+                                  {productName.replace(/([a-z])([A-Z])/g, '$1 $2')}
+                                </p>
+                              </div>
+
+                              <div className="flex items-center gap-4 ml-2">
+                                <p className="text-[14px] font-black tabular-nums transition-all duration-500 text-muted-foreground/30">
+                                  {formatCurrency(item.unitPrice * item.quantity)}
+                                </p>
+
+                                <div className="px-2.5 py-1 bg-emerald-500/10 rounded-lg border border-emerald-500/20 flex items-center gap-1.5 shadow-sm transition-all duration-500 group-hover/item:bg-emerald-500/20">
+                                  <CheckCircle className="w-3 h-3 text-emerald-500" />
+                                  <span className="text-[10px] font-black text-emerald-500 uppercase tracking-tighter">
+                                    ÖDENDİ
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <motion.div
+                              initial={{ scaleX: 0 }}
+                              animate={{ scaleX: 1 }}
+                              className="absolute left-6 right-[6rem] top-1/2 h-[2px] rounded-full bg-gradient-to-r from-emerald-500/0 via-emerald-500/30 to-emerald-500/0 pointer-events-none origin-left transition-all duration-500 group-hover/item:opacity-0"
+                            />
+                          </motion.div>
+                        )
+                      })}
+                  </AnimatePresence>
+                </div>
+              )}
             </div>
           </div>
         ) : (
@@ -289,14 +353,11 @@ export function CartPanel({
           </div>
 
           {paidAmount > 0 && (
-            <div className="flex justify-between items-center px-1 animate-in fade-in slide-in-from-bottom-2 duration-400">
-              <span className="text-sm font-semibold text-primary/80 tracking-tight">Ödenen</span>
-              <PremiumAmount
-                amount={-paidAmount}
-                size="sm"
-                color="primary"
-                fontWeight="extrabold"
-              />
+            <div className="flex justify-between items-center px-1 animate-in fade-in slide-in-from-bottom-2 duration-400 opacity-60">
+              <span className="text-sm font-semibold text-muted-foreground tracking-tight">
+                Ödenen
+              </span>
+              <PremiumAmount amount={-paidAmount} size="sm" color="muted" fontWeight="bold" />
             </div>
           )}
 
