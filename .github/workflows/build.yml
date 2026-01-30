@@ -29,25 +29,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: 'npm' # Bağımlılıkları önbelleğe al
 
-      # Electron Binarylerini Önbelleğe Al
-      - name: Electron Cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/AppData/Local/electron/Cache
-            ~/AppData/Local/electron-builder/Cache
-          key: ${{ runner.os }}-electron-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-electron-
-
-      - name: Bağımlılıkları Yükle
+      - name: Temiz Kurulum
         run: |
-          # Önbelleği kullanmak için her seferinde silmiyoruz.
-          # Sadece kilit dosyasına göre yükleme yapıyoruz.
+          # 1. Eski kilit dosyasını sil (Temiz sayfa)
+          if (Test-Path package-lock.json) { Remove-Item package-lock.json }
+          # 2. Node Modules varsa sil
+          if (Test-Path node_modules) { Remove-Item node_modules -Recurse -Force -ErrorAction SilentlyContinue }
+          # 3. Bağımlılıkları Yükle
           npm install --legacy-peer-deps
-
       - name: Prisma Generate
         run: npx prisma generate
 
@@ -91,17 +81,11 @@ jobs:
             "formdata-polyfill",
             "bufferutil",
             "utf-8-validate",
-            "detect-libc",
-            "@prisma/client",
-            "@prisma/adapter-libsql",
-            "@prisma/driver-adapter-utils",
-            ".prisma"
+            "detect-libc"
           )
-
           Write-Host "Starting manual surgery - keeping ONLY runtime deps..."
           Move-Item node_modules node_modules_full
           New-Item -ItemType Directory -Path node_modules
-
           foreach ($mod in $essential) {
             $srcPath = "node_modules_full/$mod"
             $dstPath = "node_modules/$mod"
@@ -120,11 +104,9 @@ jobs:
               Write-Host "Not found (skipping): $mod"
             }
           }
-
           # Cleanup
           Remove-Item node_modules_full -Recurse -Force
           Write-Host "Surgery complete. Only runtime dependencies remain."
-
       # STEP 3: Run electron-builder from GLOBAL installation
       - name: Windows EXE Oluştur
         env:
