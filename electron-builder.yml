@@ -57,8 +57,6 @@ win:
   target:
     - target: nsis
       arch: x64
-    - target: portable
-      arch: x64
 
 nsis:
   oneClick: false
@@ -67,10 +65,6 @@ nsis:
   artifactName: ${productName}-Setup-${version}.${ext}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
-
-portable:
-  artifactName: ${productName}-Portable-${version}.${ext}
-  requestExecutionLevel: user
 
 extraResources:
   - from: resources
