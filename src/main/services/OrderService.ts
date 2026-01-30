@@ -1,9 +1,16 @@
 import { prisma } from '../db/prisma'
 import { logger } from '../lib/logger'
 import { logService } from './LogService'
+import { BrowserWindow } from 'electron'
 import { ApiResponse, Order } from '../../shared/types'
 
 export class OrderService {
+  private broadcastDashboardUpdate(): void {
+    BrowserWindow.getAllWindows().forEach((win) => {
+      win.webContents.send('dashboard:update')
+    })
+  }
+
   async getOpenOrderForTable(tableId: string): Promise<ApiResponse<Order | null>> {
     try {
       const order = (await prisma.order.findFirst({
@@ -40,6 +47,8 @@ export class OrderService {
         },
         include: { items: true, payments: true }
       })) as unknown as Order
+
+      this.broadcastDashboardUpdate()
       return { success: true, data: order }
     } catch (error) {
       logger.error('OrderService.createOrder', error)
@@ -150,6 +159,8 @@ export class OrderService {
         where: { id: orderId },
         data: { status: 'CLOSED' }
       })) as unknown as Order
+
+      this.broadcastDashboardUpdate()
       return { success: true, data: order }
     } catch (error) {
       logger.error('OrderService.closeOrder', error)
@@ -255,6 +266,7 @@ export class OrderService {
         await logService.createLog('CLOSE_TABLE', updatedOrder.table?.name, `Adisyon kapatıldı`)
       }
 
+      this.broadcastDashboardUpdate()
       return { success: true, data: { order: updatedOrder!, completed: remaining <= 0 } }
     } catch (error) {
       logger.error('OrderService.processPayment', error)
@@ -348,12 +360,24 @@ export class OrderService {
           status: 'CLOSED',
           ...dateFilter
         },
-        include: {
-          table: true,
-          items: {
-            include: { product: true }
+        select: {
+          id: true,
+          totalAmount: true,
+          status: true,
+          createdAt: true,
+          table: {
+            select: { name: true }
           },
-          payments: true
+          items: {
+            select: {
+              id: true,
+              quantity: true,
+              unitPrice: true,
+              product: {
+                select: { name: true }
+              }
+            }
+          }
         },
         orderBy: { createdAt: 'desc' },
         take: limit,
@@ -375,6 +399,30 @@ export class OrderService {
     } catch (error) {
       logger.error('OrderService.getOrderHistory', error)
       return { success: false, error: 'Sipariş geçmişi alınamadı.' }
+    }
+  }
+
+  async getOrderDetails(orderId: string): Promise<ApiResponse<Order>> {
+    try {
+      const order = (await prisma.order.findUnique({
+        where: { id: orderId },
+        include: {
+          table: true,
+          items: {
+            include: { product: true }
+          },
+          payments: true
+        }
+      })) as unknown as Order
+
+      if (!order) {
+        return { success: false, error: 'Sipariş bulunamadı.' }
+      }
+
+      return { success: true, data: order }
+    } catch (error) {
+      logger.error('OrderService.getOrderDetails', error)
+      return { success: false, error: 'Sipariş detayları alınamadı.' }
     }
   }
 

@@ -1,4 +1,4 @@
-import { useState, memo } from 'react'
+import { useState, memo, useCallback } from 'react'
 import { cn } from '@/lib/utils'
 import { Coffee, ArrowRightLeft, Combine } from 'lucide-react'
 import { useCartStore } from '@/store/useCartStore'
@@ -27,13 +27,14 @@ interface TableCardProps {
   name: string
   hasOpenOrder: boolean
   isLocked?: boolean
-  onClick: () => void
-  onTransfer: () => void
-  onMerge: () => void
+  onClick: (id: string) => void
+  onTransfer: (id: string) => void
+  onMerge: (id: string) => void
 }
 
 const TableCard = memo(
   ({
+    id,
     name,
     hasOpenOrder,
     isLocked,
@@ -45,20 +46,11 @@ const TableCard = memo(
       <ContextMenu>
         <ContextMenuTrigger asChild>
           <button
-            onClick={onClick}
+            onClick={() => onClick(id)}
             className={cn(
               'group relative flex flex-col items-center justify-center p-0 cursor-pointer transition-all duration-300',
               'hover:-translate-y-1 active:scale-95 !overflow-visible'
             )}
-            style={
-              {
-                '--focus-color': isLocked
-                  ? '#dc2626' // red-600
-                  : hasOpenOrder
-                    ? '#2563eb' // blue-600
-                    : '#059669' // emerald-600
-              } as React.CSSProperties
-            }
           >
             <div
               className={cn(
@@ -128,14 +120,14 @@ const TableCard = memo(
         {hasOpenOrder && (
           <ContextMenuContent className="min-w-[200px] p-2 rounded-xl">
             <ContextMenuItem
-              onClick={onTransfer}
+              onClick={() => onTransfer(id)}
               className="gap-3 py-2.5 rounded-lg font-medium cursor-pointer"
             >
               <ArrowRightLeft className="w-4 h-4 text-info" />
               Başka Masaya Aktar
             </ContextMenuItem>
             <ContextMenuItem
-              onClick={onMerge}
+              onClick={() => onMerge(id)}
               className="gap-3 py-2.5 rounded-lg font-medium cursor-pointer"
             >
               <Combine className="w-4 h-4 text-primary" />
@@ -172,7 +164,7 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
 
   const [isProcessing, setIsProcessing] = useState(false)
 
-  const handleTransferClick = async (tableId: string): Promise<void> => {
+  const handleTransferClick = useCallback(async (tableId: string): Promise<void> => {
     try {
       const order = await cafeApi.orders.getOpenByTable(tableId)
       if (order) {
@@ -181,9 +173,9 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
     } catch (error) {
       console.error('Failed to get order:', error)
     }
-  }
+  }, [])
 
-  const handleMergeClick = async (tableId: string): Promise<void> => {
+  const handleMergeClick = useCallback(async (tableId: string): Promise<void> => {
     try {
       const order = await cafeApi.orders.getOpenByTable(tableId)
       if (order) {
@@ -192,7 +184,7 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
     } catch (error) {
       console.error('Failed to get order:', error)
     }
-  }
+  }, [])
 
   const handleTransferToTable = async (targetTableId: string): Promise<void> => {
     if (!transferModal.sourceOrderId) return
@@ -257,10 +249,7 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
       <div className="flex-none py-4 px-8 border-b bg-background/80 backdrop-blur-md z-10 w-full mb-2">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold tracking-tight">Masa Seçimi</h2>
-            <p className="text-xs text-muted-foreground font-medium">
-              Sipariş almak için bir masa seçin
-            </p>
+            <h2 className="text-xl font-bold tracking-tight">Masalar</h2>
           </div>
         </div>
       </div>
@@ -287,9 +276,9 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
                   name={table.name}
                   hasOpenOrder={!!table.hasOpenOrder}
                   isLocked={table.isLocked}
-                  onClick={() => onTableSelect(table.id)}
-                  onTransfer={() => handleTransferClick(table.id)}
-                  onMerge={() => handleMergeClick(table.id)}
+                  onClick={onTableSelect}
+                  onTransfer={handleTransferClick}
+                  onMerge={handleMergeClick}
                 />
               ))}
             </div>

@@ -51,6 +51,10 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
   })
   const searchInputRef = useRef<HTMLInputElement>(null)
 
+  // Progressive Loading State
+  const [visibleLimit, setVisibleLimit] = useState(40)
+  const observerTarget = useRef<HTMLDivElement>(null)
+
   const selectedTable = tables.find((t) => t.id === selectedTableId)
 
   // Use double requestAnimationFrame to ensure the first frame (animation start) is painted
@@ -98,6 +102,26 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
     return filtered.sort((a, b) => a.name.localeCompare(b.name))
   }, [products, searchQuery, activeCategory])
 
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleLimit((prev) => prev + 40)
+        }
+      },
+      { threshold: 0.1 }
+    )
+
+    const currentTarget = observerTarget.current
+    if (currentTarget) {
+      observer.observe(currentTarget)
+    }
+
+    return () => {
+      if (currentTarget) observer.unobserve(currentTarget)
+    }
+  }, [observerTarget, filteredProducts.length])
+
   const favoriteProducts = products.filter((p) => p.isFavorite)
 
   const handleAddToCart = useCallback(
@@ -128,8 +152,10 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
             <Input
               ref={searchInputRef}
               placeholder="Ürün ara..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value)
+                setVisibleLimit(40)
+              }}
               className="pl-9 h-10 bg-muted/20 border-border/10 focus:bg-background/80 transition-all rounded-lg text-sm"
             />
           </div>
@@ -169,6 +195,7 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
                     )}
                     onClick={() => {
                       setActiveCategory(null)
+                      setVisibleLimit(40)
                       playTabChange()
                     }}
                   >
@@ -192,6 +219,7 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
                       )}
                       onClick={() => {
                         setActiveCategory(category.id)
+                        setVisibleLimit(40)
                         playTabChange()
                       }}
                     >
@@ -309,7 +337,7 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
                 )}
               >
                 <AnimatePresence mode="popLayout">
-                  {filteredProducts.map((product) => (
+                  {filteredProducts.slice(0, visibleLimit).map((product) => (
                     <motion.div
                       layout="position"
                       key={product.id}
@@ -336,9 +364,12 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
               </motion.div>
             )}
 
-            {!isInventoryLoading && filteredProducts.length === 0 && (
-              <div className="text-center py-12 text-muted-foreground">
-                <p>Ürün bulunamadı</p>
+            {/* Loading Sentinel */}
+            {filteredProducts.length > visibleLimit && (
+              <div ref={observerTarget} className="h-8 w-full flex items-center justify-center p-4">
+                <div className="w-1 h-1 bg-border rounded-full animate-bounce [animation-delay:-0.3s]" />
+                <div className="w-1 h-1 bg-border rounded-full animate-bounce [animation-delay:-0.15s] mx-1" />
+                <div className="w-1 h-1 bg-border rounded-full animate-bounce" />
               </div>
             )}
           </div>

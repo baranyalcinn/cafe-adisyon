@@ -11,6 +11,13 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
 import { cafeApi } from '@/lib/api'
 import { useInventory } from '@/hooks/useInventory'
 import { toast } from '@/store/useToastStore'
@@ -127,25 +134,64 @@ export function CategoriesTab(): React.JSX.Element {
 
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <span className="text-xs font-medium text-muted-foreground">Simge:</span>
-                  <select
-                    className="bg-muted border rounded-md px-2 py-1 text-sm outline-none focus:ring-1 focus:ring-primary"
+                  <span className="text-xs font-medium text-muted-foreground mr-1">Simge:</span>
+                  <Select
                     value={cat.icon || 'utensils'}
-                    onChange={async (e) => {
+                    onValueChange={async (val) => {
                       await cafeApi.categories.update(cat.id, {
-                        icon: e.target.value
+                        icon: val
                       })
                       refetchCategories()
                     }}
                   >
-                    <option value="coffee">☕ Kahveler</option>
-                    <option value="ice-cream-cone">🍦 Tatlılar</option>
-                    <option value="cookie">🍪 Atıştırmalık</option>
-                    <option value="utensils">🍽️ Yemekler</option>
-                    <option value="wine">🍷 İçecekler</option>
-                    <option value="cake">🎂 Pastalar</option>
-                    <option value="sandwich">🥪 Sandviçler</option>
-                  </select>
+                    <SelectTrigger className="w-[140px] h-8 bg-muted border-none text-xs font-medium focus:ring-0 focus:ring-offset-0">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border-white/10 bg-background/95 backdrop-blur-md">
+                      <SelectItem
+                        value="coffee"
+                        className="text-xs font-medium rounded-lg cursor-pointer"
+                      >
+                        ☕ Kahveler
+                      </SelectItem>
+                      <SelectItem
+                        value="ice-cream-cone"
+                        className="text-xs font-medium rounded-lg cursor-pointer"
+                      >
+                        🍦 Tatlılar
+                      </SelectItem>
+                      <SelectItem
+                        value="cookie"
+                        className="text-xs font-medium rounded-lg cursor-pointer"
+                      >
+                        🍪 Atıştırmalık
+                      </SelectItem>
+                      <SelectItem
+                        value="utensils"
+                        className="text-xs font-medium rounded-lg cursor-pointer"
+                      >
+                        🍽️ Yemekler
+                      </SelectItem>
+                      <SelectItem
+                        value="wine"
+                        className="text-xs font-medium rounded-lg cursor-pointer"
+                      >
+                        🍷 İçecekler
+                      </SelectItem>
+                      <SelectItem
+                        value="cake"
+                        className="text-xs font-medium rounded-lg cursor-pointer"
+                      >
+                        🎂 Pastalar
+                      </SelectItem>
+                      <SelectItem
+                        value="sandwich"
+                        className="text-xs font-medium rounded-lg cursor-pointer"
+                      >
+                        🥪 Sandviçler
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <Button
                   size="icon"

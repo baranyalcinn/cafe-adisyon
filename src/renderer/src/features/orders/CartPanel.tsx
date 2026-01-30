@@ -40,6 +40,15 @@ export function CartPanel({
   const debounceTimers = useRef<Map<string, NodeJS.Timeout>>(new Map())
   const { playAdd, playRemove, playClick } = useSound()
 
+  // Cleanup timers on unmount
+  useEffect(() => {
+    const timers = debounceTimers.current
+    return () => {
+      timers.forEach((timer) => clearTimeout(timer))
+      timers.clear()
+    }
+  }, [])
+
   // Memoize sorted items to prevent re-sorting on every render frame
   const items = order?.items
   // Process items: Group paid items by productId, keep unpaid separate
@@ -343,7 +352,7 @@ export function CartPanel({
         )}
       </div>
 
-      <div className="shrink-0 p-5 bg-background/80 backdrop-blur-xl border-t border-border/15 z-20 space-y-4 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)]">
+      <div className="shrink-0 p-5 bg-background shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] z-20 space-y-4 border-t border-border/10">
         <div className="space-y-3">
           <div className="flex justify-between items-center px-1">
             <span className="text-sm font-semibold text-muted-foreground/70 tracking-tight">

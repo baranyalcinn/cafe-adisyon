@@ -220,6 +220,7 @@ export const IPC_CHANNELS = {
   // Expenses
   EXPENSES_CREATE: 'expenses:create',
   EXPENSES_GET_ALL: 'expenses:getAll',
+  EXPENSES_UPDATE: 'expenses:update',
   EXPENSES_DELETE: 'expenses:delete',
 
   // Admin
@@ -254,6 +255,7 @@ export const IPC_CHANNELS = {
 
   // Order History
   ORDERS_GET_HISTORY: 'orders:getHistory',
+  ORDERS_GET_DETAILS: 'orders:getDetails',
 
   // Seed
   SEED_DATABASE: 'seed:database',

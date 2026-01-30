@@ -73,5 +73,10 @@ export const orderService = {
     const result = await api.orders.getHistory(options)
     if (!result.success) throw new Error(result.error)
     return result.data
+  },
+  async getDetails(orderId: string): Promise<Order> {
+    const result = await api.orders.getDetails(orderId)
+    if (!result.success) throw new Error(result.error)
+    return result.data
   }
 }

@@ -1,12 +1,21 @@
-import { Plus, Trash2, LayoutGrid } from 'lucide-react'
+import { Plus, Trash2, LayoutGrid, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogTitle
+} from '@/components/ui/dialog'
 import { cafeApi } from '@/lib/api'
 import { toast } from '@/store/useToastStore'
 import { useTables } from '@/hooks/useTables'
+import { cn } from '@/lib/utils'
+import { useState } from 'react'
 
 export function TablesTab(): React.JSX.Element {
-  const { data: tables = [], refetch } = useTables()
+  const { data: tables = [], refetch } = useTables(false)
   // We can keep useTableStore if needed for other things, but here we just need data.
   // const { tables, addTable, removeTable } = useTableStore() // Removed
 
@@ -33,10 +42,29 @@ export function TablesTab(): React.JSX.Element {
     }
   }
 
-  const handleDeleteTable = async (id: string): Promise<void> => {
+  const [deleteDialog, setDeleteDialog] = useState<{
+    isOpen: boolean
+    tableId: string | null
+    isWarning: boolean
+  }>({
+    isOpen: false,
+    tableId: null,
+    isWarning: false
+  })
+
+  const handleDeleteTable = async (id: string, force = false): Promise<void> => {
+    const table = tables.find((t) => t.id === id)
+
+    if (table?.hasOpenOrder && !force) {
+      setDeleteDialog({ isOpen: true, tableId: id, isWarning: true })
+      return
+    }
+
     try {
       await cafeApi.tables.delete(id)
       refetch() // Refresh list
+      toast({ title: 'Başarılı', description: 'Masa başarıyla silindi', variant: 'success' })
+      setDeleteDialog({ isOpen: false, tableId: null, isWarning: false })
     } catch (error) {
       console.error('Failed to delete table:', error)
       toast({
@@ -99,11 +127,88 @@ export function TablesTab(): React.JSX.Element {
 
               <div>
                 <h3 className="font-bold text-lg">{table.name}</h3>
-                <p className="text-xs text-muted-foreground">Aktif</p>
+                <p
+                  className={cn(
+                    'text-[10px] font-black uppercase tracking-wider',
+                    table.hasOpenOrder ? 'text-amber-600' : 'text-emerald-600'
+                  )}
+                >
+                  {table.hasOpenOrder ? 'Dolu / Ürün Var' : 'Boş / Müsait'}
+                </p>
               </div>
             </div>
           ))}
         </div>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog
+          open={deleteDialog.isOpen}
+          onOpenChange={(open) => !open && setDeleteDialog((prev) => ({ ...prev, isOpen: false }))}
+        >
+          <DialogContent className="sm:max-w-[440px] rounded-3xl border-white/10 bg-background/95 backdrop-blur-xl p-0 overflow-hidden shadow-2xl">
+            <div
+              className={cn(
+                'h-2 w-full',
+                deleteDialog.isWarning ? 'bg-amber-500' : 'bg-destructive'
+              )}
+            />
+
+            <div className="p-8">
+              <div className="flex items-center gap-4 mb-6">
+                <div
+                  className={cn(
+                    'p-3 rounded-2xl',
+                    deleteDialog.isWarning
+                      ? 'bg-amber-500/10 text-amber-600'
+                      : 'bg-destructive/10 text-destructive'
+                  )}
+                >
+                  <AlertTriangle className="w-6 h-6" />
+                </div>
+                <div>
+                  <DialogTitle className="text-xl font-black tracking-tight">
+                    {deleteDialog.isWarning ? 'Dikkat: Masa Dolu!' : 'Masayı Sil'}
+                  </DialogTitle>
+                  <DialogDescription className="text-muted-foreground font-medium mt-1">
+                    Bu işlemi geri alamazsınız.
+                  </DialogDescription>
+                </div>
+              </div>
+
+              <div className="bg-muted/30 rounded-2xl p-4 border border-border/50 mb-8">
+                <p className="text-sm font-bold text-foreground leading-relaxed">
+                  {deleteDialog.isWarning
+                    ? 'Bu masada aktif sipariş ve ürünler bulunmaktadır. Masayı silmek tüm verilerin kaybolmasına neden olabilir. Yine de silmek istiyor musunuz?'
+                    : 'Bu masayı silmek istediğinizden emin misiniz?'}
+                </p>
+              </div>
+
+              <DialogFooter className="flex-row gap-3 sm:gap-0">
+                <Button
+                  variant="ghost"
+                  className="flex-1 h-12 rounded-xl border-transparent hover:bg-muted font-bold"
+                  onClick={() =>
+                    setDeleteDialog({ isOpen: false, tableId: null, isWarning: false })
+                  }
+                >
+                  Vazgeç
+                </Button>
+                <Button
+                  variant="destructive"
+                  className={cn(
+                    'flex-1 h-12 rounded-xl font-bold shadow-lg shadow-destructive/20',
+                    deleteDialog.isWarning ? 'bg-amber-600 hover:bg-amber-700' : ''
+                  )}
+                  onClick={() =>
+                    deleteDialog.tableId && handleDeleteTable(deleteDialog.tableId, true)
+                  }
+                >
+                  {deleteDialog.isWarning ? 'Evet, Yine de Sil' : 'Masayı Sil'}
+                </Button>
+              </DialogFooter>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {tables.length === 0 && (
           <div className="flex flex-col items-center justify-center h-64 text-center">

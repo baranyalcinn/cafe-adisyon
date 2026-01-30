@@ -18,7 +18,6 @@ import {
   ArrowLeft,
   ChevronRight,
   Monitor,
-  Heart,
   ShieldCheck,
   Database,
   RefreshCw,
@@ -101,7 +100,7 @@ const MENU_ITEMS = [
   {
     id: 'products',
     label: 'Ürünler & Menü',
-    description: 'Fiyatlar, ürünler ve stok takibi',
+    description: 'Fiyatlar, ürünler',
     icon: Coffee,
     color: 'text-emerald-500'
   },
@@ -143,9 +142,9 @@ export function SettingsView({
 }: SettingsViewProps): React.JSX.Element {
   const soundEnabled = useSettingsStore((state) => state.soundEnabled)
   const toggleSound = useSettingsStore((state) => state.toggleSound)
-  const tables = useTableStore((state) => state.tables)
+  const tableCount = useTableStore((state) => state.tables.length)
   const fetchTables = useTableStore((state) => state.fetchTables)
-  const products = useInventoryStore((state) => state.products)
+  const productCount = useInventoryStore((state) => state.products.length)
   const fetchInventory = useInventoryStore((state) => state.fetchInventory)
   const [activeView, setActiveView] = useState<string | null>(null)
 
@@ -268,9 +267,6 @@ export function SettingsView({
           <div className="mb-8 flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-extrabold tracking-tight">Ayarlar</h1>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Yönetici paneli ve sistem yapılandırması
-              </p>
             </div>
             <Button
               variant="outline"
@@ -284,12 +280,12 @@ export function SettingsView({
           </div>
 
           {/* Grid Menu */}
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 grid-auto-rows-[1fr]">
             {MENU_ITEMS.map((item) => (
               <button
                 key={item.id}
                 onClick={() => setActiveView(item.id)}
-                className="group relative flex h-full min-h-[170px] flex-col items-start premium-card ambient-glow p-6 text-left hover:bg-accent/5"
+                className="group relative flex flex-col h-full min-h-[200px] items-start rounded-2xl border bg-card p-6 text-left shadow-sm transition-all hover:bg-muted/50 hover:shadow-md hover:-translate-y-1"
               >
                 <div
                   className={cn(
@@ -299,34 +295,17 @@ export function SettingsView({
                 >
                   <item.icon className="h-8 w-8" />
                 </div>
-                <h3 className="mb-2 text-xl font-bold tracking-tight">{item.label}</h3>
-                <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground opacity-80">
-                  {item.description}
-                </p>
-                <div className="mt-auto flex w-full justify-end pt-3 opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-1">
+                <div className="flex-1 flex flex-col">
+                  <h3 className="mb-2 text-xl font-bold tracking-tight">{item.label}</h3>
+                  <p className="line-clamp-3 text-sm leading-relaxed text-muted-foreground opacity-80">
+                    {item.description}
+                  </p>
+                </div>
+                <div className="mt-4 flex w-full justify-end opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-1">
                   <ChevronRight className="h-5 w-5 text-muted-foreground" />
                 </div>
               </button>
             ))}
-          </div>
-
-          {/* Footer / Credits */}
-          <div className="mt-auto pt-24 pb-12 flex flex-col items-center justify-center gap-4">
-            <div className="flex items-center gap-2 group cursor-default">
-              <span className="text-sm font-medium text-muted-foreground/40">Made with</span>
-              <div className="relative flex items-center justify-center">
-                <Heart className="w-4 h-4 text-red-500 fill-red-500 animate-pulse duration-[2s]" />
-                <div className="absolute inset-0 bg-red-500/20 blur-md rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
-              </div>
-              <span className="text-sm font-medium text-muted-foreground/40">by</span>
-              <span className="text-sm font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent group-hover:to-primary transition-all">
-                Baran & Beyda
-              </span>
-            </div>
-
-            <div className="px-3 py-1 rounded-full bg-muted/20 border border-muted-foreground/5 text-[10px] font-bold text-muted-foreground/30 tracking-widest uppercase">
-              Caffio v2.1.0
-            </div>
           </div>
         </div>
       </div>
@@ -401,7 +380,7 @@ export function SettingsView({
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in slide-in-from-bottom-4 duration-500">
               {/* Left Column: Appearance & Preferences */}
               <div className="space-y-6">
-                <Card className="premium-card ambient-glow overflow-hidden">
+                <Card className="rounded-xl border bg-card text-card-foreground shadow-sm">
                   <CardHeader className="bg-muted/10 pb-4 pt-5 px-6">
                     <CardTitle className="flex items-center gap-2 text-base font-bold">
                       <Palette className="w-5 h-5 text-primary" />
@@ -532,7 +511,7 @@ export function SettingsView({
               {/* Right Column: Security & System */}
               <div className="space-y-6">
                 {/* Security Card */}
-                <Card className="premium-card ambient-glow overflow-hidden">
+                <Card className="rounded-xl border bg-card text-card-foreground shadow-sm">
                   <CardHeader className="bg-muted/10 pb-4 pt-5 px-6">
                     <div className="flex items-center justify-between">
                       <CardTitle className="flex items-center gap-2 text-base font-bold">
@@ -764,7 +743,7 @@ export function SettingsView({
                 </Card>
 
                 {/* System Actions */}
-                <Card className="premium-card ambient-glow overflow-hidden">
+                <Card className="rounded-xl border bg-card text-card-foreground shadow-sm">
                   <CardHeader className="bg-muted/10 pb-4 pt-5 px-6">
                     <CardTitle className="text-base font-bold flex items-center gap-2">
                       <Activity className="w-5 h-5 text-blue-500" />
@@ -788,7 +767,7 @@ export function SettingsView({
                       <div className="flex items-center gap-4">
                         <div className="text-right">
                           <p className="text-lg font-bold tracking-tight text-primary">
-                            {tables.length}
+                            {tableCount}
                           </p>
                           <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-70">
                             Masa
@@ -797,7 +776,7 @@ export function SettingsView({
                         <div className="w-px h-6 bg-border/80" />
                         <div className="text-right">
                           <p className="text-lg font-bold tracking-tight text-primary">
-                            {products.length}
+                            {productCount}
                           </p>
                           <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-70">
                             Ürün

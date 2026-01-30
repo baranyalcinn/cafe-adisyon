@@ -74,17 +74,13 @@ async function reset(): Promise<void> {
       { name: 'Ev Yapımı Limonata', price: 6000, categoryId: 'cat-soguk', isFavorite: true },
       { name: 'Churchill', price: 5000, categoryId: 'cat-soguk', isFavorite: false },
       { name: 'Taze Portakal Suyu', price: 8000, categoryId: 'cat-soguk', isFavorite: false },
-      { name: 'Ayran', price: 3000, categoryId: 'cat-soguk', isFavorite: false },
       { name: 'Su (33cl)', price: 1500, categoryId: 'cat-soguk', isFavorite: false },
       { name: 'Soda', price: 2500, categoryId: 'cat-soguk', isFavorite: false },
       { name: 'Kaşarlı Tost', price: 8000, categoryId: 'cat-yiyecek', isFavorite: true },
       { name: 'Karışık Tost', price: 9500, categoryId: 'cat-yiyecek', isFavorite: true },
-      { name: 'Bazlama Tost', price: 11000, categoryId: 'cat-yiyecek', isFavorite: false },
       { name: 'Soğuk Sandviç', price: 8500, categoryId: 'cat-yiyecek', isFavorite: false },
-      { name: 'Hamburger Menü', price: 22000, categoryId: 'cat-yiyecek', isFavorite: false },
       { name: 'Patates Cips', price: 7000, categoryId: 'cat-yiyecek', isFavorite: true },
       { name: 'Sigara Böreği (6 lı)', price: 8000, categoryId: 'cat-yiyecek', isFavorite: false },
-      { name: 'Omlet Tabağı', price: 12000, categoryId: 'cat-yiyecek', isFavorite: false },
       { name: 'San Sebastian Cheesecake', price: 14000, categoryId: 'cat-tatli', isFavorite: true },
       { name: 'Limonlu Cheesecake', price: 13000, categoryId: 'cat-tatli', isFavorite: false },
       {
@@ -95,8 +91,7 @@ async function reset(): Promise<void> {
       },
       { name: 'Çilekli Magnolia', price: 9000, categoryId: 'cat-tatli', isFavorite: false },
       { name: 'Tiramisu', price: 11000, categoryId: 'cat-tatli', isFavorite: true },
-      { name: 'Waffle', price: 15000, categoryId: 'cat-tatli', isFavorite: false },
-      { name: 'Dondurma (Top)', price: 2500, categoryId: 'cat-tatli', isFavorite: false }
+      { name: 'Waffle', price: 15000, categoryId: 'cat-tatli', isFavorite: false }
     ]
 
     for (const product of products) {

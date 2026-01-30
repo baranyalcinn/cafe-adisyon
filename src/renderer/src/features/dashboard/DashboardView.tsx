@@ -15,7 +15,7 @@ import {
   PieChart as PieChartIcon,
   BarChart3
 } from 'lucide-react'
-import { Card } from '@/components/ui/card'
+
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -231,8 +231,16 @@ export function DashboardView(): React.JSX.Element {
 
   useEffect(() => {
     loadStats()
-    const interval = setInterval(loadStats, 30000)
-    return () => clearInterval(interval)
+
+    // Listen for real-time updates from backend
+    // @ts-ignore - electron type definition
+    const removeListener = window.electron.ipcRenderer.on('dashboard:update', () => {
+      loadStats()
+    })
+
+    return () => {
+      removeListener()
+    }
   }, [loadStats])
 
   if (isLoading) {
@@ -937,130 +945,122 @@ export function DashboardView(): React.JSX.Element {
       {/* Z-Report Detail Modal */}
       {/* Z-Report Detail Modal - Redesigned for better fit and visuals */}
       <Dialog open={!!selectedReport} onOpenChange={(open) => !open && setSelectedReport(null)}>
-        <DialogContent className="sm:max-w-[480px] max-h-[96vh] p-0 overflow-hidden border-primary/20 bg-background/95 backdrop-blur-md">
+        <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden border-border bg-background shadow-lg [&>button]:hidden">
           {selectedReport && (
             <div className="flex flex-col">
-              <div className="bg-gradient-to-br from-primary/20 via-primary/10 to-background p-4 border-b border-primary/10 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
-
-                <div className="relative z-10 flex items-center gap-4">
-                  <div className="p-2 bg-background/40 backdrop-blur-md rounded-2xl shadow-xl border border-white/10 ring-1 ring-black/5 shrink-0">
-                    <ReceiptText className="w-6 h-6 text-primary" />
+              <div className="px-6 py-4 border-b bg-muted/20 flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-bold tracking-tight">Z Raporu Detayı</h2>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span>
+                      {new Date(selectedReport.date).toLocaleDateString('tr-TR', {
+                        weekday: 'long',
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                      })}
+                    </span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h2 className="text-lg font-black text-foreground tracking-tight uppercase italic truncate">
-                      <span className="text-primary">Z</span> Raporu Detayı
-                    </h2>
-                    <div className="flex items-center gap-2.5 text-muted-foreground mt-1">
-                      <Calendar className="w-4 h-4 text-primary/60" />
-                      <span className="text-xs font-bold uppercase tracking-widest truncate">
-                        {new Date(selectedReport.date).toLocaleDateString('tr-TR', {
-                          weekday: 'long',
-                          day: 'numeric',
-                          month: 'long',
-                          year: 'numeric'
-                        })}
+                </div>
+                <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
+                  <ReceiptText className="w-5 h-5 text-primary" />
+                </div>
+              </div>
+
+              <div className="p-6 space-y-6">
+                {/* Summary Grid */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 rounded-xl border bg-card flex flex-col gap-1">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase">
+                      Günlük Ciro
+                    </span>
+                    <span className="text-2xl font-bold tabular-nums tracking-tight">
+                      {formatCurrency(selectedReport.totalRevenue)}
+                    </span>
+                  </div>
+                  <div className="p-4 rounded-xl border bg-card flex flex-col gap-1">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase">
+                      Sipariş Sayısı
+                    </span>
+                    <span className="text-2xl font-bold tabular-nums tracking-tight">
+                      {selectedReport.orderCount}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Details Table */}
+                <div className="border rounded-xl overflow-hidden">
+                  <div className="bg-muted/30 px-4 py-2 border-b text-xs font-bold text-muted-foreground uppercase">
+                    Ödeme Dağılımı
+                  </div>
+                  <div className="divide-y">
+                    <div className="flex justify-between items-center p-4 bg-card">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                          <Banknote className="w-4 h-4 text-emerald-600" />
+                        </div>
+                        <span className="font-medium">Nakit</span>
+                      </div>
+                      <span className="font-bold tabular-nums text-emerald-600">
+                        {formatCurrency(selectedReport.totalCash)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center p-4 bg-card">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                          <CreditCard className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <span className="font-medium">Kredi Kartı</span>
+                      </div>
+                      <span className="font-bold tabular-nums text-blue-600">
+                        {formatCurrency(selectedReport.totalCard)}
                       </span>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="p-4 relative z-20 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="group bg-gradient-to-br from-emerald-500/10 to-background border p-3.5 rounded-[1.5rem] flex flex-col items-center text-center shadow-sm hover:shadow-lg transition-all duration-300 border-emerald-500/20">
-                    <div className="p-1.5 bg-emerald-500/20 rounded-xl mb-2 group-hover:scale-110 transition-transform">
-                      <TrendingUp className="w-4 h-4 text-emerald-500" />
-                    </div>
-                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">
-                      Günlük Ciro
-                    </p>
-                    <p className="text-xl font-black text-emerald-500 tabular-nums tracking-tight">
-                      {formatCurrency(selectedReport.totalRevenue)}
-                    </p>
+                {/* Financial Summary */}
+                <div className="border rounded-xl overflow-hidden">
+                  <div className="bg-muted/30 px-4 py-2 border-b text-xs font-bold text-muted-foreground uppercase">
+                    Finansal Özet
                   </div>
-
-                  <div className="group bg-gradient-to-br from-blue-500/10 to-background border p-3.5 rounded-[1.5rem] flex flex-col items-center text-center shadow-sm hover:shadow-lg transition-all duration-300 border-blue-500/20">
-                    <div className="p-1.5 bg-blue-500/20 rounded-xl mb-2 group-hover:scale-110 transition-transform">
-                      <ShoppingBag className="w-4 h-4 text-blue-500" />
+                  <div className="divide-y bg-card">
+                    <div className="flex justify-between items-center p-3 px-4">
+                      <span className="text-sm font-medium text-muted-foreground">
+                        Net Satışlar
+                      </span>
+                      <span className="text-sm font-bold tabular-nums">
+                        {formatCurrency(selectedReport.totalRevenue - selectedReport.totalVat)}
+                      </span>
                     </div>
-                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">
-                      Sipariş
-                    </p>
-                    <p className="text-xl font-black text-blue-500 tabular-nums tracking-tight">
-                      {selectedReport.orderCount}
-                    </p>
-                  </div>
-
-                  <div className="group bg-gradient-to-br from-orange-500/10 to-background border p-3.5 rounded-[1.5rem] flex flex-col items-center text-center shadow-sm hover:shadow-lg transition-all duration-300 border-orange-500/20">
-                    <div className="p-1.5 bg-orange-500/20 rounded-xl mb-2 group-hover:scale-110 transition-transform">
-                      <Banknote className="w-4 h-4 text-orange-500" />
+                    <div className="flex justify-between items-center p-3 px-4">
+                      <span className="text-sm font-medium text-muted-foreground">KDV (%10)</span>
+                      <span className="text-sm font-bold tabular-nums">
+                        {formatCurrency(selectedReport.totalVat)}
+                      </span>
                     </div>
-                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">
-                      Nakit
-                    </p>
-                    <p className="text-xl font-black text-orange-500 tabular-nums tracking-tight">
-                      {formatCurrency(selectedReport.totalCash)}
-                    </p>
-                  </div>
-
-                  <div className="group bg-gradient-to-br from-purple-500/10 to-background border p-3.5 rounded-[1.5rem] flex flex-col items-center text-center shadow-sm hover:shadow-lg transition-all duration-300 border-purple-500/20">
-                    <div className="p-1.5 bg-purple-500/20 rounded-xl mb-2 group-hover:scale-110 transition-transform">
-                      <CreditCard className="w-4 h-4 text-purple-500" />
-                    </div>
-                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">
-                      Kart
-                    </p>
-                    <p className="text-xl font-black text-purple-500 tabular-nums tracking-tight">
-                      {formatCurrency(selectedReport.totalCard)}
-                    </p>
+                    {selectedReport.cancelCount > 0 && (
+                      <div className="flex justify-between items-center p-3 px-4 bg-red-50/50 dark:bg-red-900/10">
+                        <span className="text-sm font-bold text-red-600 flex items-center gap-2">
+                          <AlertCircle className="w-3.5 h-3.5" /> İptal Edilenler
+                        </span>
+                        <span className="text-sm font-bold text-red-600">
+                          {selectedReport.cancelCount}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  <Card className="bg-muted/30 border-none shadow-inner overflow-hidden">
-                    <div className="p-4 space-y-3">
-                      <div className="flex justify-between items-end">
-                        <div className="space-y-1">
-                          <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest text-opacity-80">
-                            Net Satışlar
-                          </span>
-                          <p className="text-xl font-black tabular-nums text-foreground">
-                            {formatCurrency(selectedReport.totalRevenue - selectedReport.totalVat)}
-                          </p>
-                        </div>
-                        <div className="text-right space-y-1">
-                          <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest text-opacity-80">
-                            KDV (%10)
-                          </span>
-                          <p className="text-xl font-bold tabular-nums text-muted-foreground">
-                            {formatCurrency(selectedReport.totalVat)}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="h-px bg-gradient-to-r from-transparent via-muted-foreground/10 to-transparent" />
-
-                      {selectedReport.cancelCount > 0 && (
-                        <div className="flex justify-between items-center text-xs text-red-500/80 bg-red-500/5 px-3 py-2 rounded-xl border border-red-500/10">
-                          <span className="font-bold flex items-center gap-2 uppercase tracking-tight">
-                            <AlertCircle className="w-4 h-4" /> İptal Edilenler
-                          </span>
-                          <span className="font-black text-sm">{selectedReport.cancelCount}</span>
-                        </div>
-                      )}
-                    </div>
-                  </Card>
-
-                  <div className="flex flex-col items-center gap-4 pt-2">
-                    <Button
-                      className="w-full h-12 rounded-2xl font-black uppercase tracking-widest gap-3 text-sm shadow-xl hover:shadow-primary/20 transition-all active:scale-[0.98]"
-                      onClick={() => setSelectedReport(null)}
-                    >
-                      <X className="w-5 h-5" />
-                      Pencereyi Kapat
-                    </Button>
-                  </div>
+                <div className="pt-2">
+                  <Button
+                    variant="outline"
+                    className="w-full h-11 font-semibold hover:bg-destructive hover:text-destructive-foreground hover:scale-105 active:scale-95 transition-all duration-300"
+                    onClick={() => setSelectedReport(null)}
+                  >
+                    Kapat
+                  </Button>
                 </div>
               </div>
             </div>

@@ -27,6 +27,9 @@ export function OrderHistoryModal(): React.JSX.Element {
   const [open, setOpen] = useState(false)
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(false)
+  // New state for detail loading
+  const [loadingDetails, setLoadingDetails] = useState<string | null>(null)
+
   const [totalCount, setTotalCount] = useState(0)
   const [page, setPage] = useState(0)
   const [dateFilter, setDateFilter] = useState(new Date().toISOString().split('T')[0])
@@ -70,8 +73,30 @@ export function OrderHistoryModal(): React.JSX.Element {
     }
   }, [open, loadOrders, dateFilter, page])
 
-  const toggleExpand = (orderId: string): void => {
-    setExpandedOrderId(expandedOrderId === orderId ? null : orderId)
+  const toggleExpand = async (orderId: string): Promise<void> => {
+    if (expandedOrderId === orderId) {
+      setExpandedOrderId(null)
+      return
+    }
+
+    setExpandedOrderId(orderId)
+
+    // Check if we have details (e.g. payments is a good indicator as it wasn't in list view)
+    const order = orders.find((o) => o.id === orderId)
+    if (order && !order.payments) {
+      setLoadingDetails(orderId)
+      try {
+        // Use the typed wrapper which we know calls the IPC
+        // We might need to cast cafeApi.orders to any if TS complains about getDetails missing on type
+        // But we updated orderService, so it should be fine.
+        const fullOrder = await cafeApi.orders.getDetails(orderId)
+        setOrders((prev) => prev.map((o) => (o.id === orderId ? fullOrder : o)))
+      } catch (error) {
+        console.error('Failed to load details', error)
+      } finally {
+        setLoadingDetails(null)
+      }
+    }
   }
 
   return (
@@ -177,61 +202,69 @@ export function OrderHistoryModal(): React.JSX.Element {
                     {expandedOrderId === order.id && (
                       <TableRow className="bg-muted/30 hover:bg-muted/30">
                         <TableCell colSpan={5} className="p-4">
-                          <div className="space-y-3">
-                            <h4 className="text-sm font-semibold mb-2">Sipariş Detayı</h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                              {/* Left Column - Items */}
-                              <div className="space-y-2">
-                                {order.items?.map((item) => (
-                                  <div key={item.id} className="flex justify-between text-sm">
-                                    <span>
-                                      {item.quantity}x {item.product?.name}
-                                    </span>
+                          {loadingDetails === order.id ? (
+                            <div className="py-8 flex justify-center items-center text-muted-foreground gap-2">
+                              <RefreshCw className="w-5 h-5 animate-spin" /> Yükleniyor...
+                            </div>
+                          ) : (
+                            <div className="space-y-3">
+                              <h4 className="text-sm font-semibold mb-2">Sipariş Detayı</h4>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Left Column - Items */}
+                                <div className="space-y-2">
+                                  {order.items?.map((item) => (
+                                    <div key={item.id} className="flex justify-between text-sm">
+                                      <span>
+                                        {item.quantity}x {item.product?.name}
+                                      </span>
+                                      <span className="tabular-nums">
+                                        {formatCurrency(item.unitPrice * item.quantity)}
+                                      </span>
+                                    </div>
+                                  ))}
+                                  <div className="border-t pt-2 mt-2 flex justify-between font-bold">
+                                    <span>Toplam</span>
                                     <span className="tabular-nums">
-                                      {formatCurrency(item.unitPrice * item.quantity)}
+                                      {formatCurrency(order.totalAmount)}
                                     </span>
                                   </div>
-                                ))}
-                                <div className="border-t pt-2 mt-2 flex justify-between font-bold">
-                                  <span>Toplam</span>
-                                  <span className="tabular-nums">
-                                    {formatCurrency(order.totalAmount)}
-                                  </span>
+                                </div>
+
+                                {/* Right Column - Info */}
+                                <div className="text-sm text-muted-foreground border-l pl-6">
+                                  <p>
+                                    Sipariş ID:{' '}
+                                    <span className="font-mono text-xs">
+                                      {order.id.slice(0, 16)}...
+                                    </span>
+                                  </p>
+                                  <p>
+                                    Tarih:{' '}
+                                    {format(new Date(order.createdAt), 'dd MMMM yyyy HH:mm', {
+                                      locale: tr
+                                    })}
+                                  </p>
+                                  {order.payments && order.payments.length > 0 && (
+                                    <div className="mt-3">
+                                      <p className="font-semibold text-foreground">
+                                        Ödeme Bilgisi:
+                                      </p>
+                                      {order.payments.map((p) => (
+                                        <div key={p.id} className="flex justify-between mt-1">
+                                          <span>
+                                            {p.paymentMethod === 'CASH' ? 'Nakit' : 'Kredi Kartı'}
+                                          </span>
+                                          <span className="tabular-nums">
+                                            {formatCurrency(p.amount)}
+                                          </span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
                                 </div>
                               </div>
-
-                              {/* Right Column - Info */}
-                              <div className="text-sm text-muted-foreground border-l pl-6">
-                                <p>
-                                  Sipariş ID:{' '}
-                                  <span className="font-mono text-xs">
-                                    {order.id.slice(0, 16)}...
-                                  </span>
-                                </p>
-                                <p>
-                                  Tarih:{' '}
-                                  {format(new Date(order.createdAt), 'dd MMMM yyyy HH:mm', {
-                                    locale: tr
-                                  })}
-                                </p>
-                                {order.payments && order.payments.length > 0 && (
-                                  <div className="mt-3">
-                                    <p className="font-semibold text-foreground">Ödeme Bilgisi:</p>
-                                    {order.payments.map((p) => (
-                                      <div key={p.id} className="flex justify-between mt-1">
-                                        <span>
-                                          {p.paymentMethod === 'CASH' ? 'Nakit' : 'Kredi Kartı'}
-                                        </span>
-                                        <span className="tabular-nums">
-                                          {formatCurrency(p.amount)}
-                                        </span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
                             </div>
-                          </div>
+                          )}
                         </TableCell>
                       </TableRow>
                     )}

@@ -60,7 +60,8 @@ const api = {
     markItemsPaid: (items: { id: string; quantity: number }[]) =>
       ipcRenderer.invoke(IPC_CHANNELS.ORDERS_MARK_ITEMS_PAID, items),
     getHistory: (options?: { date?: string; limit?: number; offset?: number }) =>
-      ipcRenderer.invoke(IPC_CHANNELS.ORDERS_GET_HISTORY, options)
+      ipcRenderer.invoke(IPC_CHANNELS.ORDERS_GET_HISTORY, options),
+    getDetails: (orderId: string) => ipcRenderer.invoke(IPC_CHANNELS.ORDERS_GET_DETAILS, orderId)
   },
 
   // Payments
@@ -121,6 +122,8 @@ const api = {
     create: (data: { description: string; amount: number; category?: string }) =>
       ipcRenderer.invoke(IPC_CHANNELS.EXPENSES_CREATE, data),
     getAll: () => ipcRenderer.invoke(IPC_CHANNELS.EXPENSES_GET_ALL),
+    update: (id: string, data: { description?: string; amount?: number; category?: string }) =>
+      ipcRenderer.invoke(IPC_CHANNELS.EXPENSES_UPDATE, id, data),
     delete: (id: string) => ipcRenderer.invoke(IPC_CHANNELS.EXPENSES_DELETE, id)
   },
 

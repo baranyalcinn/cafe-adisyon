@@ -79,6 +79,14 @@ export function registerOrderHandlers(): void {
     return orderService.getOrderHistory(validation.data ?? {})
   })
 
+  ipcMain.handle(IPC_CHANNELS.ORDERS_GET_DETAILS, async (_, orderId) => {
+    // Basic string validation
+    if (!orderId || typeof orderId !== 'string') {
+      throw new Error('Geçersiz sipariş ID')
+    }
+    return orderService.getOrderDetails(orderId)
+  })
+
   ipcMain.handle(IPC_CHANNELS.ORDERS_TRANSFER, async (_, orderId, targetTableId) => {
     const validation = validateInput(orderSchemas.transfer, { orderId, targetTableId })
     if (!validation.success) throw new Error(validation.error)

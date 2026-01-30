@@ -363,38 +363,89 @@ export function LogsTab(): React.JSX.Element {
                               {/* Detailed Activity Card */}
                               <div className="space-y-3">
                                 <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-1.5">
-                                  <History className="w-3 h-3" /> Aktivite Detayı
+                                  <History className="w-3 h-3" /> İşlem Detayı
                                 </span>
-                                <div className="relative p-5 bg-background rounded-2xl border-2 shadow-sm group/card overflow-hidden">
-                                  <div
-                                    className={cn(
-                                      'absolute top-0 left-0 w-1 h-full transition-all duration-300',
-                                      config?.color?.replace('text-', 'bg-') || 'bg-primary'
-                                    )}
-                                  />
-                                  <div className="flex gap-4">
-                                    <div
-                                      className={cn(
-                                        'w-12 h-12 rounded-xl flex items-center justify-center shrink-0',
-                                        config?.color
-                                          ?.replace('text-', 'bg-')
-                                          ?.replace('-', '-500/10 ') || 'bg-muted'
-                                      )}
-                                    >
-                                      <History className={cn('w-6 h-6', config?.color)} />
+
+                                {log.action === 'GENERATE_ZREPORT' ||
+                                log.action === 'END_OF_DAY' ? (
+                                  <div className="border rounded-xl  bg-card/50 overflow-hidden text-sm">
+                                    <div className="grid grid-cols-2 divide-x divide-y border-b">
+                                      <div className="p-4 flex flex-col items-center justify-center gap-1">
+                                        <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                                          Günlük Ciro
+                                        </span>
+                                        <span className="text-xl font-bold tabular-nums text-foreground">
+                                          {/* Parse revenue from details if possible, or show generic info */}
+                                          {(log.details || '').includes('₺')
+                                            ? (log.details || '')
+                                                .split('Toplam:')[1]
+                                                ?.split(' ')[1] || log.details
+                                            : log.details}
+                                        </span>
+                                      </div>
+                                      <div className="p-4 flex flex-col items-center justify-center gap-1">
+                                        <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                                          Sipariş
+                                        </span>
+                                        <span className="text-xl font-bold tabular-nums text-blue-600">
+                                          -
+                                        </span>
+                                      </div>
                                     </div>
-                                    <div className="space-y-1 py-1">
-                                      <p className="text-base font-medium text-foreground leading-relaxed">
-                                        {log.details}
-                                      </p>
-                                      {log.action.includes('PAYMENT') && (
-                                        <p className="text-xs font-bold text-success/80 uppercase tracking-wide">
-                                          Finansal İşlem Onaylandı
-                                        </p>
-                                      )}
+                                    <div className="grid grid-cols-2 divide-x">
+                                      <div className="p-4 flex flex-col items-center justify-center gap-1">
+                                        <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                                          Nakit
+                                        </span>
+                                        <span className="text-xl font-bold tabular-nums text-emerald-600">
+                                          -
+                                        </span>
+                                      </div>
+                                      <div className="p-4 flex flex-col items-center justify-center gap-1">
+                                        <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                                          Kart
+                                        </span>
+                                        <span className="text-xl font-bold tabular-nums text-purple-600">
+                                          -
+                                        </span>
+                                      </div>
+                                    </div>
+                                    <div className="p-3 bg-muted/30 text-center text-xs text-muted-foreground border-t">
+                                      {log.details}
                                     </div>
                                   </div>
-                                </div>
+                                ) : (
+                                  <div className="relative p-5 bg-background rounded-2xl border-2 shadow-sm group/card overflow-hidden">
+                                    <div
+                                      className={cn(
+                                        'absolute top-0 left-0 w-1 h-full transition-all duration-300',
+                                        config?.color?.replace('text-', 'bg-') || 'bg-primary'
+                                      )}
+                                    />
+                                    <div className="flex gap-4">
+                                      <div
+                                        className={cn(
+                                          'w-12 h-12 rounded-xl flex items-center justify-center shrink-0',
+                                          config?.color
+                                            ?.replace('text-', 'bg-')
+                                            ?.replace('-', '-500/10 ') || 'bg-muted'
+                                        )}
+                                      >
+                                        <History className={cn('w-6 h-6', config?.color)} />
+                                      </div>
+                                      <div className="space-y-1 py-1">
+                                        <p className="text-base font-medium text-foreground leading-relaxed">
+                                          {log.details}
+                                        </p>
+                                        {log.action.includes('PAYMENT') && (
+                                          <p className="text-xs font-bold text-success/80 uppercase tracking-wide">
+                                            Finansal İşlem Onaylandı
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </TableCell>

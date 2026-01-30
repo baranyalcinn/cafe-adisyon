@@ -13,7 +13,8 @@ import {
 export class ReportingService {
   /**
    * Generates a Z-Report for the current shift.
-   * Logic: "Since Last Report" to prevent data loss.
+   * Logic: Revenue is based on TRANSACTIONS (Payments) collected since last report.
+   * Orders count is based on CLOSED orders.
    * Handles midnight shifts by smart-dating < 5AM to yesterday.
    */
   async generateZReport(actualCash?: number): Promise<ApiResponse<DailySummary>> {
@@ -40,16 +41,25 @@ export class ReportingService {
 
       const startDate = lastReport ? lastReport.createdAt : new Date(0)
 
-      // Get ALL closed orders since the last Z-Report
-      const periodicOrders = await prisma.order.findMany({
+      // Get ALL closed orders since the last Z-Report (For Order Count)
+      const periodicOrdersCount = await prisma.order.count({
         where: {
           status: 'CLOSED',
           createdAt: {
             gt: startDate,
             lte: now
           }
-        },
-        include: { payments: true }
+        }
+      })
+
+      // Get ALL transactions (payments) since the last Z-Report (For Revenue)
+      const periodicTransactions = await prisma.transaction.findMany({
+        where: {
+          createdAt: {
+            gt: startDate,
+            lte: now
+          }
+        }
       })
 
       // Get expenses in the same period
@@ -62,14 +72,15 @@ export class ReportingService {
         }
       })
 
-      // Calculate totals
-      const allPayments = periodicOrders.flatMap((o) => o.payments)
-      const totalCash = allPayments
-        .filter((p) => p.paymentMethod === 'CASH')
-        .reduce((sum, p) => sum + p.amount, 0)
-      const totalCard = allPayments
-        .filter((p) => p.paymentMethod === 'CARD')
-        .reduce((sum, p) => sum + p.amount, 0)
+      // Calculate totals from TRANSACTIONS
+      const totalCash = periodicTransactions
+        .filter((t) => t.paymentMethod === 'CASH')
+        .reduce((sum, t) => sum + t.amount, 0)
+
+      const totalCard = periodicTransactions
+        .filter((t) => t.paymentMethod === 'CARD')
+        .reduce((sum, t) => sum + t.amount, 0)
+
       const totalRevenue = totalCash + totalCard
 
       const totalExpenses = periodicExpenses.reduce((sum, e) => sum + e.amount, 0)
@@ -88,7 +99,7 @@ export class ReportingService {
           netProfit,
           cancelCount: 0,
           totalVat,
-          orderCount: periodicOrders.length,
+          orderCount: periodicOrdersCount,
           totalRevenue
         },
         update: {
@@ -98,7 +109,7 @@ export class ReportingService {
           totalExpenses,
           netProfit,
           totalVat,
-          orderCount: periodicOrders.length,
+          orderCount: periodicOrdersCount,
           totalRevenue,
           createdAt: now
         }
@@ -131,22 +142,28 @@ export class ReportingService {
       }
       today.setHours(0, 0, 0, 0)
 
-      const todayOrders = await prisma.order.findMany({
+      // For Order Count
+      const todayOrdersCount = await prisma.order.count({
         where: {
           status: 'CLOSED',
           createdAt: { gte: today }
-        },
-        include: { payments: true }
+        }
       })
 
-      const dailyRevenue = todayOrders.reduce((sum, order) => sum + order.totalAmount, 0)
+      // For Revenue (Transactions)
+      const todayTransactions = await prisma.transaction.findMany({
+        where: {
+          createdAt: { gte: today }
+        }
+      })
 
-      const allPayments = todayOrders.flatMap((o) => o.payments)
+      const dailyRevenue = todayTransactions.reduce((sum, t) => sum + t.amount, 0)
+
       const paymentMethodBreakdown = {
-        cash: allPayments
+        cash: todayTransactions
           .filter((p) => p.paymentMethod === 'CASH')
           .reduce((sum, p) => sum + p.amount, 0),
-        card: allPayments
+        card: todayTransactions
           .filter((p) => p.paymentMethod === 'CARD')
           .reduce((sum, p) => sum + p.amount, 0)
       }
@@ -187,7 +204,7 @@ export class ReportingService {
         success: true,
         data: {
           dailyRevenue,
-          totalOrders: todayOrders.length,
+          totalOrders: todayOrdersCount,
           paymentMethodBreakdown,
           topProducts
         }
@@ -209,22 +226,28 @@ export class ReportingService {
       }
       today.setHours(0, 0, 0, 0)
 
+      // For Order Count & Hourly Activity (Orders based)
       const todayOrders = await prisma.order.findMany({
         where: {
           status: 'CLOSED',
           createdAt: { gte: today }
-        },
-        include: { payments: true }
+        }
       })
 
-      const dailyRevenue = todayOrders.reduce((sum, order) => sum + order.totalAmount, 0)
+      // For Revenue (Transactions)
+      const todayTransactions = await prisma.transaction.findMany({
+        where: {
+          createdAt: { gte: today }
+        }
+      })
 
-      const allPayments = todayOrders.flatMap((o) => o.payments)
+      const dailyRevenue = todayTransactions.reduce((sum, t) => sum + t.amount, 0)
+
       const paymentMethodBreakdown = {
-        cash: allPayments
+        cash: todayTransactions
           .filter((p) => p.paymentMethod === 'CASH')
           .reduce((sum, p) => sum + p.amount, 0),
-        card: allPayments
+        card: todayTransactions
           .filter((p) => p.paymentMethod === 'CARD')
           .reduce((sum, p) => sum + p.amount, 0)
       }
@@ -277,6 +300,13 @@ export class ReportingService {
       })
 
       // Calculate Hourly Activity
+      // NOTE: Activity is simpler to map to Orders because Transactions can be multiple per order.
+      // But for consistency with revenue, we should probably stick to Order closes for "Activity"
+      // or change activity to "Transactions"?
+      // Let's keep "Activity" as "Orders Closed" count, but maybe Revenue part of activity derived from transactions?
+      // For simplicity and alignment with chart, using Orders for hourly distribution is safer for now
+      // unless user wants strict hourly cash flow.
+      // Existing logic uses `todayOrders` (now without payments included).
       const hourlyStats = new Map<number, { revenue: number; count: number }>()
 
       // Initialize all hours with 0
@@ -288,7 +318,12 @@ export class ReportingService {
         const hour = order.createdAt.getHours()
         const current = hourlyStats.get(hour) || { revenue: 0, count: 0 }
         hourlyStats.set(hour, {
-          revenue: current.revenue + order.totalAmount,
+          revenue: current.revenue + order.totalAmount, // This is still Order Total, might vary from actual cash collected if partials exist.
+          // Ideally this should merge with transaction times.
+          // But strict "When was it busy?" is answered by Order Close Time.
+          // While "When did we get money?" is Transaction Time.
+          // Let's leave this on Order Time for now to match the "Order Count" visual.
+          // Changing this to transaction time would mismatch Order Count.
           count: current.count + 1
         })
       })
@@ -331,19 +366,28 @@ export class ReportingService {
         const nextDay = new Date(date)
         nextDay.setDate(nextDay.getDate() + 1)
 
-        const orders = await prisma.order.findMany({
+        // 1. Get Revenue (Transactions)
+        const revenueAgg = await prisma.transaction.aggregate({
+          where: {
+            createdAt: { gte: date, lt: nextDay }
+          },
+          _sum: { amount: true }
+        })
+
+        // 2. Get Order Count (Closed Orders)
+        const orderCount = await prisma.order.count({
           where: {
             status: 'CLOSED',
             createdAt: { gte: date, lt: nextDay }
           }
         })
 
-        const revenue = orders.reduce((sum, o) => sum + o.totalAmount, 0)
+        const revenue = revenueAgg._sum.amount || 0
 
         result.push({
           date: date.toLocaleDateString('tr-TR', { weekday: 'short', day: 'numeric' }),
           revenue,
-          orderCount: orders.length
+          orderCount: orderCount
         })
       }
 
@@ -360,7 +404,16 @@ export class ReportingService {
       const startOfMonth = new Date(Date.UTC(date.getFullYear(), date.getMonth(), 1))
       const endOfMonth = new Date(Date.UTC(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59))
 
-      const monthOrders = await prisma.order.findMany({
+      // 1. Get Revenue (Transactions)
+      const revenueAgg = await prisma.transaction.aggregate({
+        where: {
+          createdAt: { gte: startOfMonth, lte: endOfMonth }
+        },
+        _sum: { amount: true }
+      })
+
+      // 2. Get Order Count
+      const orderCount = await prisma.order.count({
         where: {
           status: 'CLOSED',
           createdAt: { gte: startOfMonth, lte: endOfMonth }
@@ -373,7 +426,7 @@ export class ReportingService {
         }
       })
 
-      const totalRevenue = monthOrders.reduce((sum, o) => sum + o.totalAmount, 0)
+      const totalRevenue = revenueAgg._sum.amount || 0
       const totalExpenses = monthExpenses.reduce((sum, e) => sum + e.amount, 0)
       const netProfit = totalRevenue - totalExpenses
 
@@ -388,14 +441,14 @@ export class ReportingService {
           totalRevenue,
           totalExpenses,
           netProfit,
-          orderCount: monthOrders.length
+          orderCount: orderCount
         },
         create: {
           monthDate: startOfMonth,
           totalRevenue,
           totalExpenses,
           netProfit,
-          orderCount: monthOrders.length
+          orderCount: orderCount
         }
       })
     } catch (error) {

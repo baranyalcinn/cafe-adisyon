@@ -288,7 +288,6 @@ export class MaintenanceService {
         { name: 'Soda', price: 2500, categoryId: 'cat-soguk', isFavorite: false },
         { name: 'Kaşarlı Tost', price: 8000, categoryId: 'cat-yiyecek', isFavorite: true },
         { name: 'Karışık Tost', price: 9500, categoryId: 'cat-yiyecek', isFavorite: true },
-        { name: 'Bazlama Tost', price: 11000, categoryId: 'cat-yiyecek', isFavorite: false },
         { name: 'Soğuk Sandviç', price: 8500, categoryId: 'cat-yiyecek', isFavorite: false },
         { name: 'Patates Cips', price: 7000, categoryId: 'cat-yiyecek', isFavorite: true },
         { name: 'Sigara Böreği (6 lı)', price: 8000, categoryId: 'cat-yiyecek', isFavorite: false },
