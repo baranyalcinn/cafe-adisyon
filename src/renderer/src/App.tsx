@@ -154,7 +154,7 @@ function NavButton({ active, onClick, icon: Icon, label }: NavButtonProps): Reac
           'w-12 h-12 rounded-2xl transition-all duration-500 relative group overflow-hidden',
           active
             ? 'text-primary-foreground shadow-lg shadow-primary/30'
-            : 'text-muted-foreground/30 hover:text-foreground hover:bg-muted/40'
+            : 'text-foreground/80 hover:text-foreground hover:bg-muted/40'
         )}
         title={label}
       >
@@ -168,7 +168,9 @@ function NavButton({ active, onClick, icon: Icon, label }: NavButtonProps): Reac
         <Icon
           className={cn(
             'w-5 h-5 transition-all duration-500 relative z-10',
-            active ? 'scale-110 opacity-100' : 'scale-100 group-hover:scale-110'
+            active
+              ? 'scale-110 opacity-100 text-white'
+              : 'scale-100 group-hover:scale-110 opacity-100'
           )}
         />
       </Button>
@@ -178,25 +180,51 @@ function NavButton({ active, onClick, icon: Icon, label }: NavButtonProps): Reac
 
 function LogoSection(): React.JSX.Element {
   return (
-    <div className="flex flex-col items-center group select-none animate-in fade-in zoom-in duration-700">
-      <div className="relative">
-        <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full scale-150 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-        <div className="flex flex-col items-center gap-1 relative z-10">
-          <div className="flex items-center justify-center gap-0.5">
-            <span className="text-2xl font-black text-rose-500 tracking-tighter transition-all duration-500 group-hover:scale-110">
-              7
-            </span>
-            <span className="text-2xl font-black text-rose-500/70 tracking-tighter transition-all duration-500 group-hover:scale-110 delay-75">
-              7
-            </span>
-            <span className="text-2xl font-black text-rose-500/40 tracking-tighter transition-all duration-500 group-hover:scale-110 delay-150">
-              7
+    <div className="flex flex-col items-center group select-none animate-in fade-in zoom-in duration-1000">
+      <div className="relative p-2 flex flex-col items-center">
+        {/* Abstract Background Glow */}
+        <div className="absolute inset-x-0 top-0 bottom-0 bg-rose-500/[0.03] dark:bg-rose-500/[0.08] blur-2xl rounded-full scale-150 group-hover:bg-rose-500/10 transition-colors duration-1000" />
+
+        <div className="flex flex-col items-center gap-2 relative z-10">
+          {/* Staggered Vertical 7s - Prevents 'M' look */}
+          <motion.div
+            className="flex items-center gap-1"
+            initial="hidden"
+            animate="show"
+            variants={{
+              show: { transition: { staggerChildren: 0.1 } }
+            }}
+          >
+            {[
+              { color: 'text-rose-500', offset: 'translate-y-1' },
+              { color: 'text-rose-500/70', offset: 'translate-y-0' },
+              { color: 'text-rose-500/40', offset: '-translate-y-1' }
+            ].map((config, i) => (
+              <motion.div
+                key={i}
+                variants={{
+                  hidden: { opacity: 0, y: 10 },
+                  show: { opacity: 1, y: 0 }
+                }}
+                className={cn(
+                  'w-4 h-6 rounded-md border border-rose-500/10 bg-rose-500/[0.02] dark:bg-rose-500/[0.05] flex items-center justify-center font-[1000] text-base transition-all duration-500 group-hover:border-rose-500/30 group-hover:bg-rose-500/10 shadow-sm',
+                  config.color,
+                  config.offset,
+                  'group-hover:translate-y-0'
+                )}
+              >
+                7
+              </motion.div>
+            ))}
+          </motion.div>
+
+          {/* Minimalist Cafe Text */}
+          <div className="flex flex-col items-center">
+            <span className="text-[9px] font-black text-rose-500/40 dark:text-rose-500/30 uppercase tracking-[0.3em] transition-all duration-500 group-hover:text-rose-500 group-hover:tracking-[0.45em] relative">
+              Cafe
+              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-[1px] bg-rose-500/20 group-hover:w-6 transition-all duration-500" />
             </span>
           </div>
-          <div className="h-0.5 w-5 bg-gradient-to-r from-transparent via-border to-transparent mb-0.5" />
-          <span className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-[0.3em] transition-colors duration-500 group-hover:text-primary/60">
-            Cafe
-          </span>
         </div>
       </div>
     </div>

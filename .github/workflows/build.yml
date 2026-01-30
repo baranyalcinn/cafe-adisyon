@@ -17,7 +17,7 @@ jobs:
       - name: Kodları Çek
         uses: actions/checkout@v4
 
-      # Swap Alanı (8GB) - Native modüller ve Prisma için kritik
+      # Swap Alanı (8GB) - Extra güvenlik için tutuyoruz
       - name: Set Pagefile (Swap)
         uses: al-cheb/configure-pagefile-action@v1.4
         with:
@@ -29,26 +29,24 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
-          # Bu satır görseldeki 'node-cache'i otomatik yönetir
-          cache: 'npm'
+          cache: 'npm' # Bağımlılıkları önbelleğe al
 
-      # Görseldeki 'electron-Windows' cache'ini kullanmak için
-      - name: Cache Electron Binaries
+      # Electron Binarylerini Önbelleğe Al
+      - name: Electron Cache
         uses: actions/cache@v4
         with:
-          path: ~\AppData\Local\electron\Cache
-          key: ${{ runner.os }}-electron-cache-${{ hashFiles('package.json') }}
+          path: |
+            ~/AppData/Local/electron/Cache
+            ~/AppData/Local/electron-builder/Cache
+          key: ${{ runner.os }}-electron-${{ hashFiles('package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-electron-cache-
+            ${{ runner.os }}-electron-
 
-      - name: Bağımlılıkları Yükle (Optimize Edilmiş)
+      - name: Bağımlılıkları Yükle
         run: |
-          # package-lock.json yoksa oluştur (Cache için şarttır), varsa dokunma
-          if (!(Test-Path package-lock.json)) { 
-            npm install --package-lock-only --legacy-peer-deps 
-          }
-          # npm ci, node_modules'ü cache'e göre en hızlı şekilde senkronize eder
-          npm ci --legacy-peer-deps
+          # Önbelleği kullanmak için her seferinde silmiyoruz.
+          # Sadece kilit dosyasına göre yükleme yapıyoruz.
+          npm install --legacy-peer-deps
 
       - name: Prisma Generate
         run: npx prisma generate
@@ -59,23 +57,45 @@ jobs:
       - name: TypeScript Build
         run: npm run build
 
-      # STEP 1: Electron Builder'ı global kur
+      # STEP 1: Install electron-builder globally BEFORE surgery
+      # This ensures the build tool is completely independent of local node_modules
       - name: Install Electron Builder Globally
         run: npm install -g electron-builder@26.4.0
 
-      # STEP 2: Surgery İşlemi (Runtime native deps koruma)
-      - name: Prepare for Packaging (Surgery)
+      # STEP 2: Prune node_modules to keep ONLY runtime native deps
+      # electron-builder runs from global, so we don't need any build tools locally
+      - name: Prepare for Packaging
         run: |
+          # Runtime dependencies that must be preserved
+          # Format: "scope/package" for scoped, "package" for regular
           $essential = @(
-            "@libsql/client", "@libsql/core", "@libsql/hrana-client",
-            "@libsql/isomorphic-fetch", "@libsql/isomorphic-ws",
-            "@libsql/win32-x64-msvc", "@neon-rs/load", "libsql",
-            "js-base64", "ws", "cross-fetch", "node-fetch",
-            "node-fetch-native", "whatwg-url", "webidl-conversions",
-            "tr46", "web-streams-polyfill", "data-uri-to-buffer",
-            "fetch-blob", "formdata-polyfill", "bufferutil",
-            "utf-8-validate", "detect-libc", "@prisma/client",
-            "@prisma/adapter-libsql", "@prisma/driver-adapter-utils", ".prisma"
+            "@libsql/client",
+            "@libsql/core",
+            "@libsql/hrana-client",
+            "@libsql/isomorphic-fetch",
+            "@libsql/isomorphic-ws",
+            "@libsql/win32-x64-msvc",
+            "@neon-rs/load",
+            "libsql",
+            "js-base64",
+            "ws",
+            "cross-fetch",
+            "node-fetch",
+            "node-fetch-native",
+            "whatwg-url",
+            "webidl-conversions",
+            "tr46",
+            "web-streams-polyfill",
+            "data-uri-to-buffer",
+            "fetch-blob",
+            "formdata-polyfill",
+            "bufferutil",
+            "utf-8-validate",
+            "detect-libc",
+            "@prisma/client",
+            "@prisma/adapter-libsql",
+            "@prisma/driver-adapter-utils",
+            ".prisma"
           )
 
           Write-Host "Starting manual surgery - keeping ONLY runtime deps..."
@@ -87,6 +107,7 @@ jobs:
             $dstPath = "node_modules/$mod"
             
             if (Test-Path $srcPath) {
+              # Handle scoped packages (e.g., @libsql/client)
               if ($mod.StartsWith("@")) {
                 $scope = $mod.Split("/")[0]
                 if (!(Test-Path "node_modules/$scope")) { 
@@ -95,12 +116,16 @@ jobs:
               }
               Copy-Item -Path $srcPath -Destination $dstPath -Recurse -Force
               Write-Host "Preserved: $mod"
+            } else {
+              Write-Host "Not found (skipping): $mod"
             }
           }
-          Remove-Item node_modules_full -Recurse -Force
-          Write-Host "Surgery complete."
 
-      # STEP 3: Build
+          # Cleanup
+          Remove-Item node_modules_full -Recurse -Force
+          Write-Host "Surgery complete. Only runtime dependencies remain."
+
+      # STEP 3: Run electron-builder from GLOBAL installation
       - name: Windows EXE Oluştur
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
