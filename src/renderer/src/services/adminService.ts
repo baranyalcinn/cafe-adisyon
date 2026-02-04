@@ -38,6 +38,8 @@ export const adminService = {
       deletedOrders: number
       deletedItems: number
       deletedTransactions: number
+      deletedExpenses: number
+      deletedSummaries: number
     }> {
       const result = await api.maintenance.archiveOldData()
       if (!result.success) throw new Error(result.error)

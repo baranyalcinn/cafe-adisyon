@@ -31,7 +31,7 @@ export function MaintenanceTab(): React.JSX.Element {
   const handleArchive = async (): Promise<void> => {
     if (
       !confirm(
-        '1 yıldan eski tüm siparişler ve işlemler silinecek.\n\nZ-Raporları korunacaktır.\n\nDevam etmek istiyor musunuz?'
+        '1 yıldan eski tüm siparişler, giderler ve Z-Raporları silinecek.\n\nBu işlem geri alınamaz.\n\nDevam etmek istiyor musunuz?'
       )
     )
       return
@@ -40,7 +40,7 @@ export function MaintenanceTab(): React.JSX.Element {
       const result = await cafeApi.maintenance.archiveOldData()
       setLastResult({
         success: true,
-        message: `${result.deletedOrders} sipariş, ${result.deletedItems} ürün, ${result.deletedTransactions} işlem silindi.`
+        message: `${result.deletedOrders} sipariş, ${result.deletedItems} ürün, ${result.deletedTransactions} işlem, ${result.deletedExpenses} gider, ${result.deletedSummaries} Z-raporu silindi.`
       })
     } catch (error) {
       setLastResult({
@@ -273,8 +273,8 @@ export function MaintenanceTab(): React.JSX.Element {
                     Eski Verileri Arşivle
                   </h4>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    **1 yıldan eski** sipariş ve işlemleri kalıcı olarak siler. Z-Raporlarınız bu
-                    işlemden etkilenmez.
+                    **1 yıldan eski** sipariş, gider ve Z-Raporu verilerini kalıcı olarak siler.
+                    Alanı boşaltır ve performansı artırır.
                   </p>
                 </div>
               </div>

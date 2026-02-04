@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Trash2, Tag, Layers } from 'lucide-react'
+import { Plus, Trash2, Tag, Layers, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
@@ -21,9 +21,10 @@ import {
 import { cafeApi } from '@/lib/api'
 import { useInventory } from '@/hooks/useInventory'
 import { toast } from '@/store/useToastStore'
+import { cn } from '@/lib/utils'
 
 export function CategoriesTab(): React.JSX.Element {
-  const { categories, products, refetchCategories } = useInventory()
+  const { categories, products, refetchCategories, isLoading } = useInventory()
   const [newCategoryName, setNewCategoryName] = useState('')
   const [deleteCategoryId, setDeleteCategoryId] = useState<string | null>(null)
   const [showDeleteCategoryDialog, setShowDeleteCategoryDialog] = useState(false)
@@ -83,6 +84,15 @@ export function CategoriesTab(): React.JSX.Element {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refetchCategories()}
+              disabled={isLoading}
+            >
+              <RefreshCw className={cn('w-4 h-4 mr-2', isLoading && 'animate-spin')} />
+              Yenile
+            </Button>
             <div className="relative">
               <Input
                 placeholder="Yeni kategori adı..."

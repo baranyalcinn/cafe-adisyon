@@ -175,8 +175,7 @@ export class OrderService {
     try {
       const updatedOrder = (await prisma.order.update({
         where: { id: orderId },
-        // @ts-ignore status enum cast
-        data,
+        data: data as { status?: 'OPEN' | 'CLOSED'; totalAmount?: number; isLocked?: boolean },
         include: {
           items: { include: { product: true } },
           payments: true
@@ -244,30 +243,36 @@ export class OrderService {
         const closedOrder = (await prisma.order.update({
           where: { id: orderId },
           data: { status: 'CLOSED' },
-          include: { items: { include: { product: true } }, payments: true }
+          include: { items: { include: { product: true } }, payments: true, table: true }
         })) as unknown as Order
+
+        // Log payment and close
+        await logService.createLog(
+          method === 'CASH' ? 'PAYMENT_CASH' : 'PAYMENT_CARD',
+          closedOrder.table?.name,
+          `₺${(amount / 100).toFixed(2)} ${method === 'CASH' ? 'nakit' : 'kart'} ödeme alındı`
+        )
+        await logService.createLog('CLOSE_TABLE', closedOrder.table?.name, 'Adisyon kapatıldı')
+
+        this.broadcastDashboardUpdate()
         return { success: true, data: { order: closedOrder, completed: true } }
       }
 
-      // Return updated order
+      // Return updated order (partial payment case)
       const updatedOrder = (await prisma.order.findUnique({
         where: { id: orderId },
         include: { items: { include: { product: true } }, payments: true, table: true }
       })) as unknown as Order
 
-      // Log activity
+      // Log partial payment activity
       await logService.createLog(
         method === 'CASH' ? 'PAYMENT_CASH' : 'PAYMENT_CARD',
         updatedOrder.table?.name,
         `₺${(amount / 100).toFixed(2)} ${method === 'CASH' ? 'nakit' : 'kart'} ödeme alındı`
       )
 
-      if (remaining <= 0) {
-        await logService.createLog('CLOSE_TABLE', updatedOrder.table?.name, `Adisyon kapatıldı`)
-      }
-
       this.broadcastDashboardUpdate()
-      return { success: true, data: { order: updatedOrder!, completed: remaining <= 0 } }
+      return { success: true, data: { order: updatedOrder!, completed: false } }
     } catch (error) {
       logger.error('OrderService.processPayment', error)
       return { success: false, error: 'Ödeme alınamadı.' }

@@ -15,7 +15,7 @@ if (!isDev && !fs.existsSync(dbPath)) {
   try {
     const initialDbPath = path.join(process.resourcesPath, 'initial.db')
     if (fs.existsSync(initialDbPath)) {
-      console.log('First run: Copying initial database...')
+      // Logger not available yet during db init, use console for first-run message
       fs.copyFileSync(initialDbPath, dbPath)
     } else {
       console.error('Initial database file not found at:', initialDbPath)
@@ -25,7 +25,7 @@ if (!isDev && !fs.existsSync(dbPath)) {
   }
 }
 
-console.log(`[Database] Initialization: ${dbPath}`)
+// Database path logged at initialization (console ok here, before logger available)
 
 // Create Prisma adapter with LibSQL (Prisma 7+ compatible)
 const adapter = new PrismaLibSql({

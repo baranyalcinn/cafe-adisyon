@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { Plus } from 'lucide-react'
+import { Plus, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { cafeApi } from '@/lib/api'
@@ -16,9 +16,10 @@ import {
 import { CategorySidebar } from './components/CategorySidebar'
 import { ProductCard } from './components/ProductCard'
 import { Input } from '@/components/ui/input'
+import { cn } from '@/lib/utils'
 
 export function ProductsTab(): React.JSX.Element {
-  const { products, categories, refetchProducts, refetchCategories } = useInventory()
+  const { products, categories, refetchProducts, refetchCategories, isLoading } = useInventory()
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
 
   // Category Delete State
@@ -135,6 +136,11 @@ export function ProductsTab(): React.JSX.Element {
     }
   }
 
+  const handleRefreshAll = (): void => {
+    refetchProducts()
+    refetchCategories()
+  }
+
   return (
     <>
       <Card className="h-full flex flex-row overflow-hidden border-0 shadow-none bg-transparent">
@@ -162,6 +168,10 @@ export function ProductsTab(): React.JSX.Element {
                 {filteredProducts.length} Ürün listeleniyor
               </p>
             </div>
+            <Button variant="outline" size="sm" onClick={handleRefreshAll} disabled={isLoading}>
+              <RefreshCw className={cn('w-4 h-4 mr-2', isLoading && 'animate-spin')} />
+              Yenile
+            </Button>
           </div>
 
           <div className="flex-1 overflow-y-auto p-6">

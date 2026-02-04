@@ -196,6 +196,12 @@ export function DashboardView(): React.JSX.Element {
         const startDate = new Date(year, month, 1, 0, 0, 0)
         const endDate = new Date(year, month + 1, 0, 23, 59, 59)
         zReportOptions = { startDate, endDate, limit: 100 } // Increase limit for month view
+        console.log('[Z-Report Filter]', {
+          month,
+          year,
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString()
+        })
       }
 
       const results = await Promise.allSettled([
@@ -233,13 +239,16 @@ export function DashboardView(): React.JSX.Element {
     loadStats()
 
     // Listen for real-time updates from backend
-    // @ts-ignore - electron type definition
-    const removeListener = window.electron.ipcRenderer.on('dashboard:update', () => {
+    const removeListener = (
+      window as {
+        electron?: { ipcRenderer: { on: (channel: string, callback: () => void) => () => void } }
+      }
+    ).electron?.ipcRenderer.on('dashboard:update', () => {
       loadStats()
     })
 
     return () => {
-      removeListener()
+      removeListener?.()
     }
   }, [loadStats])
 

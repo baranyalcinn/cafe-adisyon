@@ -44,9 +44,9 @@ export function ExpenseSheet({
   useEffect(() => {
     if (open) {
       if (expense) {
-        // Edit Mode
+        // Edit Mode - amount is stored in kuruş, convert to TL for display
         setDescription(expense.description)
-        setAmount(expense.amount.toString())
+        setAmount((expense.amount / 100).toString())
         setCategory(expense.category || '')
         // Expense type currently doesn't have 'note', but UI could support it later
       } else {

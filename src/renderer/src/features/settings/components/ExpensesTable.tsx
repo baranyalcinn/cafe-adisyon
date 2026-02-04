@@ -66,11 +66,12 @@ export function ExpensesTable({
       return direction === 'asc' ? dateA - dateB : dateB - dateA
     }
 
-    // String/Number sorting
-    /* @ts-ignore - dynamic key access */
-    if (a[key] < b[key]) return direction === 'asc' ? -1 : 1
-    /* @ts-ignore - dynamic key access */
-    if (a[key] > b[key]) return direction === 'asc' ? 1 : -1
+    // String/Number sorting with proper type handling
+    const aValue = a[key]
+    const bValue = b[key]
+    if (aValue === undefined || bValue === undefined) return 0
+    if (aValue < bValue) return direction === 'asc' ? -1 : 1
+    if (aValue > bValue) return direction === 'asc' ? 1 : -1
     return 0
   })
 

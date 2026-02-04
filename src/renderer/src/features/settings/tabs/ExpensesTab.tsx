@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { Plus } from 'lucide-react'
+import { Plus, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { Expense } from '@shared/types'
 import { ExpensesTable } from '../components/ExpensesTable'
 import { RevenueSidebar } from '../components/RevenueSidebar'
 import { ExpenseSheet } from '../components/ExpenseSheet'
+import { cn } from '@/lib/utils'
 
 // Using api directly from window as defined in preload
 const api = window.api
@@ -172,10 +173,16 @@ export function ExpensesTab(): React.JSX.Element {
               {filteredExpenses.length} gider listeleniyor
             </p>
           </div>
-          <Button onClick={handleAddExpense} className="gap-2 font-bold px-6 rounded-xl">
-            <Plus className="w-5 h-5" />
-            Gider Ekle
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={loadExpenses} disabled={isLoading}>
+              <RefreshCw className={cn('w-4 h-4 mr-2', isLoading && 'animate-spin')} />
+              Yenile
+            </Button>
+            <Button onClick={handleAddExpense} className="gap-2 font-bold px-6 rounded-xl">
+              <Plus className="w-5 h-5" />
+              Gider Ekle
+            </Button>
+          </div>
         </header>
 
         {/* Content Area */}

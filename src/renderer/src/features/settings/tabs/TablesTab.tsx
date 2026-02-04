@@ -1,4 +1,4 @@
-import { Plus, Trash2, LayoutGrid, AlertTriangle } from 'lucide-react'
+import { Plus, Trash2, LayoutGrid, AlertTriangle, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import {
@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils'
 import { useState } from 'react'
 
 export function TablesTab(): React.JSX.Element {
-  const { data: tables = [], refetch } = useTables(false)
+  const { data: tables = [], refetch, isLoading } = useTables(false)
   // We can keep useTableStore if needed for other things, but here we just need data.
   // const { tables, addTable, removeTable } = useTableStore() // Removed
 
@@ -86,6 +86,10 @@ export function TablesTab(): React.JSX.Element {
               İşletmenizdeki masaları ekleyin, düzenleyin ve yönetin
             </p>
           </div>
+          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading}>
+            <RefreshCw className={cn('w-4 h-4 mr-2', isLoading && 'animate-spin')} />
+            Yenile
+          </Button>
         </div>
       </div>
 
