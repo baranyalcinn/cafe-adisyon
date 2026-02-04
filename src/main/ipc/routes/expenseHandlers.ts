@@ -23,6 +23,20 @@ export function registerExpenseHandlers(): void {
 
   ipcMain.handle(IPC_CHANNELS.EXPENSES_GET_ALL, () => expenseService.getAllExpenses())
 
+  ipcMain.handle(IPC_CHANNELS.EXPENSES_UPDATE, async (_, id, data) => {
+    // Validate?
+    // const validation = validateInput(expenseSchemas.update, data)
+    // if (!validation.success) {
+    //   return { success: false, error: validation.error }
+    // }
+
+    const result = await expenseService.updateExpense(id, data)
+    if (result.success) {
+      await reportingService.updateMonthlyReport(new Date())
+    }
+    return result
+  })
+
   ipcMain.handle(IPC_CHANNELS.EXPENSES_DELETE, async (_, id) => {
     // Validate?
     const validation = validateInput(expenseSchemas.delete, { id })

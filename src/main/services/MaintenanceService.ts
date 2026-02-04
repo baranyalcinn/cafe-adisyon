@@ -7,8 +7,132 @@ import * as path from 'path'
 import { ApiResponse } from '../../shared/types'
 
 export class MaintenanceService {
+  /**
+   * Eski logları temizler (varsayılan: 30 günden eski)
+   */
+  async cleanupOldLogs(days: number = 30): Promise<ApiResponse<{ deletedLogs: number }>> {
+    try {
+      const cutoffDate = new Date()
+      cutoffDate.setDate(cutoffDate.getDate() - days)
+
+      const deletedLogs = await prisma.activityLog.deleteMany({
+        where: {
+          createdAt: { lt: cutoffDate }
+        }
+      })
+
+      logger.info('MaintenanceService.cleanupOldLogs', `${deletedLogs.count} eski log silindi`)
+
+      return {
+        success: true,
+        data: { deletedLogs: deletedLogs.count }
+      }
+    } catch (error) {
+      logger.error('MaintenanceService.cleanupOldLogs', error)
+      return { success: false, error: 'Log temizleme başarısız.' }
+    }
+  }
+
+  /**
+   * 1 yıldan eski giderleri arşivler (siler)
+   */
+  async archiveOldExpenses(): Promise<ApiResponse<{ deletedExpenses: number }>> {
+    try {
+      const oneYearAgo = new Date()
+      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
+
+      const deletedExpenses = await prisma.expense.deleteMany({
+        where: {
+          createdAt: { lt: oneYearAgo }
+        }
+      })
+
+      if (deletedExpenses.count > 0) {
+        await logService.createLog(
+          'ARCHIVE_EXPENSES',
+          undefined,
+          `${deletedExpenses.count} eski gider kaydı silindi`
+        )
+      }
+
+      return {
+        success: true,
+        data: { deletedExpenses: deletedExpenses.count }
+      }
+    } catch (error) {
+      logger.error('MaintenanceService.archiveOldExpenses', error)
+      return { success: false, error: 'Gider arşivleme başarısız.' }
+    }
+  }
+
+  /**
+   * 1 yıldan eski Z-raporlarını (DailySummary) siler
+   */
+  async archiveOldSummaries(): Promise<ApiResponse<{ deletedSummaries: number }>> {
+    try {
+      const oneYearAgo = new Date()
+      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
+
+      const deletedSummaries = await prisma.dailySummary.deleteMany({
+        where: {
+          date: { lt: oneYearAgo }
+        }
+      })
+
+      if (deletedSummaries.count > 0) {
+        await logService.createLog(
+          'ARCHIVE_SUMMARIES',
+          undefined,
+          `${deletedSummaries.count} eski Z-raporu silindi`
+        )
+      }
+
+      return {
+        success: true,
+        data: { deletedSummaries: deletedSummaries.count }
+      }
+    } catch (error) {
+      logger.error('MaintenanceService.archiveOldSummaries', error)
+      return { success: false, error: 'Z-raporu arşivleme başarısız.' }
+    }
+  }
+
+  /**
+   * Veritabanı bütünlük kontrolü yapar
+   */
+  async integrityCheck(): Promise<ApiResponse<{ isHealthy: boolean; details: string }>> {
+    try {
+      const result =
+        await prisma.$queryRawUnsafe<Array<{ integrity_check: string }>>('PRAGMA integrity_check')
+
+      const isHealthy = result.length === 1 && result[0].integrity_check === 'ok'
+      const details = result.map((r) => r.integrity_check).join(', ')
+
+      if (!isHealthy) {
+        logger.error('MaintenanceService.integrityCheck', `Veritabanı bütünlük hatası: ${details}`)
+      }
+
+      return {
+        success: true,
+        data: { isHealthy, details }
+      }
+    } catch (error) {
+      logger.error('MaintenanceService.integrityCheck', error)
+      return { success: false, error: 'Bütünlük kontrolü başarısız.' }
+    }
+  }
+
+  /**
+   * 1 yıldan eski siparişleri, giderleri ve Z-raporlarını arşivler
+   */
   async archiveOldData(): Promise<
-    ApiResponse<{ deletedOrders: number; deletedItems: number; deletedTransactions: number }>
+    ApiResponse<{
+      deletedOrders: number
+      deletedItems: number
+      deletedTransactions: number
+      deletedExpenses: number
+      deletedSummaries: number
+    }>
   > {
     try {
       const oneYearAgo = new Date()
@@ -39,10 +163,18 @@ export class MaintenanceService {
         }
       })
 
+      // Giderleri de arşivle
+      const expenseResult = await this.archiveOldExpenses()
+      const deletedExpenses = expenseResult.data?.deletedExpenses || 0
+
+      // Z-raporlarını da arşivle
+      const summaryResult = await this.archiveOldSummaries()
+      const deletedSummaries = summaryResult.data?.deletedSummaries || 0
+
       await logService.createLog(
         'ARCHIVE_DATA',
         undefined,
-        `Silinen: ${deletedOrders.count} sipariş, ${deletedItems.count} ürün, ${deletedTransactions.count} işlem`
+        `Silinen: ${deletedOrders.count} sipariş, ${deletedItems.count} ürün, ${deletedTransactions.count} işlem, ${deletedExpenses} gider, ${deletedSummaries} Z-raporu`
       )
 
       return {
@@ -50,7 +182,9 @@ export class MaintenanceService {
         data: {
           deletedOrders: deletedOrders.count,
           deletedItems: deletedItems.count,
-          deletedTransactions: deletedTransactions.count
+          deletedTransactions: deletedTransactions.count,
+          deletedExpenses,
+          deletedSummaries
         }
       }
     } catch (error) {

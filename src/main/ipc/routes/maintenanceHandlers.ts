@@ -56,13 +56,21 @@ export function registerMaintenanceHandlers(): void {
     const backupResult = await maintenanceService.backupWithRotation(30)
     await maintenanceService.vacuumDatabase()
 
+    // Yeni: 30 günden eski logları otomatik temizle
+    const logCleanupResult = await maintenanceService.cleanupOldLogs(30)
+
+    // Yeni: Veritabanı bütünlük kontrolü
+    const integrityResult = await maintenanceService.integrityCheck()
+
     return {
       success: true,
       data: {
         zReport: zReportResult.data,
         backupPath: backupResult.data?.backupPath,
         deletedBackups: backupResult.data?.deletedCount,
-        vacuumCompleted: true
+        vacuumCompleted: true,
+        deletedLogs: logCleanupResult.data?.deletedLogs || 0,
+        dbHealthy: integrityResult.data?.isHealthy ?? true
       }
     }
   })

@@ -35,6 +35,8 @@ export function EndOfDayModal({ open, onClose }: EndOfDayModalProps): React.JSX.
     zReport: DailySummary
     backupPath: string
     deletedBackups: number
+    deletedLogs?: number
+    dbHealthy?: boolean
   } | null>(null)
   const [error, setError] = useState<string>('')
   const [actualCashInput, setActualCashInput] = useState<string>('')
@@ -330,9 +332,17 @@ export function EndOfDayModal({ open, onClose }: EndOfDayModalProps): React.JSX.
                   <span>{result.zReport.orderCount}</span>
                 </div>
                 <hr />
-                <div className="text-xs text-muted-foreground">
+                <div className="text-xs text-muted-foreground space-y-1">
                   <p>✓ Yedek alındı ({result.deletedBackups} eski yedek silindi)</p>
                   <p>✓ Veritabanı optimize edildi</p>
+                  {result.deletedLogs !== undefined && result.deletedLogs > 0 && (
+                    <p>✓ {result.deletedLogs} eski log temizlendi</p>
+                  )}
+                  <p className={result.dbHealthy === false ? 'text-red-500' : ''}>
+                    {result.dbHealthy === false
+                      ? '⚠ Veritabanı sağlık sorunu!'
+                      : '✓ Veritabanı sağlığı: İyi'}
+                  </p>
                 </div>
               </div>
 

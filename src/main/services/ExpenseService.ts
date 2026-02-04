@@ -1,5 +1,6 @@
 import { prisma } from '../db/prisma'
 import { logger } from '../lib/logger'
+import { Prisma } from '../../generated/prisma/client'
 
 export class ExpenseService {
   async createExpense(data: {
@@ -9,26 +10,42 @@ export class ExpenseService {
   }): Promise<{ success: boolean; data?: unknown; error?: string }> {
     try {
       const expense = await prisma.expense.create({
-        data
+        data: {
+          ...data,
+          amount: Math.round(data.amount * 100) // Convert to cents
+        }
       })
-
-      // Update Monthly Report logic if needed instantly,
-      // but typically we update checks dynamically.
-      // Handlers.ts did: await updateMonthlyReport(new Date())
-      // I should expose `ReportingService.updateMonthlyReport` publically?
-      // Or just let Z-Report handle it?
-      // Z-Report handle is better. But if user looks at monthly report instantly?
-      // I will assume we want immediate consistency.
-      // But circular dependency (Expense -> Reporting -> Expense).
-      // Solution: ExpenseService updates DB. ReportingService calculates from DB.
-      // If we need to trigger update, we can call ReportingService externally or duplicate logic?
-      // Better: ReportingService has `updateMonthlyReport(date)`.
-      // I can import `reportingService` here.
 
       return { success: true, data: expense }
     } catch (error) {
       logger.error('ExpenseService.createExpense', error)
       return { success: false, error: 'Gider oluşturulamadı.' }
+    }
+  }
+
+  async updateExpense(
+    id: string,
+    data: {
+      description?: string
+      amount?: number
+      category?: string
+    }
+  ): Promise<{ success: boolean; data?: unknown; error?: string }> {
+    try {
+      const updateData: Prisma.ExpenseUpdateInput = { ...data }
+      if (data.amount !== undefined) {
+        updateData.amount = Math.round(data.amount * 100) // Convert to cents
+      }
+
+      const expense = await prisma.expense.update({
+        where: { id },
+        data: updateData
+      })
+
+      return { success: true, data: expense }
+    } catch (error) {
+      logger.error('ExpenseService.updateExpense', error)
+      return { success: false, error: 'Gider güncellenemedi.' }
     }
   }
 
