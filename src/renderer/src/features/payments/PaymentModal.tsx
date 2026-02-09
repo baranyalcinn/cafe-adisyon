@@ -288,10 +288,8 @@ export function PaymentModal({
               animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
               exit={{ opacity: 0, scale: 0.9, filter: 'blur(10px)' }}
               transition={{
-                type: 'spring',
-                damping: 25,
-                stiffness: 300,
-                mass: 0.5
+                duration: 0.4,
+                ease: 'easeOut'
               }}
               className="relative bg-card/95 backdrop-blur-3xl border border-border/10 dark:border-white/10 rounded-[2.5rem] p-12 flex flex-col items-center text-center shadow-[0_0_100px_-20px_rgba(34,197,94,0.3)]"
             >

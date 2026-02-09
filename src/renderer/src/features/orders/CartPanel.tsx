@@ -215,14 +215,9 @@ export function CartPanel({
                       <motion.div
                         layout
                         key={item.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: 20, transition: { duration: 0.2 } }}
                         whileTap={{ scale: 0.98 }}
                         transition={{
-                          layout: { type: 'spring', stiffness: 500, damping: 35, mass: 1 },
-                          opacity: { duration: 0.2 },
-                          x: { type: 'spring', stiffness: 500, damping: 35 }
+                          layout: { duration: 0.3, ease: 'circOut' }
                         }}
                         style={{
                           willChange: 'transform, opacity',

@@ -345,10 +345,8 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.9 }}
                       transition={{
-                        type: 'spring',
-                        stiffness: 400,
-                        damping: 30,
-                        opacity: { duration: 0.2 }
+                        duration: 0.3,
+                        ease: 'easeOut'
                       }}
                       className="gpu-accelerated"
                     >
@@ -367,9 +365,9 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
             {/* Loading Sentinel */}
             {filteredProducts.length > visibleLimit && (
               <div ref={observerTarget} className="h-8 w-full flex items-center justify-center p-4">
-                <div className="w-1 h-1 bg-border rounded-full animate-bounce [animation-delay:-0.3s]" />
-                <div className="w-1 h-1 bg-border rounded-full animate-bounce [animation-delay:-0.15s] mx-1" />
-                <div className="w-1 h-1 bg-border rounded-full animate-bounce" />
+                <div className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-pulse [animation-delay:-0.3s]" />
+                <div className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-pulse [animation-delay:-0.15s] mx-1.5" />
+                <div className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-pulse" />
               </div>
             )}
           </div>

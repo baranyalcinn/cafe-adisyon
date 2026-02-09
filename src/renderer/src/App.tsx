@@ -29,7 +29,7 @@ const viewVariants: Variants = {
     opacity: 1,
     x: 0,
     scale: 1,
-    transition: { type: 'spring' as const, stiffness: 300, damping: 30 }
+    transition: { duration: 0.4, ease: 'circOut' }
   },
   exit: (direction: number) => ({
     opacity: 0,
@@ -162,7 +162,7 @@ function NavButton({ active, onClick, icon: Icon, label }: NavButtonProps): Reac
           <motion.div
             layoutId="activeNavBackground"
             className="absolute inset-0 bg-primary z-0"
-            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            transition={{ duration: 0.3, ease: 'circOut' }}
           />
         )}
         <Icon
