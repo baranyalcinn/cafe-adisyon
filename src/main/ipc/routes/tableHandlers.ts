@@ -2,7 +2,7 @@ import { ipcMain } from 'electron'
 import { prisma, dbWrite } from '../../db/prisma'
 import { logger } from '../../lib/logger'
 import { IPC_CHANNELS } from '../../../shared/types'
-import { tableSchemas, validateInput } from '../../lib/validation'
+import { tableSchemas, validateInput } from '../../../shared/ipc-schemas'
 
 export function registerTableHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.TABLES_GET_ALL, async () => {

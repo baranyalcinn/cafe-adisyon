@@ -2,12 +2,10 @@ import { ipcMain } from 'electron'
 import { IPC_CHANNELS } from '../../../shared/types'
 import { expenseService } from '../../services/ExpenseService'
 import { reportingService } from '../../services/ReportingService'
-import { expenseSchemas, validateInput } from '../../lib/validation' // Need validation logic
+import { expenseSchemas, validateInput } from '../../../shared/ipc-schemas'
 
 export function registerExpenseHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.EXPENSES_CREATE, async (_, data) => {
-    // Validation Logic was in handlers.ts. We should keep it here or in Service?
-    // Controller/Handler level validation is good.
     const validation = validateInput(expenseSchemas.create, data)
     if (!validation.success) {
       return { success: false, error: validation.error }
@@ -24,7 +22,7 @@ export function registerExpenseHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.EXPENSES_GET_ALL, () => expenseService.getAllExpenses())
 
   ipcMain.handle(IPC_CHANNELS.EXPENSES_UPDATE, async (_, id, data) => {
-    // Validate?
+    // TODO: Add update validation schema to expenseSchemas
     // const validation = validateInput(expenseSchemas.update, data)
     // if (!validation.success) {
     //   return { success: false, error: validation.error }

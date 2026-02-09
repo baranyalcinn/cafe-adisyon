@@ -114,8 +114,11 @@ app.on('window-all-closed', () => {
   }
 })
 
-// Global Exception Handler
+// Global Exception Handlers
 process.on('uncaughtException', (error) => {
   logger.error('Uncaught Exception', error)
-  // In a real production app, you might want to show a dialog to the user here
+})
+
+process.on('unhandledRejection', (reason) => {
+  logger.error('Unhandled Rejection', reason)
 })

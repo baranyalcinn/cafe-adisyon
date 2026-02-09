@@ -27,3 +27,12 @@ github action build log.txt
 
 *storybook.log
 storybook-static
+
+# Auto-generated dependency tree
+deps-tree.json
+
+# Electron-vite temp configs
+electron.vite.config.*.mjs
+
+# Application logs
+logs/

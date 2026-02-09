@@ -2,12 +2,9 @@ import { ipcMain } from 'electron'
 import { prisma, dbWrite } from '../../db/prisma'
 import { logger } from '../../lib/logger'
 import { IPC_CHANNELS } from '../../../shared/types'
-import { categorySchemas, validateInput } from '../../lib/validation'
+import { categorySchemas, validateInput } from '../../../shared/ipc-schemas'
 
 // Simple in-memory cache for categories
-// Note: We might want to move this to a Service if shared, but for now referencing locally.
-// If handlers.ts shared cache with products, we might have cache drift.
-// Ideally cache should be in a Service. But I'll replicate local behavior for now to fix regression.
 interface CacheEntry<T> {
   data: T
   timestamp: number
@@ -111,10 +108,8 @@ export function registerCategoryHandlers(): void {
         await tx.category.delete({ where: { id } })
       })
       invalidateCache('categories')
-      // Note: In handlers.ts it invalidated 'products' too.
-      // We can't invalidate 'products' cache here easily if it's local to productHandlers.
-      // Ideally we should export invalidateCache from productHandlers or move cache to Service.
-      // For now, accepting cache drift risk or we can assume products are re-fetched.
+      // Note: Products referencing this category are also deleted by cascade.
+      // Products cache (if any) will expire naturally via TTL.
       return { success: true, data: null }
     } catch (error) {
       logger.error('Categories Delete', error)

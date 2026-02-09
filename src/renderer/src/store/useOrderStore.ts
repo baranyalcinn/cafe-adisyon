@@ -1,7 +1,9 @@
 import { create, type StateCreator } from 'zustand'
 import { cafeApi, type Order, type PaymentMethod } from '@/lib/api'
+import type { CartItem } from '@/lib/api'
 import { useCartStore } from './useCartStore'
 import { useTableStore } from './useTableStore'
+import { toast } from './useToastStore'
 
 // --- Types ---
 
@@ -33,22 +35,24 @@ type OrderStore = OrderData & OrderActions
 
 /**
  * Reusable helper to sync the global cart store with an order's items.
- * Ensures the items in the cart UI matches exactly what is in the DB.
+ * Uses a single bulk setState() instead of calling addItem() per unit for performance.
  */
 const syncCartWithOrder = (order: Order | null): void => {
-  const cartStore = useCartStore.getState()
-  cartStore.clearCart()
-
-  if (order?.items) {
-    order.items.forEach((item) => {
-      if (item.product) {
-        // Add items one by one based on quantity
-        for (let i = 0; i < item.quantity; i++) {
-          cartStore.addItem(item.product)
-        }
-      }
-    })
+  if (!order?.items || order.items.length === 0) {
+    useCartStore.getState().clearCart()
+    return
   }
+
+  const items: CartItem[] = order.items
+    .filter((item) => item.product)
+    .map((item) => ({
+      productId: item.productId,
+      product: item.product!,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice
+    }))
+
+  useCartStore.setState({ items })
 }
 
 // --- Slices ---
@@ -243,3 +247,16 @@ export const useOrderStore = create<OrderStore>()((...a) => ({
   ...createOrderDataSlice(...a),
   ...createOrderActionSlice(...a)
 }))
+
+// Subscribe to error state and show toast notifications
+let prevError: string | null = null
+useOrderStore.subscribe((state) => {
+  if (state.error && state.error !== prevError) {
+    toast({
+      title: 'Hata',
+      description: state.error,
+      variant: 'destructive'
+    })
+  }
+  prevError = state.error
+})

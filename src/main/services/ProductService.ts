@@ -4,16 +4,38 @@ import { ApiResponse, Product, Category } from '../../shared/types'
 import { Prisma } from '../../generated/prisma/client'
 
 export class ProductService {
+  // In-memory cache for getAllProducts (most frequently called)
+  private cache: { data: Product[]; timestamp: number } | null = null
+  private readonly CACHE_TTL = 60000 // 1 minute
+
+  private getCached(): Product[] | null {
+    if (!this.cache) return null
+    if (Date.now() - this.cache.timestamp > this.CACHE_TTL) {
+      this.cache = null
+      return null
+    }
+    return this.cache.data
+  }
+
+  private invalidateCache(): void {
+    this.cache = null
+  }
+
   async getAllProducts(): Promise<ApiResponse<Product[]>> {
     try {
+      const cached = this.getCached()
+      if (cached) return { success: true, data: cached }
+
       const products = await prisma.product.findMany({
         where: {
           categoryId: { not: undefined },
           isDeleted: false
-        }, // Valid categories and not deleted
+        },
         include: { category: true }
       })
-      return { success: true, data: products as unknown as Product[] }
+      const result = products as unknown as Product[]
+      this.cache = { data: result, timestamp: Date.now() }
+      return { success: true, data: result }
     } catch (error) {
       logger.error('ProductService.getAllProducts', error)
       return { success: false, error: 'Ürünler alınamadı.' }
@@ -23,6 +45,7 @@ export class ProductService {
   async createProduct(data: Prisma.ProductCreateInput): Promise<ApiResponse<Product>> {
     try {
       const product = await prisma.product.create({ data })
+      this.invalidateCache()
       return { success: true, data: product as unknown as Product }
     } catch (error) {
       logger.error('ProductService.createProduct', error)
@@ -36,6 +59,7 @@ export class ProductService {
         where: { id },
         data
       })
+      this.invalidateCache()
       return { success: true, data: product as unknown as Product }
     } catch (error) {
       logger.error('ProductService.updateProduct', error)
@@ -49,6 +73,7 @@ export class ProductService {
         where: { id },
         data: { isDeleted: true }
       })
+      this.invalidateCache()
       return { success: true, data: null }
     } catch (error) {
       logger.error('ProductService.deleteProduct', error)

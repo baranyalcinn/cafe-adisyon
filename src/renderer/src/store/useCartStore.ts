@@ -1,13 +1,5 @@
 import { create } from 'zustand'
-import type { Product } from '@/lib/api'
-
-// Cart item type
-interface CartItem {
-  productId: string
-  product: Product
-  quantity: number
-  unitPrice: number
-}
+import type { Product, CartItem } from '@/lib/api'
 
 interface CartState {
   items: CartItem[]
