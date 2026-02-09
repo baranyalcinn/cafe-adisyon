@@ -93,7 +93,6 @@ export function EndOfDayModal({ open, onClose }: EndOfDayModalProps): React.JSX.
     return () => {
       mounted = false
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, step])
 
   const handleExecute = async (): Promise<void> => {

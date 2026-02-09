@@ -1,10 +1,7 @@
-// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
-
 import { defineConfig } from 'eslint/config'
 import tseslint from '@electron-toolkit/eslint-config-ts'
 import eslintConfigPrettier from '@electron-toolkit/eslint-config-prettier'
-import eslintPluginReact from 'eslint-plugin-react'
-import eslintPluginReactHooks from 'eslint-plugin-react-hooks'
+import eslintReact from '@eslint-react/eslint-plugin'
 import { reactRefresh } from 'eslint-plugin-react-refresh'
 
 export default defineConfig(
@@ -23,23 +20,13 @@ export default defineConfig(
     ]
   },
   tseslint.configs.recommended,
-  eslintPluginReact.configs.flat.recommended,
-  eslintPluginReact.configs.flat['jsx-runtime'],
-  {
-    settings: {
-      react: {
-        version: 'detect'
-      }
-    }
-  },
   {
     files: ['**/*.{ts,tsx}'],
+    ...eslintReact.configs['recommended-typescript'],
     plugins: {
-      'react-hooks': eslintPluginReactHooks,
       'react-refresh': reactRefresh.plugin
     },
     rules: {
-      ...eslintPluginReactHooks.configs.recommended.rules,
       ...reactRefresh.configs.vite.rules
     }
   },
