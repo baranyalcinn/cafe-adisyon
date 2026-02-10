@@ -7,6 +7,7 @@ export interface Product {
   price: number
   categoryId: string
   isFavorite: boolean
+  isDeleted: boolean
   category?: Category
 }
 
@@ -33,6 +34,7 @@ export interface Order {
   totalAmount: number
   isLocked: boolean
   createdAt: Date
+  updatedAt?: Date
   table?: Table
   items?: OrderItem[]
   payments?: Transaction[]
@@ -111,7 +113,10 @@ export interface DailySummary {
   id: string
   date: Date
   totalCash: number
+  actualCash: number | null
   totalCard: number
+  totalExpenses: number
+  netProfit: number
   cancelCount: number
   totalVat: number
   orderCount: number
@@ -133,18 +138,35 @@ export interface ActivityLog {
 export type ActivityAction =
   | 'OPEN_TABLE'
   | 'CLOSE_ORDER'
+  | 'CLOSE_TABLE'
   | 'CANCEL_ITEM'
   | 'CHANGE_PRICE'
   | 'ADD_PRODUCT'
   | 'DELETE_PRODUCT'
+  | 'ADD_ITEM'
+  | 'REMOVE_ITEM'
+  | 'UPDATE_ITEM'
+  | 'TRANSFER_TABLE'
+  | 'MERGE_TABLES'
+  | 'TOGGLE_LOCK'
   | 'GENERATE_ZREPORT'
   | 'ARCHIVE_DATA'
+  | 'ARCHIVE_EXPENSES'
+  | 'ARCHIVE_SUMMARIES'
   | 'BACKUP_DATABASE'
+  | 'VACUUM'
+  | 'SEED_DATABASE'
+  | 'SECURITY_RESCUE'
+  | 'SECURITY_CHANGE_PIN'
+  | 'SECURITY_RESET_PIN'
+  | 'PAYMENT'
 
 // App Settings
 export interface AppSettings {
   id: string
   adminPin: string
+  securityQuestion?: string
+  securityAnswer?: string
 }
 
 // Expenses

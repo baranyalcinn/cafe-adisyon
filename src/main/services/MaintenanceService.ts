@@ -1,4 +1,4 @@
-import { prisma, dbPath } from '../db/prisma'
+import { prisma } from '../db/prisma'
 import { logger } from '../lib/logger'
 import { logService } from './LogService'
 import { app } from 'electron'
@@ -232,11 +232,18 @@ export class MaintenanceService {
       if (format === 'json') {
         await fs.writeFile(filepath, JSON.stringify(oldOrders, null, 2))
       } else {
+        // RFC 4180 compliant CSV escaping
+        const escCsv = (val: string): string => {
+          if (val.includes(',') || val.includes('"') || val.includes('\n')) {
+            return `"${val.replace(/"/g, '""')}"`
+          }
+          return val
+        }
         const headers = 'OrderId,TableName,TotalAmount,Status,CreatedAt\n'
         const rows = oldOrders
           .map(
             (o) =>
-              `${o.id},${o.table?.name || ''},${o.totalAmount},${o.status},${o.createdAt.toISOString()}`
+              `${escCsv(o.id)},${escCsv(o.table?.name || '')},${o.totalAmount},${escCsv(o.status)},${o.createdAt.toISOString()}`
           )
           .join('\n')
         await fs.writeFile(filepath, headers + rows)
@@ -274,7 +281,8 @@ export class MaintenanceService {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
       const backupPath = path.join(backupDir, `backup_${timestamp}.db`)
 
-      await fs.copyFile(dbPath, backupPath)
+      // Use VACUUM INTO for a consistent snapshot (safe during active writes)
+      await prisma.$executeRawUnsafe(`VACUUM INTO '${backupPath.replace(/'/g, "''")}'`)
 
       await logService.createLog('BACKUP_DATABASE', undefined, `Yedek oluşturuldu: ${backupPath}`)
 
@@ -296,10 +304,10 @@ export class MaintenanceService {
         await fs.mkdir(backupDir, { recursive: true })
       }
 
-      // Create new backup
+      // Create new backup using VACUUM INTO for consistency
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
       const backupPath = path.join(backupDir, `backup_${timestamp}.db`)
-      await fs.copyFile(dbPath, backupPath)
+      await prisma.$executeRawUnsafe(`VACUUM INTO '${backupPath.replace(/'/g, "''")}'`)
 
       // Get all backup files and sort by modification time (oldest first)
       const fileNames = await fs.readdir(backupDir)
@@ -338,7 +346,15 @@ export class MaintenanceService {
   }
 
   async endOfDayCheck(): Promise<
-    ApiResponse<{ canProceed: boolean; openTables: Array<{ tableId: string; tableName: string }> }>
+    ApiResponse<{
+      canProceed: boolean
+      openTables: Array<{
+        tableId: string
+        tableName: string
+        orderId: string
+        totalAmount: number
+      }>
+    }>
   > {
     try {
       const openOrders = await prisma.order.findMany({

@@ -2,6 +2,7 @@ import { Prisma } from '../../generated/prisma/client'
 import { prisma } from '../db/prisma'
 import { logger } from '../lib/logger'
 import { ApiResponse, ActivityLog } from '../../shared/types'
+import { toPlain } from '../lib/toPlain'
 
 export class LogService {
   async getRecentLogs(
@@ -53,14 +54,14 @@ export class LogService {
         }
       }
 
-      const logs = (await prisma.activityLog.findMany({
+      const logs = await prisma.activityLog.findMany({
         where,
         orderBy: { createdAt: 'desc' },
         take: safeLimit,
         skip: safeOffset
-      })) as unknown as ActivityLog[]
+      })
 
-      return { success: true, data: logs }
+      return { success: true, data: toPlain<ActivityLog[]>(logs) }
     } catch (error) {
       logger.error('LogService.getRecentLogs', error)
       return { success: false, error: 'İşlem geçmişi alınamadı.' }
@@ -74,15 +75,15 @@ export class LogService {
     userName?: string
   ): Promise<ApiResponse<ActivityLog>> {
     try {
-      const log = (await prisma.activityLog.create({
+      const log = await prisma.activityLog.create({
         data: {
           action,
           tableName,
           details,
           userName
         }
-      })) as unknown as ActivityLog
-      return { success: true, data: log }
+      })
+      return { success: true, data: toPlain<ActivityLog>(log) }
     } catch (error) {
       logger.error('LogService.createLog', error)
       return { success: false, error: 'Log kaydı oluşturulamadı.' }

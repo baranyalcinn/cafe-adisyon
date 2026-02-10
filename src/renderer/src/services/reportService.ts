@@ -1,4 +1,4 @@
-import { DailySummary, ActivityLog, MonthlyReport, ApiResponse } from '../../../shared/types'
+import { DailySummary, ActivityLog, MonthlyReport } from '../../../shared/types'
 
 const api = window.api
 
@@ -36,18 +36,7 @@ export const reportService = {
       search?: string,
       category?: 'all' | 'system' | 'operation'
     ): Promise<ActivityLog[]> {
-      const result = await (
-        api.logs as unknown as {
-          getRecent(
-            limit: number,
-            start?: string,
-            end?: string,
-            offset?: number,
-            search?: string,
-            category?: string
-          ): Promise<ApiResponse<ActivityLog[]>>
-        }
-      ).getRecent(limit, startDate, endDate, offset, search, category)
+      const result = await api.logs.getRecent(limit, startDate, endDate, offset, search, category)
       if (!result.success) throw new Error(result.error)
       return result.data!
     },

@@ -21,6 +21,7 @@ model Product {
   @@index([categoryId])
   @@index([isFavorite])
   @@index([isDeleted])
+  @@index([name])
 }
 
 model Category {
@@ -43,6 +44,7 @@ model Order {
   totalAmount Int           @default(0)
   isLocked    Boolean       @default(false)
   createdAt   DateTime      @default(now())
+  updatedAt   DateTime?     @updatedAt
   table       Table         @relation(fields: [tableId], references: [id])
   items       OrderItem[]
   payments    Transaction[]
@@ -64,6 +66,7 @@ model OrderItem {
 
   @@index([orderId])
   @@index([productId])
+  @@index([isPaid])
 }
 
 model Transaction {

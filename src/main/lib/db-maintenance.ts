@@ -1,7 +1,7 @@
 import { app } from 'electron'
 import * as fs from 'fs'
 import * as path from 'path'
-import { prisma, dbPath } from '../db/prisma'
+import { prisma } from '../db/prisma'
 import { logger } from '../lib/logger'
 
 export class DBMaintenance {
@@ -9,7 +9,6 @@ export class DBMaintenance {
 
   constructor() {
     const isDev = process.env.NODE_ENV === 'development'
-    // In dev, use project root/backups. In prod, use userData/backups
     const baseDir = isDev ? process.cwd() : app.getPath('userData')
     this.backupDir = path.join(baseDir, 'backups')
 
@@ -21,6 +20,7 @@ export class DBMaintenance {
   public async runMaintenance(): Promise<void> {
     try {
       logger.info('DBMaintenance', 'Starting maintenance tasks...')
+      await this.runMigrations()
       await this.runVacuum()
       await this.createBackup()
       this.cleanupOldBackups()
@@ -30,9 +30,56 @@ export class DBMaintenance {
     }
   }
 
+  /**
+   * Auto-migration: applies schema changes to existing databases.
+   * Each migration is idempotent — safe to run on every startup.
+   * When adding a new schema change, append a new migration entry below.
+   */
+  private async runMigrations(): Promise<void> {
+    try {
+      logger.info('DBMaintenance', 'Running auto-migrations...')
+
+      // Migration 1: Add updatedAt column to Order table
+      await this.addColumnIfNotExists('Order', 'updatedAt', 'DATETIME')
+
+      // Migration 2: Add index on OrderItem.isPaid
+      await prisma.$executeRawUnsafe(
+        'CREATE INDEX IF NOT EXISTS "OrderItem_isPaid_idx" ON "OrderItem"("isPaid")'
+      )
+
+      // Migration 3: Add index on Product.name
+      await prisma.$executeRawUnsafe(
+        'CREATE INDEX IF NOT EXISTS "Product_name_idx" ON "Product"("name")'
+      )
+
+      logger.info('DBMaintenance', 'Auto-migrations completed.')
+    } catch (error) {
+      // Migrations failing should NOT block app startup
+      logger.error('DBMaintenance Migrations', error)
+    }
+  }
+
+  /**
+   * Adds a column to a table if it doesn't already exist.
+   * SQLite doesn't support IF NOT EXISTS for ALTER TABLE, so we check pragma first.
+   */
+  private async addColumnIfNotExists(table: string, column: string, type: string): Promise<void> {
+    try {
+      const columns: Array<{ name: string }> = await prisma.$queryRawUnsafe(
+        `PRAGMA table_info("${table}")`
+      )
+      const exists = columns.some((c) => c.name === column)
+      if (!exists) {
+        await prisma.$executeRawUnsafe(`ALTER TABLE "${table}" ADD COLUMN "${column}" ${type}`)
+        logger.info('DBMaintenance', `Added column ${table}.${column}`)
+      }
+    } catch (error) {
+      logger.error(`DBMaintenance AddColumn ${table}.${column}`, error)
+    }
+  }
+
   private async runVacuum(): Promise<void> {
     try {
-      // Execute VACUUM command to optimize SQLite DB
       await prisma.$executeRawUnsafe('VACUUM;')
       logger.info('DBMaintenance', 'VACUUM executed.')
     } catch (error) {
@@ -43,25 +90,11 @@ export class DBMaintenance {
 
   private async createBackup(): Promise<void> {
     try {
-      // Ensure WAL checkpoint before copy (optional but good for consistency)
-      // SQLite usually handles simple file copy if not in heavy write mode,
-      // but VACUUM above already helps settle things.
-
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
       const backupPath = path.join(this.backupDir, `backup-${timestamp}.db`)
 
-      // In WAL mode, we should ideally use the SQLite backup API, but simple file copy
-      // works reasonably well for small desktop apps if we accept slight risk or if app is idle.
-      // Since specific dbPath includes the file scheme 'file:...,' we need actual path string.
-      // We imported dbPath from prisma setup which should be the file path.
-
-      // We must strip 'file:' prefix if present or handle typical prisma path logic
-      let sourcePath = dbPath
-      if (sourcePath.startsWith('file:')) {
-        sourcePath = sourcePath.replace('file:', '')
-      }
-
-      fs.copyFileSync(sourcePath, backupPath)
+      // Use VACUUM INTO for a consistent snapshot (safe during active writes)
+      await prisma.$executeRawUnsafe(`VACUUM INTO '${backupPath.replace(/'/g, "''")}'`)
       logger.info('DBMaintenance', `Backup created at ${backupPath}`)
     } catch (error) {
       logger.error('DBMaintenance Backup', error)

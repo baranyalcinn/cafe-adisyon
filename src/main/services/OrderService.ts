@@ -3,6 +3,7 @@ import { logger } from '../lib/logger'
 import { logService } from './LogService'
 import { BrowserWindow } from 'electron'
 import { ApiResponse, Order } from '../../shared/types'
+import { toPlain } from '../lib/toPlain'
 
 export class OrderService {
   private broadcastDashboardUpdate(): void {
@@ -13,7 +14,7 @@ export class OrderService {
 
   async getOpenOrderForTable(tableId: string): Promise<ApiResponse<Order | null>> {
     try {
-      const order = (await prisma.order.findFirst({
+      const order = await prisma.order.findFirst({
         where: {
           tableId: tableId,
           status: 'OPEN'
@@ -24,8 +25,8 @@ export class OrderService {
           },
           payments: true
         }
-      })) as unknown as Order | null
-      return { success: true, data: order }
+      })
+      return { success: true, data: toPlain<Order | null>(order) }
     } catch (error) {
       logger.error('OrderService.getOpenOrderForTable', error)
       return { success: false, error: 'Sipariş bulunamadı.' }
@@ -35,21 +36,21 @@ export class OrderService {
   async createOrder(tableId: string): Promise<ApiResponse<Order>> {
     try {
       // Check existing
-      const existing = (await prisma.order.findFirst({
+      const existing = await prisma.order.findFirst({
         where: { tableId, status: 'OPEN' }
-      })) as unknown as Order
-      if (existing) return { success: true, data: existing }
+      })
+      if (existing) return { success: true, data: toPlain<Order>(existing) }
 
-      const order = (await prisma.order.create({
+      const order = await prisma.order.create({
         data: {
           tableId,
           status: 'OPEN'
         },
         include: { items: true, payments: true }
-      })) as unknown as Order
+      })
 
       this.broadcastDashboardUpdate()
-      return { success: true, data: order }
+      return { success: true, data: toPlain<Order>(order) }
     } catch (error) {
       logger.error('OrderService.createOrder', error)
       return { success: false, error: 'Sipariş oluşturulamadı.' }
@@ -63,35 +64,38 @@ export class OrderService {
     unitPrice: number
   ): Promise<ApiResponse<Order>> {
     try {
-      // Check if product exists in order already (merge logic)
-      const existingItem = await prisma.orderItem.findFirst({
-        where: { orderId, productId, isPaid: false }
-      })
+      // Use transaction to prevent race condition on concurrent adds of same product
+      await prisma.$transaction(async (tx) => {
+        const existingItem = await tx.orderItem.findFirst({
+          where: { orderId, productId, isPaid: false }
+        })
 
-      if (existingItem) {
-        await prisma.orderItem.update({
-          where: { id: existingItem.id },
-          data: { quantity: existingItem.quantity + quantity }
-        })
-      } else {
-        await prisma.orderItem.create({
-          data: {
-            orderId,
-            productId,
-            quantity,
-            unitPrice
-          }
-        })
-      }
+        if (existingItem) {
+          await tx.orderItem.update({
+            where: { id: existingItem.id },
+            data: { quantity: existingItem.quantity + quantity }
+          })
+        } else {
+          await tx.orderItem.create({
+            data: { orderId, productId, quantity, unitPrice }
+          })
+        }
+      })
 
       const updatedOrder = await this.recalculateOrderTotal(orderId)
 
-      // Log activity
-      const product = await prisma.product.findUnique({ where: { id: productId } })
-      const table = await prisma.table.findUnique({ where: { id: updatedOrder.tableId } })
+      // Log activity — use data already available from recalculate instead of N+1 queries
+      const orderWithRefs = await prisma.order.findUnique({
+        where: { id: orderId },
+        include: { table: true }
+      })
+      const product = await prisma.product.findUnique({
+        where: { id: productId },
+        select: { name: true }
+      })
       await logService.createLog(
         'ADD_ITEM',
-        table?.name,
+        orderWithRefs?.table?.name,
         `${quantity}x ${product?.name || 'Ürün'} eklendi`
       )
 
@@ -155,13 +159,13 @@ export class OrderService {
 
   async closeOrder(orderId: string): Promise<ApiResponse<Order>> {
     try {
-      const order = (await prisma.order.update({
+      const order = await prisma.order.update({
         where: { id: orderId },
         data: { status: 'CLOSED' }
-      })) as unknown as Order
+      })
 
       this.broadcastDashboardUpdate()
-      return { success: true, data: order }
+      return { success: true, data: toPlain<Order>(order) }
     } catch (error) {
       logger.error('OrderService.closeOrder', error)
       return { success: false, error: 'Sipariş kapatılamadı.' }
@@ -173,16 +177,16 @@ export class OrderService {
     data: { status?: string; totalAmount?: number; isLocked?: boolean }
   ): Promise<ApiResponse<Order>> {
     try {
-      const updatedOrder = (await prisma.order.update({
+      const updatedOrder = await prisma.order.update({
         where: { id: orderId },
         data: data as { status?: 'OPEN' | 'CLOSED'; totalAmount?: number; isLocked?: boolean },
         include: {
           items: { include: { product: true } },
           payments: true
         }
-      })) as unknown as Order
+      })
 
-      return { success: true, data: updatedOrder }
+      return { success: true, data: toPlain<Order>(updatedOrder) }
     } catch (error) {
       logger.error('OrderService.updateOrder', error)
       return { success: false, error: 'Sipariş güncellenemedi.' }
@@ -191,15 +195,15 @@ export class OrderService {
 
   async toggleLock(orderId: string, isLocked: boolean): Promise<ApiResponse<Order>> {
     try {
-      const updatedOrder = (await prisma.order.update({
+      const updatedOrder = await prisma.order.update({
         where: { id: orderId },
         data: { isLocked },
         include: {
           items: { include: { product: true } },
           payments: true
         }
-      })) as unknown as Order
-      return { success: true, data: updatedOrder }
+      })
+      return { success: true, data: toPlain<Order>(updatedOrder) }
     } catch (error) {
       logger.error('OrderService.toggleLock', error)
       return { success: false, error: 'Kilit durumu değiştirilemedi.' }
@@ -214,10 +218,10 @@ export class OrderService {
     try {
       const result = await prisma.$transaction(async (tx) => {
         // 1. Read order with payments atomically
-        const order = (await tx.order.findUnique({
+        const order = await tx.order.findUnique({
           where: { id: orderId },
           include: { payments: true }
-        })) as unknown as Order | null
+        })
 
         if (!order) throw new Error('Order not found')
 
@@ -241,22 +245,22 @@ export class OrderService {
             data: { isPaid: true }
           })
 
-          const closedOrder = (await tx.order.update({
+          const closedOrder = await tx.order.update({
             where: { id: orderId },
             data: { status: 'CLOSED' },
             include: { items: { include: { product: true } }, payments: true, table: true }
-          })) as unknown as Order
+          })
 
-          return { order: closedOrder, completed: true }
+          return { order: toPlain<Order>(closedOrder), completed: true }
         }
 
         // 5. Partial payment — return updated order
-        const updatedOrder = (await tx.order.findUnique({
+        const updatedOrder = await tx.order.findUnique({
           where: { id: orderId },
           include: { items: { include: { product: true } }, payments: true, table: true }
-        })) as unknown as Order
+        })
 
-        return { order: updatedOrder!, completed: false }
+        return { order: toPlain<Order>(updatedOrder!), completed: false }
       })
 
       // Log outside transaction (non-critical)
@@ -282,57 +286,49 @@ export class OrderService {
     items: { id: string; quantity: number }[]
   ): Promise<ApiResponse<Order | null>> {
     try {
-      // This is a complex logic: we might need to split order items if partial quantity is paid
-      // But typically we mark specific OrderItems.
-      // If we support quantity-based payment, we need logic.
-      // Current implementation in handlers just assumed whole items or handled externally?
-      // Let's implement robustly.
+      if (items.length === 0) return { success: true, data: null }
 
-      // For each item to pay
-      for (const { id, quantity } of items) {
-        const orderItem = await prisma.orderItem.findUnique({ where: { id } })
-        if (!orderItem) continue
+      // Wrap entire operation in a transaction for atomicity
+      const orderId = await prisma.$transaction(async (tx) => {
+        let resolvedOrderId: string | null = null
 
-        if (quantity >= orderItem.quantity) {
-          // Pay full item
-          await prisma.orderItem.update({
-            where: { id },
-            data: { isPaid: true }
-          })
-        } else {
-          // Splitting item:
-          // 1. Decrement current item quantity
-          // 2. Create NEW paid item with `quantity`
-          await prisma.orderItem.update({
-            where: { id },
-            data: { quantity: orderItem.quantity - quantity }
-          })
+        for (const { id, quantity } of items) {
+          const orderItem = await tx.orderItem.findUnique({ where: { id } })
+          if (!orderItem) continue
 
-          await prisma.orderItem.create({
-            data: {
-              orderId: orderItem.orderId,
-              productId: orderItem.productId,
-              quantity: quantity,
-              unitPrice: orderItem.unitPrice,
-              isPaid: true
-            }
-          })
+          resolvedOrderId = orderItem.orderId
+
+          if (quantity >= orderItem.quantity) {
+            // Pay full item
+            await tx.orderItem.update({
+              where: { id },
+              data: { isPaid: true }
+            })
+          } else {
+            // Split: decrement current, create new paid item
+            await tx.orderItem.update({
+              where: { id },
+              data: { quantity: orderItem.quantity - quantity }
+            })
+
+            await tx.orderItem.create({
+              data: {
+                orderId: orderItem.orderId,
+                productId: orderItem.productId,
+                quantity,
+                unitPrice: orderItem.unitPrice,
+                isPaid: true
+              }
+            })
+          }
         }
-      }
 
-      // Check if order is fully paid now?
-      // We need to return the updated order
-      // We assume the caller knows the order ID from one of the items?
-      // Or we assume the frontend reloads.
-      // Handlers return the UPADTED ORDER.
+        return resolvedOrderId
+      })
 
-      // Let's get orderId from first item
-      if (items.length > 0) {
-        const firstItem = await prisma.orderItem.findUnique({ where: { id: items[0].id } })
-        if (firstItem) {
-          const updated = await this.recalculateOrderTotal(firstItem.orderId)
-          return { success: true, data: updated }
-        }
+      if (orderId) {
+        const updated = await this.recalculateOrderTotal(orderId)
+        return { success: true, data: updated }
       }
 
       return { success: true, data: null }
@@ -386,7 +382,7 @@ export class OrderService {
         orderBy: { createdAt: 'desc' },
         take: limit,
         skip: offset
-      })) as unknown as Order[]
+      })) as Order[]
 
       const totalCount = await prisma.order.count({
         where: { status: 'CLOSED', ...dateFilter }
@@ -408,7 +404,7 @@ export class OrderService {
 
   async getOrderDetails(orderId: string): Promise<ApiResponse<Order>> {
     try {
-      const order = (await prisma.order.findUnique({
+      const order = await prisma.order.findUnique({
         where: { id: orderId },
         include: {
           table: true,
@@ -417,13 +413,13 @@ export class OrderService {
           },
           payments: true
         }
-      })) as unknown as Order
+      })
 
       if (!order) {
         return { success: false, error: 'Sipariş bulunamadı.' }
       }
 
-      return { success: true, data: order }
+      return { success: true, data: toPlain<Order>(order) }
     } catch (error) {
       logger.error('OrderService.getOrderDetails', error)
       return { success: false, error: 'Sipariş detayları alınamadı.' }
@@ -439,15 +435,15 @@ export class OrderService {
 
     const total = orderItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
 
-    const updated = (await prisma.order.update({
+    const updated = await prisma.order.update({
       where: { id: orderId },
       data: { totalAmount: total },
       include: {
         items: { include: { product: true } },
         payments: true
       }
-    })) as unknown as Order
-    return updated
+    })
+    return toPlain<Order>(updated)
   }
   async transferTable(orderId: string, targetTableId: string): Promise<ApiResponse<Order>> {
     try {
@@ -474,7 +470,7 @@ export class OrderService {
       }
 
       // 3. Update order tableId
-      const updatedOrder = (await prisma.order.update({
+      const updatedOrder = await prisma.order.update({
         where: { id: orderId },
         data: { tableId: targetTableId },
         include: {
@@ -482,7 +478,7 @@ export class OrderService {
           payments: true,
           table: true
         }
-      })) as unknown as Order
+      })
 
       // Log activity
       const toTable = await prisma.table.findUnique({ where: { id: targetTableId } })
@@ -493,7 +489,7 @@ export class OrderService {
         `${sourceOrder.table?.name || 'Masa'} -> ${toTable?.name} taşındı`
       )
 
-      return { success: true, data: updatedOrder }
+      return { success: true, data: toPlain<Order>(updatedOrder) }
     } catch (error) {
       logger.error('OrderService.transferTable', error)
       return { success: false, error: 'Masa taşıma işlemi başarısız.' }
@@ -559,7 +555,7 @@ export class OrderService {
             0
           )
 
-          const updatedOrder = (await tx.order.update({
+          const updatedOrder = await tx.order.update({
             where: { id: targetOrderId },
             data: { totalAmount },
             include: {
@@ -567,9 +563,9 @@ export class OrderService {
               payments: true,
               table: true
             }
-          })) as unknown as Order
+          })
 
-          return updatedOrder
+          return toPlain<Order>(updatedOrder)
         },
         {
           timeout: 20000 // Increase timeout to 20s

@@ -1,4 +1,4 @@
-import { Transaction, Order, PaymentMethod } from '../../../shared/types'
+import { Order, PaymentMethod, Transaction } from '../../../shared/types'
 
 const api = window.api
 
@@ -7,7 +7,7 @@ export const paymentService = {
     orderId: string,
     amount: number,
     paymentMethod: PaymentMethod
-  ): Promise<{ payment: Transaction; order: Order }> {
+  ): Promise<{ order: Order; completed: boolean }> {
     const result = await api.payments.create(orderId, amount, paymentMethod)
     if (!result.success) throw new Error(result.error)
     return result.data

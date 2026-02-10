@@ -2,6 +2,7 @@ import { prisma } from '../db/prisma'
 import { logger } from '../lib/logger'
 import { ApiResponse, Product, Category } from '../../shared/types'
 import { Prisma } from '../../generated/prisma/client'
+import { toPlain } from '../lib/toPlain'
 
 export class ProductService {
   // In-memory cache for getAllProducts (most frequently called)
@@ -33,7 +34,7 @@ export class ProductService {
         },
         include: { category: true }
       })
-      const result = products as unknown as Product[]
+      const result = toPlain<Product[]>(products)
       this.cache = { data: result, timestamp: Date.now() }
       return { success: true, data: result }
     } catch (error) {
@@ -46,7 +47,7 @@ export class ProductService {
     try {
       const product = await prisma.product.create({ data })
       this.invalidateCache()
-      return { success: true, data: product as unknown as Product }
+      return { success: true, data: toPlain<Product>(product) }
     } catch (error) {
       logger.error('ProductService.createProduct', error)
       return { success: false, error: 'Ürün oluşturulamadı.' }
@@ -60,7 +61,7 @@ export class ProductService {
         data
       })
       this.invalidateCache()
-      return { success: true, data: product as unknown as Product }
+      return { success: true, data: toPlain<Product>(product) }
     } catch (error) {
       logger.error('ProductService.updateProduct', error)
       return { success: false, error: 'Ürün güncellenemedi.' }
@@ -84,7 +85,7 @@ export class ProductService {
   async getCategories(): Promise<ApiResponse<Category[]>> {
     try {
       const categories = await prisma.category.findMany()
-      return { success: true, data: categories as unknown as Category[] }
+      return { success: true, data: toPlain<Category[]>(categories) }
     } catch (error) {
       return { success: false, error: String(error) }
     }
@@ -99,7 +100,7 @@ export class ProductService {
         },
         include: { category: true }
       })
-      return { success: true, data: products as unknown as Product[] }
+      return { success: true, data: toPlain<Product[]>(products) }
     } catch (error) {
       logger.error('ProductService.getProductsByCategory', error)
       return { success: false, error: 'Kategori ürünleri alınamadı.' }
@@ -115,7 +116,7 @@ export class ProductService {
         },
         include: { category: true }
       })
-      return { success: true, data: products as unknown as Product[] }
+      return { success: true, data: toPlain<Product[]>(products) }
     } catch (error) {
       logger.error('ProductService.getFavorites', error)
       return { success: false, error: 'Favori ürünler alınamadı.' }
@@ -131,7 +132,7 @@ export class ProductService {
         },
         include: { category: true }
       })
-      return { success: true, data: products as unknown as Product[] }
+      return { success: true, data: toPlain<Product[]>(products) }
     } catch (error) {
       logger.error('ProductService.searchProducts', error)
       return { success: false, error: 'Ürün araması yapılamadı.' }

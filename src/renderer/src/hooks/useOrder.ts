@@ -16,7 +16,7 @@ interface UseOrderResult {
   processPayment: (variables: {
     amount: number
     method: PaymentMethod
-  }) => Promise<{ payment: unknown; order: Order }>
+  }) => Promise<{ order: Order; completed: boolean }>
   toggleLock: UseMutateFunction<void | undefined, Error, void, unknown>
   deleteOrder: UseMutateFunction<void, Error, string, unknown>
   markItemsPaid: (items: { id: string; quantity: number }[]) => Promise<Order>

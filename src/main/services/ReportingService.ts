@@ -152,14 +152,13 @@ export class ReportingService {
     }
     today.setHours(0, 0, 0, 0)
 
-    // Parallel fetch: transactions, order items, and order count
-    const [todayTransactions, todayItems, todayOrdersCount, todayOrders] = await Promise.all([
+    // Parallel fetch: transactions, order items, and orders
+    const [todayTransactions, todayItems, todayOrders] = await Promise.all([
       prisma.transaction.findMany({ where: { createdAt: { gte: today } } }),
       prisma.orderItem.findMany({
         where: { order: { status: 'CLOSED', createdAt: { gte: today } } },
         include: { product: true }
       }),
-      prisma.order.count({ where: { status: 'CLOSED', createdAt: { gte: today } } }),
       prisma.order.findMany({ where: { status: 'CLOSED', createdAt: { gte: today } } })
     ])
 
@@ -199,7 +198,7 @@ export class ReportingService {
     return {
       today,
       dailyRevenue,
-      totalOrders: todayOrdersCount,
+      totalOrders: todayOrders.length,
       paymentMethodBreakdown,
       topProducts,
       todayOrders

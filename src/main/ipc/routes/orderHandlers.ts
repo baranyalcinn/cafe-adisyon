@@ -80,9 +80,8 @@ export function registerOrderHandlers(): void {
   })
 
   ipcMain.handle(IPC_CHANNELS.ORDERS_GET_DETAILS, async (_, orderId) => {
-    // Basic string validation
     if (!orderId || typeof orderId !== 'string') {
-      throw new Error('Geçersiz sipariş ID')
+      return { success: false, error: 'Geçersiz sipariş ID' }
     }
     return orderService.getOrderDetails(orderId)
   })
