@@ -42,7 +42,9 @@ export function registerCategoryHandlers(): void {
         return { success: true, data: cached }
       }
 
-      const categories = await prisma.category.findMany()
+      const categories = await prisma.category.findMany({
+        where: { isDeleted: false }
+      })
       categories.sort((a, b) =>
         a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
       )
@@ -104,14 +106,22 @@ export function registerCategoryHandlers(): void {
     }
 
     try {
-      // Use transaction to delete related products first
+      // Use transaction to soft delete related products and category
       await prisma.$transaction(async (tx) => {
-        await tx.product.deleteMany({ where: { categoryId: id } })
-        await tx.category.delete({ where: { id } })
+        // Soft delete all products in this category
+        await tx.product.updateMany({
+          where: { categoryId: id },
+          data: { isDeleted: true }
+        })
+
+        // Soft delete the category
+        await tx.category.update({
+          where: { id },
+          data: { isDeleted: true }
+        })
       })
       invalidateCache('categories')
-      // Note: Products referencing this category are also deleted by cascade.
-      // Products cache (if any) will expire naturally via TTL.
+      // Note: Products referencing this category are now soft deleted.
       return { success: true, data: null }
     } catch (error) {
       logger.error('Categories Delete', error)

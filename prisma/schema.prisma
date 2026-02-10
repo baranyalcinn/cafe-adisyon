@@ -29,6 +29,9 @@ model Category {
   name     String
   icon     String    @default("utensils")
   products Product[]
+  isDeleted Boolean  @default(false)
+
+  @@index([isDeleted])
 }
 
 model Table {
