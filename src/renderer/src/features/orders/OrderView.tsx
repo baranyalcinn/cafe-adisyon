@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button'
 import { useTableStore } from '@/store/useTableStore'
 import { useInventory } from '@/hooks/useInventory'
 import { useOrder } from '@/hooks/useOrder'
-import { useTables } from '@/hooks/useTables'
 import { ProductCard } from './ProductCard'
 import { getCategoryIcon } from './order-icons'
 import { CartPanel } from './CartPanel'
@@ -23,10 +22,12 @@ interface OrderViewProps {
 
 export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
   const selectedTableId = useTableStore((state) => state.selectedTableId)
+  const selectedTableName = useTableStore(
+    (state) => state.tables.find((t) => t.id === state.selectedTableId)?.name
+  )
 
   // Hooks
   const { products, categories, isLoading: isInventoryLoading } = useInventory()
-  const { data: tables = [] } = useTables()
   const { playTabChange, playSuccess } = useSound()
   const {
     order,
@@ -54,9 +55,6 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
   // Progressive Loading State
   const [visibleLimit, setVisibleLimit] = useState(40)
   const observerTarget = useRef<HTMLDivElement>(null)
-
-  const selectedTable = tables.find((t) => t.id === selectedTableId)
-
   // Use double requestAnimationFrame to ensure the first frame (animation start) is painted
   useEffect(() => {
     requestAnimationFrame(() => {
@@ -131,6 +129,16 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
     },
     [addItem]
   )
+
+  // Stable callbacks for CartPanel (React.memo)
+  const handlePaymentClick = useCallback(() => setIsPaymentOpen(true), [])
+  const handleUpdateItem = useCallback(
+    (itemId: string, qty: number) => updateItem({ orderItemId: itemId, quantity: qty }),
+    [updateItem]
+  )
+  const handleRemoveItem = useCallback((itemId: string) => removeItem(itemId), [removeItem])
+  const handleToggleLock = useCallback(() => toggleLock(), [toggleLock])
+  const handleDeleteOrder = useCallback((orderId: string) => deleteOrder(orderId), [deleteOrder])
 
   /* Keyboard navigation removed as per request */
 
@@ -276,7 +284,7 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
         <div className="z-10 relative h-14 px-4 border-b border-white/10 bg-gradient-to-r from-background via-background/95 to-background flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-2.5">
             <h2 className="text-lg font-bold tracking-tight text-foreground/90">
-              {selectedTable?.name || 'Masa'}
+              {selectedTableName || 'Masa'}
             </h2>
             <div className="h-4 w-px bg-border/20" />
             <span className="text-primary/70 font-semibold tracking-tight text-sm">Sipariş</span>
@@ -378,11 +386,11 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
       <CartPanel
         order={order}
         isLocked={isLocked}
-        onPaymentClick={() => setIsPaymentOpen(true)}
-        onUpdateItem={(itemId, qty) => updateItem({ orderItemId: itemId, quantity: qty })}
-        onRemoveItem={(itemId) => removeItem(itemId)}
-        onToggleLock={() => toggleLock()}
-        onDeleteOrder={(orderId) => deleteOrder(orderId)}
+        onPaymentClick={handlePaymentClick}
+        onUpdateItem={handleUpdateItem}
+        onRemoveItem={handleRemoveItem}
+        onToggleLock={handleToggleLock}
+        onDeleteOrder={handleDeleteOrder}
       />
 
       <PaymentModal

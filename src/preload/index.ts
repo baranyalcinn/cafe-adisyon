@@ -8,6 +8,7 @@ import {
   Product,
   Order,
   Transaction,
+  Expense,
   DashboardStats,
   ExtendedDashboardStats,
   RevenueTrendItem,
@@ -217,38 +218,13 @@ const api = {
       description: string
       amount: number
       category?: string
-    }): Promise<
-      ApiResponse<{
-        id: string
-        description: string
-        amount: number
-        category: string | null
-        createdAt: Date
-      }>
-    > => ipcRenderer.invoke(IPC_CHANNELS.EXPENSES_CREATE, data),
-    getAll: (): Promise<
-      ApiResponse<
-        {
-          id: string
-          description: string
-          amount: number
-          category: string | null
-          createdAt: Date
-        }[]
-      >
-    > => ipcRenderer.invoke(IPC_CHANNELS.EXPENSES_GET_ALL),
+    }): Promise<ApiResponse<Expense>> => ipcRenderer.invoke(IPC_CHANNELS.EXPENSES_CREATE, data),
+    getAll: (): Promise<ApiResponse<Expense[]>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.EXPENSES_GET_ALL),
     update: (
       id: string,
       data: { description?: string; amount?: number; category?: string }
-    ): Promise<
-      ApiResponse<{
-        id: string
-        description: string
-        amount: number
-        category: string | null
-        createdAt: Date
-      }>
-    > => ipcRenderer.invoke(IPC_CHANNELS.EXPENSES_UPDATE, id, data),
+    ): Promise<ApiResponse<Expense>> => ipcRenderer.invoke(IPC_CHANNELS.EXPENSES_UPDATE, id, data),
     delete: (id: string): Promise<ApiResponse<null>> =>
       ipcRenderer.invoke(IPC_CHANNELS.EXPENSES_DELETE, id)
   },

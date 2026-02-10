@@ -37,7 +37,7 @@ export function PaymentModal({
   onProcessPayment,
   onMarkItemsPaid
 }: PaymentModalProps): React.JSX.Element {
-  const { selectTable } = useTableStore()
+  const selectTable = useTableStore((s) => s.selectTable)
 
   const [paymentMode, setPaymentMode] = useState<PaymentMode>('full')
   const [selectedQuantities, setSelectedQuantities] = useState<Record<string, number>>({})

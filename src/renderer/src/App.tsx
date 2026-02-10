@@ -41,7 +41,7 @@ const viewVariants: Variants = {
 function App(): React.JSX.Element {
   const [currentView, setCurrentView] = useState<ViewType>('tables')
   const { isDark, toggleTheme, colorScheme, setColorScheme } = useTheme()
-  const { selectTable } = useTableStore()
+  const selectTable = useTableStore((s) => s.selectTable)
 
   // Prefetch logic (Sadece mount anında bir kez çalışır)
   const { prefetchAll } = useInventoryPrefetch()

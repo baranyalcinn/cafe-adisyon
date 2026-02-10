@@ -27,7 +27,7 @@ interface CartPanelProps {
   onDeleteOrder: (orderId: string) => void
 }
 
-export function CartPanel({
+export const CartPanel = React.memo(function CartPanel({
   order,
   isLocked,
   onPaymentClick,
@@ -438,4 +438,4 @@ export function CartPanel({
       </Dialog>
     </div>
   )
-}
+})
