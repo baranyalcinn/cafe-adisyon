@@ -27,12 +27,31 @@ export function AdminPinModal({
 
   // Hidden input ref for keyboard focus
   const hiddenInputRef = useRef<HTMLInputElement>(null)
+  const timersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set())
+
+  // Helper to create tracked timeouts that auto-clean
+  const safeTimeout = (fn: () => void, ms: number): void => {
+    const id = setTimeout(() => {
+      timersRef.current.delete(id)
+      fn()
+    }, ms)
+    timersRef.current.add(id)
+  }
 
   // Recovery State
   const [question, setQuestion] = useState<string | null>(null)
   const [answer, setAnswer] = useState('')
   const [isResetting, setIsResetting] = useState(false)
   const [recoveryError, setRecoveryError] = useState<string | null>(null)
+
+  // Clean up all tracked timers on unmount
+  useEffect(() => {
+    const timers = timersRef.current
+    return () => {
+      timers.forEach((id) => clearTimeout(id))
+      timers.clear()
+    }
+  }, [])
 
   useEffect(() => {
     if (open) {
@@ -44,7 +63,7 @@ export function AdminPinModal({
       setRecoveryError(null)
 
       // Focus hidden input for keyboard entry
-      setTimeout(() => hiddenInputRef.current?.focus(), 100)
+      safeTimeout(() => hiddenInputRef.current?.focus(), 100)
     }
   }, [open])
 
@@ -102,14 +121,14 @@ export function AdminPinModal({
       } else {
         // Fail
         setError(true)
-        setTimeout(() => {
+        safeTimeout(() => {
           setPin('')
           setError(false)
         }, 500)
       }
     } catch {
       setError(true)
-      setTimeout(() => setPin(''), 500)
+      safeTimeout(() => setPin(''), 500)
     } finally {
       setIsVerifying(false)
     }

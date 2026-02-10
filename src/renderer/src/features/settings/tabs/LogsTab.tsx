@@ -139,9 +139,19 @@ export function LogsTab(): React.JSX.Element {
   const observerTarget = useRef<HTMLDivElement>(null)
   const LIMIT = 50
 
+  // Refs for mutable state accessed inside the stable callback
+  const offsetRef = useRef(offset)
+  const hasMoreRef = useRef(hasMore)
+  const isLoadingRef = useRef(isLoading)
+
+  // Keep refs in sync with state
+  offsetRef.current = offset
+  hasMoreRef.current = hasMore
+  isLoadingRef.current = isLoading
+
   const loadLogs = useCallback(
     async (isLoadMore = false) => {
-      if (isLoading) return // Prevent double fetch
+      if (isLoadingRef.current) return // Prevent double fetch
 
       if (!isLoadMore) setIsLoading(true)
 
@@ -169,7 +179,7 @@ export function LogsTab(): React.JSX.Element {
             break
         }
 
-        const currentOffset = isLoadMore ? offset : 0
+        const currentOffset = isLoadMore ? offsetRef.current : 0
         const data = await cafeApi.logs.getRecent(
           LIMIT,
           start?.toISOString(),
@@ -194,7 +204,7 @@ export function LogsTab(): React.JSX.Element {
         setIsLoading(false)
       }
     },
-    [dateRange, category, debouncedSearchTerm, offset, hasMore, isLoading]
+    [dateRange, category, debouncedSearchTerm]
   )
 
   // Debounce search term
@@ -212,13 +222,13 @@ export function LogsTab(): React.JSX.Element {
     setHasMore(true)
     setLogs([])
     loadLogs(false)
-  }, [dateRange, category, debouncedSearchTerm])
+  }, [dateRange, category, debouncedSearchTerm, loadLogs])
 
   // Infinite Scroll Observer
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore && !isLoading) {
+        if (entries[0].isIntersecting && hasMoreRef.current && !isLoadingRef.current) {
           loadLogs(true)
         }
       },
@@ -230,7 +240,7 @@ export function LogsTab(): React.JSX.Element {
     }
 
     return () => observer.disconnect()
-  }, [hasMore, isLoading, loadLogs])
+  }, [loadLogs])
 
   const stats = useMemo(() => {
     const todayLogs = logs.filter((l) =>
