@@ -50,15 +50,15 @@ function App(): React.JSX.Element {
   }, [prefetchAll])
 
   const handleTableSelect = useCallback(
-    (tableId: string) => {
-      selectTable(tableId)
+    (tableId: string, tableName: string) => {
+      selectTable(tableId, tableName)
       setCurrentView('order')
     },
     [selectTable]
   )
 
   const handleBackToTables = useCallback(() => {
-    selectTable(null)
+    selectTable(null, null)
     setCurrentView('tables')
   }, [selectTable])
 

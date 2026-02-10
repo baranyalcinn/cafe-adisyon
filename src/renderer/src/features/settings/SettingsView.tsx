@@ -61,8 +61,8 @@ const ExpensesTab = lazy(() =>
 )
 import { AdminPinModal } from '@/components/ui/AdminPinModal'
 import { useSettingsStore } from '@/store/useSettingsStore'
-import { useTableStore } from '@/store/useTableStore'
-import { useInventoryStore } from '@/store/useInventoryStore'
+import { useTables } from '@/hooks/useTables'
+import { useInventory } from '@/hooks/useInventory'
 import { cn } from '@/lib/utils'
 
 interface SettingsViewProps {
@@ -157,10 +157,10 @@ export function SettingsView({
 }: SettingsViewProps): React.JSX.Element {
   const soundEnabled = useSettingsStore((state) => state.soundEnabled)
   const toggleSound = useSettingsStore((state) => state.toggleSound)
-  const tableCount = useTableStore((state) => state.tables.length)
-  const fetchTables = useTableStore((state) => state.fetchTables)
-  const productCount = useInventoryStore((state) => state.products.length)
-  const fetchInventory = useInventoryStore((state) => state.fetchInventory)
+  const { data: tables = [], refetch: refetchTables } = useTables(false)
+  const { products, refetchProducts, refetchCategories } = useInventory()
+  const tableCount = tables.length
+  const productCount = products.length
   const [activeView, setActiveView] = useState<string | null>(null)
 
   // PIN verification state
@@ -822,7 +822,11 @@ export function SettingsView({
                       <Button
                         onClick={async () => {
                           try {
-                            await Promise.all([fetchTables(), fetchInventory(true)])
+                            await Promise.all([
+                              refetchTables(),
+                              refetchProducts(),
+                              refetchCategories()
+                            ])
                             alert(
                               'Sistem kontrolü tamamlandı: Veritabanı bağlantısı sağlıklı ve tüm veriler güncel.'
                             )
@@ -853,7 +857,11 @@ export function SettingsView({
                             ) {
                               try {
                                 await cafeApi.seed.database()
-                                await Promise.all([fetchTables(), fetchInventory(true)])
+                                await Promise.all([
+                                  refetchTables(),
+                                  refetchProducts(),
+                                  refetchCategories()
+                                ])
                               } catch (error) {
                                 console.error('Seed error:', error)
                                 alert('Demo veri yükleme başarısız oldu.')

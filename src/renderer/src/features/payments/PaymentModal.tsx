@@ -204,7 +204,7 @@ export function PaymentModal({
           if (onPaymentComplete) {
             onPaymentComplete()
           } else {
-            selectTable(null)
+            selectTable(null, null)
           }
         }, 3000)
       } else {
@@ -248,7 +248,7 @@ export function PaymentModal({
       if (onPaymentComplete) {
         onPaymentComplete()
       } else {
-        selectTable(null)
+        selectTable(null, null)
       }
     }
 

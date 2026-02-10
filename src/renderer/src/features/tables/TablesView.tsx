@@ -27,7 +27,7 @@ interface TableCardProps {
   name: string
   hasOpenOrder: boolean
   isLocked?: boolean
-  onClick: (id: string) => void
+  onClick: (id: string, name: string) => void
   onTransfer: (id: string) => void
   onMerge: (id: string) => void
 }
@@ -46,7 +46,7 @@ const TableCard = memo(
       <ContextMenu>
         <ContextMenuTrigger asChild>
           <button
-            onClick={() => onClick(id)}
+            onClick={() => onClick(id, name)}
             className={cn(
               'group relative flex flex-col items-center justify-center p-0 cursor-pointer transition-all duration-300',
               'hover:-translate-y-1 active:scale-95 !overflow-visible'
@@ -143,7 +143,7 @@ const TableCard = memo(
 TableCard.displayName = 'TableCard'
 
 interface TablesViewProps {
-  onTableSelect: (tableId: string) => void
+  onTableSelect: (tableId: string, tableName: string) => void
 }
 
 export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Element {

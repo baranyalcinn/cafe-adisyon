@@ -22,9 +22,7 @@ interface OrderViewProps {
 
 export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
   const selectedTableId = useTableStore((state) => state.selectedTableId)
-  const selectedTableName = useTableStore(
-    (state) => state.tables.find((t) => t.id === state.selectedTableId)?.name
-  )
+  const selectedTableName = useTableStore((state) => state.selectedTableName)
 
   // Hooks
   const { products, categories, isLoading: isInventoryLoading } = useInventory()
