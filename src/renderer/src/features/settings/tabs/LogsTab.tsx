@@ -98,11 +98,35 @@ const ACTION_CONFIG: Record<string, { label: string; color: string; dot: string;
   },
   ADD_ITEM: {
     label: 'Sipariş',
+    color: 'text-foreground',
+    dot: 'bg-foreground',
+    bg: 'bg-foreground/5'
+  },
+  DELETE_PRODUCT: {
+    label: 'Ürün Silme',
+    color: 'text-red-500',
+    dot: 'bg-red-500',
+    bg: 'bg-red-500/5'
+  },
+  DELETE_ORDER: {
+    label: 'Masa Boşaltma',
+    color: 'text-red-500',
+    dot: 'bg-red-500',
+    bg: 'bg-red-500/5'
+  },
+  REMOVE_ITEM: {
+    label: 'Ürün İptal',
     color: 'text-emerald-400',
     dot: 'bg-emerald-400',
     bg: 'bg-emerald-400/5'
   },
   CANCEL_ITEM: { label: 'İptal', color: 'text-rose-400', dot: 'bg-rose-400', bg: 'bg-rose-400/5' },
+  ITEMS_PAID: {
+    label: 'Ürün Ödemesi',
+    color: 'text-emerald-500',
+    dot: 'bg-emerald-500',
+    bg: 'bg-emerald-500/5'
+  },
   PAYMENT_CASH: {
     label: 'Nakit Ödeme',
     color: 'text-emerald-500',
@@ -130,7 +154,7 @@ export function LogsTab(): React.JSX.Element {
   const [logs, setLogs] = useState<ActivityLog[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [category, setCategory] = useState<LogCategory>('all')
-  const [dateRange, setDateRange] = useState<DateRangeType>('all')
+  const [dateRange, setDateRange] = useState<DateRangeType>('today')
   const [searchTerm, setSearchTerm] = useState('')
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null)
@@ -289,7 +313,10 @@ export function LogsTab(): React.JSX.Element {
           if (match) {
             const qty = parseInt(match[1])
             const name = match[2]
-            const existingItem = currentGroup.groupItems?.find((i) => i.details.includes(name))
+            const existingItem = currentGroup.groupItems?.find((i) => {
+              const m = i.details.match(/(\d+)x (.*) eklendi/)
+              return m && m[2] === name
+            })
 
             if (existingItem) {
               existingItem.count += qty

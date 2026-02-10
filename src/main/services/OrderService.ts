@@ -149,7 +149,29 @@ export class OrderService {
 
   async deleteOrder(orderId: string): Promise<ApiResponse<null>> {
     try {
+      const order = await prisma.order.findUnique({
+        where: { id: orderId },
+        include: {
+          table: true,
+          items: {
+            include: { product: true }
+          }
+        }
+      })
       await prisma.order.delete({ where: { id: orderId } })
+
+      if (order) {
+        const itemDetails = order.items
+          .map((i) => `${i.quantity}x ${i.product?.name || 'Ürün'}`)
+          .join(', ')
+
+        await logService.createLog(
+          'DELETE_ORDER',
+          order.table?.name,
+          `Masa boşaltıldı: ${itemDetails}`
+        )
+      }
+
       return { success: true, data: null }
     } catch (error) {
       logger.error('OrderService.deleteOrder', error)
@@ -271,7 +293,21 @@ export class OrderService {
       )
 
       if (result.completed) {
-        await logService.createLog('CLOSE_TABLE', result.order.table?.name, 'Adisyon kapatıldı')
+        // Find items that were unpaid before this closure (simplified: list all items as it's closed)
+        // Or better: pass the originally unpaid items from the transaction result if possible.
+        // Since we don't return them from transaction easily without refactor, we can list ALL items order had.
+        // But user wants to know what was paid *now*.
+        // In full payment, everything is paid.
+        // Let's list all items concisely.
+        const itemDetails = (result.order.items || [])
+          .map((i) => `${i.quantity}x ${i.product?.name}`)
+          .join(', ')
+
+        await logService.createLog(
+          'CLOSE_TABLE',
+          result.order.table?.name,
+          `Adisyon kapatıldı. Ödenenler: ${itemDetails}`
+        )
       }
 
       this.broadcastDashboardUpdate()
@@ -289,14 +325,19 @@ export class OrderService {
       if (items.length === 0) return { success: true, data: null }
 
       // Wrap entire operation in a transaction for atomicity
-      const orderId = await prisma.$transaction(async (tx) => {
+      const result = await prisma.$transaction(async (tx) => {
         let resolvedOrderId: string | null = null
+        const paidItemsLog: string[] = []
 
         for (const { id, quantity } of items) {
-          const orderItem = await tx.orderItem.findUnique({ where: { id } })
+          const orderItem = await tx.orderItem.findUnique({
+            where: { id },
+            include: { product: true }
+          })
           if (!orderItem) continue
 
           resolvedOrderId = orderItem.orderId
+          const productName = orderItem.product?.name || 'Ürün'
 
           if (quantity >= orderItem.quantity) {
             // Pay full item
@@ -304,6 +345,7 @@ export class OrderService {
               where: { id },
               data: { isPaid: true }
             })
+            paidItemsLog.push(`${quantity}x ${productName}`)
           } else {
             // Split: decrement current, create new paid item
             await tx.orderItem.update({
@@ -320,14 +362,27 @@ export class OrderService {
                 isPaid: true
               }
             })
+            paidItemsLog.push(`${quantity}x ${productName}`)
           }
         }
 
-        return resolvedOrderId
+        return { orderId: resolvedOrderId, logs: paidItemsLog }
       })
 
-      if (orderId) {
-        const updated = await this.recalculateOrderTotal(orderId)
+      if (result.orderId) {
+        const order = await prisma.order.findUnique({
+          where: { id: result.orderId },
+          include: { table: true }
+        })
+        if (result.logs.length > 0) {
+          await logService.createLog(
+            'ITEMS_PAID',
+            order?.table?.name,
+            `Ürün ödemesi alındı: ${result.logs.join(', ')}`
+          )
+        }
+
+        const updated = await this.recalculateOrderTotal(result.orderId)
         return { success: true, data: updated }
       }
 

@@ -233,13 +233,7 @@ export function OrderHistoryModal(): React.JSX.Element {
                                 {/* Right Column - Info */}
                                 <div className="text-sm text-muted-foreground border-l pl-6">
                                   <p>
-                                    Sipariş ID:{' '}
-                                    <span className="font-mono text-xs">
-                                      {order.id.slice(0, 16)}...
-                                    </span>
-                                  </p>
-                                  <p>
-                                    Tarih:{' '}
+                                    {' '}
                                     {format(new Date(order.createdAt), 'dd MMMM yyyy HH:mm', {
                                       locale: tr
                                     })}

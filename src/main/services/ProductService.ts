@@ -1,5 +1,6 @@
 import { prisma } from '../db/prisma'
 import { logger } from '../lib/logger'
+import { logService } from './LogService'
 import { ApiResponse, Product, Category } from '../../shared/types'
 import { Prisma } from '../../generated/prisma/client'
 import { toPlain } from '../lib/toPlain'
@@ -70,11 +71,13 @@ export class ProductService {
 
   async deleteProduct(id: string): Promise<ApiResponse<null>> {
     try {
-      await prisma.product.update({
+      const product = await prisma.product.update({
         where: { id },
-        data: { isDeleted: true }
+        data: { isDeleted: true },
+        include: { category: true }
       })
       this.invalidateCache()
+      await logService.createLog('DELETE_PRODUCT', undefined, `Ürün silindi: ${product.name}`)
       return { success: true, data: null }
     } catch (error) {
       logger.error('ProductService.deleteProduct', error)
