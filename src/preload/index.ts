@@ -101,7 +101,23 @@ const api = {
 
   // Activity Logs
   logs: {
-    getRecent: (limit: number = 100) => ipcRenderer.invoke(IPC_CHANNELS.LOGS_GET_RECENT, limit),
+    getRecent: (
+      limit: number = 100,
+      startDate?: string,
+      endDate?: string,
+      offset: number = 0,
+      search?: string,
+      category?: string
+    ) =>
+      ipcRenderer.invoke(
+        IPC_CHANNELS.LOGS_GET_RECENT,
+        limit,
+        startDate,
+        endDate,
+        offset,
+        search,
+        category
+      ),
     create: (action: string, tableName?: string, userName?: string, details?: string) =>
       ipcRenderer.invoke(IPC_CHANNELS.LOGS_CREATE, action, tableName, userName, details)
   },

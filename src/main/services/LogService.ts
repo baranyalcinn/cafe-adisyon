@@ -1,14 +1,65 @@
+import { Prisma } from '../../generated/prisma/client'
 import { prisma } from '../db/prisma'
 import { logger } from '../lib/logger'
 import { ApiResponse, ActivityLog } from '../../shared/types'
 
 export class LogService {
-  async getRecentLogs(limit: number = 100): Promise<ApiResponse<ActivityLog[]>> {
+  async getRecentLogs(
+    limit: number = 100,
+    startDate?: string,
+    endDate?: string,
+    offset: number = 0,
+    search?: string,
+    category?: 'all' | 'system' | 'operation'
+  ): Promise<ApiResponse<ActivityLog[]>> {
+    const safeLimit = Math.max(1, Math.min(1000, Number(limit) || 100))
+    const safeOffset = Math.max(0, Number(offset) || 0)
+
     try {
+      const where: Prisma.ActivityLogWhereInput = {}
+
+      // Date filtering
+      if (startDate || endDate) {
+        where.createdAt = {}
+        if (startDate) where.createdAt.gte = new Date(startDate)
+        if (endDate) where.createdAt.lte = new Date(endDate)
+      }
+
+      // Search filtering
+      if (search) {
+        where.OR = [
+          { details: { contains: search } },
+          { tableName: { contains: search } },
+          { action: { contains: search } },
+          { userName: { contains: search } }
+        ]
+      }
+
+      // Category filtering
+      if (category && category !== 'all') {
+        const systemActions = [
+          'GENERATE_ZREPORT',
+          'BACKUP_DATABASE',
+          'ARCHIVE_DATA',
+          'END_OF_DAY',
+          'VACUUM',
+          'SOFT_RESET'
+        ]
+
+        if (category === 'system') {
+          where.action = { in: systemActions }
+        } else {
+          where.action = { notIn: systemActions }
+        }
+      }
+
       const logs = (await prisma.activityLog.findMany({
+        where,
         orderBy: { createdAt: 'desc' },
-        take: limit
+        take: safeLimit,
+        skip: safeOffset
       })) as unknown as ActivityLog[]
+
       return { success: true, data: logs }
     } catch (error) {
       logger.error('LogService.getRecentLogs', error)

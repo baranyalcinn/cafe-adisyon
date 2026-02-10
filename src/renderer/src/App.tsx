@@ -9,7 +9,6 @@ import { useTheme } from '@/hooks/useTheme'
 import { cn } from '@/lib/utils'
 import '@/styles/globals.css'
 import { Toaster } from '@/components/ui/toaster'
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { TitleBar } from '@/components/TitleBar'
 import { AnimatePresence, motion, Variants } from 'framer-motion'
 
@@ -129,7 +128,6 @@ function App(): React.JSX.Element {
       </div>
 
       <Toaster />
-      <ReactQueryDevtools initialIsOpen={false} />
     </div>
   )
 }

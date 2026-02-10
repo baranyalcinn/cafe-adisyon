@@ -3,6 +3,7 @@ import { join } from 'path'
 import { registerAllHandlers } from './ipc'
 import { logger } from './lib/logger'
 import { dbMaintenance } from './lib/db-maintenance'
+import { prisma } from './db/prisma'
 
 function createWindow(): void {
   // Create the browser window - optimized for POS application
@@ -112,6 +113,18 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
   }
+})
+
+// Graceful shutdown — flush pending operations before exit
+app.on('before-quit', async (event) => {
+  event.preventDefault()
+  try {
+    await prisma.$disconnect()
+    logger.info('App', 'Graceful shutdown completed')
+  } catch (error) {
+    logger.error('Shutdown error', error)
+  }
+  app.exit(0)
 })
 
 // Global Exception Handlers

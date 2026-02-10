@@ -212,67 +212,66 @@ export class OrderService {
     method: string
   ): Promise<ApiResponse<{ order: Order; completed: boolean }>> {
     try {
-      // 1. Create Transaction
-      await prisma.transaction.create({
-        data: {
-          orderId,
-          amount,
-          paymentMethod: method
-        }
-      })
+      const result = await prisma.$transaction(async (tx) => {
+        // 1. Read order with payments atomically
+        const order = (await tx.order.findUnique({
+          where: { id: orderId },
+          include: { payments: true }
+        })) as unknown as Order | null
 
-      // 2. Check totals
-      const order = (await prisma.order.findUnique({
-        where: { id: orderId },
-        include: { payments: true }
-      })) as unknown as Order | null
+        if (!order) throw new Error('Order not found')
 
-      if (!order) throw new Error('Order not found')
-
-      const totalPaid = order.payments!.reduce((sum, p) => sum + p.amount, 0)
-      const remaining = order.totalAmount - totalPaid
-
-      // 3. Close if fully paid (allow small tolerance for float issues, though we use integers)
-      if (remaining <= 0) {
-        // Mark all items as paid
-        await prisma.orderItem.updateMany({
-          where: { orderId },
-          data: { isPaid: true }
+        // 2. Create payment transaction
+        await tx.transaction.create({
+          data: {
+            orderId,
+            amount,
+            paymentMethod: method
+          }
         })
 
-        const closedOrder = (await prisma.order.update({
+        // 3. Check totals (based on existing payments + new amount)
+        const totalPaid = order.payments!.reduce((sum, p) => sum + p.amount, 0) + amount
+        const remaining = order.totalAmount - totalPaid
+
+        // 4. Close if fully paid
+        if (remaining <= 0) {
+          await tx.orderItem.updateMany({
+            where: { orderId },
+            data: { isPaid: true }
+          })
+
+          const closedOrder = (await tx.order.update({
+            where: { id: orderId },
+            data: { status: 'CLOSED' },
+            include: { items: { include: { product: true } }, payments: true, table: true }
+          })) as unknown as Order
+
+          return { order: closedOrder, completed: true }
+        }
+
+        // 5. Partial payment — return updated order
+        const updatedOrder = (await tx.order.findUnique({
           where: { id: orderId },
-          data: { status: 'CLOSED' },
           include: { items: { include: { product: true } }, payments: true, table: true }
         })) as unknown as Order
 
-        // Log payment and close
-        await logService.createLog(
-          method === 'CASH' ? 'PAYMENT_CASH' : 'PAYMENT_CARD',
-          closedOrder.table?.name,
-          `₺${(amount / 100).toFixed(2)} ${method === 'CASH' ? 'nakit' : 'kart'} ödeme alındı`
-        )
-        await logService.createLog('CLOSE_TABLE', closedOrder.table?.name, 'Adisyon kapatıldı')
+        return { order: updatedOrder!, completed: false }
+      })
 
-        this.broadcastDashboardUpdate()
-        return { success: true, data: { order: closedOrder, completed: true } }
-      }
-
-      // Return updated order (partial payment case)
-      const updatedOrder = (await prisma.order.findUnique({
-        where: { id: orderId },
-        include: { items: { include: { product: true } }, payments: true, table: true }
-      })) as unknown as Order
-
-      // Log partial payment activity
+      // Log outside transaction (non-critical)
       await logService.createLog(
         method === 'CASH' ? 'PAYMENT_CASH' : 'PAYMENT_CARD',
-        updatedOrder.table?.name,
+        result.order.table?.name,
         `₺${(amount / 100).toFixed(2)} ${method === 'CASH' ? 'nakit' : 'kart'} ödeme alındı`
       )
 
+      if (result.completed) {
+        await logService.createLog('CLOSE_TABLE', result.order.table?.name, 'Adisyon kapatıldı')
+      }
+
       this.broadcastDashboardUpdate()
-      return { success: true, data: { order: updatedOrder!, completed: false } }
+      return { success: true, data: result }
     } catch (error) {
       logger.error('OrderService.processPayment', error)
       return { success: false, error: 'Ödeme alınamadı.' }
@@ -570,7 +569,7 @@ export class OrderService {
             }
           })) as unknown as Order
 
-          return { success: true, data: updatedOrder }
+          return updatedOrder
         },
         {
           timeout: 20000 // Increase timeout to 20s
@@ -578,18 +577,16 @@ export class OrderService {
       )
 
       // Log outside transaction
-      if (result.success && result.data) {
-        await logService.createLog(
-          'MERGE_TABLES',
-          result.data.table?.name,
-          `Adisyonlar birleştirildi (Toplam: ₺${(result.data.totalAmount / 100).toFixed(2)})`
-        )
-      }
+      await logService.createLog(
+        'MERGE_TABLES',
+        result.table?.name,
+        `Adisyonlar birleştirildi (Toplam: ₺${(result.totalAmount / 100).toFixed(2)})`
+      )
 
-      return result
+      return { success: true as const, data: result }
     } catch (error) {
       logger.error('OrderService.mergeTables', error)
-      return { success: false, error: String(error) }
+      return { success: false as const, error: String(error) }
     }
   }
 }

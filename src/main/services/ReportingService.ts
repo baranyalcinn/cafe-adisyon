@@ -131,83 +131,89 @@ export class ReportingService {
     }
   }
 
+  /**
+   * Shared base stats calculation used by both getDashboardStats and getExtendedDashboardStats.
+   * Avoids duplicating the common queries for transactions, items, and top products.
+   */
+  private async getBaseStats(topProductLimit: number = 5): Promise<{
+    today: Date
+    dailyRevenue: number
+    totalOrders: number
+    paymentMethodBreakdown: { cash: number; card: number }
+    topProducts: { productId: string; productName: string; quantity: number }[]
+    todayOrders: { id: string; totalAmount: number; createdAt: Date }[]
+  }> {
+    const now = new Date()
+    const currentHour = now.getHours()
+
+    const today = new Date(now)
+    if (currentHour < 5) {
+      today.setDate(today.getDate() - 1)
+    }
+    today.setHours(0, 0, 0, 0)
+
+    // Parallel fetch: transactions, order items, and order count
+    const [todayTransactions, todayItems, todayOrdersCount, todayOrders] = await Promise.all([
+      prisma.transaction.findMany({ where: { createdAt: { gte: today } } }),
+      prisma.orderItem.findMany({
+        where: { order: { status: 'CLOSED', createdAt: { gte: today } } },
+        include: { product: true }
+      }),
+      prisma.order.count({ where: { status: 'CLOSED', createdAt: { gte: today } } }),
+      prisma.order.findMany({ where: { status: 'CLOSED', createdAt: { gte: today } } })
+    ])
+
+    const dailyRevenue = todayTransactions.reduce((sum, t) => sum + t.amount, 0)
+
+    const paymentMethodBreakdown = {
+      cash: todayTransactions
+        .filter((p) => p.paymentMethod === 'CASH')
+        .reduce((sum, p) => sum + p.amount, 0),
+      card: todayTransactions
+        .filter((p) => p.paymentMethod === 'CARD')
+        .reduce((sum, p) => sum + p.amount, 0)
+    }
+
+    const productCounts = new Map<string, { name: string; quantity: number }>()
+    todayItems.forEach((item) => {
+      const existing = productCounts.get(item.productId)
+      if (existing) {
+        existing.quantity += item.quantity
+      } else {
+        productCounts.set(item.productId, {
+          name: item.product.name,
+          quantity: item.quantity
+        })
+      }
+    })
+
+    const topProducts = Array.from(productCounts.entries())
+      .map(([productId, data]) => ({
+        productId,
+        productName: data.name,
+        quantity: data.quantity
+      }))
+      .sort((a, b) => b.quantity - a.quantity)
+      .slice(0, topProductLimit)
+
+    return {
+      today,
+      dailyRevenue,
+      totalOrders: todayOrdersCount,
+      paymentMethodBreakdown,
+      topProducts,
+      todayOrders
+    }
+  }
+
   async getDashboardStats(): Promise<ApiResponse<DashboardStats>> {
     try {
-      const now = new Date()
-      const currentHour = now.getHours()
-
-      const today = new Date(now)
-      if (currentHour < 5) {
-        today.setDate(today.getDate() - 1)
-      }
-      today.setHours(0, 0, 0, 0)
-
-      // For Order Count
-      const todayOrdersCount = await prisma.order.count({
-        where: {
-          status: 'CLOSED',
-          createdAt: { gte: today }
-        }
-      })
-
-      // For Revenue (Transactions)
-      const todayTransactions = await prisma.transaction.findMany({
-        where: {
-          createdAt: { gte: today }
-        }
-      })
-
-      const dailyRevenue = todayTransactions.reduce((sum, t) => sum + t.amount, 0)
-
-      const paymentMethodBreakdown = {
-        cash: todayTransactions
-          .filter((p) => p.paymentMethod === 'CASH')
-          .reduce((sum, p) => sum + p.amount, 0),
-        card: todayTransactions
-          .filter((p) => p.paymentMethod === 'CARD')
-          .reduce((sum, p) => sum + p.amount, 0)
-      }
-
-      const todayItems = await prisma.orderItem.findMany({
-        where: {
-          order: {
-            status: 'CLOSED',
-            createdAt: { gte: today }
-          }
-        },
-        include: { product: true }
-      })
-
-      const productCounts = new Map<string, { name: string; quantity: number }>()
-      todayItems.forEach((item) => {
-        const existing = productCounts.get(item.productId)
-        if (existing) {
-          existing.quantity += item.quantity
-        } else {
-          productCounts.set(item.productId, {
-            name: item.product.name,
-            quantity: item.quantity
-          })
-        }
-      })
-
-      const topProducts = Array.from(productCounts.entries())
-        .map(([productId, data]) => ({
-          productId,
-          productName: data.name,
-          quantity: data.quantity
-        }))
-        .sort((a, b) => b.quantity - a.quantity)
-        .slice(0, 5)
+      const { dailyRevenue, totalOrders, paymentMethodBreakdown, topProducts } =
+        await this.getBaseStats(5)
 
       return {
         success: true,
-        data: {
-          dailyRevenue,
-          totalOrders: todayOrdersCount,
-          paymentMethodBreakdown,
-          topProducts
-        }
+        data: { dailyRevenue, totalOrders, paymentMethodBreakdown, topProducts }
       }
     } catch (error) {
       logger.error('ReportingService.getDashboardStats', error)
@@ -217,99 +223,16 @@ export class ReportingService {
 
   async getExtendedDashboardStats(): Promise<ApiResponse<ExtendedDashboardStats>> {
     try {
-      const now = new Date()
-      const currentHour = now.getHours()
+      const { dailyRevenue, totalOrders, paymentMethodBreakdown, topProducts, todayOrders } =
+        await this.getBaseStats(10)
 
-      const today = new Date(now)
-      if (currentHour < 5) {
-        today.setDate(today.getDate() - 1)
-      }
-      today.setHours(0, 0, 0, 0)
+      const [openTables, pendingOrders] = await Promise.all([
+        prisma.table.count({ where: { orders: { some: { status: 'OPEN' } } } }),
+        prisma.order.count({ where: { status: 'OPEN', items: { some: {} } } })
+      ])
 
-      // For Order Count & Hourly Activity (Orders based)
-      const todayOrders = await prisma.order.findMany({
-        where: {
-          status: 'CLOSED',
-          createdAt: { gte: today }
-        }
-      })
-
-      // For Revenue (Transactions)
-      const todayTransactions = await prisma.transaction.findMany({
-        where: {
-          createdAt: { gte: today }
-        }
-      })
-
-      const dailyRevenue = todayTransactions.reduce((sum, t) => sum + t.amount, 0)
-
-      const paymentMethodBreakdown = {
-        cash: todayTransactions
-          .filter((p) => p.paymentMethod === 'CASH')
-          .reduce((sum, p) => sum + p.amount, 0),
-        card: todayTransactions
-          .filter((p) => p.paymentMethod === 'CARD')
-          .reduce((sum, p) => sum + p.amount, 0)
-      }
-
-      const todayItems = await prisma.orderItem.findMany({
-        where: {
-          order: {
-            status: 'CLOSED',
-            createdAt: { gte: today }
-          }
-        },
-        include: { product: true }
-      })
-
-      const productCounts = new Map<string, { name: string; quantity: number }>()
-      todayItems.forEach((item) => {
-        const existing = productCounts.get(item.productId)
-        if (existing) {
-          existing.quantity += item.quantity
-        } else {
-          productCounts.set(item.productId, {
-            name: item.product.name,
-            quantity: item.quantity
-          })
-        }
-      })
-
-      const topProducts = Array.from(productCounts.entries())
-        .map(([productId, data]) => ({
-          productId,
-          productName: data.name,
-          quantity: data.quantity
-        }))
-        .sort((a, b) => b.quantity - a.quantity)
-        .slice(0, 10)
-
-      const openTables = await prisma.table.count({
-        where: {
-          orders: {
-            some: { status: 'OPEN' }
-          }
-        }
-      })
-
-      const pendingOrders = await prisma.order.count({
-        where: {
-          status: 'OPEN',
-          items: { some: {} }
-        }
-      })
-
-      // Calculate Hourly Activity
-      // NOTE: Activity is simpler to map to Orders because Transactions can be multiple per order.
-      // But for consistency with revenue, we should probably stick to Order closes for "Activity"
-      // or change activity to "Transactions"?
-      // Let's keep "Activity" as "Orders Closed" count, but maybe Revenue part of activity derived from transactions?
-      // For simplicity and alignment with chart, using Orders for hourly distribution is safer for now
-      // unless user wants strict hourly cash flow.
-      // Existing logic uses `todayOrders` (now without payments included).
+      // Calculate Hourly Activity from closed orders
       const hourlyStats = new Map<number, { revenue: number; count: number }>()
-
-      // Initialize all hours with 0
       for (let i = 0; i < 24; i++) {
         hourlyStats.set(i, { revenue: 0, count: 0 })
       }
@@ -318,12 +241,7 @@ export class ReportingService {
         const hour = order.createdAt.getHours()
         const current = hourlyStats.get(hour) || { revenue: 0, count: 0 }
         hourlyStats.set(hour, {
-          revenue: current.revenue + order.totalAmount, // This is still Order Total, might vary from actual cash collected if partials exist.
-          // Ideally this should merge with transaction times.
-          // But strict "When was it busy?" is answered by Order Close Time.
-          // While "When did we get money?" is Transaction Time.
-          // Let's leave this on Order Time for now to match the "Order Count" visual.
-          // Changing this to transaction time would mismatch Order Count.
+          revenue: current.revenue + order.totalAmount,
           count: current.count + 1
         })
       })
@@ -340,7 +258,7 @@ export class ReportingService {
         success: true,
         data: {
           dailyRevenue,
-          totalOrders: todayOrders.length,
+          totalOrders,
           paymentMethodBreakdown,
           topProducts,
           openTables,
@@ -356,8 +274,26 @@ export class ReportingService {
 
   async getRevenueTrend(days: number = 7): Promise<ApiResponse<RevenueTrendItem[]>> {
     try {
-      const result: { date: string; revenue: number; orderCount: number }[] = []
+      // Calculate date range
+      const endDate = new Date()
+      const startDate = new Date()
+      startDate.setHours(0, 0, 0, 0)
+      startDate.setDate(startDate.getDate() - (days - 1))
 
+      // Batch fetch: 2 queries instead of 2*N
+      const [allTransactions, allOrders] = await Promise.all([
+        prisma.transaction.findMany({
+          where: { createdAt: { gte: startDate, lte: endDate } },
+          select: { amount: true, createdAt: true }
+        }),
+        prisma.order.findMany({
+          where: { status: 'CLOSED', createdAt: { gte: startDate, lte: endDate } },
+          select: { createdAt: true }
+        })
+      ])
+
+      // Group by day in-memory
+      const result: RevenueTrendItem[] = []
       for (let i = days - 1; i >= 0; i--) {
         const date = new Date()
         date.setHours(0, 0, 0, 0)
@@ -366,28 +302,18 @@ export class ReportingService {
         const nextDay = new Date(date)
         nextDay.setDate(nextDay.getDate() + 1)
 
-        // 1. Get Revenue (Transactions)
-        const revenueAgg = await prisma.transaction.aggregate({
-          where: {
-            createdAt: { gte: date, lt: nextDay }
-          },
-          _sum: { amount: true }
-        })
+        const dayRevenue = allTransactions
+          .filter((t) => t.createdAt >= date && t.createdAt < nextDay)
+          .reduce((sum, t) => sum + t.amount, 0)
 
-        // 2. Get Order Count (Closed Orders)
-        const orderCount = await prisma.order.count({
-          where: {
-            status: 'CLOSED',
-            createdAt: { gte: date, lt: nextDay }
-          }
-        })
-
-        const revenue = revenueAgg._sum.amount || 0
+        const dayOrderCount = allOrders.filter(
+          (o) => o.createdAt >= date && o.createdAt < nextDay
+        ).length
 
         result.push({
           date: date.toLocaleDateString('tr-TR', { weekday: 'short', day: 'numeric' }),
-          revenue,
-          orderCount: orderCount
+          revenue: dayRevenue,
+          orderCount: dayOrderCount
         })
       }
 

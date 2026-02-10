@@ -2,7 +2,8 @@ import { prisma, dbPath } from '../db/prisma'
 import { logger } from '../lib/logger'
 import { logService } from './LogService'
 import { app } from 'electron'
-import * as fs from 'fs'
+import { promises as fs } from 'fs'
+import { existsSync } from 'fs'
 import * as path from 'path'
 import { ApiResponse } from '../../shared/types'
 
@@ -138,55 +139,60 @@ export class MaintenanceService {
       const oneYearAgo = new Date()
       oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
 
-      const deletedItems = await prisma.orderItem.deleteMany({
-        where: {
-          order: {
+      const result = await prisma.$transaction(async (tx) => {
+        const deletedItems = await tx.orderItem.deleteMany({
+          where: {
+            order: {
+              createdAt: { lt: oneYearAgo },
+              status: 'CLOSED'
+            }
+          }
+        })
+
+        const deletedTransactions = await tx.transaction.deleteMany({
+          where: {
+            order: {
+              createdAt: { lt: oneYearAgo },
+              status: 'CLOSED'
+            }
+          }
+        })
+
+        const deletedOrders = await tx.order.deleteMany({
+          where: {
             createdAt: { lt: oneYearAgo },
             status: 'CLOSED'
           }
-        }
-      })
+        })
 
-      const deletedTransactions = await prisma.transaction.deleteMany({
-        where: {
-          order: {
-            createdAt: { lt: oneYearAgo },
-            status: 'CLOSED'
+        const deletedExpenses = await tx.expense.deleteMany({
+          where: {
+            createdAt: { lt: oneYearAgo }
           }
+        })
+
+        const deletedSummaries = await tx.dailySummary.deleteMany({
+          where: {
+            date: { lt: oneYearAgo }
+          }
+        })
+
+        return {
+          deletedOrders: deletedOrders.count,
+          deletedItems: deletedItems.count,
+          deletedTransactions: deletedTransactions.count,
+          deletedExpenses: deletedExpenses.count,
+          deletedSummaries: deletedSummaries.count
         }
       })
-
-      const deletedOrders = await prisma.order.deleteMany({
-        where: {
-          createdAt: { lt: oneYearAgo },
-          status: 'CLOSED'
-        }
-      })
-
-      // Giderleri de arşivle
-      const expenseResult = await this.archiveOldExpenses()
-      const deletedExpenses = expenseResult.data?.deletedExpenses || 0
-
-      // Z-raporlarını da arşivle
-      const summaryResult = await this.archiveOldSummaries()
-      const deletedSummaries = summaryResult.data?.deletedSummaries || 0
 
       await logService.createLog(
         'ARCHIVE_DATA',
         undefined,
-        `Silinen: ${deletedOrders.count} sipariş, ${deletedItems.count} ürün, ${deletedTransactions.count} işlem, ${deletedExpenses} gider, ${deletedSummaries} Z-raporu`
+        `Silinen: ${result.deletedOrders} sipariş, ${result.deletedItems} ürün, ${result.deletedTransactions} işlem, ${result.deletedExpenses} gider, ${result.deletedSummaries} Z-raporu`
       )
 
-      return {
-        success: true,
-        data: {
-          deletedOrders: deletedOrders.count,
-          deletedItems: deletedItems.count,
-          deletedTransactions: deletedTransactions.count,
-          deletedExpenses,
-          deletedSummaries
-        }
-      }
+      return { success: true, data: result }
     } catch (error) {
       logger.error('MaintenanceService.archiveOldData', error)
       return { success: false, error: 'Veri arşivleme başarısız.' }
@@ -215,8 +221,8 @@ export class MaintenanceService {
       const isDev = process.env.NODE_ENV === 'development'
       const baseDir = isDev ? process.cwd() : app.getPath('userData')
       const exportDir = path.join(baseDir, 'exports')
-      if (!fs.existsSync(exportDir)) {
-        fs.mkdirSync(exportDir, { recursive: true })
+      if (!existsSync(exportDir)) {
+        await fs.mkdir(exportDir, { recursive: true })
       }
 
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
@@ -224,7 +230,7 @@ export class MaintenanceService {
       const filepath = path.join(exportDir, filename)
 
       if (format === 'json') {
-        fs.writeFileSync(filepath, JSON.stringify(oldOrders, null, 2))
+        await fs.writeFile(filepath, JSON.stringify(oldOrders, null, 2))
       } else {
         const headers = 'OrderId,TableName,TotalAmount,Status,CreatedAt\n'
         const rows = oldOrders
@@ -233,7 +239,7 @@ export class MaintenanceService {
               `${o.id},${o.table?.name || ''},${o.totalAmount},${o.status},${o.createdAt.toISOString()}`
           )
           .join('\n')
-        fs.writeFileSync(filepath, headers + rows)
+        await fs.writeFile(filepath, headers + rows)
       }
 
       return { success: true, data: { filepath, count: oldOrders.length } }
@@ -261,14 +267,14 @@ export class MaintenanceService {
       const isDev = process.env.NODE_ENV === 'development'
       const baseDir = isDev ? process.cwd() : app.getPath('userData')
       const backupDir = path.join(baseDir, 'backups')
-      if (!fs.existsSync(backupDir)) {
-        fs.mkdirSync(backupDir, { recursive: true })
+      if (!existsSync(backupDir)) {
+        await fs.mkdir(backupDir, { recursive: true })
       }
 
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
       const backupPath = path.join(backupDir, `backup_${timestamp}.db`)
 
-      fs.copyFileSync(dbPath, backupPath)
+      await fs.copyFile(dbPath, backupPath)
 
       await logService.createLog('BACKUP_DATABASE', undefined, `Yedek oluşturuldu: ${backupPath}`)
 
@@ -286,30 +292,29 @@ export class MaintenanceService {
       const isDev = process.env.NODE_ENV === 'development'
       const baseDir = isDev ? process.cwd() : app.getPath('userData')
       const backupDir = path.join(baseDir, 'backups')
-      if (!fs.existsSync(backupDir)) {
-        fs.mkdirSync(backupDir, { recursive: true })
+      if (!existsSync(backupDir)) {
+        await fs.mkdir(backupDir, { recursive: true })
       }
 
       // Create new backup
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
       const backupPath = path.join(backupDir, `backup_${timestamp}.db`)
-      fs.copyFileSync(dbPath, backupPath)
+      await fs.copyFile(dbPath, backupPath)
 
       // Get all backup files and sort by modification time (oldest first)
-      const backupFiles = fs
-        .readdirSync(backupDir)
-        .filter((f) => f.startsWith('backup_') && f.endsWith('.db'))
-        .map((f) => ({
-          name: f,
-          path: path.join(backupDir, f),
-          mtime: fs.statSync(path.join(backupDir, f)).mtime.getTime()
-        }))
-        .sort((a, b) => a.mtime - b.mtime)
+      const fileNames = await fs.readdir(backupDir)
+      const backupFiles: { name: string; path: string; mtime: number }[] = []
+      for (const f of fileNames.filter((f) => f.startsWith('backup_') && f.endsWith('.db'))) {
+        const filePath = path.join(backupDir, f)
+        const stat = await fs.stat(filePath)
+        backupFiles.push({ name: f, path: filePath, mtime: stat.mtime.getTime() })
+      }
+      backupFiles.sort((a, b) => a.mtime - b.mtime)
 
       // Delete old backups if we exceed maxBackups
       const toDelete = backupFiles.slice(0, Math.max(0, backupFiles.length - maxBackups))
       for (const file of toDelete) {
-        fs.unlinkSync(file.path)
+        await fs.unlink(file.path)
       }
 
       await logService.createLog(
@@ -443,24 +448,22 @@ export class MaintenanceService {
         { name: 'Waffle', price: 15000, categoryId: 'cat-tatli', isFavorite: false }
       ]
 
-      for (const product of products) {
-        await prisma.product.create({
-          data: {
-            id: `prod-${product.name
-              .toLowerCase()
-              .replace(/[^\w\s-]/g, '')
-              .replace(/\s+/g, '-')}`,
-            ...product
-          }
-        })
-      }
+      await prisma.product.createMany({
+        data: products.map((product) => ({
+          id: `prod-${product.name
+            .toLowerCase()
+            .replace(/[^\w\s-]/g, '')
+            .replace(/\s+/g, '-')}`,
+          ...product
+        }))
+      })
 
-      // Seed Tables
-      for (let i = 1; i <= 12; i++) {
-        await prisma.table.create({
-          data: { id: `table-${i}`, name: `Masa ${i}` }
-        })
-      }
+      await prisma.table.createMany({
+        data: Array.from({ length: 12 }, (_, i) => ({
+          id: `table-${i + 1}`,
+          name: `Masa ${i + 1}`
+        }))
+      })
 
       await logService.createLog(
         'SEED_DATABASE',

@@ -32,7 +32,7 @@ export function useOrder(tableId: string | null): UseOrderResult {
     queryKey,
     queryFn: () => (tableId ? cafeApi.orders.getOpenByTable(tableId) : null),
     enabled: !!tableId,
-    staleTime: 0 // Orders update frequently
+    staleTime: 5_000 // Mutations invalidate cache, so 5s is safe
   })
 
   // --- Mutations ---

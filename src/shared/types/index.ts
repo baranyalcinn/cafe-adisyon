@@ -68,12 +68,8 @@ export interface CartItem {
   unitPrice: number
 }
 
-// API response types
-export interface ApiResponse<T> {
-  success: boolean
-  data?: T
-  error?: string
-}
+// API response types — Discriminated union for type-safe narrowing
+export type ApiResponse<T> = { success: true; data: T } | { success: false; error: string }
 
 // Dashboard statistics
 export interface DashboardStats {

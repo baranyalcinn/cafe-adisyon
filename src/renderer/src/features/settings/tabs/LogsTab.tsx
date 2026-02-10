@@ -1,14 +1,14 @@
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react'
 import {
   History,
   Monitor,
   ShoppingCart,
   RefreshCw,
   Search,
-  ArrowUpDown,
-  Calendar
+  Activity,
+  ChevronRight,
+  Clock
 } from 'lucide-react'
-import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -21,9 +21,23 @@ import {
 } from '@/components/ui/table'
 import { cafeApi, type ActivityLog } from '@/lib/api'
 import { cn } from '@/lib/utils'
+import { motion } from 'framer-motion'
+import {
+  startOfDay,
+  endOfDay,
+  subDays,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+  format,
+  isWithinInterval
+} from 'date-fns'
+import { tr } from 'date-fns/locale'
 
 // Category definitions
 type LogCategory = 'all' | 'system' | 'operation'
+type DateRangeType = 'today' | 'yesterday' | 'week' | 'month' | 'all'
 
 const CATEGORY_TABS: { id: LogCategory; label: string; icon: React.ElementType }[] = [
   { id: 'all', label: 'Tümü', icon: History },
@@ -31,434 +45,563 @@ const CATEGORY_TABS: { id: LogCategory; label: string; icon: React.ElementType }
   { id: 'system', label: 'Sistem', icon: Monitor }
 ]
 
-const ACTION_CONFIG: Record<string, { label: string; color: string; badge: string }> = {
-  // System
+const DATE_FILTERS: { id: DateRangeType; label: string }[] = [
+  { id: 'today', label: 'Bugün' },
+  { id: 'yesterday', label: 'Dün' },
+  { id: 'week', label: 'Bu Hafta' },
+  { id: 'month', label: 'Bu Ay' },
+  { id: 'all', label: 'Tümü' }
+]
+
+const ACTION_CONFIG: Record<string, { label: string; color: string; dot: string; bg: string }> = {
   GENERATE_ZREPORT: {
     label: 'Z-Raporu',
-    color: 'text-purple-600',
-    badge: 'bg-purple-100 text-purple-700'
+    color: 'text-purple-400',
+    dot: 'bg-purple-400',
+    bg: 'bg-purple-400/5'
   },
   ARCHIVE_DATA: {
     label: 'Arşivleme',
-    color: 'text-warning',
-    badge: 'bg-warning/10 text-warning'
+    color: 'text-orange-400',
+    dot: 'bg-orange-400',
+    bg: 'bg-orange-400/5'
   },
   BACKUP_DATABASE: {
     label: 'Yedekleme',
-    color: 'text-blue-600',
-    badge: 'bg-blue-100 text-blue-700'
+    color: 'text-blue-400',
+    dot: 'bg-blue-400',
+    bg: 'bg-blue-400/5'
   },
   END_OF_DAY: {
     label: 'Gün Sonu',
-    color: 'text-indigo-600',
-    badge: 'bg-indigo-100 text-indigo-700'
+    color: 'text-indigo-400',
+    dot: 'bg-indigo-400',
+    bg: 'bg-indigo-400/5'
   },
-
-  // Table
   OPEN_TABLE: {
     label: 'Masa Açıldı',
-    color: 'text-success',
-    badge: 'bg-success/10 text-success'
+    color: 'text-emerald-400',
+    dot: 'bg-emerald-400',
+    bg: 'bg-emerald-400/5'
   },
   CLOSE_TABLE: {
     label: 'Masa Kapatıldı',
-    color: 'text-slate-600',
-    badge: 'bg-slate-100 text-slate-700'
+    color: 'text-slate-400',
+    dot: 'bg-slate-400',
+    bg: 'bg-slate-400/5'
   },
-  MOVE_TABLE: { label: 'Taşıma', color: 'text-orange-600', badge: 'bg-orange-100 text-orange-700' },
-
-  // Order
+  MOVE_TABLE: {
+    label: 'Taşıma',
+    color: 'text-amber-400',
+    dot: 'bg-amber-400',
+    bg: 'bg-amber-400/5'
+  },
   ADD_ITEM: {
     label: 'Sipariş',
-    color: 'text-success',
-    badge: 'bg-success/5 text-success'
+    color: 'text-emerald-400',
+    dot: 'bg-emerald-400',
+    bg: 'bg-emerald-400/5'
   },
-  CANCEL_ITEM: {
-    label: 'İptal',
-    color: 'text-destructive',
-    badge: 'bg-destructive/10 text-destructive'
-  },
+  CANCEL_ITEM: { label: 'İptal', color: 'text-rose-400', dot: 'bg-rose-400', bg: 'bg-rose-400/5' },
   PAYMENT_CASH: {
     label: 'Nakit Ödeme',
-    color: 'text-success font-bold',
-    badge: 'bg-success/10 text-success'
+    color: 'text-emerald-500',
+    dot: 'bg-emerald-500',
+    bg: 'bg-emerald-500/5'
   },
   PAYMENT_CARD: {
     label: 'Kart Ödeme',
-    color: 'text-blue-600 font-bold',
-    badge: 'bg-blue-100 text-blue-800'
+    color: 'text-blue-500',
+    dot: 'bg-blue-500',
+    bg: 'bg-blue-500/5'
   }
 }
 
+const SYSTEM_ACTIONS = [
+  'GENERATE_ZREPORT',
+  'BACKUP_DATABASE',
+  'ARCHIVE_DATA',
+  'END_OF_DAY',
+  'VACUUM',
+  'SOFT_RESET'
+]
+
 export function LogsTab(): React.JSX.Element {
   const [logs, setLogs] = useState<ActivityLog[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [category, setCategory] = useState<LogCategory>('all')
+  const [dateRange, setDateRange] = useState<DateRangeType>('all')
   const [searchTerm, setSearchTerm] = useState('')
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null)
+  const [offset, setOffset] = useState(0)
+  const [hasMore, setHasMore] = useState(true)
+  const observerTarget = useRef<HTMLDivElement>(null)
+  const LIMIT = 50
 
-  const loadLogs = async (): Promise<void> => {
-    setIsLoading(true)
-    try {
-      const data = await cafeApi.logs.getRecent(500)
-      setLogs(data)
-    } catch (error) {
-      console.error('Failed to load logs:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  const loadLogs = useCallback(
+    async (isLoadMore = false) => {
+      if (isLoading) return // Prevent double fetch
 
+      if (!isLoadMore) setIsLoading(true)
+
+      try {
+        let start: Date | undefined
+        let end: Date | undefined
+        const now = new Date()
+
+        switch (dateRange) {
+          case 'today':
+            start = startOfDay(now)
+            end = endOfDay(now)
+            break
+          case 'yesterday':
+            start = startOfDay(subDays(now, 1))
+            end = endOfDay(subDays(now, 1))
+            break
+          case 'week':
+            start = startOfWeek(now, { weekStartsOn: 1 })
+            end = endOfWeek(now, { weekStartsOn: 1 })
+            break
+          case 'month':
+            start = startOfMonth(now)
+            end = endOfMonth(now)
+            break
+        }
+
+        const currentOffset = isLoadMore ? offset : 0
+        const data = await cafeApi.logs.getRecent(
+          LIMIT,
+          start?.toISOString(),
+          end?.toISOString(),
+          currentOffset,
+          debouncedSearchTerm,
+          category
+        )
+
+        if (isLoadMore) {
+          setLogs((prev) => [...prev, ...data])
+          setOffset((prev) => prev + LIMIT)
+        } else {
+          setLogs(data)
+          setOffset(LIMIT)
+        }
+
+        setHasMore(data.length === LIMIT)
+      } catch (error) {
+        console.error('Failed to load logs:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [dateRange, category, debouncedSearchTerm, offset, hasMore, isLoading]
+  )
+
+  // Debounce search term
   useEffect(() => {
-    loadLogs()
-  }, [])
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm)
+    }, 500)
 
-  const toggleExpand = (logId: string): void => {
-    setExpandedLogId(expandedLogId === logId ? null : logId)
-  }
+    return () => clearTimeout(timer)
+  }, [searchTerm])
 
-  const filteredLogs = logs.filter((log) => {
-    // Category Filter
-    if (
-      category === 'system' &&
-      ![
-        'GENERATE_ZREPORT',
-        'BACKUP_DATABASE',
-        'ARCHIVE_DATA',
-        'END_OF_DAY',
-        'VACUUM',
-        'SOFT_RESET'
-      ].includes(log.action)
+  // Reset and reload when filters change
+  useEffect(() => {
+    setOffset(0)
+    setHasMore(true)
+    setLogs([])
+    loadLogs(false)
+  }, [dateRange, category, debouncedSearchTerm])
+
+  // Infinite Scroll Observer
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !isLoading) {
+          loadLogs(true)
+        }
+      },
+      { threshold: 1.0 }
     )
-      return false
-    if (
-      category === 'operation' &&
-      [
-        'GENERATE_ZREPORT',
-        'BACKUP_DATABASE',
-        'ARCHIVE_DATA',
-        'END_OF_DAY',
-        'VACUUM',
-        'SOFT_RESET'
-      ].includes(log.action)
-    )
-      return false
 
-    // Search Filter
-    if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase()
-      const details = log.details || ''
-      const tableName = log.tableName || ''
-      return (
-        details.toLowerCase().includes(searchLower) ||
-        tableName.toLowerCase().includes(searchLower) ||
-        log.action.toLowerCase().includes(searchLower)
-      )
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current)
     }
-    return true
-  })
+
+    return () => observer.disconnect()
+  }, [hasMore, isLoading, loadLogs])
+
+  const stats = useMemo(() => {
+    const todayLogs = logs.filter((l) =>
+      isWithinInterval(new Date(l.createdAt), {
+        start: startOfDay(new Date()),
+        end: endOfDay(new Date())
+      })
+    )
+
+    const sysCount = todayLogs.filter((l) => SYSTEM_ACTIONS.includes(l.action)).length
+
+    return {
+      total: todayLogs.length,
+      sys: sysCount,
+      ops: Math.max(0, todayLogs.length - sysCount)
+    }
+  }, [logs])
+
+  // Client-side filtering removed as it is now server-side
+  const filteredLogs = logs
+
+  const groupedLogs = useMemo(() => {
+    if (filteredLogs.length === 0) return []
+
+    const grouped: (ActivityLog & {
+      groupCount?: number
+      groupItems?: { details: string; count: number }[]
+    })[] = []
+    let currentGroup:
+      | (ActivityLog & { groupCount?: number; groupItems?: { details: string; count: number }[] })
+      | null = null
+
+    filteredLogs.forEach((log) => {
+      if (log.action === 'ADD_ITEM') {
+        if (
+          currentGroup &&
+          currentGroup.action === 'ADD_ITEM' &&
+          currentGroup.tableName === log.tableName &&
+          Math.abs(new Date(currentGroup.createdAt).getTime() - new Date(log.createdAt).getTime()) <
+            2 * 60 * 1000
+        ) {
+          currentGroup.groupCount = (currentGroup.groupCount || 1) + 1
+
+          // Aggregate by product name
+          const match = log.details?.match(/(\d+)x (.*) eklendi/)
+          if (match) {
+            const qty = parseInt(match[1])
+            const name = match[2]
+            const existingItem = currentGroup.groupItems?.find((i) => i.details.includes(name))
+
+            if (existingItem) {
+              existingItem.count += qty
+              existingItem.details = `${existingItem.count}x ${name} eklendi`
+            } else {
+              currentGroup.groupItems?.push({ details: log.details || '', count: qty })
+            }
+          } else {
+            currentGroup.groupItems?.push({ details: log.details || '', count: 1 })
+          }
+        } else {
+          const match = log.details?.match(/(\d+)x (.*) eklendi/)
+          const qty = match ? parseInt(match[1]) : 1
+          currentGroup = {
+            ...log,
+            groupCount: 1,
+            groupItems: [{ details: log.details || '', count: qty }]
+          }
+          grouped.push(currentGroup)
+        }
+      } else {
+        currentGroup = null
+        grouped.push(log)
+      }
+    })
+
+    return grouped
+  }, [filteredLogs])
 
   return (
-    <Card className="h-full flex flex-col border-0 shadow-none bg-transparent">
-      {/* Header Section */}
-      <div className="flex-none py-1 px-8 border-b bg-background/50 backdrop-blur z-10 w-full">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
+    <div className="h-full flex flex-col p-6 space-y-4">
+      {/* Minimal Header Bar */}
+      <div className="flex items-center justify-between px-2">
+        <div className="flex items-center gap-8">
           <div>
-            <h2 className="text-2xl font-bold tracking-tight">İşlem Geçmişi</h2>
-            <p className="text-sm text-muted-foreground">
-              Sistemdeki tüm hareketleri ve operasyonları takip edin
+            <h2 className="text-xl font-bold tracking-tight">Geçmiş</h2>
+            <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+              İşlem Kayıtları
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={loadLogs} disabled={isLoading}>
-              <RefreshCw className={cn('w-4 h-4 mr-2', isLoading && 'animate-spin')} />
-              Güncelle
-            </Button>
+
+          <div className="hidden md:flex items-center gap-6 border-l pl-8 border-border/50">
+            {[
+              { label: 'Bugün Toplam', value: stats.total, color: 'text-primary' },
+              { label: 'Operasyon', value: stats.ops, color: 'text-emerald-500' },
+              { label: 'Sistem', value: stats.sys, color: 'text-blue-500' }
+            ].map((s) => (
+              <div key={s.label} className="flex flex-col">
+                <span className="text-[9px] font-black uppercase text-muted-foreground/50 tracking-widest">
+                  {s.label}
+                </span>
+                <span className={cn('text-lg font-black leading-none', s.color)}>{s.value}</span>
+              </div>
+            ))}
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-          {/* Segmented Control */}
-          <div className="flex p-1 bg-muted rounded-lg w-full md:w-auto">
-            {CATEGORY_TABS.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setCategory(tab.id)}
-                className={cn(
-                  'flex items-center px-4 py-1.5 text-sm font-medium rounded-md transition-all',
-                  category === tab.id
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
-                )}
-              >
-                <tab.icon className="w-4 h-4 mr-2" />
-                {tab.label}
-              </button>
-            ))}
+        <div className="flex items-center gap-3">
+          <div className="relative group">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/40 group-focus-within:text-primary transition-colors" />
+            <Input
+              placeholder="Filtrele..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-48 h-9 pl-9 bg-muted/30 border-none rounded-lg text-sm transition-all focus:w-64 focus:bg-muted/50"
+            />
           </div>
-
-          {/* Filters */}
-          <div className="flex items-center gap-2 w-full md:w-auto">
-            <div className="relative flex-1 md:w-64">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="İşlem, masa veya detay ara..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 h-9"
-              />
-            </div>
-          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => loadLogs(false)}
+            disabled={isLoading}
+            className="h-9 w-9 rounded-lg hover:bg-muted/50"
+          >
+            <RefreshCw size={14} className={cn(isLoading && 'animate-spin')} />
+          </Button>
         </div>
       </div>
 
-      {/* Main Content - Full Height Table */}
+      {/* Modern Control Bar */}
+      <div className="flex flex-col sm:flex-row items-center gap-4 bg-card/30 p-1.5 rounded-xl border border-border/40">
+        <div className="flex flex-1 gap-1">
+          {CATEGORY_TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setCategory(tab.id)}
+              className={cn(
+                'flex items-center gap-2 px-4 py-1.5 text-xs font-bold rounded-lg transition-all',
+                category === tab.id
+                  ? 'bg-foreground text-background shadow-lg'
+                  : 'text-muted-foreground hover:bg-muted/50'
+              )}
+            >
+              <tab.icon size={13} />
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex gap-1 h-fit">
+          {DATE_FILTERS.map((f) => (
+            <button
+              key={f.id}
+              onClick={() => setDateRange(f.id)}
+              className={cn(
+                'px-3 py-1.5 text-xs font-bold rounded-lg transition-all',
+                dateRange === f.id
+                  ? 'bg-primary text-primary-foreground shadow-lg'
+                  : 'text-muted-foreground hover:bg-muted/50'
+              )}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Background-Integrated Table */}
       <div className="flex-1 overflow-hidden">
-        <div className="h-full overflow-auto">
+        <div className="h-full overflow-auto custom-scrollbar">
           <Table>
-            <TableHeader className="sticky top-0 bg-background z-10 shadow-sm">
-              <TableRow className="hover:bg-transparent border-b">
-                <TableHead className="w-[200px] pl-8">
-                  <div className="flex items-center gap-1 cursor-pointer hover:text-foreground">
-                    <Calendar className="w-3.5 h-3.5" />
-                    Tarih & Saat
-                  </div>
+            <TableHeader className="sticky top-0 bg-background/60 backdrop-blur-3xl z-10 border-b border-border/40">
+              <TableRow className="hover:bg-transparent border-0">
+                <TableHead className="w-[140px] pl-6 text-[10px] uppercase font-black tracking-[0.2em] text-muted-foreground/40">
+                  SAAT
                 </TableHead>
-                <TableHead className="w-[180px]">İşlem</TableHead>
-                <TableHead className="w-[150px]">Masa / Kaynak</TableHead>
-                <TableHead>Detay</TableHead>
-                <TableHead className="w-[40px]"></TableHead>
+                <TableHead className="w-[180px] text-[10px] uppercase font-black tracking-[0.2em] text-muted-foreground/40">
+                  İŞLEM TÜRÜ
+                </TableHead>
+                <TableHead className="w-[140px] text-[10px] uppercase font-black tracking-[0.2em] text-muted-foreground/40">
+                  KONUM
+                </TableHead>
+                <TableHead className="text-[10px] uppercase font-black tracking-[0.2em] text-muted-foreground/40">
+                  AÇIKLAMA
+                </TableHead>
+                <TableHead className="w-10"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredLogs.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">
-                    Kayıt bulunamadı
+              {isLoading && logs.length === 0 ? (
+                <TableRow className="hover:bg-transparent">
+                  <TableCell colSpan={5} className="h-48 text-center">
+                    <div className="flex flex-col items-center justify-center space-y-2 opacity-20">
+                      <RefreshCw className="animate-spin" size={32} />
+                      <span className="text-xs font-bold">Yükleniyor...</span>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : filteredLogs.length === 0 ? (
+                <TableRow className="hover:bg-transparent">
+                  <TableCell colSpan={5} className="h-48 text-center">
+                    <div className="flex flex-col items-center justify-center space-y-2 opacity-20">
+                      <History size={32} />
+                      <span className="text-xs font-bold">Kayıt Bulunmuyor</span>
+                    </div>
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredLogs.map((log) => {
+                groupedLogs.map((log) => {
                   const config = ACTION_CONFIG[log.action]
                   const isExpanded = expandedLogId === log.id
+                  const isGroup = log.groupCount && log.groupCount > 1
                   return (
-                    <>
-                      <TableRow
-                        key={log.id}
+                    <React.Fragment key={log.id}>
+                      <motion.tr
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.05 }}
+                        onClick={() => setExpandedLogId(isExpanded ? null : log.id)}
                         className={cn(
-                          'group cursor-pointer hover:bg-muted/30 border-b transition-colors',
-                          isExpanded && 'bg-muted/40'
+                          'group cursor-pointer transition-colors border-b border-border/10',
+                          isExpanded ? 'bg-primary/5' : 'hover:bg-muted/30'
                         )}
-                        onClick={() => toggleExpand(log.id)}
                       >
-                        <TableCell className="font-mono text-xs text-muted-foreground pl-8">
-                          <div className="flex flex-col">
-                            <span className="font-medium text-foreground">
-                              {new Date(log.createdAt).toLocaleTimeString('tr-TR', {
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
-                            </span>
-                            <span className="text-[10px] opacity-70">
-                              {new Date(log.createdAt).toLocaleDateString('tr-TR')}
-                            </span>
+                        <TableCell className="pl-6 py-3 font-bold text-base">
+                          <div className="flex flex-col leading-tight">
+                            <span>{format(new Date(log.createdAt), 'HH:mm')}</span>
+                            {dateRange !== 'today' && (
+                              <span className="text-xs text-muted-foreground/60 font-medium">
+                                {format(new Date(log.createdAt), 'dd MMM', { locale: tr })}
+                              </span>
+                            )}
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="py-3">
                           <div
                             className={cn(
-                              'font-semibold text-sm',
-                              config?.color || 'text-foreground'
+                              'text-sm font-black uppercase tracking-tight',
+                              config?.color || 'text-muted-foreground'
                             )}
                           >
                             {config?.label || log.action}
                           </div>
                         </TableCell>
-                        <TableCell>
-                          {log.tableName ? (
-                            <div className="flex items-center gap-1.5 font-medium text-sm">
-                              <span className="w-1.5 h-1.5 rounded-full bg-success" />
-                              {log.tableName}
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground text-xs">-</span>
-                          )}
+                        <TableCell className="py-3">
+                          <span className="text-sm font-bold text-muted-foreground group-hover:text-foreground transition-colors">
+                            {log.tableName || 'Sistem'}
+                          </span>
                         </TableCell>
-                        <TableCell className="max-w-[400px]">
-                          <p className="truncate text-sm text-muted-foreground group-hover:text-foreground transition-colors">
-                            {log.details}
-                          </p>
+                        <TableCell className="py-3">
+                          <span className="text-sm text-muted-foreground/80 group-hover:text-foreground transition-colors line-clamp-1 font-medium">
+                            {isGroup ? (
+                              <span className="text-primary font-bold">
+                                {log.groupCount} Ürün Eklendi
+                              </span>
+                            ) : (
+                              log.details
+                            )}
+                          </span>
                         </TableCell>
-                        <TableCell>
-                          {isExpanded ? (
-                            <ArrowUpDown className="w-4 h-4 text-primary rotate-180 transition-transform" />
-                          ) : (
-                            <ArrowUpDown className="w-4 h-4 text-muted-foreground opacity-50" />
-                          )}
+                        <TableCell className="py-2 pr-4">
+                          <ChevronRight
+                            size={14}
+                            className={cn(
+                              'opacity-0 group-hover:opacity-40 transition-all',
+                              isExpanded && 'rotate-90 opacity-100 text-primary'
+                            )}
+                          />
                         </TableCell>
-                      </TableRow>
+                      </motion.tr>
 
-                      {/* Expanded Details */}
                       {isExpanded && (
-                        <TableRow className="bg-muted/5 hover:bg-muted/10 border-b-2">
+                        <TableRow className="hover:bg-transparent border-0">
                           <TableCell colSpan={5} className="p-0">
-                            <div className="p-8 pl-12 flex flex-col gap-8 animate-in slide-in-from-top-4 duration-300">
-                              {/* Quick Info Grid */}
-                              <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                                <div className="space-y-1.5">
-                                  <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-1.5">
-                                    <Monitor className="w-3 h-3" /> İşlem Türü
-                                  </span>
-                                  <div
-                                    className={cn('font-bold text-lg leading-tight', config?.color)}
-                                  >
-                                    {config?.label}
-                                  </div>
-                                </div>
-
-                                <div className="space-y-1.5">
-                                  <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-1.5">
-                                    <Calendar className="w-3 h-3" /> İşlem Tarihi
-                                  </span>
-                                  <div className="font-semibold text-sm text-foreground/80">
-                                    {new Date(log.createdAt).toLocaleDateString('tr-TR', {
-                                      day: 'numeric',
-                                      month: 'long',
-                                      year: 'numeric'
-                                    })}
-                                  </div>
-                                </div>
-
-                                <div className="space-y-1.5">
-                                  <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-1.5">
-                                    <History className="w-3 h-3" /> İşlem Saati
-                                  </span>
-                                  <div className="font-mono text-sm font-bold text-foreground/80">
-                                    {new Date(log.createdAt).toLocaleTimeString('tr-TR', {
-                                      hour: '2-digit',
-                                      minute: '2-digit',
-                                      second: '2-digit'
-                                    })}
-                                  </div>
-                                </div>
-
-                                <div className="space-y-1.5">
-                                  <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-1.5">
-                                    <ShoppingCart className="w-3 h-3" /> Kaynak
-                                  </span>
-                                  <div className="flex items-center gap-2">
-                                    {log.tableName ? (
-                                      <div className="px-2 py-0.5 rounded-md bg-success/10 text-success text-xs font-black uppercase ring-1 ring-success/20">
-                                        {log.tableName}
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              className="overflow-hidden bg-muted/10"
+                            >
+                              <div className="p-6 grid grid-cols-3 gap-6">
+                                <div className="col-span-2 space-y-4">
+                                  <div className="bg-background/50 p-6 rounded-2xl border border-border/30 shadow-sm">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 leading-none mb-4">
+                                      Sipariş Detayı
+                                    </p>
+                                    {isGroup ? (
+                                      <div className="space-y-3">
+                                        {log.groupItems?.map((item, idx) => (
+                                          <p
+                                            key={idx}
+                                            className="text-base font-bold leading-relaxed text-foreground/90 border-b border-border/5 last:border-0 pb-2 last:pb-0"
+                                          >
+                                            {item.details}
+                                          </p>
+                                        ))}
                                       </div>
                                     ) : (
-                                      <span className="text-xs font-bold text-muted-foreground italic">
-                                        Sistem Geneli
-                                      </span>
+                                      <p className="text-base font-bold leading-relaxed text-foreground/90">
+                                        {log.details}
+                                      </p>
                                     )}
                                   </div>
                                 </div>
-                              </div>
 
-                              {/* Detailed Activity Card */}
-                              <div className="space-y-3">
-                                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-1.5">
-                                  <History className="w-3 h-3" /> İşlem Detayı
-                                </span>
-
-                                {log.action === 'GENERATE_ZREPORT' ||
-                                log.action === 'END_OF_DAY' ? (
-                                  <div className="border rounded-xl  bg-card/50 overflow-hidden text-sm">
-                                    <div className="grid grid-cols-2 divide-x divide-y border-b">
-                                      <div className="p-4 flex flex-col items-center justify-center gap-1">
-                                        <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-                                          Günlük Ciro
-                                        </span>
-                                        <span className="text-xl font-bold tabular-nums text-foreground">
-                                          {/* Parse revenue from details if possible, or show generic info */}
-                                          {(log.details || '').includes('₺')
-                                            ? (log.details || '')
-                                                .split('Toplam:')[1]
-                                                ?.split(' ')[1] || log.details
-                                            : log.details}
-                                        </span>
-                                      </div>
-                                      <div className="p-4 flex flex-col items-center justify-center gap-1">
-                                        <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-                                          Sipariş
-                                        </span>
-                                        <span className="text-xl font-bold tabular-nums text-blue-600">
-                                          -
-                                        </span>
-                                      </div>
-                                    </div>
-                                    <div className="grid grid-cols-2 divide-x">
-                                      <div className="p-4 flex flex-col items-center justify-center gap-1">
-                                        <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-                                          Nakit
-                                        </span>
-                                        <span className="text-xl font-bold tabular-nums text-emerald-600">
-                                          -
-                                        </span>
-                                      </div>
-                                      <div className="p-4 flex flex-col items-center justify-center gap-1">
-                                        <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-                                          Kart
-                                        </span>
-                                        <span className="text-xl font-bold tabular-nums text-purple-600">
-                                          -
-                                        </span>
-                                      </div>
-                                    </div>
-                                    <div className="p-3 bg-muted/30 text-center text-xs text-muted-foreground border-t">
-                                      {log.details}
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <div className="relative p-5 bg-background rounded-2xl border-2 shadow-sm group/card overflow-hidden">
+                                <div className="grid grid-cols-1 gap-6 border-l border-border/30 pl-6 h-fit">
+                                  {/* Action Type */}
+                                  <div className="flex gap-4 items-start">
                                     <div
                                       className={cn(
-                                        'absolute top-0 left-0 w-1 h-full transition-all duration-300',
-                                        config?.color?.replace('text-', 'bg-') || 'bg-primary'
+                                        'p-2.5 rounded-xl shadow-sm',
+                                        config?.bg || 'bg-muted'
                                       )}
-                                    />
-                                    <div className="flex gap-4">
-                                      <div
-                                        className={cn(
-                                          'w-12 h-12 rounded-xl flex items-center justify-center shrink-0',
-                                          config?.color
-                                            ?.replace('text-', 'bg-')
-                                            ?.replace('-', '-500/10 ') || 'bg-muted'
-                                        )}
-                                      >
-                                        <History className={cn('w-6 h-6', config?.color)} />
-                                      </div>
-                                      <div className="space-y-1 py-1">
-                                        <p className="text-base font-medium text-foreground leading-relaxed">
-                                          {log.details}
-                                        </p>
-                                        {log.action.includes('PAYMENT') && (
-                                          <p className="text-xs font-bold text-success/80 uppercase tracking-wide">
-                                            Finansal İşlem Onaylandı
-                                          </p>
-                                        )}
-                                      </div>
+                                    >
+                                      <Activity
+                                        size={18}
+                                        className={config?.color || 'text-muted-foreground'}
+                                      />
+                                    </div>
+                                    <div className="flex flex-col">
+                                      <span className="text-[10px] font-black uppercase text-muted-foreground/50 leading-none mb-1.5 tracking-widest">
+                                        İşlem Tipi
+                                      </span>
+                                      <span className="text-sm font-black text-foreground uppercase tracking-tight">
+                                        {config?.label || log.action}
+                                      </span>
                                     </div>
                                   </div>
-                                )}
+
+                                  {/* Date and Time */}
+                                  <div className="flex gap-4 items-start">
+                                    <div className="p-2.5 bg-background rounded-xl border border-border/20 shadow-sm">
+                                      <Clock size={18} className="text-primary/70" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                      <span className="text-[10px] font-black uppercase text-muted-foreground/50 leading-none mb-1.5 tracking-widest">
+                                        Tarih / Saat
+                                      </span>
+                                      <span className="text-sm font-bold text-foreground">
+                                        {format(new Date(log.createdAt), 'dd MMMM yyyy', {
+                                          locale: tr
+                                        })}
+                                      </span>
+                                      <span className="text-xs font-medium text-muted-foreground">
+                                        {format(new Date(log.createdAt), 'HH:mm:ss')}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
                               </div>
-                            </div>
+                            </motion.div>
                           </TableCell>
                         </TableRow>
                       )}
-                    </>
+                    </React.Fragment>
                   )
                 })
               )}
+              <TableRow className="hover:bg-transparent border-0">
+                <TableCell colSpan={5} className="p-0">
+                  <div ref={observerTarget} className="h-4 w-full" />
+                  {hasMore && logs.length > 0 && (
+                    <div className="flex justify-center p-4">
+                      <RefreshCw className="animate-spin text-muted-foreground" size={20} />
+                    </div>
+                  )}
+                </TableCell>
+              </TableRow>
             </TableBody>
           </Table>
         </div>
       </div>
-    </Card>
+    </div>
   )
 }
