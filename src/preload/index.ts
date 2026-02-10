@@ -38,7 +38,6 @@ const api = {
 
   // Orders
   orders: {
-    getByTable: (tableId: string) => ipcRenderer.invoke(IPC_CHANNELS.ORDERS_GET_BY_TABLE, tableId),
     getOpenByTable: (tableId: string) =>
       ipcRenderer.invoke(IPC_CHANNELS.ORDERS_GET_OPEN_BY_TABLE, tableId),
     create: (tableId: string) => ipcRenderer.invoke(IPC_CHANNELS.ORDERS_CREATE, tableId),

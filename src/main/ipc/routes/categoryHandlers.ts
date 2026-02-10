@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron'
-import { prisma, dbWrite } from '../../db/prisma'
+import { prisma } from '../../db/prisma'
 import { logger } from '../../lib/logger'
 import { IPC_CHANNELS } from '../../../shared/types'
 import { categorySchemas, validateInput } from '../../../shared/ipc-schemas'
@@ -60,11 +60,9 @@ export function registerCategoryHandlers(): void {
     }
 
     try {
-      const category = await dbWrite(() =>
-        prisma.category.create({
-          data: { name: validation.data.name }
-        })
-      )
+      const category = await prisma.category.create({
+        data: { name: validation.data.name }
+      })
       invalidateCache('categories')
       return { success: true, data: category }
     } catch (error) {
@@ -82,9 +80,13 @@ export function registerCategoryHandlers(): void {
       }
 
       try {
+        const validatedData = validation.data.data
         const category = await prisma.category.update({
-          where: { id },
-          data: { ...(data.name && { name: data.name }), ...(data.icon && { icon: data.icon }) }
+          where: { id: validation.data.id },
+          data: {
+            ...(validatedData.name && { name: validatedData.name }),
+            ...(validatedData.icon && { icon: validatedData.icon })
+          }
         })
         invalidateCache('categories')
         return { success: true, data: category }

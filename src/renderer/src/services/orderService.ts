@@ -3,11 +3,6 @@ import { Order, OrderStatus } from '../../../shared/types'
 const api = window.api
 
 export const orderService = {
-  async getByTable(tableId: string): Promise<Order[]> {
-    const result = await api.orders.getByTable(tableId)
-    if (!result.success) throw new Error(result.error)
-    return result.data
-  },
   async getOpenByTable(tableId: string): Promise<Order | null> {
     const result = await api.orders.getOpenByTable(tableId)
     if (!result.success) throw new Error(result.error)

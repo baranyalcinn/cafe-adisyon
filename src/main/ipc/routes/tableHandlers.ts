@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron'
-import { prisma, dbWrite } from '../../db/prisma'
+import { prisma } from '../../db/prisma'
 import { logger } from '../../lib/logger'
 import { IPC_CHANNELS } from '../../../shared/types'
 import { tableSchemas, validateInput } from '../../../shared/ipc-schemas'
@@ -54,11 +54,9 @@ export function registerTableHandlers(): void {
     }
 
     try {
-      const table = await dbWrite(() =>
-        prisma.table.create({
-          data: { name: validation.data.name }
-        })
-      )
+      const table = await prisma.table.create({
+        data: { name: validation.data.name }
+      })
       return { success: true, data: table }
     } catch (error) {
       logger.error('Tables Create', error)
@@ -73,17 +71,15 @@ export function registerTableHandlers(): void {
     }
 
     try {
-      await dbWrite(() =>
-        prisma.$transaction(async (tx) => {
-          const orders = await tx.order.findMany({ where: { tableId: validation.data.id } })
-          for (const order of orders) {
-            await tx.transaction.deleteMany({ where: { orderId: order.id } })
-            await tx.orderItem.deleteMany({ where: { orderId: order.id } })
-          }
-          await tx.order.deleteMany({ where: { tableId: validation.data.id } })
-          await tx.table.delete({ where: { id: validation.data.id } })
-        })
-      )
+      await prisma.$transaction(async (tx) => {
+        const orders = await tx.order.findMany({ where: { tableId: validation.data.id } })
+        for (const order of orders) {
+          await tx.transaction.deleteMany({ where: { orderId: order.id } })
+          await tx.orderItem.deleteMany({ where: { orderId: order.id } })
+        }
+        await tx.order.deleteMany({ where: { tableId: validation.data.id } })
+        await tx.table.delete({ where: { id: validation.data.id } })
+      })
 
       return { success: true, data: null }
     } catch (error) {

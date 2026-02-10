@@ -14,6 +14,9 @@ interface ToastState {
   dismissToast: (id: string) => void
 }
 
+// Track active timers outside of state to avoid re-renders
+const activeTimers = new Map<string, ReturnType<typeof setTimeout>>()
+
 export const useToastStore = create<ToastState>((set) => ({
   toasts: [],
   addToast: (toast) => {
@@ -22,14 +25,21 @@ export const useToastStore = create<ToastState>((set) => ({
     set((state) => ({ toasts: [...state.toasts, newToast] }))
 
     if (toast.duration !== Infinity) {
-      setTimeout(() => {
+      const timer = setTimeout(() => {
+        activeTimers.delete(id)
         set((state) => ({
           toasts: state.toasts.filter((t) => t.id !== id)
         }))
       }, toast.duration || 3000)
+      activeTimers.set(id, timer)
     }
   },
   dismissToast: (id) => {
+    const timer = activeTimers.get(id)
+    if (timer) {
+      clearTimeout(timer)
+      activeTimers.delete(id)
+    }
     set((state) => ({
       toasts: state.toasts.filter((t) => t.id !== id)
     }))

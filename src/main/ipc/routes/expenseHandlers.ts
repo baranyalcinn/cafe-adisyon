@@ -11,7 +11,7 @@ export function registerExpenseHandlers(): void {
       return { success: false, error: validation.error }
     }
 
-    const result = await expenseService.createExpense(data)
+    const result = await expenseService.createExpense(validation.data)
     if (result.success) {
       // Trigger generic report update?
       await reportingService.updateMonthlyReport(new Date())
@@ -22,13 +22,12 @@ export function registerExpenseHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.EXPENSES_GET_ALL, () => expenseService.getAllExpenses())
 
   ipcMain.handle(IPC_CHANNELS.EXPENSES_UPDATE, async (_, id, data) => {
-    // TODO: Add update validation schema to expenseSchemas
-    // const validation = validateInput(expenseSchemas.update, data)
-    // if (!validation.success) {
-    //   return { success: false, error: validation.error }
-    // }
+    const validation = validateInput(expenseSchemas.update, { id, data })
+    if (!validation.success) {
+      return { success: false, error: validation.error }
+    }
 
-    const result = await expenseService.updateExpense(id, data)
+    const result = await expenseService.updateExpense(validation.data.id, validation.data.data)
     if (result.success) {
       await reportingService.updateMonthlyReport(new Date())
     }
@@ -41,7 +40,7 @@ export function registerExpenseHandlers(): void {
     if (!validation.success) {
       return { success: false, error: validation.error }
     }
-    const result = await expenseService.deleteExpense(id)
+    const result = await expenseService.deleteExpense(validation.data.id)
     if (result.success) {
       await reportingService.updateMonthlyReport(new Date())
     }

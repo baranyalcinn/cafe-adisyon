@@ -127,6 +127,14 @@ export const expenseSchemas = {
     amount: priceSchema,
     category: z.string().optional()
   }),
+  update: z.object({
+    id: cuidSchema,
+    data: z.object({
+      description: z.string().min(1).optional(),
+      amount: priceSchema.optional(),
+      category: z.string().optional()
+    })
+  }),
   delete: z.object({ id: cuidSchema })
 }
 

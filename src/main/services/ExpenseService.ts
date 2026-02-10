@@ -1,13 +1,14 @@
 import { prisma } from '../db/prisma'
 import { logger } from '../lib/logger'
-import { Prisma } from '../../generated/prisma/client'
+import { Prisma, Expense } from '../../generated/prisma/client'
+import { ApiResponse } from '../../shared/types'
 
 export class ExpenseService {
   async createExpense(data: {
     description: string
     amount: number
     category?: string
-  }): Promise<{ success: boolean; data?: unknown; error?: string }> {
+  }): Promise<ApiResponse<Expense>> {
     try {
       const expense = await prisma.expense.create({
         data: {
@@ -30,7 +31,7 @@ export class ExpenseService {
       amount?: number
       category?: string
     }
-  ): Promise<{ success: boolean; data?: unknown; error?: string }> {
+  ): Promise<ApiResponse<Expense>> {
     try {
       const updateData: Prisma.ExpenseUpdateInput = { ...data }
       if (data.amount !== undefined) {
@@ -49,7 +50,7 @@ export class ExpenseService {
     }
   }
 
-  async getAllExpenses(): Promise<{ success: boolean; data?: unknown[]; error?: string }> {
+  async getAllExpenses(): Promise<ApiResponse<Expense[]>> {
     try {
       const thirtyDaysAgo = new Date()
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
@@ -65,9 +66,7 @@ export class ExpenseService {
     }
   }
 
-  async deleteExpense(
-    id: string
-  ): Promise<{ success: boolean; data?: null | unknown; error?: string }> {
+  async deleteExpense(id: string): Promise<ApiResponse<null>> {
     try {
       await prisma.expense.delete({ where: { id } })
       return { success: true, data: null }

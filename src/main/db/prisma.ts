@@ -25,15 +25,10 @@ if (!isDev && !fs.existsSync(dbPath)) {
   }
 }
 
-// Database path logged at initialization (console ok here, before logger available)
-
 // Create Prisma adapter with LibSQL (Prisma 7+ compatible)
 const adapter = new PrismaLibSql({
   url: `file:${dbPath}`
 })
-
-// Create Prisma client with adapter
-const prisma = new PrismaClient({ adapter })
 
 // --- Sequential Write Queue for SQLite ---
 // Since SQLite only allows one writer at a time, we use a simple queue to prevent "database is locked" errors.
@@ -58,24 +53,45 @@ class TaskQueue {
 
 const writeQueue = new TaskQueue()
 
-/**
- * Execute a database write operation through the sequential queue.
- * Use this for all Prisma CREATE, UPDATE, DELETE or TRANSACTION operations.
- */
-export async function dbWrite<T>(task: DbTask<T>): Promise<T> {
-  return writeQueue.enqueue(task)
-}
+// Write operations that should go through the sequential queue
+const WRITE_OPERATIONS = new Set([
+  'create',
+  'createMany',
+  'createManyAndReturn',
+  'update',
+  'updateMany',
+  'upsert',
+  'delete',
+  'deleteMany'
+])
+
+// Create base Prisma client
+const basePrisma = new PrismaClient({ adapter })
+
+// Extend Prisma with automatic write queueing via $allModels query interceptor
+const prisma = basePrisma.$extends({
+  query: {
+    $allModels: {
+      async $allOperations({ operation, args, query }) {
+        if (WRITE_OPERATIONS.has(operation)) {
+          return writeQueue.enqueue(() => query(args))
+        }
+        return query(args)
+      }
+    }
+  }
+})
 
 // Optimize SQLite performance
 ;(async () => {
   try {
-    await prisma.$executeRawUnsafe('PRAGMA journal_mode = WAL;')
-    await prisma.$executeRawUnsafe('PRAGMA synchronous = NORMAL;')
-    await prisma.$executeRawUnsafe('PRAGMA cache_size = -64000;')
-    await prisma.$executeRawUnsafe('PRAGMA temp_store = MEMORY;')
+    await basePrisma.$executeRawUnsafe('PRAGMA journal_mode = WAL;')
+    await basePrisma.$executeRawUnsafe('PRAGMA synchronous = NORMAL;')
+    await basePrisma.$executeRawUnsafe('PRAGMA cache_size = -64000;')
+    await basePrisma.$executeRawUnsafe('PRAGMA temp_store = MEMORY;')
   } catch (error) {
     console.error('Failed to set SQLite pragmas:', error)
   }
 })()
 
-export { prisma, dbPath }
+export { prisma, basePrisma, dbPath }

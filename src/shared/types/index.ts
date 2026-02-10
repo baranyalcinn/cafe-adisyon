@@ -193,7 +193,6 @@ export const IPC_CHANNELS = {
   // Orders
   ORDERS_CREATE: 'orders:create',
   ORDERS_UPDATE: 'orders:update',
-  ORDERS_GET_BY_TABLE: 'orders:getByTable',
   ORDERS_GET_OPEN_BY_TABLE: 'orders:getOpenByTable',
   ORDERS_ADD_ITEM: 'orders:addItem',
   ORDERS_REMOVE_ITEM: 'orders:removeItem',
