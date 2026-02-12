@@ -42,17 +42,58 @@ export class DBMaintenance {
       // Migration 1: Add updatedAt column to Order table
       await this.addColumnIfNotExists('Order', 'updatedAt', 'DATETIME')
 
-      // Migration 2: Add index on OrderItem.isPaid
-      await prisma.$executeRawUnsafe(
-        'CREATE INDEX IF NOT EXISTS "OrderItem_isPaid_idx" ON "OrderItem"("isPaid")'
-      )
+      // Migration 2: Add isDeleted column to Category table (soft delete support)
+      await this.addColumnIfNotExists('Category', 'isDeleted', 'BOOLEAN DEFAULT 0')
 
-      // Migration 3: Add index on Product.name
-      await prisma.$executeRawUnsafe(
-        'CREATE INDEX IF NOT EXISTS "Product_name_idx" ON "Product"("name")'
-      )
+      // Migration 3: Add isDeleted column to Product table (soft delete support)
+      await this.addColumnIfNotExists('Product', 'isDeleted', 'BOOLEAN DEFAULT 0')
 
-      logger.info('DBMaintenance', 'Auto-migrations completed.')
+      // Comprehensive index sync — ensures ALL schema.prisma indexes exist
+      // Each statement is idempotent (IF NOT EXISTS), safe on every startup
+      const indexes = [
+        // Product indexes
+        'CREATE INDEX IF NOT EXISTS "Product_categoryId_idx" ON "Product"("categoryId")',
+        'CREATE INDEX IF NOT EXISTS "Product_isFavorite_idx" ON "Product"("isFavorite")',
+        'CREATE INDEX IF NOT EXISTS "Product_isDeleted_idx" ON "Product"("isDeleted")',
+        'CREATE INDEX IF NOT EXISTS "Product_name_idx" ON "Product"("name")',
+
+        // Category indexes
+        'CREATE INDEX IF NOT EXISTS "Category_isDeleted_idx" ON "Category"("isDeleted")',
+
+        // Order indexes
+        'CREATE INDEX IF NOT EXISTS "Order_tableId_status_idx" ON "Order"("tableId", "status")',
+        'CREATE INDEX IF NOT EXISTS "Order_status_idx" ON "Order"("status")',
+        'CREATE INDEX IF NOT EXISTS "Order_createdAt_idx" ON "Order"("createdAt")',
+
+        // OrderItem indexes
+        'CREATE INDEX IF NOT EXISTS "OrderItem_orderId_idx" ON "OrderItem"("orderId")',
+        'CREATE INDEX IF NOT EXISTS "OrderItem_productId_idx" ON "OrderItem"("productId")',
+        'CREATE INDEX IF NOT EXISTS "OrderItem_isPaid_idx" ON "OrderItem"("isPaid")',
+
+        // Transaction indexes
+        'CREATE INDEX IF NOT EXISTS "Transaction_orderId_idx" ON "Transaction"("orderId")',
+        'CREATE INDEX IF NOT EXISTS "Transaction_createdAt_idx" ON "Transaction"("createdAt")',
+        'CREATE INDEX IF NOT EXISTS "Transaction_paymentMethod_idx" ON "Transaction"("paymentMethod")',
+
+        // DailySummary indexes
+        'CREATE INDEX IF NOT EXISTS "DailySummary_date_idx" ON "DailySummary"("date")',
+
+        // ActivityLog indexes
+        'CREATE INDEX IF NOT EXISTS "ActivityLog_createdAt_idx" ON "ActivityLog"("createdAt")',
+        'CREATE INDEX IF NOT EXISTS "ActivityLog_action_idx" ON "ActivityLog"("action")',
+
+        // Expense indexes
+        'CREATE INDEX IF NOT EXISTS "Expense_createdAt_idx" ON "Expense"("createdAt")',
+
+        // MonthlyReport indexes
+        'CREATE INDEX IF NOT EXISTS "MonthlyReport_monthDate_idx" ON "MonthlyReport"("monthDate")'
+      ]
+
+      for (const sql of indexes) {
+        await prisma.$executeRawUnsafe(sql)
+      }
+
+      logger.info('DBMaintenance', `Auto-migrations completed. ${indexes.length} indexes synced.`)
     } catch (error) {
       // Migrations failing should NOT block app startup
       logger.error('DBMaintenance Migrations', error)
