@@ -13,7 +13,10 @@ import {
   AlertCircle,
   History,
   PieChart as PieChartIcon,
-  BarChart3
+  BarChart3,
+  Wallet,
+  ArrowDownRight,
+  TrendingDown
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -42,7 +45,8 @@ import {
 } from '@/lib/api'
 import { formatCurrency, cn } from '@/lib/utils'
 import {
-  LineChart,
+  AreaChart,
+  Area,
   Line,
   BarChart,
   Bar,
@@ -52,7 +56,10 @@ import {
   ResponsiveContainer,
   CartesianGrid,
   ComposedChart,
-  Legend
+  Legend,
+  PieChart,
+  Pie,
+  Cell
 } from 'recharts'
 import { EndOfDayModal } from '@/components/modals/EndOfDayModal'
 import { OrderHistoryModal } from '@/components/modals/OrderHistoryModal'
@@ -196,12 +203,6 @@ export function DashboardView(): React.JSX.Element {
         const startDate = new Date(year, month, 1, 0, 0, 0)
         const endDate = new Date(year, month + 1, 0, 23, 59, 59)
         zReportOptions = { startDate, endDate, limit: 100 } // Increase limit for month view
-        console.log('[Z-Report Filter]', {
-          month,
-          year,
-          startDate: startDate.toISOString(),
-          endDate: endDate.toISOString()
-        })
       }
 
       const results = await Promise.allSettled([
@@ -315,7 +316,7 @@ export function DashboardView(): React.JSX.Element {
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
                   </span>
-                  <span className="text-[10px] font-bold text-success">Canlı Akış</span>
+                  <span className="text-[10px] font-bold text-success">Güncel Veriler</span>
                 </div>
               </div>
               <div className="h-12 w-12 rounded-2xl bg-success/10 flex items-center justify-center transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-[0_0_15px_rgba(var(--color-success),0.15)]">
@@ -327,14 +328,30 @@ export function DashboardView(): React.JSX.Element {
               <div className="text-5xl font-black tabular-nums tracking-tighter text-foreground filter drop-shadow-sm">
                 {formatCurrency(stats?.dailyRevenue || 0)}
               </div>
-              <div className="flex items-center gap-3 mt-3">
-                <div className="px-2.5 py-1 rounded-lg bg-success/10 border border-success/20 text-[10px] font-black text-success uppercase tracking-wider">
-                  +12.5% Artış
-                </div>
-                <p className="text-[10px] font-medium text-muted-foreground/60">
-                  Düne göre performans
-                </p>
-              </div>
+              {(() => {
+                const today = revenueTrend[revenueTrend.length - 1]?.revenue || 0
+                const yesterday = revenueTrend[revenueTrend.length - 2]?.revenue || 0
+                const change = yesterday > 0 ? ((today - yesterday) / yesterday) * 100 : 0
+                if (yesterday === 0 && today === 0) return null
+                return (
+                  <div className="flex items-center gap-3 mt-3">
+                    <div
+                      className={cn(
+                        'px-2.5 py-1 rounded-lg border text-[10px] font-black uppercase tracking-wider',
+                        change >= 0
+                          ? 'bg-success/10 border-success/20 text-success'
+                          : 'bg-destructive/10 border-destructive/20 text-destructive'
+                      )}
+                    >
+                      {change >= 0 ? '+' : ''}
+                      {change.toFixed(1)}%
+                    </div>
+                    <p className="text-[10px] font-medium text-muted-foreground/60">
+                      Düne göre performans
+                    </p>
+                  </div>
+                )
+              })()}
             </div>
           </div>
 
@@ -387,6 +404,43 @@ export function DashboardView(): React.JSX.Element {
               </div>
               <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
                 <ReceiptText className="w-5 h-5 text-primary" />
+              </div>
+            </div>
+          </div>
+
+          {/* Avg Order Value & Daily Expenses */}
+          <div className="lg:col-span-12 grid grid-cols-2 gap-4">
+            {/* Avg Order Value */}
+            <div className="premium-card ambient-glow px-5 py-4 flex items-center justify-between group">
+              <div>
+                <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-0.5">
+                  Ort. Sipariş
+                </p>
+                <p className="text-2xl font-black text-foreground tabular-nums">
+                  {formatCurrency(
+                    stats?.totalOrders
+                      ? Math.round((stats.dailyRevenue || 0) / stats.totalOrders)
+                      : 0
+                  )}
+                </p>
+              </div>
+              <div className="h-10 w-10 rounded-xl bg-success/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Wallet className="w-5 h-5 text-success" />
+              </div>
+            </div>
+
+            {/* Daily Expenses */}
+            <div className="premium-card ambient-glow px-5 py-4 flex items-center justify-between group">
+              <div>
+                <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-0.5">
+                  Bugünkü Gider
+                </p>
+                <p className="text-2xl font-black text-destructive tabular-nums">
+                  {formatCurrency(stats?.dailyExpenses || 0)}
+                </p>
+              </div>
+              <div className="h-10 w-10 rounded-xl bg-destructive/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <ArrowDownRight className="w-5 h-5 text-destructive" />
               </div>
             </div>
           </div>
@@ -540,11 +594,11 @@ export function DashboardView(): React.JSX.Element {
           <div className="h-[280px] w-full">
             {revenueTrend.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={revenueTrend} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                <AreaChart data={revenueTrend} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
                   <defs>
-                    <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                    <linearGradient id="revenueAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#10b981" stopOpacity={0.35} />
+                      <stop offset="100%" stopColor="#10b981" stopOpacity={0.02} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid
@@ -580,15 +634,16 @@ export function DashboardView(): React.JSX.Element {
                     className="fill-foreground"
                   />
                   <Tooltip content={<RevenueTooltip />} />
-                  <Line
+                  <Area
                     type="monotone"
                     dataKey="revenue"
                     stroke="#10b981"
-                    strokeWidth={2}
-                    dot={false}
-                    isAnimationActive={false}
+                    strokeWidth={3}
+                    fill="url(#revenueAreaGradient)"
+                    dot={{ r: 4, fill: '#10b981', strokeWidth: 2, stroke: '#fff' }}
+                    activeDot={{ r: 6, fill: '#10b981', strokeWidth: 2, stroke: '#fff' }}
                   />
-                </LineChart>
+                </AreaChart>
               </ResponsiveContainer>
             ) : (
               <div className="flex items-center justify-center h-full text-muted-foreground">
@@ -598,10 +653,111 @@ export function DashboardView(): React.JSX.Element {
           </div>
         </div>
 
-        {/* Product Performance - Full Width */}
-        <div className="grid grid-cols-1 gap-6">
-          {/* Top Products - Horizontal Bar Chart */}
+        {/* Category Breakdown & Top/Bottom Products */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Category Breakdown Donut */}
           <div className="premium-card ambient-glow p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="h-8 w-8 rounded-lg bg-warning/10 flex items-center justify-center">
+                <PieChartIcon className="w-4 h-4 text-warning" />
+              </div>
+              <h3 className="text-sm font-black text-foreground uppercase tracking-wider">
+                Kategori Dağılımı
+              </h3>
+            </div>
+            <div className="h-[280px] w-full">
+              {stats?.categoryBreakdown && stats.categoryBreakdown.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={stats.categoryBreakdown.map((c) => ({
+                        name: c.categoryName,
+                        value: c.revenue,
+                        quantity: c.quantity
+                      }))}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={100}
+                      paddingAngle={3}
+                      dataKey="value"
+                    >
+                      {stats.categoryBreakdown.map((_, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={
+                            [
+                              'hsl(142, 71%, 45%)',
+                              'hsl(217, 91%, 60%)',
+                              'hsl(38, 92%, 50%)',
+                              'hsl(0, 84%, 60%)',
+                              'hsl(262, 83%, 58%)',
+                              'hsl(180, 60%, 45%)',
+                              'hsl(330, 80%, 55%)'
+                            ][index % 7]
+                          }
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload as {
+                            name: string
+                            value: number
+                            quantity: number
+                          }
+                          return (
+                            <div className="bg-card text-card-foreground border border-border rounded-lg px-4 py-3 shadow-lg">
+                              <p className="text-sm font-bold mb-1">{data.name}</p>
+                              <p className="text-sm font-bold text-success tabular-nums">
+                                {formatCurrency(data.value)}
+                              </p>
+                              <p className="text-xs text-muted-foreground">{data.quantity} adet</p>
+                            </div>
+                          )
+                        }
+                        return null
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full text-muted-foreground">
+                  Henüz veri yok
+                </div>
+              )}
+            </div>
+            {/* Legend */}
+            {stats?.categoryBreakdown && stats.categoryBreakdown.length > 0 && (
+              <div className="flex flex-wrap gap-3 mt-4 justify-center">
+                {stats.categoryBreakdown.map((cat, index) => (
+                  <div key={cat.categoryName} className="flex items-center gap-1.5">
+                    <div
+                      className="w-2.5 h-2.5 rounded-full"
+                      style={{
+                        backgroundColor: [
+                          'hsl(142, 71%, 45%)',
+                          'hsl(217, 91%, 60%)',
+                          'hsl(38, 92%, 50%)',
+                          'hsl(0, 84%, 60%)',
+                          'hsl(262, 83%, 58%)',
+                          'hsl(180, 60%, 45%)',
+                          'hsl(330, 80%, 55%)'
+                        ][index % 7]
+                      }}
+                    />
+                    <span className="text-[11px] font-bold text-muted-foreground">
+                      {cat.categoryName}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Top Products - Horizontal Bar Chart */}
+          <div className="lg:col-span-2 premium-card ambient-glow p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="h-8 w-8 rounded-lg bg-success/10 flex items-center justify-center">
                 <ShoppingBag className="w-4 h-4 text-success" />
@@ -649,10 +805,9 @@ export function DashboardView(): React.JSX.Element {
                     />
                     <Bar
                       dataKey="quantity"
-                      fill="var(--color-success)"
-                      radius={[0, 4, 4, 0]}
-                      maxBarSize={24}
-                      isAnimationActive={false}
+                      fill="url(#barGradient)"
+                      radius={[0, 6, 6, 0]}
+                      maxBarSize={28}
                     />
                   </BarChart>
                 </ResponsiveContainer>
@@ -662,6 +817,38 @@ export function DashboardView(): React.JSX.Element {
                 </div>
               )}
             </div>
+
+            {/* Bottom Products */}
+            {stats?.bottomProducts && stats.bottomProducts.length > 0 && (
+              <div className="mt-6 pt-5 border-t border-border/20">
+                <div className="flex items-center gap-2 mb-4">
+                  <TrendingDown className="w-4 h-4 text-destructive/70" />
+                  <h4 className="text-xs font-black text-muted-foreground uppercase tracking-wider">
+                    En Az Satan Ürünler
+                  </h4>
+                </div>
+                <div className="grid grid-cols-5 gap-3">
+                  {stats.bottomProducts.map((product, index) => (
+                    <div
+                      key={product.productId}
+                      className="flex flex-col items-center gap-1 p-3 rounded-xl bg-muted/30 border border-border/10"
+                    >
+                      <span className="text-lg font-black text-destructive/70 tabular-nums">
+                        {product.quantity}
+                      </span>
+                      <span className="text-[10px] font-bold text-muted-foreground text-center leading-tight truncate w-full">
+                        {product.productName.length > 12
+                          ? product.productName.slice(0, 12) + '...'
+                          : product.productName}
+                      </span>
+                      <span className="text-[9px] font-medium text-muted-foreground/50">
+                        #{index + 1}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

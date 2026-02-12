@@ -93,6 +93,9 @@ export interface ExtendedDashboardStats extends DashboardStats {
   openTables: number
   pendingOrders: number
   hourlyActivity: HourlyActivityItem[]
+  categoryBreakdown: { categoryName: string; revenue: number; quantity: number }[]
+  bottomProducts: { productId: string; productName: string; quantity: number }[]
+  dailyExpenses: number
 }
 
 export interface HourlyActivityItem {

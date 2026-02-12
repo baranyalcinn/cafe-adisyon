@@ -347,31 +347,31 @@ export const CartPanel = React.memo(function CartPanel({
         )}
       </div>
 
-      <div className="shrink-0 p-5 bg-background shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] z-20 space-y-4 border-t border-border/10">
+      <div className="shrink-0 p-5 bg-background shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] z-20 space-y-4 border-t border-border/20">
         <div className="space-y-3">
           <div className="flex justify-between items-center px-1">
-            <span className="text-sm font-semibold text-muted-foreground/70 tracking-tight">
+            <span className="text-[15px] font-bold text-foreground/70 tracking-tight">
               Ara Toplam
             </span>
-            <PremiumAmount amount={total} size="sm" color="foreground" fontWeight="bold" />
+            <PremiumAmount amount={total} size="md" color="foreground" fontWeight="bold" />
           </div>
 
           {paidAmount > 0 && (
-            <div className="flex justify-between items-center px-1 animate-in fade-in slide-in-from-bottom-2 duration-400 opacity-60">
-              <span className="text-sm font-semibold text-muted-foreground tracking-tight">
+            <div className="flex justify-between items-center px-1 animate-in fade-in slide-in-from-bottom-2 duration-400">
+              <span className="text-[15px] font-bold text-muted-foreground/70 tracking-tight">
                 Ödenen
               </span>
-              <PremiumAmount amount={-paidAmount} size="sm" color="muted" fontWeight="bold" />
+              <PremiumAmount amount={-paidAmount} size="md" fontWeight="bold" />
             </div>
           )}
 
-          <div className="pt-3 border-t border-border/10">
+          <div className="pt-3 border-t border-border/20">
             <div className="flex justify-between items-end px-1 gap-4">
               <div className="flex flex-col">
-                <span className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-[0.15em] mb-1">
+                <span className="text-[11px] font-black text-muted-foreground/60 uppercase tracking-[0.15em] mb-1">
                   ÖDENECEK TUTAR
                 </span>
-                <PremiumAmount amount={remainingAmount} size="xl" fontWeight="black" />
+                <PremiumAmount amount={remainingAmount} size="2xl" fontWeight="black" />
               </div>
               <Button
                 onClick={() => {

@@ -141,6 +141,8 @@ export class ReportingService {
     totalOrders: number
     paymentMethodBreakdown: { cash: number; card: number }
     topProducts: { productId: string; productName: string; quantity: number }[]
+    bottomProducts: { productId: string; productName: string; quantity: number }[]
+    categoryBreakdown: { categoryName: string; revenue: number; quantity: number }[]
     todayOrders: { id: string; totalAmount: number; createdAt: Date }[]
   }> {
     const now = new Date()
@@ -157,7 +159,7 @@ export class ReportingService {
       prisma.transaction.findMany({ where: { createdAt: { gte: today } } }),
       prisma.orderItem.findMany({
         where: { order: { status: 'CLOSED', createdAt: { gte: today } } },
-        include: { product: true }
+        include: { product: { include: { category: true } } }
       }),
       prisma.order.findMany({ where: { status: 'CLOSED', createdAt: { gte: today } } })
     ])
@@ -186,14 +188,32 @@ export class ReportingService {
       }
     })
 
-    const topProducts = Array.from(productCounts.entries())
+    const allProducts = Array.from(productCounts.entries())
       .map(([productId, data]) => ({
         productId,
         productName: data.name,
         quantity: data.quantity
       }))
       .sort((a, b) => b.quantity - a.quantity)
-      .slice(0, topProductLimit)
+
+    const topProducts = allProducts.slice(0, topProductLimit)
+    const bottomProducts =
+      allProducts.length > topProductLimit ? [...allProducts].reverse().slice(0, 5) : []
+
+    // Category breakdown
+    const categoryMap = new Map<string, { revenue: number; quantity: number }>()
+    todayItems.forEach((item) => {
+      const catName =
+        (item.product as unknown as { category?: { name: string } }).category?.name || 'Diğer'
+      const existing = categoryMap.get(catName) || { revenue: 0, quantity: 0 }
+      categoryMap.set(catName, {
+        revenue: existing.revenue + item.quantity * item.unitPrice,
+        quantity: existing.quantity + item.quantity
+      })
+    })
+    const categoryBreakdown = Array.from(categoryMap.entries())
+      .map(([categoryName, data]) => ({ categoryName, ...data }))
+      .sort((a, b) => b.revenue - a.revenue)
 
     return {
       today,
@@ -201,6 +221,8 @@ export class ReportingService {
       totalOrders: todayOrders.length,
       paymentMethodBreakdown,
       topProducts,
+      bottomProducts,
+      categoryBreakdown,
       todayOrders
     }
   }
@@ -222,13 +244,24 @@ export class ReportingService {
 
   async getExtendedDashboardStats(): Promise<ApiResponse<ExtendedDashboardStats>> {
     try {
-      const { dailyRevenue, totalOrders, paymentMethodBreakdown, topProducts, todayOrders } =
-        await this.getBaseStats(10)
+      const {
+        dailyRevenue,
+        totalOrders,
+        paymentMethodBreakdown,
+        topProducts,
+        bottomProducts,
+        categoryBreakdown,
+        todayOrders,
+        today
+      } = await this.getBaseStats(10)
 
-      const [openTables, pendingOrders] = await Promise.all([
+      const [openTables, pendingOrders, expensesAggregate] = await Promise.all([
         prisma.table.count({ where: { orders: { some: { status: 'OPEN' } } } }),
-        prisma.order.count({ where: { status: 'OPEN', items: { some: {} } } })
+        prisma.order.count({ where: { status: 'OPEN', items: { some: {} } } }),
+        prisma.expense.aggregate({ where: { createdAt: { gte: today } }, _sum: { amount: true } })
       ])
+
+      const dailyExpenses = expensesAggregate._sum.amount || 0
 
       // Calculate Hourly Activity from closed orders
       const hourlyStats = new Map<number, { revenue: number; count: number }>()
@@ -260,6 +293,9 @@ export class ReportingService {
           totalOrders,
           paymentMethodBreakdown,
           topProducts,
+          bottomProducts,
+          categoryBreakdown,
+          dailyExpenses,
           openTables,
           pendingOrders,
           hourlyActivity
