@@ -325,7 +325,7 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
         </div>
 
         <ScrollArea className="flex-1 h-full">
-          <div className="p-4 pb-10">
+          <div className="p-4 pb-24">
             {isInventoryLoading || !isReady ? (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {/* Product Skeletons */}
