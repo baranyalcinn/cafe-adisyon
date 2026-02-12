@@ -680,8 +680,8 @@ export function PaymentModal({
                 <div className="absolute inset-0 bg-primary/[0.08]" />
 
                 <div className="relative w-full flex items-center justify-between">
-                  <span className="text-[11px] font-black text-primary uppercase tracking-[0.15em]">
-                    Ödenen Ara Toplam
+                  <span className="text-[11px] font-black text-primary tracking-[0.15em]">
+                    ÖDENEN ARA TOPLAM
                   </span>
                   <PremiumAmount amount={paidAmount} size="lg" color="primary" />
                 </div>
@@ -874,7 +874,7 @@ export function PaymentModal({
                   <CreditCard className="h-5 w-5" />
                 </div>
                 <div className="flex flex-col items-start leading-none text-left">
-                  <span className="text-base font-black tracking-tight">Kart</span>
+                  <span className="text-base font-black tracking-tight">KART</span>
                 </div>
               </div>
             </Button>

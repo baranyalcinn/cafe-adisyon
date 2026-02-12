@@ -39,8 +39,8 @@ export function RevenueSidebar({
         <div className="grid gap-3">
           <div className="p-3.5 rounded-xl border bg-background shadow-sm hover:border-destructive/30 transition-all group">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground/80">
-                Günlük Toplam
+              <span className="text-[10px] font-black tracking-wider text-muted-foreground/80">
+                GÜNLÜK TOPLAM
               </span>
               <div className="p-1 px-2 bg-rose-500/10 rounded-lg text-rose-500 text-[10px] font-bold">
                 BU GÜN
@@ -53,8 +53,8 @@ export function RevenueSidebar({
 
           <div className="p-3.5 rounded-xl border bg-background shadow-sm hover:border-emerald-500/30 transition-all group">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground/80">
-                Bu Ay
+              <span className="text-[10px] font-black tracking-wider text-muted-foreground/80">
+                BUGÜN
               </span>
               <div className="p-1 px-2 bg-emerald-500/10 rounded-lg text-emerald-500 text-[10px] font-bold">
                 BU AY
@@ -72,16 +72,16 @@ export function RevenueSidebar({
         <div className="space-y-6">
           <div className="flex items-center gap-2 mb-2">
             <Filter className="w-4 h-4 text-muted-foreground/60" />
-            <span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground/60">
-              Filtreleme
+            <span className="text-[11px] font-black tracking-widest text-muted-foreground/60">
+              HASILAT ÖZETİ
             </span>
           </div>
 
           <div className="space-y-4">
             {/* Search */}
             <div className="space-y-2">
-              <label className="text-[11px] font-black uppercase tracking-wider text-muted-foreground/70 ml-1">
-                Arama
+              <label className="text-[11px] font-black tracking-wider text-muted-foreground/70 ml-1">
+                NAKİT
               </label>
               <div className="relative group">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50 transition-colors group-focus-within:text-foreground" />
@@ -96,8 +96,8 @@ export function RevenueSidebar({
 
             {/* Category */}
             <div className="space-y-2">
-              <label className="text-[11px] font-black uppercase tracking-wider text-muted-foreground/70 ml-1">
-                Kategori
+              <label className="text-[11px] font-black tracking-wider text-muted-foreground/70 ml-1">
+                KATEGORİ
               </label>
               <Select
                 value={filters.category}
@@ -124,8 +124,8 @@ export function RevenueSidebar({
 
             {/* Date Range */}
             <div className="space-y-2">
-              <label className="text-[11px] font-black uppercase tracking-wider text-muted-foreground/70 ml-1">
-                Tarih Aralığı
+              <label className="text-[11px] font-black tracking-wider text-muted-foreground/70 ml-1">
+                TARİH ARALIĞI
               </label>
               <Select
                 value={filters.dateRange}

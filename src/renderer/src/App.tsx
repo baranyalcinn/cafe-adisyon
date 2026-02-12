@@ -85,7 +85,7 @@ function App(): React.JSX.Element {
               active={currentView === 'tables'}
               onClick={() => setCurrentView('tables')}
               icon={LayoutGrid}
-              label="Masalar"
+              label="MASALAR"
             />
           </nav>
 
@@ -94,7 +94,7 @@ function App(): React.JSX.Element {
               active={currentView === 'settings'}
               onClick={() => setCurrentView('settings')}
               icon={Settings}
-              label="Ayarlar"
+              label="AYARLAR"
             />
           </div>
         </aside>
@@ -219,7 +219,7 @@ function LogoSection(): React.JSX.Element {
           {/* Minimalist Cafe Text */}
           <div className="flex flex-col items-center">
             <span className="text-[9px] font-black text-rose-500/40 dark:text-rose-500/30 uppercase tracking-[0.3em] transition-all duration-500 group-hover:text-rose-500 group-hover:tracking-[0.45em] relative">
-              Cafe
+              CAFE
               <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-[1px] bg-rose-500/20 group-hover:w-6 transition-all duration-500" />
             </span>
           </div>

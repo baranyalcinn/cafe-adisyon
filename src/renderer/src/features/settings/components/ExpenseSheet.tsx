@@ -8,7 +8,6 @@ import {
 } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { Trash2, TrendingDown, AlignLeft, Tag, Banknote } from 'lucide-react'
 import {
@@ -120,12 +119,12 @@ export function ExpenseSheet({
           <div className="space-y-6">
             {/* Amount Field */}
             <div className="space-y-3">
-              <Label
+              <label
                 htmlFor="amount"
-                className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 ml-1"
+                className="text-[10px] font-black tracking-widest text-muted-foreground/60 ml-1"
               >
-                Tutar (₺)
-              </Label>
+                TUTAR (₺)
+              </label>
               <div className="relative group">
                 <div className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center transition-colors group-focus-within:bg-rose-500/10">
                   <Banknote className="w-4 h-4 text-muted-foreground transition-colors group-focus-within:text-rose-500" />
@@ -146,12 +145,12 @@ export function ExpenseSheet({
 
             {/* Description Field */}
             <div className="space-y-3">
-              <Label
+              <label
                 htmlFor="description"
-                className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 ml-1"
+                className="text-[10px] font-black tracking-widest text-muted-foreground/60 ml-1"
               >
-                Açıklama
-              </Label>
+                AÇIKLAMA
+              </label>
               <div className="relative group">
                 <div className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center transition-colors group-focus-within:bg-primary/10">
                   <AlignLeft className="w-4 h-4 text-muted-foreground transition-colors group-focus-within:text-primary" />
@@ -168,12 +167,12 @@ export function ExpenseSheet({
 
             {/* Category Field */}
             <div className="space-y-3">
-              <Label
+              <label
                 htmlFor="category"
-                className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 ml-1"
+                className="text-[10px] font-black tracking-widest text-muted-foreground/60 ml-1"
               >
-                Kategori
-              </Label>
+                KATEGORİ
+              </label>
               <Select value={category} onValueChange={setCategory}>
                 <SelectTrigger className="h-14 font-bold bg-muted/20 border-transparent focus:border-amber-500/20 transition-all rounded-xl pl-14 relative group">
                   <div className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center transition-colors group-focus-within:bg-amber-500/10">
@@ -206,16 +205,24 @@ export function ExpenseSheet({
                 <Separator className="opacity-50" />
                 <div className="bg-muted/30 p-4 rounded-2xl border border-border/50 space-y-2">
                   <div className="flex justify-between items-center text-xs">
-                    <span className="text-muted-foreground font-bold uppercase tracking-wider">
-                      Kayıt Tarihi
+                    <span className="text-muted-foreground font-bold tracking-wider">
+                      KAYIT TARİHİ
                     </span>
-                    <span className="font-black px-2 py-1 bg-background rounded-md shadow-sm border">
-                      {new Date(expense.createdAt).toLocaleDateString('tr-TR', {
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric'
-                      })}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-black px-2 py-1 bg-background rounded-md shadow-sm border">
+                        {new Date(expense.createdAt).toLocaleDateString('tr-TR', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric'
+                        })}
+                      </span>
+                      <div className="text-[10px] font-bold text-muted-foreground tracking-wider opacity-70">
+                        {new Date(expense.createdAt).toLocaleTimeString('tr-TR', {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </>

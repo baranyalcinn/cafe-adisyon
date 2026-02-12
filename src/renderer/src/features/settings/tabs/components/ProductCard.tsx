@@ -44,9 +44,7 @@ export const ProductCard = memo(function ProductCard({
       <div className="relative flex flex-col p-4 bg-background border-2 border-primary/20 rounded-2xl shadow-lg animate-in zoom-in-95 duration-200">
         <div className="space-y-3">
           <div>
-            <label className="text-[10px] font-bold text-muted-foreground uppercase">
-              Ürün Adı
-            </label>
+            <h3 className="font-bold text-sm tracking-tight text-muted-foreground">ÜRÜN ADI</h3>
             <Input
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
@@ -55,9 +53,7 @@ export const ProductCard = memo(function ProductCard({
             />
           </div>
           <div>
-            <label className="text-[10px] font-bold text-muted-foreground uppercase">
-              Fiyat (₺)
-            </label>
+            <label className="text-[10px] font-bold text-muted-foreground">FİYAT (₺)</label>
             <Input
               type="number"
               value={editPrice}

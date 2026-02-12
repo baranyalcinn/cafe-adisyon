@@ -77,20 +77,12 @@ export function TablesTab(): React.JSX.Element {
 
   return (
     <Card className="h-full flex flex-col border-0 shadow-none bg-transparent">
-      {/* Header Section */}
-      <div className="flex-none py-4 px-8 border-b bg-background/50 backdrop-blur z-10 w-full">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">Masa Yönetimi</h2>
-            <p className="text-sm text-muted-foreground">
-              İşletmenizdeki masaları ekleyin, düzenleyin ve yönetin
-            </p>
-          </div>
-          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading}>
-            <RefreshCw className={cn('w-4 h-4 mr-2', isLoading && 'animate-spin')} />
-            Yenile
-          </Button>
-        </div>
+      {/* Action Header */}
+      <div className="flex-none py-4 px-8 border-b bg-background/50 backdrop-blur z-10 w-full flex justify-end">
+        <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading}>
+          <RefreshCw className={cn('w-4 h-4 mr-2', isLoading && 'animate-spin')} />
+          YENİLE
+        </Button>
       </div>
 
       <div className="flex-1 overflow-y-auto p-8">
@@ -133,11 +125,11 @@ export function TablesTab(): React.JSX.Element {
                 <h3 className="font-bold text-lg">{table.name}</h3>
                 <p
                   className={cn(
-                    'text-[10px] font-black uppercase tracking-wider',
+                    'text-[10px] font-black tracking-wider',
                     table.hasOpenOrder ? 'text-amber-600' : 'text-emerald-600'
                   )}
                 >
-                  {table.hasOpenOrder ? 'Dolu / Ürün Var' : 'Boş / Müsait'}
+                  {table.hasOpenOrder ? 'DOLU / ÜRÜN VAR' : 'BOŞ / MÜSAİT'}
                 </p>
               </div>
             </div>

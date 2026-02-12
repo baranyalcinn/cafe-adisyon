@@ -74,39 +74,32 @@ export function CategoriesTab(): React.JSX.Element {
 
   return (
     <Card className="h-full flex flex-col border-0 shadow-none bg-transparent">
-      {/* Header Section */}
+      {/* Action Header */}
       <div className="flex-none py-4 px-8 border-b bg-background/50 backdrop-blur z-10 w-full">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">Kategori Yönetimi</h2>
-            <p className="text-sm text-muted-foreground">
-              Kategorileri ve görsel simgelerini düzenleyin
-            </p>
+        <div className="flex items-center justify-end gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetchCategories()}
+            disabled={isLoading}
+            className="font-bold tracking-wider"
+          >
+            <RefreshCw className={cn('w-4 h-4 mr-2', isLoading && 'animate-spin')} />
+            YENİLE
+          </Button>
+          <div className="relative">
+            <Input
+              placeholder="Yeni kategori adı..."
+              value={newCategoryName}
+              onChange={(e) => setNewCategoryName(e.target.value)}
+              className="w-48 h-9 bg-background/50"
+              onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
+            />
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => refetchCategories()}
-              disabled={isLoading}
-            >
-              <RefreshCw className={cn('w-4 h-4 mr-2', isLoading && 'animate-spin')} />
-              Yenile
-            </Button>
-            <div className="relative">
-              <Input
-                placeholder="Yeni kategori adı..."
-                value={newCategoryName}
-                onChange={(e) => setNewCategoryName(e.target.value)}
-                className="w-48 h-9"
-                onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
-              />
-            </div>
-            <Button onClick={handleAddCategory} size="sm" className="gap-2">
-              <Plus className="w-4 h-4" />
-              Ekle
-            </Button>
-          </div>
+          <Button onClick={handleAddCategory} size="sm" className="gap-2 font-bold px-4">
+            <Plus className="w-4 h-4" />
+            EKLE
+          </Button>
         </div>
       </div>
 

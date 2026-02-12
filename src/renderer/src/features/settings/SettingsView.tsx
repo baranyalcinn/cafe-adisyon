@@ -413,9 +413,9 @@ export function SettingsView({
                     <CardContent className="space-y-5 pt-6 px-6 pb-8">
                       {/* Theme Mode Selection */}
                       <div className="space-y-3">
-                        <label className="text-xs font-semibold flex items-center gap-2 text-muted-foreground uppercase tracking-tight">
+                        <label className="text-xs font-semibold flex items-center gap-2 text-muted-foreground tracking-tight">
                           <Monitor className="w-3.5 h-3.5" />
-                          Tema Modu
+                          TEMA MODU
                         </label>
 
                         <div className="grid grid-cols-2 gap-4">
@@ -460,9 +460,9 @@ export function SettingsView({
                       {/* Color Scheme */}
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                          <label className="text-xs font-semibold flex items-center gap-2 text-muted-foreground uppercase tracking-tight">
+                          <label className="text-xs font-semibold flex items-center gap-2 text-muted-foreground tracking-tight">
                             <Palette className="w-3.5 h-3.5" />
-                            Renk Teması
+                            RENK TEMASI
                           </label>
                           <span className="text-xs font-bold text-primary">
                             {COLOR_SCHEMES.find((c) => c.id === colorScheme)?.name}
@@ -553,9 +553,9 @@ export function SettingsView({
                       {/* PIN Section */}
                       <div className="space-y-6">
                         <div className="p-4 bg-muted/30 rounded-xl border border-border/50 space-y-4">
-                          <label className="text-xs font-semibold flex items-center gap-2 text-muted-foreground uppercase tracking-tight">
+                          <label className="text-xs font-semibold flex items-center gap-2 text-muted-foreground tracking-tight">
                             <KeyRound className="w-4 h-4 text-primary" />
-                            Erişim Şifreleme (PIN)
+                            ERİŞİM ŞİFRELEME (PIN)
                           </label>
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -669,9 +669,9 @@ export function SettingsView({
 
                       {/* Recovery Section */}
                       <div className="p-4 bg-muted/30 rounded-xl border border-border/50 space-y-4">
-                        <label className="text-xs font-semibold flex items-center gap-2 text-muted-foreground uppercase tracking-tight">
+                        <label className="text-xs font-semibold flex items-center gap-2 text-muted-foreground tracking-tight">
                           <ShieldCheck className="w-4 h-4 text-primary" />
-                          Hesap Kurtarma Ayarları
+                          HESAP KURTARMA AYARLARI
                         </label>
 
                         <div className="space-y-3">
@@ -794,8 +794,8 @@ export function SettingsView({
                             <p className="text-lg font-bold tracking-tight text-primary">
                               {tableCount}
                             </p>
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-70">
-                              Masa
+                            <p className="text-[10px] font-bold text-muted-foreground opacity-70">
+                              MASA
                             </p>
                           </div>
                           <div className="w-px h-6 bg-border/80" />
@@ -803,8 +803,8 @@ export function SettingsView({
                             <p className="text-lg font-bold tracking-tight text-primary">
                               {productCount}
                             </p>
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-70">
-                              Ürün
+                            <p className="text-[10px] font-bold text-muted-foreground opacity-70">
+                              ÜRÜN
                             </p>
                           </div>
                         </div>

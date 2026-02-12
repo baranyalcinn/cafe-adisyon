@@ -58,9 +58,7 @@ export const CategorySidebar = memo(
       <div className="flex flex-col h-full w-full max-w-[280px]">
         <div className="p-4 border-b bg-background/50 backdrop-blur">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="font-bold text-sm tracking-tight text-muted-foreground uppercase">
-              Kategoriler
-            </h3>
+            <h3 className="font-bold text-sm tracking-tight text-muted-foreground">KATEGORİLER</h3>
             <Button
               size="icon"
               variant="ghost"

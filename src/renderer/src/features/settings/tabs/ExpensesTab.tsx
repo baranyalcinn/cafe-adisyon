@@ -165,24 +165,16 @@ export function ExpensesTab(): React.JSX.Element {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Header */}
-        <header className="h-20 flex-none border-b bg-background flex items-center justify-between px-6">
-          <div>
-            <h1 className="text-xl font-bold tracking-tight">Giderler</h1>
-            <p className="text-sm text-muted-foreground">
-              {filteredExpenses.length} gider listeleniyor
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={loadExpenses} disabled={isLoading}>
-              <RefreshCw className={cn('w-4 h-4 mr-2', isLoading && 'animate-spin')} />
-              Yenile
-            </Button>
-            <Button onClick={handleAddExpense} className="gap-2 font-bold px-6 rounded-xl">
-              <Plus className="w-5 h-5" />
-              Gider Ekle
-            </Button>
-          </div>
+        {/* Action Header */}
+        <header className="h-14 flex-none border-b bg-background flex items-center justify-end px-6 gap-3">
+          <Button variant="outline" size="sm" onClick={loadExpenses} disabled={isLoading}>
+            <RefreshCw className={cn('w-4 h-4 mr-2', isLoading && 'animate-spin')} />
+            YENİLE
+          </Button>
+          <Button onClick={handleAddExpense} className="gap-2 font-bold px-6 rounded-xl h-9">
+            <Plus className="w-5 h-5" />
+            GİDER EKLE
+          </Button>
         </header>
 
         {/* Content Area */}

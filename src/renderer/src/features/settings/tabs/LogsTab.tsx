@@ -55,86 +55,86 @@ const DATE_FILTERS: { id: DateRangeType; label: string }[] = [
 
 const ACTION_CONFIG: Record<string, { label: string; color: string; dot: string; bg: string }> = {
   GENERATE_ZREPORT: {
-    label: 'Z-Raporu',
+    label: 'Z-RAPORU',
     color: 'text-purple-400',
     dot: 'bg-purple-400',
     bg: 'bg-purple-400/5'
   },
   ARCHIVE_DATA: {
-    label: 'Arşivleme',
+    label: 'ARŞİVLEME',
     color: 'text-orange-400',
     dot: 'bg-orange-400',
     bg: 'bg-orange-400/5'
   },
   BACKUP_DATABASE: {
-    label: 'Yedekleme',
+    label: 'YEDEKLEME',
     color: 'text-blue-400',
     dot: 'bg-blue-400',
     bg: 'bg-blue-400/5'
   },
   END_OF_DAY: {
-    label: 'Gün Sonu',
+    label: 'GÜN SONU',
     color: 'text-indigo-400',
     dot: 'bg-indigo-400',
     bg: 'bg-indigo-400/5'
   },
   OPEN_TABLE: {
-    label: 'Masa Açıldı',
+    label: 'MASA AÇILDI',
     color: 'text-emerald-400',
     dot: 'bg-emerald-400',
     bg: 'bg-emerald-400/5'
   },
   CLOSE_TABLE: {
-    label: 'Masa Kapatıldı',
+    label: 'MASA KAPATILDI',
     color: 'text-slate-400',
     dot: 'bg-slate-400',
     bg: 'bg-slate-400/5'
   },
   MOVE_TABLE: {
-    label: 'Taşıma',
+    label: 'TAŞIMA',
     color: 'text-amber-400',
     dot: 'bg-amber-400',
     bg: 'bg-amber-400/5'
   },
   ADD_ITEM: {
-    label: 'Sipariş',
+    label: 'SİPARİŞ',
     color: 'text-foreground',
     dot: 'bg-foreground',
     bg: 'bg-foreground/5'
   },
   DELETE_PRODUCT: {
-    label: 'Ürün Silme',
+    label: 'ÜRÜN SİLME',
     color: 'text-red-500',
     dot: 'bg-red-500',
     bg: 'bg-red-500/5'
   },
   DELETE_ORDER: {
-    label: 'Masa Boşaltma',
+    label: 'MASA BOŞALTMA',
     color: 'text-red-500',
     dot: 'bg-red-500',
     bg: 'bg-red-500/5'
   },
   REMOVE_ITEM: {
-    label: 'Ürün İptal',
+    label: 'ÜRÜN İPTAL',
     color: 'text-emerald-400',
     dot: 'bg-emerald-400',
     bg: 'bg-emerald-400/5'
   },
-  CANCEL_ITEM: { label: 'İptal', color: 'text-rose-400', dot: 'bg-rose-400', bg: 'bg-rose-400/5' },
+  CANCEL_ITEM: { label: 'İPTAL', color: 'text-rose-400', dot: 'bg-rose-400', bg: 'bg-rose-400/5' },
   ITEMS_PAID: {
-    label: 'Ürün Ödemesi',
+    label: 'ÜRÜN ÖDEMESİ',
     color: 'text-emerald-500',
     dot: 'bg-emerald-500',
     bg: 'bg-emerald-500/5'
   },
   PAYMENT_CASH: {
-    label: 'Nakit Ödeme',
+    label: 'NAKİT ÖDEME',
     color: 'text-emerald-500',
     dot: 'bg-emerald-500',
     bg: 'bg-emerald-500/5'
   },
   PAYMENT_CARD: {
-    label: 'Kart Ödeme',
+    label: 'KART ÖDEME',
     color: 'text-blue-500',
     dot: 'bg-blue-500',
     bg: 'bg-blue-500/5'
@@ -348,27 +348,22 @@ export function LogsTab(): React.JSX.Element {
 
   return (
     <div className="h-full flex flex-col p-6 space-y-4">
-      {/* Minimal Header Bar */}
+      {/* Action Header */}
       <div className="flex items-center justify-between px-2">
         <div className="flex items-center gap-8">
-          <div>
-            <h2 className="text-xl font-bold tracking-tight">Geçmiş</h2>
-            <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
-              İşlem Kayıtları
-            </p>
-          </div>
-
-          <div className="hidden md:flex items-center gap-6 border-l pl-8 border-border/50">
+          <div className="flex md:flex items-center gap-6">
             {[
               { label: 'Bugün Toplam', value: stats.total, color: 'text-primary' },
               { label: 'Operasyon', value: stats.ops, color: 'text-emerald-500' },
               { label: 'Sistem', value: stats.sys, color: 'text-blue-500' }
             ].map((s) => (
               <div key={s.label} className="flex flex-col">
-                <span className="text-[9px] font-black uppercase text-muted-foreground/50 tracking-widest">
+                <span className="text-[9px] font-black text-muted-foreground/50 tracking-widest uppercase">
                   {s.label}
                 </span>
-                <span className={cn('text-lg font-black leading-none', s.color)}>{s.value}</span>
+                <span className={cn('text-lg font-black leading-none uppercase', s.color)}>
+                  {s.value}
+                </span>
               </div>
             ))}
           </div>
@@ -440,16 +435,16 @@ export function LogsTab(): React.JSX.Element {
           <Table>
             <TableHeader className="sticky top-0 bg-background/60 backdrop-blur-3xl z-10 border-b border-border/40">
               <TableRow className="hover:bg-transparent border-0">
-                <TableHead className="w-[140px] pl-6 text-[10px] uppercase font-black tracking-[0.2em] text-muted-foreground/40">
+                <TableHead className="w-[140px] pl-6 text-[10px] font-black tracking-[0.2em] text-muted-foreground/40">
                   SAAT
                 </TableHead>
-                <TableHead className="w-[180px] text-[10px] uppercase font-black tracking-[0.2em] text-muted-foreground/40">
+                <TableHead className="w-[180px] text-[10px] font-black tracking-[0.2em] text-muted-foreground/40">
                   İŞLEM TÜRÜ
                 </TableHead>
-                <TableHead className="w-[140px] text-[10px] uppercase font-black tracking-[0.2em] text-muted-foreground/40">
+                <TableHead className="w-[140px] text-[10px] font-black tracking-[0.2em] text-muted-foreground/40">
                   KONUM
                 </TableHead>
-                <TableHead className="text-[10px] uppercase font-black tracking-[0.2em] text-muted-foreground/40">
+                <TableHead className="text-[10px] font-black tracking-[0.2em] text-muted-foreground/40">
                   AÇIKLAMA
                 </TableHead>
                 <TableHead className="w-10"></TableHead>
@@ -504,7 +499,7 @@ export function LogsTab(): React.JSX.Element {
                         <TableCell className="py-3">
                           <div
                             className={cn(
-                              'text-sm font-black uppercase tracking-tight',
+                              'text-sm font-black tracking-tight',
                               config?.color || 'text-muted-foreground'
                             )}
                           >
@@ -520,7 +515,7 @@ export function LogsTab(): React.JSX.Element {
                           <span className="text-sm text-muted-foreground/80 group-hover:text-foreground transition-colors line-clamp-1 font-medium">
                             {isGroup ? (
                               <span className="text-primary font-bold">
-                                {log.groupCount} Ürün Eklendi
+                                {log.groupCount} ÜRÜN EKLENDİ
                               </span>
                             ) : (
                               log.details
@@ -550,8 +545,8 @@ export function LogsTab(): React.JSX.Element {
                               <div className="p-6 grid grid-cols-3 gap-6">
                                 <div className="col-span-2 space-y-4">
                                   <div className="bg-background/50 p-6 rounded-2xl border border-border/30 shadow-sm">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 leading-none mb-4">
-                                      Sipariş Detayı
+                                    <p className="text-[10px] font-black tracking-widest text-muted-foreground/40 leading-none mb-4">
+                                      SİPARİŞ DETAYI
                                     </p>
                                     {isGroup ? (
                                       <div className="space-y-3">
@@ -587,10 +582,10 @@ export function LogsTab(): React.JSX.Element {
                                       />
                                     </div>
                                     <div className="flex flex-col">
-                                      <span className="text-[10px] font-black uppercase text-muted-foreground/50 leading-none mb-1.5 tracking-widest">
-                                        İşlem Tipi
+                                      <span className="text-[10px] font-black text-muted-foreground/50 leading-none mb-1.5 tracking-widest">
+                                        İŞLEM TİPİ
                                       </span>
-                                      <span className="text-sm font-black text-foreground uppercase tracking-tight">
+                                      <span className="text-sm font-black text-foreground tracking-tight">
                                         {config?.label || log.action}
                                       </span>
                                     </div>
@@ -602,8 +597,8 @@ export function LogsTab(): React.JSX.Element {
                                       <Clock size={18} className="text-primary/70" />
                                     </div>
                                     <div className="flex flex-col">
-                                      <span className="text-[10px] font-black uppercase text-muted-foreground/50 leading-none mb-1.5 tracking-widest">
-                                        Tarih / Saat
+                                      <span className="text-[10px] font-black text-muted-foreground/50 leading-none mb-1.5 tracking-widest">
+                                        TARİH / SAAT
                                       </span>
                                       <span className="text-sm font-bold text-foreground">
                                         {format(new Date(log.createdAt), 'dd MMMM yyyy', {

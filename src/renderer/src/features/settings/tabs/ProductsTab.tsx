@@ -158,19 +158,11 @@ export function ProductsTab(): React.JSX.Element {
 
         {/* Right Content */}
         <div className="flex-1 h-full bg-background flex flex-col">
-          {/* Header / Context Bar */}
-          <div className="h-14 border-b bg-background/50 backdrop-blur px-6 flex items-center justify-between">
-            <div>
-              <h3 className="font-bold text-lg">
-                {categories.find((c) => c.id === selectedCategoryId)?.name || 'Kategori Seçin'}
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                {filteredProducts.length} Ürün listeleniyor
-              </p>
-            </div>
+          {/* Action Header */}
+          <div className="h-14 border-b bg-background/50 backdrop-blur px-6 flex items-center justify-end">
             <Button variant="outline" size="sm" onClick={handleRefreshAll} disabled={isLoading}>
               <RefreshCw className={cn('w-4 h-4 mr-2', isLoading && 'animate-spin')} />
-              Yenile
+              YENİLE
             </Button>
           </div>
 
@@ -187,9 +179,7 @@ export function ProductsTab(): React.JSX.Element {
                       className="w-full space-y-3 animate-in fade-in zoom-in-95"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <p className="text-xs font-bold text-primary uppercase text-center">
-                        Yeni Ürün Ekle
-                      </p>
+                      <p className="text-xs font-bold text-primary text-center">YENİ ÜRÜN EKLE</p>
                       <Input
                         placeholder="Ürün Adı"
                         value={newProductName}
@@ -228,7 +218,7 @@ export function ProductsTab(): React.JSX.Element {
                         <Plus className="w-5 h-5 text-muted-foreground" />
                       </div>
                       <span className="font-bold text-sm text-muted-foreground">
-                        Yeni Ürün Ekle
+                        YENİ ÜRÜN EKLE
                       </span>
                     </>
                   )}

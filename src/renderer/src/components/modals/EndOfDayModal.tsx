@@ -122,7 +122,7 @@ export function EndOfDayModal({ open, onClose }: EndOfDayModalProps): React.JSX.
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Moon className="w-5 h-5" />
-            Gün Sonu İşlemi
+            GÜN SONU İŞLEMİ
           </DialogTitle>
         </DialogHeader>
 
@@ -131,7 +131,7 @@ export function EndOfDayModal({ open, onClose }: EndOfDayModalProps): React.JSX.
           {step === 'checking' && (
             <div className="flex flex-col items-center justify-center py-8 gap-4">
               <Loader2 className="w-12 h-12 text-primary animate-spin" />
-              <p className="text-muted-foreground">Açık masalar kontrol ediliyor...</p>
+              <p className="text-muted-foreground">AÇIK MASALAR KONTROL EDİLİYOR...</p>
             </div>
           )}
 
@@ -141,9 +141,9 @@ export function EndOfDayModal({ open, onClose }: EndOfDayModalProps): React.JSX.
               <div className="flex items-center gap-3 p-4 bg-destructive/10 text-destructive rounded-lg">
                 <AlertTriangle className="w-6 h-6 flex-shrink-0" />
                 <div>
-                  <p className="font-semibold">Açık Masalar Var!</p>
+                  <p className="font-semibold">AÇIK MASALAR VAR!</p>
                   <p className="text-sm">
-                    Gün sonu yapabilmek için önce aşağıdaki masaları kapatmanız gerekiyor.
+                    GÜN SONU YAPABİLMEK İÇİN ÖNCE AŞAĞIDAKİ MASALARI KAPATMANIZ GEREKİYOR.
                   </p>
                 </div>
               </div>
@@ -164,7 +164,7 @@ export function EndOfDayModal({ open, onClose }: EndOfDayModalProps): React.JSX.
 
               <Button variant="outline" className="w-full" onClick={handleClose}>
                 <X className="w-4 h-4 mr-2" />
-                Kapat
+                KAPAT
               </Button>
             </div>
           )}
@@ -175,35 +175,35 @@ export function EndOfDayModal({ open, onClose }: EndOfDayModalProps): React.JSX.
               <div className="flex items-center gap-3 p-4 bg-primary/10 text-primary rounded-lg">
                 <CheckCircle className="w-6 h-6 flex-shrink-0" />
                 <div>
-                  <p className="font-semibold">Tüm Masalar Kapalı</p>
-                  <p className="text-sm">Gün sonu işlemi başlatılabilir.</p>
+                  <p className="font-semibold">TÜM MASALAR KAPALI</p>
+                  <p className="text-sm">GÜN SONU İŞLEMİ BAŞLATILABİLİR.</p>
                 </div>
               </div>
 
               <div className="p-4 bg-muted rounded-lg space-y-2">
-                <p className="font-medium">Yapılacak işlemler:</p>
+                <p className="font-medium">YAPILACAK İŞLEMLER:</p>
                 <ul className="text-sm text-muted-foreground space-y-1">
                   <li className="flex items-center gap-2">
-                    <FileText className="w-4 h-4" /> Z-Raporu oluşturulacak
+                    <FileText className="w-4 h-4" /> Z-RAPORU OLUŞTURULACAK
                   </li>
                   <li className="flex items-center gap-2">
-                    <Database className="w-4 h-4" /> Veritabanı yedeklenecek
+                    <Database className="w-4 h-4" /> VERİTABANI YEDEKLENECEK
                   </li>
                   <li className="flex items-center gap-2">
-                    <Database className="w-4 h-4" /> Veritabanı optimize edilecek (VACUUM)
+                    <Database className="w-4 h-4" /> VERİTABANI OPTİMİZE EDİLECEK (VACUUM)
                   </li>
                 </ul>
               </div>
 
               <div className="flex gap-2">
                 <Button variant="outline" className="flex-1" onClick={handleClose}>
-                  İptal
+                  İPTAL
                 </Button>
                 <Button
                   className="flex-1 bg-primary font-bold"
                   onClick={() => setStep('cash_reconcile')}
                 >
-                  İlerle
+                  İLERLE
                   <Moon className="w-4 h-4 ml-2" />
                 </Button>
               </div>
@@ -215,14 +215,14 @@ export function EndOfDayModal({ open, onClose }: EndOfDayModalProps): React.JSX.
             <div className="space-y-6">
               <div className="p-4 bg-muted rounded-2xl space-y-3">
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-muted-foreground uppercase font-bold text-[10px] tracking-wider">
-                    Sistem Nakit Beklentisi
+                  <span className="text-muted-foreground font-bold text-[10px] tracking-wider">
+                    SİSTEM NAKİT BEKLENTİSİ
                   </span>
                   <span className="font-bold font-mono">{formatCurrency(expectedTotals.cash)}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-muted-foreground uppercase font-bold text-[10px] tracking-wider">
-                    Bugünkü Giderler
+                  <span className="text-muted-foreground font-bold text-[10px] tracking-wider">
+                    BUGÜNKÜ GİDERLER
                   </span>
                   <span className="font-bold font-mono text-red-500">
                     -{formatCurrency(expectedTotals.expenses || 0)}
@@ -230,8 +230,8 @@ export function EndOfDayModal({ open, onClose }: EndOfDayModalProps): React.JSX.
                 </div>
                 <div className="h-px bg-border" />
                 <div className="flex justify-between items-center">
-                  <span className="font-bold text-sm text-muted-foreground uppercase tracking-wider text-[10px]">
-                    Net Beklenen
+                  <span className="font-bold text-sm text-muted-foreground tracking-wider text-[10px]">
+                    NET BEKLENEN
                   </span>
                   <span className="font-extrabold text-lg tabular-nums">
                     {formatCurrency(Math.max(0, expectedTotals.cash - expectedTotals.expenses))}
@@ -240,8 +240,8 @@ export function EndOfDayModal({ open, onClose }: EndOfDayModalProps): React.JSX.
               </div>
 
               <div className="space-y-3">
-                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                  Kasadaki Gerçek Nakit Tutarı
+                <label className="text-xs font-bold text-muted-foreground tracking-wider">
+                  KASADAKİ GERÇEK NAKİT TUTARI
                 </label>
                 <Input
                   type="number"
@@ -281,7 +281,7 @@ export function EndOfDayModal({ open, onClose }: EndOfDayModalProps): React.JSX.
                   onClick={handleExecute}
                   disabled={!actualCashInput}
                 >
-                  Kesinleştir ve Bitir
+                  KESİNLEŞTİR VE BİTİR
                 </Button>
               </div>
             </div>
@@ -306,28 +306,28 @@ export function EndOfDayModal({ open, onClose }: EndOfDayModalProps): React.JSX.
               <div className="flex items-center gap-3 p-4 bg-emerald-500/10 text-emerald-600 rounded-lg">
                 <CheckCircle className="w-6 h-6 flex-shrink-0" />
                 <div>
-                  <p className="font-semibold">Gün Sonu Tamamlandı!</p>
-                  <p className="text-sm">Tüm işlemler başarıyla gerçekleştirildi.</p>
+                  <p className="font-semibold">GÜN SONU TAMAMLANDI!</p>
+                  <p className="text-sm">TÜM İŞLEMLER BAŞARIYLA GERÇEKLEŞTİRİLDİ.</p>
                 </div>
               </div>
 
               <div className="p-4 bg-muted rounded-lg space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Günlük Ciro</span>
+                  <span className="text-muted-foreground">GÜNLÜK CİRO</span>
                   <span className="font-bold">{formatCurrency(result.zReport.totalRevenue)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Nakit</span>
+                  <span className="text-muted-foreground">NAKİT</span>
                   <span className="text-emerald-600">
                     {formatCurrency(result.zReport.totalCash)}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Kart</span>
+                  <span className="text-muted-foreground">KART</span>
                   <span className="text-blue-600">{formatCurrency(result.zReport.totalCard)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Sipariş Sayısı</span>
+                  <span className="text-muted-foreground">SİPARİŞ SAYISI</span>
                   <span>{result.zReport.orderCount}</span>
                 </div>
                 <hr />
@@ -346,7 +346,7 @@ export function EndOfDayModal({ open, onClose }: EndOfDayModalProps): React.JSX.
               </div>
 
               <Button className="w-full" onClick={handleClose}>
-                Tamam
+                TAMAM
               </Button>
             </div>
           )}
@@ -357,17 +357,17 @@ export function EndOfDayModal({ open, onClose }: EndOfDayModalProps): React.JSX.
               <div className="flex items-center gap-3 p-4 bg-destructive/10 text-destructive rounded-lg">
                 <AlertTriangle className="w-6 h-6 flex-shrink-0" />
                 <div>
-                  <p className="font-semibold">Hata Oluştu</p>
+                  <p className="font-semibold">HATA OLUŞTU</p>
                   <p className="text-sm">{error}</p>
                 </div>
               </div>
 
               <div className="flex gap-2">
                 <Button variant="outline" className="flex-1" onClick={handleClose}>
-                  Kapat
+                  KAPAT
                 </Button>
                 <Button className="flex-1" onClick={handleCheck}>
-                  Tekrar Dene
+                  TEKRAR DENE
                 </Button>
               </div>
             </div>

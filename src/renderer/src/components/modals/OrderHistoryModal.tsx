@@ -104,14 +104,14 @@ export function OrderHistoryModal(): React.JSX.Element {
       <DialogTrigger asChild>
         <Button variant="outline" className="gap-2">
           <History className="w-4 h-4" />
-          Sipariş Geçmişi
+          SİPARİŞ GEÇMİŞİ
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[96vw] max-w-[96vw] w-full max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <History className="w-5 h-5" />
-            Sipariş Geçmişi
+            SİPARİŞ GEÇMİŞİ
           </DialogTitle>
         </DialogHeader>
 
@@ -137,10 +137,10 @@ export function OrderHistoryModal(): React.JSX.Element {
             className="gap-2"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Yenile
+            YENİLE
           </Button>
           <div className="ml-auto text-sm text-muted-foreground">
-            Toplam <strong className="text-foreground">{totalCount}</strong> sipariş
+            TOPLAM <strong className="text-foreground">{totalCount}</strong> SİPARİŞ
           </div>
         </div>
 
@@ -149,11 +149,11 @@ export function OrderHistoryModal(): React.JSX.Element {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[100px]">Saat</TableHead>
-                <TableHead className="w-[150px]">Masa</TableHead>
-                <TableHead className="w-[150px]">Tutar</TableHead>
-                <TableHead>Özet</TableHead>
-                <TableHead className="w-[120px]">Durum</TableHead>
+                <TableHead className="w-[100px]">SAAT</TableHead>
+                <TableHead className="w-[150px]">MASA</TableHead>
+                <TableHead className="w-[150px]">TUTAR</TableHead>
+                <TableHead>ÖZET</TableHead>
+                <TableHead className="w-[120px]">DURUM</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -181,7 +181,7 @@ export function OrderHistoryModal(): React.JSX.Element {
                       <TableCell className="font-medium">
                         {format(new Date(order.createdAt), 'HH:mm', { locale: tr })}
                       </TableCell>
-                      <TableCell>{order.table?.name || 'Bilinmeyen'}</TableCell>
+                      <TableCell>{order.table?.name || 'BİLİNMEYEN'}</TableCell>
                       <TableCell className="font-bold text-emerald-600 tabular-nums">
                         {formatCurrency(order.totalAmount)}
                       </TableCell>
@@ -193,7 +193,7 @@ export function OrderHistoryModal(): React.JSX.Element {
                           variant="outline"
                           className="bg-emerald-50 text-emerald-700 border-emerald-200"
                         >
-                          Tamamlandı
+                          TAMAMLANDI
                         </Badge>
                       </TableCell>
                     </TableRow>
@@ -208,7 +208,7 @@ export function OrderHistoryModal(): React.JSX.Element {
                             </div>
                           ) : (
                             <div className="space-y-3">
-                              <h4 className="text-sm font-semibold mb-2">Sipariş Detayı</h4>
+                              <h4 className="text-sm font-semibold mb-2">SİPARİŞ DETAYI</h4>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {/* Left Column - Items */}
                                 <div className="space-y-2">
@@ -223,7 +223,7 @@ export function OrderHistoryModal(): React.JSX.Element {
                                     </div>
                                   ))}
                                   <div className="border-t pt-2 mt-2 flex justify-between font-bold">
-                                    <span>Toplam</span>
+                                    <span>TOPLAM</span>
                                     <span className="tabular-nums">
                                       {formatCurrency(order.totalAmount)}
                                     </span>
@@ -241,12 +241,12 @@ export function OrderHistoryModal(): React.JSX.Element {
                                   {order.payments && order.payments.length > 0 && (
                                     <div className="mt-3">
                                       <p className="font-semibold text-foreground">
-                                        Ödeme Bilgisi:
+                                        ÖDEME BİLGİSİ:
                                       </p>
                                       {order.payments.map((p) => (
                                         <div key={p.id} className="flex justify-between mt-1">
                                           <span>
-                                            {p.paymentMethod === 'CASH' ? 'Nakit' : 'Kredi Kartı'}
+                                            {p.paymentMethod === 'CASH' ? 'NAKİT' : 'KREDİ KARTI'}
                                           </span>
                                           <span className="tabular-nums">
                                             {formatCurrency(p.amount)}
@@ -283,7 +283,7 @@ export function OrderHistoryModal(): React.JSX.Element {
               className="hover:bg-primary/10 hover:text-primary transition-all duration-300"
             >
               <ChevronLeft className="w-4 h-4 mr-1" />
-              Önceki
+              ÖNCEKİ
             </Button>
             <Button
               variant="outline"
@@ -292,7 +292,7 @@ export function OrderHistoryModal(): React.JSX.Element {
               disabled={orders.length < LIMIT || loading}
               className="hover:bg-primary/10 hover:text-primary transition-all duration-300"
             >
-              Sonraki
+              SONRAKİ
               <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           </div>

@@ -104,7 +104,7 @@ const TableCard = memo(
                 </span>
                 <div
                   className={cn(
-                    'text-[12px] uppercase font-black tracking-widest px-4 py-1.5 rounded-xl border-2 transition-colors',
+                    'text-[12px] font-black tracking-widest px-4 py-1.5 rounded-xl border-2 transition-colors',
                     hasOpenOrder
                       ? 'border-info/40 bg-info/15 text-info'
                       : 'border-success/40 bg-success/15 text-success',

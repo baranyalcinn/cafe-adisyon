@@ -16,7 +16,8 @@ import {
   BarChart3,
   Wallet,
   ArrowDownRight,
-  TrendingDown
+  TrendingDown,
+  ChevronRight
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -274,8 +275,12 @@ export function DashboardView(): React.JSX.Element {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-            <p className="text-muted-foreground">Günlük istatistikler ve raporlar</p>
+            <h1 className="text-3xl font-black text-foreground uppercase tracking-tight">
+              DASHBOARD
+            </h1>
+            <p className="text-[10px] font-bold text-muted-foreground/60 tracking-widest uppercase">
+              GÜNLÜK İSTATİSTİKLER VE RAPORLAR
+            </p>
           </div>
           <div className="flex gap-2">
             <Button
@@ -285,7 +290,7 @@ export function DashboardView(): React.JSX.Element {
               className="gap-2 rounded-xl text-muted-foreground hover:bg-muted/50 hover:text-foreground"
             >
               <RefreshCw className="w-4 h-4" />
-              Yenile
+              YENİLE
             </Button>
 
             <OrderHistoryModal />
@@ -295,7 +300,7 @@ export function DashboardView(): React.JSX.Element {
               className="gap-2 h-10 px-5 rounded-xl font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-lg shadow-destructive/20 active:scale-95 transition-all"
             >
               <Moon className="w-4 h-4" />
-              Gün Sonu
+              GÜN SONU
             </Button>
           </div>
         </div>
@@ -308,8 +313,8 @@ export function DashboardView(): React.JSX.Element {
 
             <div className="relative z-10 flex items-start justify-between">
               <div className="space-y-1">
-                <span className="text-xs font-bold text-muted-foreground/60 uppercase tracking-widest">
-                  Bugünkü Toplam Ciro
+                <span className="text-xs font-bold text-muted-foreground/60 tracking-widest">
+                  BUGÜNKÜ TOPLAM CİRO
                 </span>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="relative flex h-2 w-2">
@@ -346,8 +351,8 @@ export function DashboardView(): React.JSX.Element {
                       {change >= 0 ? '+' : ''}
                       {change.toFixed(1)}%
                     </div>
-                    <p className="text-[10px] font-medium text-muted-foreground/60">
-                      Düne göre performans
+                    <p className="text-[10px] font-bold text-muted-foreground/60 tracking-wide uppercase">
+                      DÜNE GÖRE PERFORMANS
                     </p>
                   </div>
                 )
@@ -358,8 +363,8 @@ export function DashboardView(): React.JSX.Element {
           {/* Total Orders */}
           <div className="lg:col-span-3 premium-card ambient-glow p-6 flex flex-col justify-between group">
             <div className="flex items-start justify-between">
-              <span className="text-xs font-bold text-muted-foreground/60 uppercase tracking-widest">
-                Siparişler
+              <span className="text-xs font-bold text-muted-foreground/60 tracking-widest">
+                SİPARİŞLER
               </span>
               <div className="h-10 w-10 rounded-xl bg-info/10 flex items-center justify-center transition-transform duration-300 group-hover:-translate-y-1">
                 <ShoppingBag className="w-5 h-5 text-info" />
@@ -369,8 +374,8 @@ export function DashboardView(): React.JSX.Element {
               <div className="text-4xl font-black tabular-nums text-foreground">
                 {stats?.totalOrders || 0}
               </div>
-              <p className="text-[10px] font-medium text-muted-foreground mt-1">
-                Tamamlanan sipariş
+              <p className="text-[10px] font-bold text-muted-foreground/60 tracking-widest uppercase mt-1">
+                TAMAMLANAN SİPARİŞ
               </p>
             </div>
           </div>
@@ -380,8 +385,8 @@ export function DashboardView(): React.JSX.Element {
             {/* Open Tables */}
             <div className="premium-card ambient-glow px-5 py-4 flex items-center justify-between group">
               <div>
-                <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-0.5">
-                  Dolu Masa
+                <p className="text-[10px] font-bold text-muted-foreground/60 tracking-widest mb-0.5">
+                  DOLU MASA
                 </p>
                 <p className="text-2xl font-black text-warning tabular-nums">
                   {stats?.openTables || 0}
@@ -395,8 +400,8 @@ export function DashboardView(): React.JSX.Element {
             {/* Pending Orders */}
             <div className="premium-card ambient-glow px-5 py-4 flex items-center justify-between group">
               <div>
-                <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-0.5">
-                  Açık Hesap
+                <p className="text-[10px] font-bold text-muted-foreground/60 tracking-widest mb-0.5">
+                  AÇIK HESAP
                 </p>
                 <p className="text-2xl font-black text-primary tabular-nums">
                   {stats?.pendingOrders || 0}
@@ -413,8 +418,8 @@ export function DashboardView(): React.JSX.Element {
             {/* Avg Order Value */}
             <div className="premium-card ambient-glow px-5 py-4 flex items-center justify-between group">
               <div>
-                <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-0.5">
-                  Ort. Sipariş
+                <p className="text-[10px] font-bold text-muted-foreground/60 tracking-widest mb-0.5">
+                  ORT. SİPARİŞ
                 </p>
                 <p className="text-2xl font-black text-foreground tabular-nums">
                   {formatCurrency(
@@ -432,8 +437,8 @@ export function DashboardView(): React.JSX.Element {
             {/* Daily Expenses */}
             <div className="premium-card ambient-glow px-5 py-4 flex items-center justify-between group">
               <div>
-                <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-0.5">
-                  Bugünkü Gider
+                <p className="text-[10px] font-bold text-muted-foreground/60 tracking-widest mb-0.5">
+                  BUGÜNKÜ GİDER
                 </p>
                 <p className="text-2xl font-black text-destructive tabular-nums">
                   {formatCurrency(stats?.dailyExpenses || 0)}
@@ -455,11 +460,11 @@ export function DashboardView(): React.JSX.Element {
                 <BarChart3 className="w-4 h-4 text-primary" />
               </div>
               <div>
-                <h3 className="text-sm font-black text-foreground uppercase tracking-wider">
-                  Saatlik Satış Yoğunluğu
+                <h3 className="text-sm font-black text-foreground tracking-wider">
+                  SAATLİK SATIŞ YOĞUNLUĞU
                 </h3>
-                <p className="text-[10px] font-bold text-muted-foreground/80">
-                  Günün en yoğun saatleri
+                <p className="text-[10px] font-bold text-muted-foreground/80 tracking-wide">
+                  GÜNÜN EN YOĞUN SAATLERİ
                 </p>
               </div>
             </div>
@@ -551,10 +556,10 @@ export function DashboardView(): React.JSX.Element {
                   <Banknote className="w-5 h-5 text-success" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">
-                    Nakit
+                  <p className="text-[14px] font-bold text-muted-foreground/60 tracking-widest">
+                    NAKİT
                   </p>
-                  <p className="text-xl font-black text-foreground tabular-nums">
+                  <p className="text-3xl font-black text-foreground tabular-nums">
                     {formatCurrency(stats?.paymentMethodBreakdown?.cash || 0)}
                   </p>
                 </div>
@@ -569,10 +574,10 @@ export function DashboardView(): React.JSX.Element {
                   <CreditCard className="w-5 h-5 text-info" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">
-                    Kredi Kartı
+                  <p className="text-[14px] font-bold text-muted-foreground/60 tracking-widest">
+                    KART
                   </p>
-                  <p className="text-xl font-black text-foreground tabular-nums">
+                  <p className="text-3xl font-black text-foreground tabular-nums">
                     {formatCurrency(stats?.paymentMethodBreakdown?.card || 0)}
                   </p>
                 </div>
@@ -587,8 +592,8 @@ export function DashboardView(): React.JSX.Element {
             <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
               <TrendingUp className="w-4 h-4 text-primary" />
             </div>
-            <h3 className="text-sm font-black text-foreground uppercase tracking-wider">
-              Son 7 Gün Ciro Trendi
+            <h3 className="text-sm font-black text-foreground tracking-wider">
+              SON 7 GÜN HASILAT TRENDİ
             </h3>
           </div>
           <div className="h-[280px] w-full">
@@ -661,8 +666,8 @@ export function DashboardView(): React.JSX.Element {
               <div className="h-8 w-8 rounded-lg bg-warning/10 flex items-center justify-center">
                 <PieChartIcon className="w-4 h-4 text-warning" />
               </div>
-              <h3 className="text-sm font-black text-foreground uppercase tracking-wider">
-                Kategori Dağılımı
+              <h3 className="text-sm font-black text-foreground tracking-wider">
+                KATEGORİ BAZLI SATIŞ DAĞILIMI
               </h3>
             </div>
             <div className="h-[280px] w-full">
@@ -762,8 +767,8 @@ export function DashboardView(): React.JSX.Element {
               <div className="h-8 w-8 rounded-lg bg-success/10 flex items-center justify-center">
                 <ShoppingBag className="w-4 h-4 text-success" />
               </div>
-              <h3 className="text-sm font-black text-foreground uppercase tracking-wider">
-                En Çok Satan Ürünler
+              <h3 className="text-sm font-black text-foreground tracking-wider">
+                EN ÇOK SATAN ÜRÜNLER
               </h3>
             </div>
             <div className="h-[280px] w-full">
@@ -823,27 +828,27 @@ export function DashboardView(): React.JSX.Element {
               <div className="mt-6 pt-5 border-t border-border/20">
                 <div className="flex items-center gap-2 mb-4">
                   <TrendingDown className="w-4 h-4 text-destructive/70" />
-                  <h4 className="text-xs font-black text-muted-foreground uppercase tracking-wider">
-                    En Az Satan Ürünler
+                  <h4 className="text-xs font-black text-muted-foreground tracking-widest">
+                    EN AZ SATAN ÜRÜNLER
                   </h4>
                 </div>
                 <div className="grid grid-cols-5 gap-3">
                   {stats.bottomProducts.map((product, index) => (
                     <div
                       key={product.productId}
-                      className="flex flex-col items-center gap-1 p-3 rounded-xl bg-muted/30 border border-border/10"
+                      className="flex flex-col items-center gap-2 p-3 rounded-xl bg-muted/20 border border-border/10 hover:bg-muted/30 transition-colors group/card h-full min-h-[110px]"
                     >
-                      <span className="text-lg font-black text-destructive/70 tabular-nums">
+                      <span className="text-lg font-black text-destructive/70 tabular-nums group-hover/card:scale-110 transition-transform">
                         {product.quantity}
                       </span>
-                      <span className="text-[10px] font-bold text-muted-foreground text-center leading-tight truncate w-full">
-                        {product.productName.length > 12
-                          ? product.productName.slice(0, 12) + '...'
-                          : product.productName}
+                      <span className="text-xs font-bold text-muted-foreground text-center leading-[1.3] w-full line-clamp-2 px-1">
+                        {product.productName}
                       </span>
-                      <span className="text-[9px] font-medium text-muted-foreground/50">
-                        #{index + 1}
-                      </span>
+                      <div className="mt-auto flex flex-col items-center">
+                        <span className="text-[9px] font-black text-muted-foreground/30 group-hover/card:text-muted-foreground/50 transition-colors uppercase tracking-[0.2em]">
+                          #{index + 1}
+                        </span>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -856,9 +861,9 @@ export function DashboardView(): React.JSX.Element {
         <div className="space-y-6 pt-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-foreground">Aylık Analiz</h2>
-              <p className="text-sm text-muted-foreground">
-                Son 12 ayın gelir, gider ve kar durumu
+              <h2 className="text-2xl font-bold text-foreground">AYLIK ANALİZ</h2>
+              <p className="text-[10px] font-bold text-muted-foreground/80 tracking-wide uppercase">
+                SON 12 AYIN GELİR, GİDER VE KAR DURUMU
               </p>
             </div>
           </div>
@@ -870,8 +875,8 @@ export function DashboardView(): React.JSX.Element {
                 <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
                   <Calendar className="w-4 h-4 text-primary" />
                 </div>
-                <h3 className="text-sm font-black text-foreground uppercase tracking-wider">
-                  Aylık Gelir-Gider Analizi
+                <h3 className="text-sm font-black text-foreground tracking-wider">
+                  AYLIK GELİR-GİDER ANALİZİ
                 </h3>
               </div>
               <div className="h-[300px] w-full">
@@ -943,15 +948,13 @@ export function DashboardView(): React.JSX.Element {
                 <div className="h-8 w-8 rounded-lg bg-warning/10 flex items-center justify-center">
                   <PieChartIcon className="w-4 h-4 text-warning" />
                 </div>
-                <h3 className="text-sm font-black text-foreground uppercase tracking-wider">
-                  Aylık Özet
-                </h3>
+                <h3 className="text-sm font-black text-foreground tracking-wider">HASILAT ÖZETİ</h3>
               </div>
 
               <div className="flex-1 flex flex-col justify-center gap-8">
                 <div>
-                  <p className="text-sm text-muted-foreground font-medium mb-1">
-                    {filterMonth !== 'all' ? 'Seçili Dönem Ciro' : 'Görüntülenen Ciro'}
+                  <p className="text-[10px] font-black text-muted-foreground/60 tracking-widest mb-1.5">
+                    {filterMonth !== 'all' ? 'SEÇİLİ DÖNEM CİRO' : 'GÖRÜNTÜLENEN CİRO'}
                   </p>
                   <div className="text-3xl font-black text-success tabular-nums">
                     {formatCurrency(
@@ -961,7 +964,9 @@ export function DashboardView(): React.JSX.Element {
                 </div>
 
                 <div>
-                  <p className="text-sm text-muted-foreground font-medium mb-1">Ortalama Günlük</p>
+                  <p className="text-[10px] font-black text-muted-foreground/60 tracking-widest mb-1.5">
+                    ORTALAMA GÜNLÜK
+                  </p>
                   <div className="text-3xl font-black text-foreground tabular-nums">
                     {formatCurrency(
                       zReportHistory.length > 0
@@ -973,7 +978,9 @@ export function DashboardView(): React.JSX.Element {
                 </div>
 
                 <div>
-                  <p className="text-sm text-muted-foreground font-medium mb-1">En Yüksek Gün</p>
+                  <p className="text-[10px] font-black text-muted-foreground/60 tracking-widest mb-1.5">
+                    EN YÜKSEK GÜN
+                  </p>
                   <div className="text-3xl font-black text-primary tabular-nums">
                     {formatCurrency(Math.max(...zReportHistory.map((s) => s.totalRevenue), 0))}
                   </div>
@@ -991,11 +998,11 @@ export function DashboardView(): React.JSX.Element {
                 <History className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <h3 className="text-sm font-black text-foreground uppercase tracking-wider">
-                  Z-Raporu Geçmişi
+                <h3 className="text-sm font-black text-foreground tracking-wider">
+                  Z-RAPORU GEÇMİŞİ
                 </h3>
-                <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mt-0.5">
-                  Arşiv ve Kayıtlar
+                <p className="text-[10px] font-bold text-muted-foreground/60 tracking-widest mt-0.5">
+                  ARŞİV VE KAYITLAR
                 </p>
               </div>
             </div>
@@ -1004,8 +1011,8 @@ export function DashboardView(): React.JSX.Element {
             <div className="flex items-center gap-2 bg-muted/20 p-1.5 rounded-2xl border border-white/5 shadow-inner">
               <div className="flex items-center gap-2 px-3 border-r border-white/10 mr-1">
                 <Calendar className="w-3.5 h-3.5 text-muted-foreground/60" />
-                <span className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest">
-                  Filtrele
+                <span className="text-[10px] font-black text-muted-foreground/60 tracking-widest">
+                  FİLTRELE
                 </span>
               </div>
 
@@ -1079,55 +1086,86 @@ export function DashboardView(): React.JSX.Element {
               oluşturabilirsiniz.
             </div>
           ) : (
-            <ScrollArea className="h-[400px]">
+            <ScrollArea className="h-[460px] -mx-1 pr-1">
               <Table>
-                <TableHeader className="bg-muted/50">
-                  <TableRow>
-                    <TableHead className="font-medium text-muted-foreground">Tarih</TableHead>
-                    <TableHead className="text-right font-medium text-muted-foreground">
-                      Nakit
+                <TableHeader className="bg-muted/30 sticky top-0 z-10 shadow-sm border-y border-white/5">
+                  <TableRow className="hover:bg-transparent border-none">
+                    <TableHead className="py-4 pl-6 font-black text-[10px] text-muted-foreground tracking-[0.15em]">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-3 h-3" />
+                        TARİH
+                      </div>
                     </TableHead>
-                    <TableHead className="text-right font-medium text-muted-foreground">
-                      Kart
+                    <TableHead className="text-right font-black text-[10px] text-muted-foreground tracking-[0.15em]">
+                      <div className="flex items-center justify-end gap-2">
+                        <Banknote className="w-3 h-3" />
+                        NAKİT
+                      </div>
                     </TableHead>
-                    <TableHead className="text-right font-medium text-muted-foreground">
-                      Toplam
+                    <TableHead className="text-right font-black text-[10px] text-muted-foreground tracking-[0.15em]">
+                      <div className="flex items-center justify-end gap-2">
+                        <CreditCard className="w-3 h-3" />
+                        KART
+                      </div>
                     </TableHead>
-                    <TableHead className="text-right font-medium text-muted-foreground">
-                      Sipariş
+                    <TableHead className="text-right font-black text-[10px] text-muted-foreground tracking-[0.15em]">
+                      <div className="flex items-center justify-end gap-2 text-foreground/80">
+                        <TrendingUp className="w-3 h-3" />
+                        TOPLAM
+                      </div>
                     </TableHead>
+                    <TableHead className="text-right font-black text-[10px] text-muted-foreground tracking-[0.15em]">
+                      <div className="flex items-center justify-end gap-2">
+                        <ShoppingBag className="w-3 h-3" />
+                        SİPARİŞ
+                      </div>
+                    </TableHead>
+                    <TableHead className="w-[40px] px-0" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {zReportHistory.map((report) => (
                     <TableRow
                       key={report.id}
-                      className="cursor-pointer hover:bg-muted/50 transition-colors"
+                      className="group cursor-pointer hover:bg-primary/[0.03] transition-all duration-200 border-white/5 h-16"
                       onClick={() => setSelectedReport(report)}
                     >
-                      <TableCell className="font-medium">
-                        {new Date(report.date).toLocaleDateString('tr-TR')}
+                      <TableCell className="pl-6 font-bold text-sm text-foreground/70 group-hover:text-foreground transition-colors">
+                        {new Date(report.date).toLocaleDateString('tr-TR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric'
+                        })}
                       </TableCell>
-                      <TableCell className="text-right text-success tabular-nums">
-                        {formatCurrency(report.totalCash)}
+                      <TableCell className="text-right tabular-nums">
+                        <div className="inline-flex items-baseline">
+                          <span className="text-xs font-medium text-success/50 mr-1">₺</span>
+                          <span className="font-extrabold text-success tracking-tight">
+                            {formatCurrency(report.totalCash).split(' ')[1]}
+                          </span>
+                        </div>
                       </TableCell>
-                      <TableCell className="text-right text-info tabular-nums">
-                        {formatCurrency(report.totalCard)}
+                      <TableCell className="text-right tabular-nums">
+                        <div className="inline-flex items-baseline">
+                          <span className="text-xs font-medium text-info/50 mr-1">₺</span>
+                          <span className="font-extrabold text-info tracking-tight">
+                            {formatCurrency(report.totalCard).split(' ')[1]}
+                          </span>
+                        </div>
                       </TableCell>
-                      <TableCell className="text-right font-bold tabular-nums">
-                        {formatCurrency(report.totalRevenue)}
+                      <TableCell className="text-right tabular-nums">
+                        <div className="inline-flex items-baseline">
+                          <span className="text-xs font-medium text-foreground/30 mr-1">₺</span>
+                          <span className="text-md font-black text-foreground tracking-tighter">
+                            {formatCurrency(report.totalRevenue).split(' ')[1]}
+                          </span>
+                        </div>
                       </TableCell>
-                      <TableCell className="text-right">{report.orderCount}</TableCell>
-                      <TableCell className="text-center">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setSelectedReport(report)
-                          }}
-                          className="hover:bg-primary/10"
-                        ></Button>
+                      <TableCell className="text-right tabular-nums font-black text-muted-foreground/80 text-sm">
+                        {report.orderCount}
+                      </TableCell>
+                      <TableCell className="pr-4 text-center">
+                        <ChevronRight className="w-4 h-4 text-muted-foreground/20 group-hover:text-primary transition-all duration-300 group-hover:translate-x-0.5" />
                       </TableCell>
                     </TableRow>
                   ))}
@@ -1146,7 +1184,7 @@ export function DashboardView(): React.JSX.Element {
             <div className="flex flex-col">
               <div className="px-6 py-4 border-b bg-muted/20 flex items-center justify-between">
                 <div>
-                  <h2 className="text-lg font-bold tracking-tight">Z Raporu Detayı</h2>
+                  <h2 className="text-lg font-bold tracking-tight">Z RAPORU DETAYI</h2>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Calendar className="w-3.5 h-3.5" />
                     <span>
@@ -1168,16 +1206,14 @@ export function DashboardView(): React.JSX.Element {
                 {/* Summary Grid */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-4 rounded-xl border bg-card flex flex-col gap-1">
-                    <span className="text-xs font-semibold text-muted-foreground uppercase">
-                      Günlük Ciro
-                    </span>
+                    <span className="text-xs font-semibold text-muted-foreground">GÜNLÜK CİRO</span>
                     <span className="text-2xl font-bold tabular-nums tracking-tight">
                       {formatCurrency(selectedReport.totalRevenue)}
                     </span>
                   </div>
                   <div className="p-4 rounded-xl border bg-card flex flex-col gap-1">
-                    <span className="text-xs font-semibold text-muted-foreground uppercase">
-                      Sipariş Sayısı
+                    <span className="text-xs font-semibold text-muted-foreground">
+                      SİPARİŞ SAYISI
                     </span>
                     <span className="text-2xl font-bold tabular-nums tracking-tight">
                       {selectedReport.orderCount}
@@ -1187,8 +1223,8 @@ export function DashboardView(): React.JSX.Element {
 
                 {/* Details Table */}
                 <div className="border rounded-xl overflow-hidden">
-                  <div className="bg-muted/30 px-4 py-2 border-b text-xs font-bold text-muted-foreground uppercase">
-                    Ödeme Dağılımı
+                  <div className="bg-muted/30 px-4 py-2 border-b text-xs font-bold text-muted-foreground">
+                    ÖDEME DAĞILIMI
                   </div>
                   <div className="divide-y">
                     <div className="flex justify-between items-center p-4 bg-card">
@@ -1196,7 +1232,7 @@ export function DashboardView(): React.JSX.Element {
                         <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
                           <Banknote className="w-4 h-4 text-emerald-600" />
                         </div>
-                        <span className="font-medium">Nakit</span>
+                        <span className="font-bold text-xs">NAKİT</span>
                       </div>
                       <span className="font-bold tabular-nums text-emerald-600">
                         {formatCurrency(selectedReport.totalCash)}
@@ -1207,7 +1243,7 @@ export function DashboardView(): React.JSX.Element {
                         <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
                           <CreditCard className="w-4 h-4 text-blue-600" />
                         </div>
-                        <span className="font-medium">Kredi Kartı</span>
+                        <span className="font-bold text-xs">KREDİ KARTI</span>
                       </div>
                       <span className="font-bold tabular-nums text-blue-600">
                         {formatCurrency(selectedReport.totalCard)}
@@ -1218,20 +1254,18 @@ export function DashboardView(): React.JSX.Element {
 
                 {/* Financial Summary */}
                 <div className="border rounded-xl overflow-hidden">
-                  <div className="bg-muted/30 px-4 py-2 border-b text-xs font-bold text-muted-foreground uppercase">
-                    Finansal Özet
+                  <div className="bg-muted/30 px-4 py-2 border-b text-xs font-bold text-muted-foreground">
+                    FİNANSAL ÖZET
                   </div>
                   <div className="divide-y bg-card">
                     <div className="flex justify-between items-center p-3 px-4">
-                      <span className="text-sm font-medium text-muted-foreground">
-                        Net Satışlar
-                      </span>
+                      <span className="text-xs font-bold text-muted-foreground">NET SATIŞLAR</span>
                       <span className="text-sm font-bold tabular-nums">
                         {formatCurrency(selectedReport.totalRevenue - selectedReport.totalVat)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center p-3 px-4">
-                      <span className="text-sm font-medium text-muted-foreground">KDV (%10)</span>
+                      <span className="text-xs font-bold text-muted-foreground">KDV (%10)</span>
                       <span className="text-sm font-bold tabular-nums">
                         {formatCurrency(selectedReport.totalVat)}
                       </span>
@@ -1239,7 +1273,7 @@ export function DashboardView(): React.JSX.Element {
                     {selectedReport.cancelCount > 0 && (
                       <div className="flex justify-between items-center p-3 px-4 bg-red-50/50 dark:bg-red-900/10">
                         <span className="text-sm font-bold text-red-600 flex items-center gap-2">
-                          <AlertCircle className="w-3.5 h-3.5" /> İptal Edilenler
+                          <AlertCircle className="w-3.5 h-3.5" /> İPTAL EDİLENLER
                         </span>
                         <span className="text-sm font-bold text-red-600">
                           {selectedReport.cancelCount}
@@ -1255,7 +1289,7 @@ export function DashboardView(): React.JSX.Element {
                     className="w-full h-11 font-semibold hover:bg-destructive hover:text-destructive-foreground hover:scale-105 active:scale-95 transition-all duration-300"
                     onClick={() => setSelectedReport(null)}
                   >
-                    Kapat
+                    KAPAT
                   </Button>
                 </div>
               </div>

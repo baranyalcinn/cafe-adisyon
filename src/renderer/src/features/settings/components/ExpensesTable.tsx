@@ -123,9 +123,9 @@ export function ExpensesTable({
                 <Button
                   variant="ghost"
                   onClick={() => handleSort('createdAt')}
-                  className="-ml-4 h-8 font-bold text-xs uppercase tracking-wider text-muted-foreground"
+                  className="-ml-4 h-8 font-bold text-xs tracking-wider text-muted-foreground"
                 >
-                  Tarih
+                  TARİH
                   <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
               </TableHead>
@@ -133,9 +133,9 @@ export function ExpensesTable({
                 <Button
                   variant="ghost"
                   onClick={() => handleSort('description')}
-                  className="-ml-4 h-8 font-bold text-xs uppercase tracking-wider text-muted-foreground"
+                  className="-ml-4 h-8 font-bold text-xs tracking-wider text-muted-foreground"
                 >
-                  Açıklama
+                  AÇIKLAMA
                   <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
               </TableHead>
@@ -143,9 +143,9 @@ export function ExpensesTable({
                 <Button
                   variant="ghost"
                   onClick={() => handleSort('category')}
-                  className="-ml-4 h-8 font-bold text-xs uppercase tracking-wider text-muted-foreground"
+                  className="-ml-4 h-8 font-bold text-xs tracking-wider text-muted-foreground"
                 >
-                  Kategori
+                  KATEGORİ
                   <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
               </TableHead>
@@ -153,9 +153,9 @@ export function ExpensesTable({
                 <Button
                   variant="ghost"
                   onClick={() => handleSort('amount')}
-                  className="-ml-4 h-8 font-bold text-xs uppercase tracking-wider text-muted-foreground"
+                  className="-ml-4 h-8 font-bold text-xs tracking-wider text-muted-foreground"
                 >
-                  Tutar
+                  TUTAR
                   <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
               </TableHead>

@@ -108,20 +108,10 @@ export function MaintenanceTab(): React.JSX.Element {
 
   return (
     <Card className="h-full flex flex-col border-0 shadow-none bg-transparent">
-      {/* Header Section */}
-      <div className="flex-none py-4 px-8 border-b bg-background/50 backdrop-blur z-10 w-full">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">Sistem Bakımı</h2>
-            <p className="text-sm text-muted-foreground">
-              Veritabanı sağlığı ve güvenliği için periyodik işlemler
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-primary/10 rounded-full text-primary">
-              <ShieldCheck className="w-5 h-5" />
-            </div>
-          </div>
+      {/* Action Header */}
+      <div className="flex-none py-4 px-8 border-b bg-background/50 backdrop-blur z-10 w-full flex justify-end">
+        <div className="p-2 bg-primary/10 rounded-full text-primary">
+          <ShieldCheck className="w-5 h-5" />
         </div>
       </div>
 
@@ -163,9 +153,9 @@ export function MaintenanceTab(): React.JSX.Element {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Backup & Export Group */}
             <div className="space-y-4">
-              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-1 flex items-center gap-2">
+              <h3 className="text-xs font-bold text-muted-foreground tracking-widest px-1 flex items-center gap-2">
                 <HardDrive className="w-3 h-3" />
-                Veri Güvenliği
+                VERİ GÜVENLİĞİ
               </h3>
 
               <div className="grid gap-4">
@@ -227,9 +217,9 @@ export function MaintenanceTab(): React.JSX.Element {
 
             {/* Performance & Cleanup Group */}
             <div className="space-y-4">
-              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-1 flex items-center gap-2">
+              <h3 className="text-xs font-bold text-muted-foreground tracking-widest px-1 flex items-center gap-2">
                 <Settings2 className="w-3 h-3" />
-                Performans & Temizlik
+                PERFORMANS & TEMİZLİK
               </h3>
 
               <div className="grid gap-4">

@@ -161,8 +161,8 @@ export const CartPanel = React.memo(function CartPanel({
         <div className="flex flex-col">
           <h2 className="text-base font-black tracking-tight flex items-center gap-3 text-foreground">
             Adisyon
-            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-primary/15 text-primary uppercase tracking-tighter border border-primary/20">
-              {order?.items?.length || 0} Ürün
+            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-primary/15 text-primary tracking-tighter border border-primary/20">
+              {order?.items?.length || 0} ÜRÜN
             </span>
           </h2>
         </div>
@@ -275,8 +275,8 @@ export const CartPanel = React.memo(function CartPanel({
                 <div className="mt-8 pt-6 border-t border-dashed border-emerald-500/20">
                   <div className="flex items-center gap-2 mb-4 px-1 text-emerald-500/40">
                     <HistoryIcon className="w-3.5 h-3.5" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">
-                      Ödenmiş Kalemler
+                    <span className="text-[10px] font-black tracking-[0.2em]">
+                      ÖDENMİŞ KALEMLER
                     </span>
                   </div>
                   <AnimatePresence>
@@ -314,7 +314,7 @@ export const CartPanel = React.memo(function CartPanel({
 
                                 <div className="px-2.5 py-1 bg-emerald-500/10 rounded-lg border border-emerald-500/20 flex items-center gap-1.5 shadow-sm transition-all duration-500 group-hover/item:bg-emerald-500/20">
                                   <CheckCircle className="w-3 h-3 text-emerald-500" />
-                                  <span className="text-[10px] font-black text-emerald-500 uppercase tracking-tighter">
+                                  <span className="text-[10px] font-black text-emerald-500 tracking-tighter">
                                     ÖDENDİ
                                   </span>
                                 </div>
@@ -351,7 +351,7 @@ export const CartPanel = React.memo(function CartPanel({
         <div className="space-y-3">
           <div className="flex justify-between items-center px-1">
             <span className="text-[15px] font-bold text-foreground/70 tracking-tight">
-              Ara Toplam
+              ARA TOPLAM
             </span>
             <PremiumAmount amount={total} size="md" color="foreground" fontWeight="bold" />
           </div>
@@ -359,7 +359,7 @@ export const CartPanel = React.memo(function CartPanel({
           {paidAmount > 0 && (
             <div className="flex justify-between items-center px-1 animate-in fade-in slide-in-from-bottom-2 duration-400">
               <span className="text-[15px] font-bold text-muted-foreground/70 tracking-tight">
-                Ödenen
+                ÖDENEN
               </span>
               <PremiumAmount amount={-paidAmount} size="md" fontWeight="bold" />
             </div>
@@ -368,7 +368,7 @@ export const CartPanel = React.memo(function CartPanel({
           <div className="pt-3 border-t border-border/20">
             <div className="flex justify-between items-end px-1 gap-4">
               <div className="flex flex-col">
-                <span className="text-[11px] font-black text-muted-foreground/60 uppercase tracking-[0.15em] mb-1">
+                <span className="text-[11px] font-black text-muted-foreground/60 tracking-[0.15em] mb-1">
                   ÖDENECEK TUTAR
                 </span>
                 <PremiumAmount amount={remainingAmount} size="2xl" fontWeight="black" />
@@ -380,7 +380,7 @@ export const CartPanel = React.memo(function CartPanel({
                 }}
                 disabled={remainingAmount <= 0}
                 className={cn(
-                  'h-14 px-10 rounded-2xl font-black text-sm uppercase tracking-wider transition-all duration-300 active:scale-95 flex-1 max-w-[180px]',
+                  'h-14 px-10 rounded-2xl font-black text-sm tracking-wider transition-all duration-300 active:scale-95 flex-1 max-w-[180px]',
                   remainingAmount <= 0
                     ? 'bg-muted text-muted-foreground/40 cursor-not-allowed border border-border/20 shadow-none'
                     : 'bg-primary text-primary-foreground hover:bg-primary/95 hover:scale-[1.02] shadow-sm'
@@ -427,7 +427,7 @@ export const CartPanel = React.memo(function CartPanel({
                     playRemove()
                     handleConfirmDelete()
                   }}
-                  className="flex-1 h-12 rounded-2xl font-black uppercase tracking-wider shadow-lg shadow-destructive/20 active:scale-95"
+                  className="flex-1 h-12 rounded-2xl font-black tracking-wider shadow-lg shadow-destructive/20 active:scale-95"
                 >
                   Evet, Sil
                 </Button>
