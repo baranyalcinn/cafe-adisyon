@@ -65,7 +65,7 @@ export class OrderService {
   ): Promise<ApiResponse<Order>> {
     try {
       // Use transaction to prevent race condition on concurrent adds of same product
-      await prisma.$transaction(async (tx) => {
+      const txResult = await prisma.$transaction(async (tx) => {
         const existingItem = await tx.orderItem.findFirst({
           where: { orderId, productId, isPaid: false }
         })
@@ -80,23 +80,23 @@ export class OrderService {
             data: { orderId, productId, quantity, unitPrice }
           })
         }
+
+        // Fetch product name and table name inside the transaction to avoid N+1
+        const [product, order] = await Promise.all([
+          tx.product.findUnique({ where: { id: productId }, select: { name: true } }),
+          tx.order.findUnique({ where: { id: orderId }, include: { table: true } })
+        ])
+
+        return { productName: product?.name || 'Ürün', tableName: order?.table?.name }
       })
 
       const updatedOrder = await this.recalculateOrderTotal(orderId)
 
-      // Log activity — use data already available from recalculate instead of N+1 queries
-      const orderWithRefs = await prisma.order.findUnique({
-        where: { id: orderId },
-        include: { table: true }
-      })
-      const product = await prisma.product.findUnique({
-        where: { id: productId },
-        select: { name: true }
-      })
+      // Log activity using data already fetched inside the transaction
       await logService.createLog(
         'ADD_ITEM',
-        orderWithRefs?.table?.name,
-        `${quantity}x ${product?.name || 'Ürün'} eklendi`
+        txResult.tableName,
+        `${quantity}x ${txResult.productName} eklendi`
       )
 
       return { success: true, data: updatedOrder }

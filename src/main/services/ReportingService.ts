@@ -345,14 +345,15 @@ export class ReportingService {
         }
       })
 
-      const monthExpenses = await prisma.expense.findMany({
+      const expenseAgg = await prisma.expense.aggregate({
         where: {
           createdAt: { gte: startOfMonth, lte: endOfMonth }
-        }
+        },
+        _sum: { amount: true }
       })
 
       const totalRevenue = revenueAgg._sum.amount || 0
-      const totalExpenses = monthExpenses.reduce((sum, e) => sum + e.amount, 0)
+      const totalExpenses = expenseAgg._sum.amount || 0
       const netProfit = totalRevenue - totalExpenses
 
       logger.info(

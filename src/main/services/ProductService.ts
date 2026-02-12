@@ -87,7 +87,9 @@ export class ProductService {
 
   async getCategories(): Promise<ApiResponse<Category[]>> {
     try {
-      const categories = await prisma.category.findMany()
+      const categories = await prisma.category.findMany({
+        where: { isDeleted: false }
+      })
       return { success: true, data: toPlain<Category[]>(categories) }
     } catch (error) {
       return { success: false, error: String(error) }

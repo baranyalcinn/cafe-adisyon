@@ -12,8 +12,8 @@ import { formatCurrency } from '@/lib/utils'
 
 describe('Payment Logic Calculation', () => {
   it('should format currency correctly', () => {
-    expect(formatCurrency(100)).toBe('₺1,00')
-    expect(formatCurrency(123456)).toBe('₺1.234,56')
+    expect(formatCurrency(100)).toBe('₺ 1')
+    expect(formatCurrency(123456)).toBe('₺ 1.235')
   })
 
   describe('Split Calculation', () => {

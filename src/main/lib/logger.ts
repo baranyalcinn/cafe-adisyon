@@ -37,6 +37,7 @@ class Logger {
 
     fsp
       .appendFile(this.logPath, logEntry)
+      .then(() => this.rotateLogIfLarge())
       .catch((err) => console.error('Failed to write to log file:', err))
   }
 

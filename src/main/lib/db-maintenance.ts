@@ -78,9 +78,25 @@ export class DBMaintenance {
     }
   }
 
+  private async shouldVacuum(): Promise<boolean> {
+    const marker = path.join(this.backupDir, '.last-vacuum')
+    try {
+      const stat = await fs.promises.stat(marker)
+      const daysSince = (Date.now() - stat.mtime.getTime()) / (1000 * 60 * 60 * 24)
+      return daysSince >= 7
+    } catch {
+      return true // No marker file = never vacuumed
+    }
+  }
+
   private async runVacuum(): Promise<void> {
     try {
+      if (!(await this.shouldVacuum())) {
+        logger.info('DBMaintenance', 'VACUUM skipped (last run < 7 days ago)')
+        return
+      }
       await prisma.$executeRawUnsafe('VACUUM;')
+      await fs.promises.writeFile(path.join(this.backupDir, '.last-vacuum'), '')
       logger.info('DBMaintenance', 'VACUUM executed.')
     } catch (error) {
       logger.error('DBMaintenance Vacuum', error)
