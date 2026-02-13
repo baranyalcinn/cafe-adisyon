@@ -85,33 +85,35 @@
 
 ```mermaid
 graph TD
-    classDef renderer fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
-    classDef main fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px;
-    classDef ipc fill:#fff3e0,stroke:#ef6c00,stroke-width:2px,stroke-dasharray: 5 5;
-    classDef db fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px;
+    %% Styles
+    classDef renderer fill:#f8fafc,stroke:#3b82f6,stroke-width:2px,rx:10,ry:10,color:#1e293b;
+    classDef main fill:#f8fafc,stroke:#22c55e,stroke-width:2px,rx:10,ry:10,color:#1e293b;
+    classDef ipc fill:#f1f5f9,stroke:#64748b,stroke-width:2px,stroke-dasharray: 5 5,rx:5,ry:5,color:#334155;
+    classDef db fill:#f8fafc,stroke:#a855f7,stroke-width:2px,rx:10,ry:10,color:#1e293b;
+    classDef node fill:#ffffff,stroke:#cbd5e1,stroke-width:1px,rx:5,ry:5,color:#334155;
 
     subgraph Renderer ["🎨 Renderer Process (React 19)"]
         direction TB
-        Z[Zustand Stores]
-        Q[TanStack Query]
-        UI[Radix UI & Framer Motion]
+        Z[Zustand Stores]:::node
+        Q[TanStack Query]:::node
+        UI[Radix UI & Framer Motion]:::node
 
-        feat[Features: Dashboard, Orders, Tables, Reports, Settings]
+        feat[Features: Dashboard, Orders, Tables, Reports, Settings]:::node
     end
 
     subgraph IPC ["⚡ Secure IPC Bridge (Zod Validated)"]
-        Preload[Context Isolation / Preload]
+        Preload[Context Isolation / Preload]:::node
     end
 
     subgraph Main ["⚙️ Main Process (Electron 40)"]
         direction TB
-        Handlers[9 IPC Handlers]
-        Services[7 Backend Services]
+        Handlers[9 IPC Handlers]:::node
+        Services[7 Backend Services]:::node
     end
 
     subgraph Database ["🗄️ Data Layer"]
-        Prisma[Prisma 7.4 ORM]
-        SQLite[(LibSQL / SQLite)]
+        Prisma[Prisma 7.4 ORM]:::node
+        SQLite[(LibSQL / SQLite)]:::node
     end
 
     Renderer --> IPC
