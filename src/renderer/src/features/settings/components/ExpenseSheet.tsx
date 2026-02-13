@@ -9,7 +9,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
-import { Trash2, TrendingDown, AlignLeft, Tag, Banknote } from 'lucide-react'
+import { Trash2, TrendingDown, AlignLeft, Tag, Banknote, CreditCard } from 'lucide-react'
 import {
   Select,
   SelectContent,
@@ -37,6 +37,7 @@ export function ExpenseSheet({
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
   const [category, setCategory] = useState('')
+  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD'>('CASH')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Reset form when opening or switching expense
@@ -47,12 +48,14 @@ export function ExpenseSheet({
         setDescription(expense.description)
         setAmount((expense.amount / 100).toString())
         setCategory(expense.category || '')
+        setPaymentMethod(expense.paymentMethod || 'CASH')
         // Expense type currently doesn't have 'note', but UI could support it later
       } else {
         // Create Mode
         setDescription('')
         setAmount('')
         setCategory('')
+        setPaymentMethod('CASH')
       }
     }
   }, [open, expense])
@@ -66,7 +69,8 @@ export function ExpenseSheet({
       await onSubmit({
         description,
         amount: parseFloat(amount),
-        category: category || undefined
+        category: category || undefined,
+        paymentMethod
       })
       onOpenChange(false)
     } catch (error) {
@@ -96,17 +100,17 @@ export function ExpenseSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-md w-full overflow-y-auto border-l bg-background/95 backdrop-blur-xl p-10">
-        <SheetHeader className="mb-8 relative">
-          <div className="flex items-center gap-4 mb-2">
-            <div className="p-3 bg-rose-500/10 rounded-2xl shadow-inner border border-rose-500/10">
-              <TrendingDown className="w-6 h-6 text-rose-500" />
+      <SheetContent className="sm:max-w-md w-full overflow-y-auto border-l bg-background/95 backdrop-blur-xl p-6">
+        <SheetHeader className="mb-6 relative">
+          <div className="flex items-center gap-3 mb-1">
+            <div className="p-2.5 bg-rose-500/10 rounded-xl shadow-inner border border-rose-500/10">
+              <TrendingDown className="w-5 h-5 text-rose-500" />
             </div>
-            <div className="space-y-1">
-              <SheetTitle className="text-2xl font-black tracking-tight">
+            <div className="space-y-0.5">
+              <SheetTitle className="text-xl font-black tracking-tight">
                 {isEditMode ? 'Gider Düzenle' : 'Yeni Gider Ekle'}
               </SheetTitle>
-              <SheetDescription className="text-sm font-medium opacity-70">
+              <SheetDescription className="text-xs font-medium opacity-70">
                 {isEditMode
                   ? 'Gider detaylarını güncelleyin.'
                   : 'Yeni bir işletme gideri oluşturun.'}
@@ -115,10 +119,10 @@ export function ExpenseSheet({
           </div>
         </SheetHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-8">
-          <div className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="space-y-4">
             {/* Amount Field */}
-            <div className="space-y-3">
+            <div className="space-y-2">
               <label
                 htmlFor="amount"
                 className="text-[10px] font-black tracking-widest text-muted-foreground/60 ml-1"
@@ -126,8 +130,8 @@ export function ExpenseSheet({
                 TUTAR (₺)
               </label>
               <div className="relative group">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center transition-colors group-focus-within:bg-rose-500/10">
-                  <Banknote className="w-4 h-4 text-muted-foreground transition-colors group-focus-within:text-rose-500" />
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-md bg-muted/50 flex items-center justify-center transition-colors group-focus-within:bg-rose-500/10">
+                  <Banknote className="w-3.5 h-3.5 text-muted-foreground transition-colors group-focus-within:text-rose-500" />
                 </div>
                 <Input
                   id="amount"
@@ -137,14 +141,14 @@ export function ExpenseSheet({
                   placeholder="0.00"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  className="pl-14 h-14 text-2xl font-black bg-muted/20 border-transparent focus:border-rose-500/20 focus:ring-rose-500/20 transition-all rounded-xl"
+                  className="pl-12 h-12 text-xl font-black bg-muted/20 border-transparent focus:border-rose-500/20 focus:ring-rose-500/20 transition-all rounded-lg"
                   autoFocus={!isEditMode}
                 />
               </div>
             </div>
 
             {/* Description Field */}
-            <div className="space-y-3">
+            <div className="space-y-2">
               <label
                 htmlFor="description"
                 className="text-[10px] font-black tracking-widest text-muted-foreground/60 ml-1"
@@ -152,21 +156,50 @@ export function ExpenseSheet({
                 AÇIKLAMA
               </label>
               <div className="relative group">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center transition-colors group-focus-within:bg-primary/10">
-                  <AlignLeft className="w-4 h-4 text-muted-foreground transition-colors group-focus-within:text-primary" />
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-md bg-muted/50 flex items-center justify-center transition-colors group-focus-within:bg-primary/10">
+                  <AlignLeft className="w-3.5 h-3.5 text-muted-foreground transition-colors group-focus-within:text-primary" />
                 </div>
                 <Input
                   id="description"
                   placeholder="Örn: Market alışverişi"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="pl-14 h-14 font-bold bg-muted/20 border-transparent focus:border-primary/20 transition-all rounded-xl"
+                  className="pl-12 h-12 font-bold bg-muted/20 border-transparent focus:border-primary/20 transition-all rounded-lg"
                 />
               </div>
             </div>
 
+            {/* Payment Method Field */}
+            <div className="space-y-2">
+              <label
+                htmlFor="paymentMethod"
+                className="text-[10px] font-black tracking-widest text-muted-foreground/60 ml-1"
+              >
+                ÖDEME TÜRÜ
+              </label>
+              <Select
+                value={paymentMethod}
+                onValueChange={(value) => setPaymentMethod(value as 'CASH' | 'CARD')}
+              >
+                <SelectTrigger className="h-12 font-bold bg-muted/20 border-transparent focus:border-blue-500/20 transition-all rounded-lg pl-12 relative group">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-md bg-muted/50 flex items-center justify-center transition-colors group-focus-within:bg-blue-500/10">
+                    <CreditCard className="w-3.5 h-3.5 text-muted-foreground transition-colors group-focus-within:text-blue-500" />
+                  </div>
+                  <SelectValue placeholder="Ödeme Türü Seçin" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl border-white/10 bg-background/95 backdrop-blur-md">
+                  <SelectItem value="CASH" className="rounded-lg">
+                    Nakit
+                  </SelectItem>
+                  <SelectItem value="CARD" className="rounded-lg">
+                    Kart
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Category Field */}
-            <div className="space-y-3">
+            <div className="space-y-2">
               <label
                 htmlFor="category"
                 className="text-[10px] font-black tracking-widest text-muted-foreground/60 ml-1"
@@ -174,9 +207,9 @@ export function ExpenseSheet({
                 KATEGORİ
               </label>
               <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger className="h-14 font-bold bg-muted/20 border-transparent focus:border-amber-500/20 transition-all rounded-xl pl-14 relative group">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center transition-colors group-focus-within:bg-amber-500/10">
-                    <Tag className="w-4 h-4 text-muted-foreground transition-colors group-focus-within:text-amber-500" />
+                <SelectTrigger className="h-12 font-bold bg-muted/20 border-transparent focus:border-amber-500/20 transition-all rounded-lg pl-12 relative group">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-md bg-muted/50 flex items-center justify-center transition-colors group-focus-within:bg-amber-500/10">
+                    <Tag className="w-3.5 h-3.5 text-muted-foreground transition-colors group-focus-within:text-amber-500" />
                   </div>
                   <SelectValue placeholder="Kategori Seçin" />
                 </SelectTrigger>
@@ -202,14 +235,14 @@ export function ExpenseSheet({
 
             {isEditMode && (
               <>
-                <Separator className="opacity-50" />
-                <div className="bg-muted/30 p-4 rounded-2xl border border-border/50 space-y-2">
-                  <div className="flex justify-between items-center text-xs">
+                <Separator className="opacity-50 my-2" />
+                <div className="bg-muted/30 p-3 rounded-xl border border-border/50 space-y-1">
+                  <div className="flex justify-between items-center text-[10px]">
                     <span className="text-muted-foreground font-bold tracking-wider">
                       KAYIT TARİHİ
                     </span>
                     <div className="flex items-center gap-2">
-                      <span className="font-black px-2 py-1 bg-background rounded-md shadow-sm border">
+                      <span className="font-bold px-1.5 py-0.5 bg-background rounded shadow-sm border text-[10px]">
                         {new Date(expense.createdAt).toLocaleDateString('tr-TR', {
                           day: 'numeric',
                           month: 'long',
@@ -229,36 +262,38 @@ export function ExpenseSheet({
             )}
           </div>
 
-          <div className="flex flex-col gap-3 pt-6 border-t mt-auto">
+          <div className="flex flex-col gap-2 pt-4 border-t mt-auto">
             <Button
               type="submit"
               disabled={!description || !amount || isSubmitting}
-              className="w-full h-14 text-base font-black bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-900/20 rounded-2xl gap-2 transition-all duration-300 active:scale-[0.98]"
+              className="w-full h-12 text-sm font-black bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-900/20 rounded-xl gap-2 transition-all duration-300 active:scale-[0.98]"
             >
               {isSubmitting ? 'Kaydediliyor...' : isEditMode ? 'Güncelle' : 'Kaydet'}
             </Button>
 
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}
-              className="w-full h-12 text-sm font-bold border-muted-foreground/20 hover:bg-muted/50 rounded-xl transition-all"
-            >
-              İptal
-            </Button>
-
-            {isEditMode && onDelete && (
+            <div className="grid grid-cols-2 gap-2">
               <Button
                 type="button"
-                variant="ghost"
-                className="w-full h-12 text-destructive hover:bg-destructive/10 hover:text-destructive font-bold rounded-xl gap-2 mt-2"
-                onClick={handleDelete}
+                variant="outline"
+                onClick={() => onOpenChange(false)}
                 disabled={isSubmitting}
+                className="w-full h-10 text-xs font-bold border-muted-foreground/20 hover:bg-muted/50 rounded-lg transition-all"
               >
-                <Trash2 className="w-4 h-4" /> Gideri Sil
+                İptal
               </Button>
-            )}
+
+              {isEditMode && onDelete && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full h-10 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive font-bold rounded-lg gap-2"
+                  onClick={handleDelete}
+                  disabled={isSubmitting}
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> Sil
+                </Button>
+              )}
+            </div>
           </div>
         </form>
       </SheetContent>

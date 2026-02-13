@@ -3,10 +3,23 @@ import { Expense } from '../../../shared/types'
 const api = window.api
 
 export const expenseService = {
-  async create(data: { description: string; amount: number; category?: string }): Promise<Expense> {
-    const result = await api.expenses.create(data)
-    if (!result.success) throw new Error(result.error)
-    return result.data
+  create: async (data: {
+    description: string
+    amount: number
+    category?: string
+    paymentMethod?: string
+  }): Promise<Expense> => {
+    const response = await window.api.expenses.create(data)
+    if (!response.success) throw new Error(response.error)
+    return response.data
+  },
+  update: async (
+    id: string,
+    data: { description?: string; amount?: number; category?: string; paymentMethod?: string }
+  ): Promise<Expense> => {
+    const response = await window.api.expenses.update(id, data)
+    if (!response.success) throw new Error(response.error)
+    return response.data
   },
   async getAll(): Promise<Expense[]> {
     const result = await api.expenses.getAll()

@@ -48,6 +48,9 @@ export class DBMaintenance {
       // Migration 3: Add isDeleted column to Product table (soft delete support)
       await this.addColumnIfNotExists('Product', 'isDeleted', 'BOOLEAN DEFAULT 0')
 
+      // Migration 4: Add paymentMethod column to Expense table
+      await this.addColumnIfNotExists('Expense', 'paymentMethod', "TEXT DEFAULT 'CASH'")
+
       // Comprehensive index sync — ensures ALL schema.prisma indexes exist
       // Each statement is idempotent (IF NOT EXISTS), safe on every startup
       const indexes = [

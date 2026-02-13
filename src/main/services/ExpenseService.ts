@@ -1,39 +1,44 @@
 import { prisma } from '../db/prisma'
 import { logger } from '../lib/logger'
-import { Prisma, Expense } from '../../generated/prisma/client'
-import { ApiResponse } from '../../shared/types'
+import { ApiResponse, Expense } from '../../shared/types'
 
 export class ExpenseService {
   async createExpense(data: {
     description: string
     amount: number
     category?: string
+    paymentMethod?: string
   }): Promise<ApiResponse<Expense>> {
     try {
       const expense = await prisma.expense.create({
         data: {
           ...data,
+          paymentMethod: data.paymentMethod || 'CASH',
           amount: Math.round(data.amount * 100) // Convert to cents
         }
       })
 
-      return { success: true, data: expense }
+      return {
+        success: true,
+        data: {
+          ...expense,
+          category: expense.category || undefined,
+          paymentMethod: (expense.paymentMethod as 'CASH' | 'CARD') || 'CASH'
+        }
+      }
     } catch (error) {
-      logger.error('ExpenseService.createExpense', error)
-      return { success: false, error: 'Gider oluşturulamadı.' }
+      logger.error('Error creating expense:', error)
+      return { success: false, error: 'Failed to create expense' }
     }
   }
 
   async updateExpense(
     id: string,
-    data: {
-      description?: string
-      amount?: number
-      category?: string
-    }
+    data: { description?: string; amount?: number; category?: string; paymentMethod?: string }
   ): Promise<ApiResponse<Expense>> {
     try {
-      const updateData: Prisma.ExpenseUpdateInput = { ...data }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const updateData: any = { ...data }
       if (data.amount !== undefined) {
         updateData.amount = Math.round(data.amount * 100) // Convert to cents
       }
@@ -43,26 +48,36 @@ export class ExpenseService {
         data: updateData
       })
 
-      return { success: true, data: expense }
+      return {
+        success: true,
+        data: {
+          ...expense,
+          category: expense.category || undefined,
+          paymentMethod: (expense.paymentMethod as 'CASH' | 'CARD') || 'CASH'
+        }
+      }
     } catch (error) {
-      logger.error('ExpenseService.updateExpense', error)
-      return { success: false, error: 'Gider güncellenemedi.' }
+      logger.error('Error updating expense:', error)
+      return { success: false, error: 'Failed to update expense' }
     }
   }
 
   async getAllExpenses(): Promise<ApiResponse<Expense[]>> {
     try {
-      const thirtyDaysAgo = new Date()
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-
       const expenses = await prisma.expense.findMany({
-        where: { createdAt: { gte: thirtyDaysAgo } },
         orderBy: { createdAt: 'desc' }
       })
-      return { success: true, data: expenses }
+      return {
+        success: true,
+        data: expenses.map((e) => ({
+          ...e,
+          category: e.category || undefined,
+          paymentMethod: (e.paymentMethod as 'CASH' | 'CARD') || 'CASH'
+        }))
+      }
     } catch (error) {
-      logger.error('ExpenseService.getAllExpenses', error)
-      return { success: false, error: 'Giderler alınamadı.' }
+      logger.error('Error getting expenses:', error)
+      return { success: false, error: 'Failed to get expenses' }
     }
   }
 

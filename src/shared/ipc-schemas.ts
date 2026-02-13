@@ -125,14 +125,16 @@ export const expenseSchemas = {
   create: z.object({
     description: z.string().min(1),
     amount: priceSchema,
-    category: z.string().optional()
+    category: z.string().optional(),
+    paymentMethod: z.enum(['CASH', 'CARD']).optional()
   }),
   update: z.object({
     id: cuidSchema,
     data: z.object({
       description: z.string().min(1).optional(),
       amount: priceSchema.optional(),
-      category: z.string().optional()
+      category: z.string().optional(),
+      paymentMethod: z.enum(['CASH', 'CARD']).optional()
     })
   }),
   delete: z.object({ id: cuidSchema })

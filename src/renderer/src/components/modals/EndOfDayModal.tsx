@@ -69,6 +69,7 @@ export function EndOfDayModal({ open, onClose }: EndOfDayModalProps): React.JSX.
         today.setHours(0, 0, 0, 0)
         const dayExpensesTotal = expenses
           .filter((e) => new Date(e.createdAt) >= today)
+          .filter((e) => e.paymentMethod === 'CASH' || !e.paymentMethod) // Default to CASH for old records
           .reduce((sum, e) => sum + e.amount, 0)
 
         setExpectedTotals((prev) => (prev ? { ...prev, expenses: dayExpensesTotal } : null))
@@ -240,21 +241,31 @@ export function EndOfDayModal({ open, onClose }: EndOfDayModalProps): React.JSX.
                 <label className="text-xs font-bold text-muted-foreground tracking-wider">
                   KASADAKİ GERÇEK NAKİT TUTARI
                 </label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  autoFocus
-                  className="h-12 text-center text-2xl font-extrabold bg-background border-2 border-primary/20 rounded-2xl"
-                  value={actualCashInput}
-                  onChange={(e) => setActualCashInput(e.target.value)}
-                />
+                <div className="relative">
+                  <span
+                    className={cn(
+                      'absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-extrabold transition-colors',
+                      actualCashInput ? 'text-foreground' : 'text-muted-foreground/50'
+                    )}
+                  >
+                    ₺
+                  </span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="0"
+                    autoFocus
+                    className="h-14 pl-10 text-left text-2xl font-extrabold bg-background border-2 border-primary/20 rounded-2xl [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    value={actualCashInput}
+                    onChange={(e) => setActualCashInput(e.target.value)}
+                  />
+                </div>
 
                 <div
                   className={cn(
                     'p-3 rounded-xl text-center text-sm font-bold flex justify-between items-center',
-                    Math.round(parseFloat(actualCashInput) * 100) >=
-                      expectedTotals.cash - expectedTotals.expenses
+                    Math.round(parseFloat(actualCashInput || '0') * 100) >=
+                      Math.max(0, expectedTotals.cash - (expectedTotals.expenses || 0))
                       ? 'bg-emerald-500/10 text-emerald-600'
                       : 'bg-red-500/10 text-red-600'
                   )}
@@ -262,8 +273,8 @@ export function EndOfDayModal({ open, onClose }: EndOfDayModalProps): React.JSX.
                   <span>Kasa Farkı:</span>
                   <span className="font-mono">
                     {formatCurrency(
-                      Math.round(parseFloat(actualCashInput) * 100) -
-                        (expectedTotals.cash - expectedTotals.expenses)
+                      Math.round(parseFloat(actualCashInput || '0') * 100) -
+                      Math.max(0, expectedTotals.cash - (expectedTotals.expenses || 0))
                     )}
                   </span>
                 </div>

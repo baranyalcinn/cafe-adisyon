@@ -126,6 +126,7 @@ model Expense {
   description String
   amount      Int
   category    String?
+  paymentMethod String   @default("CASH") // CASH, CARD
   createdAt   DateTime @default(now())
 
   @@index([createdAt])

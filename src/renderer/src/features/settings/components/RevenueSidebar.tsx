@@ -54,7 +54,7 @@ export function RevenueSidebar({
           <div className="p-3.5 rounded-xl border bg-background shadow-sm hover:border-emerald-500/30 transition-all group">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] font-black tracking-wider text-muted-foreground/80">
-                BUGÜN
+                AYLIK TOPLAM
               </span>
               <div className="p-1 px-2 bg-emerald-500/10 rounded-lg text-emerald-500 text-[10px] font-bold">
                 BU AY

@@ -178,6 +178,7 @@ export interface Expense {
   description: string
   amount: number
   category?: string
+  paymentMethod?: 'CASH' | 'CARD'
   createdAt: Date
 }
 
