@@ -2,7 +2,7 @@ name: Build Cafe Adisyon
 
 on:
   push:
-    branches: [main, 'test/electron-40-upgrade']
+    branches: [main]
   workflow_dispatch:
 
 jobs:

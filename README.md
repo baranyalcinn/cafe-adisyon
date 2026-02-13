@@ -5,216 +5,258 @@
 <h1 align="center">☕ Caffio</h1>
 
 <p align="center">
-  <strong>Modern Cafe & Restaurant Point-of-Sale System</strong>
+  <strong>Modern Kafe & Restoran Adisyon Sistemi</strong>
 </p>
 
 <p align="center">
-  <em>A lightning-fast, offline-first POS application built with cutting-edge web technologies</em>
+  <em>Hızlı, çevrim dışı çalışabilen, modern teknolojilerle geliştirilmiş masaüstü POS uygulaması</em>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Electron-40.0.0-47848F?style=for-the-badge&logo=electron&logoColor=white" alt="Electron">
-  <img src="https://img.shields.io/badge/React-19.2.1-61DAFB?style=for-the-badge&logo=react&logoColor=white" alt="React">
-  <img src="https://img.shields.io/badge/TypeScript-5.9.3-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript">
-  <img src="https://img.shields.io/badge/Prisma-7.3.0-2D3748?style=for-the-badge&logo=prisma&logoColor=white" alt="Prisma">
-  <img src="https://img.shields.io/badge/Tailwind_CSS-4.1.18-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="TailwindCSS">
+  <img src="https://img.shields.io/badge/Electron-40.4.0-47848F?style=for-the-badge&logo=electron&logoColor=white" alt="Electron">
+  <img src="https://img.shields.io/badge/React-19.2-61DAFB?style=for-the-badge&logo=react&logoColor=white" alt="React">
+  <img src="https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript">
+  <img src="https://img.shields.io/badge/Prisma-7.4-2D3748?style=for-the-badge&logo=prisma&logoColor=white" alt="Prisma">
+  <img src="https://img.shields.io/badge/Tailwind_CSS-4.1-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="TailwindCSS">
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/version-1.0.0-blue?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License">
-  <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey?style=flat-square" alt="Platform">
+  <img src="https://img.shields.io/badge/platform-Windows-lightgrey?style=flat-square" alt="Platform">
+  <a href="https://github.com/baranyalcinn/cafe-adisyon/actions"><img src="https://img.shields.io/github/actions/workflow/status/baranyalcinn/cafe-adisyon/build.yml?branch=main&style=flat-square&label=CI%20Build" alt="CI Build"></a>
 </p>
 
 ---
 
-## ✨ Features
+## ✨ Özellikler
 
-### 🛒 Point-of-Sale
+### 🛒 Sipariş & POS
 
-- **Intuitive Order Management** — Add, modify, and track orders with a sleek touch-friendly interface
-- **Smart Product Catalog** — Organize products by categories with beautiful icons
-- **Favorites System** — Quick access to frequently ordered items
-- **Real-time Cart** — Instant updates with animated quantity selectors
+- **Dokunmatik Dostu Arayüz** — Hızlı sipariş oluşturma, düzenleme ve takip
+- **Akıllı Ürün Kataloğu** — Kategorilere ayrılmış, ikonlu ürün yönetimi
+- **Favori Ürünler** — Sık sipariş edilen ürünlere anında erişim
+- **Anlık Sepet Güncellemeleri** — Animasyonlu miktar seçici ve gerçek zamanlı hesaplama
 
-### 🪑 Table Management
+### 🪑 Masa Yönetimi
 
-- **Visual Table Layout** — See all tables at a glance with status indicators
-- **Order Association** — Seamlessly link orders to specific tables
-- **Multi-order Support** — Handle multiple open orders per table
+- **Görsel Masa Düzeni** — Tüm masaların durumunu tek bakışta görün (boş / dolu / kilitli)
+- **Sipariş Bağlama** — Siparişleri masalara kolayca atayın
+- **Çoklu Sipariş Desteği** — Bir masada aynı anda birden fazla açık sipariş
+- **Sağ Tık Menüsü** — Masa üzerinden hızlı işlem (kilitle, hesap kes, sipariş ekle)
 
-### 💳 Payment Processing
+### 💳 Ödeme İşleme
 
-- **Multi-Payment Methods** — Cash and card payment support
-- **Split Bills** — Divide payments across multiple methods
-- **Transaction History** — Complete payment audit trail
+- **Çoklu Ödeme Yöntemi** — Nakit ve kredi kartı desteği
+- **Adisyon Bölme** — Hesabı farklı ödeme yöntemlerine bölebilme
+- **Kısmi Ödeme** — Ürün bazında ayrı ayrı ödeme alma
+- **İşlem Geçmişi** — Tüm ödemelerin detaylı denetim kaydı
 
-### 📊 Analytics & Reporting
+### 📊 Dashboard & Raporlama
 
-- **Live Dashboard** — Real-time sales metrics and statistics
-- **Daily Summaries** — Automatic end-of-day reports with VAT calculations
-- **Monthly Reports** — Track revenue, expenses, and net profit trends
-- **Activity Logging** — Complete audit trail of all system activities
+- **Gerçek Zamanlı Dashboard** — Anlık satış metrikleri, günlük ve aylık özetler
+- **Günlük Z-Raporu** — Gün sonu kasa kapama raporu (nakit, kart, KDV, gider, net kâr)
+- **Aylık Raporlar** — Gelir, gider ve net kâr trendlerini takip edin
+- **Grafik Görselleştirme** — Recharts ile interaktif gelir grafikleri
 
-### ⚙️ Administration
+### ⚙️ Yönetim Paneli (PIN Korumalı)
 
-- **PIN-Protected Settings** — Secure access with admin PIN
-- **Product Management** — Add, edit, and organize products
-- **Category Management** — Create custom categories with icons
-- **Expense Tracking** — Record and categorize business expenses
+| Sekme           | İşlev                                            |
+| --------------- | ------------------------------------------------ |
+| **Masalar**     | Masa ekleme, silme, düzenleme                    |
+| **Kategoriler** | Ürün kategorisi yönetimi (ikon seçimi ile)       |
+| **Ürünler**     | Ürün CRUD işlemleri, fiyat ve kategori atama     |
+| **Giderler**    | İşletme giderlerini kaydetme ve kategorize etme  |
+| **Bakım**       | Veritabanı sıfırlama, Z-raporu arşivleme         |
+| **Kayıtlar**    | Tüm sistem aktivitelerinin detaylı denetim kaydı |
 
-### 🎨 Premium UI/UX
+### 🎨 Premium Kullanıcı Deneyimi
 
-- **Glassmorphism Design** — Modern, translucent interface elements
-- **Smooth Animations** — Powered by Framer Motion
-- **Dark Mode Support** — Easy on the eyes during long shifts
-- **Responsive Layout** — Optimized for various screen sizes
-
----
-
-## 🛠️ Tech Stack
-
-| Layer             | Technology                                                                               |
-| ----------------- | ---------------------------------------------------------------------------------------- |
-| **Framework**     | [Electron](https://www.electronjs.org/) 40 + [electron-vite](https://electron-vite.org/) |
-| **Frontend**      | [React](https://react.dev/) 19 + [TypeScript](https://www.typescriptlang.org/) 5.9       |
-| **Styling**       | [Tailwind CSS](https://tailwindcss.com/) 4 + [Radix UI](https://www.radix-ui.com/)       |
-| **State**         | [Zustand](https://zustand.docs.pmnd.rs/) + [TanStack Query](https://tanstack.com/query)  |
-| **Database**      | [Prisma](https://www.prisma.io/) ORM + [LibSQL](https://turso.tech/libsql) (SQLite)      |
-| **Animations**    | [Framer Motion](https://www.framer.com/motion/)                                          |
-| **Validation**    | [Zod](https://zod.dev/)                                                                  |
-| **Testing**       | [Vitest](https://vitest.dev/) + [Playwright](https://playwright.dev/)                    |
-| **Documentation** | [Storybook](https://storybook.js.org/) 10                                                |
+- **Glassmorphism Tasarım** — Modern, yarı saydam arayüz elemanları
+- **Akıcı Animasyonlar** — Framer Motion ile sayfa geçişleri ve mikro-animasyonlar
+- **Karanlık Mod** — Uzun vardiyalarda göz yorgunluğunu azaltır
+- **Özel Başlık Çubuğu** — Frameless pencere, özel minimize/maximize/close butonları
+- **GPU Hızlandırma** — Maksimum render performansı
+- **Ses Efektleri** — İşlem tamamlama sesli geri bildirimi
 
 ---
 
-## 🚀 Getting Started
+## 🏛️ Mimari
 
-### Prerequisites
-
-- **Node.js** 20.x or higher
-- **npm** 10.x or higher (comes with Node.js)
-- **Git** for version control
-
-### Installation
-
-1. **Clone the repository**
-
-   ```bash
-   git clone https://github.com/baranyalcinn/cafe-adisyon.git
-   cd cafe-adisyon
-   ```
-
-2. **Install dependencies**
-
-   ```bash
-   npm install
-   ```
-
-3. **Initialize the database**
-
-   ```bash
-   npx prisma generate
-   npx prisma db push
-   ```
-
-4. **Start the development server**
-
-   ```bash
-   npm run dev
-   ```
-
-The application will launch in development mode with hot module replacement enabled.
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Renderer (React 19)                   │
+│                                                         │
+│  ┌─────────┐ ┌────────┐ ┌──────────┐ ┌───────────────┐ │
+│  │ Zustand  │ │TanStack│ │  Framer  │ │   Radix UI    │ │
+│  │ Stores(4)│ │ Query  │ │ Motion   │ │ Components(21)│ │
+│  └─────────┘ └────────┘ └──────────┘ └───────────────┘ │
+│                                                         │
+│  Features: Dashboard│Orders│Payments│Tables│Settings    │
+│            Reports                                      │
+├──────────────── Secure IPC Bridge (Zod) ────────────────┤
+│                   Preload (Context Isolation)            │
+├─────────────────────────────────────────────────────────┤
+│                  Main Process (Electron 40)              │
+│                                                         │
+│  ┌──────────────────┐  ┌──────────────────────────────┐ │
+│  │   9 IPC Handlers │  │      7 Backend Services      │ │
+│  │  ───────────────  │  │  ────────────────────────── │ │
+│  │  • Order          │  │  • OrderService     (20KB)  │ │
+│  │  • Table          │  │  • MaintenanceService       │ │
+│  │  • Product        │  │  • ReportingService (15KB)  │ │
+│  │  • Category       │  │  • AdminService             │ │
+│  │  • Payment/Report │  │  • ProductService           │ │
+│  │  • Admin/Expense  │  │  • ExpenseService           │ │
+│  │  • Log/Maint.     │  │  • LogService               │ │
+│  └──────────────────┘  └──────────────────────────────┘ │
+│                                                         │
+│  ┌─────────────────────────────────────────────────────┐ │
+│  │         Prisma 7.4 ORM + LibSQL (SQLite)            │ │
+│  │   10 Models: Product│Category│Table│Order│OrderItem │ │
+│  │   Transaction│DailySummary│ActivityLog│Expense│...   │ │
+│  └─────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────┘
+```
 
 ---
 
-## 📁 Project Structure
+## 🛠️ Teknoloji Yığını
+
+| Katman             | Teknoloji                                                                                             |
+| ------------------ | ----------------------------------------------------------------------------------------------------- |
+| **Framework**      | [Electron](https://www.electronjs.org/) 40 + [electron-vite](https://electron-vite.org/) 5            |
+| **Frontend**       | [React](https://react.dev/) 19 + [TypeScript](https://www.typescriptlang.org/) 5.9                    |
+| **Stil**           | [Tailwind CSS](https://tailwindcss.com/) 4 + [Radix UI](https://www.radix-ui.com/) Primitives         |
+| **Durum Yönetimi** | [Zustand](https://zustand.docs.pmnd.rs/) 5 (4 store) + [TanStack Query](https://tanstack.com/query) 5 |
+| **Veritabanı**     | [Prisma](https://www.prisma.io/) 7.4 Client Engine + [LibSQL](https://turso.tech/libsql) (SQLite)     |
+| **Animasyonlar**   | [Framer Motion](https://www.framer.com/motion/) 12                                                    |
+| **Grafikler**      | [Recharts](https://recharts.org/) 3                                                                   |
+| **Doğrulama**      | [Zod](https://zod.dev/) 4                                                                             |
+| **Test**           | [Vitest](https://vitest.dev/) 4 + [Playwright](https://playwright.dev/)                               |
+| **Build**          | [electron-builder](https://www.electron.build/) 26 (NSIS Installer)                                   |
+| **CI/CD**          | [GitHub Actions](https://github.com/features/actions) (Windows, otomatik artifact)                    |
+
+---
+
+## 🚀 Başlarken
+
+### Gereksinimler
+
+- **Node.js** 20.x veya üstü
+- **npm** 10.x veya üstü
+- **Git**
+
+### Kurulum
+
+```bash
+# 1. Repo'yu klonla
+git clone https://github.com/baranyalcinn/cafe-adisyon.git
+cd cafe-adisyon
+
+# 2. Bağımlılıkları yükle
+npm install
+
+# 3. Veritabanını hazırla
+npx prisma generate
+npx prisma db push
+
+# 4. Geliştirme sunucusunu başlat
+npm run dev
+```
+
+> **Not:** `bufferutil` ve `utf-8-validate` opsiyonel native modüllerdir. Visual Studio Build Tools yoksa uyarı verebilir ama uygulama yine de sorunsuz çalışır.
+
+---
+
+## 📁 Proje Yapısı
 
 ```
 cafe-adisyon/
 ├── 📂 src/
-│   ├── 📂 main/           # Electron main process
-│   │   ├── index.ts       # Main entry point
-│   │   └── ...            # IPC handlers, services
-│   ├── 📂 preload/        # Electron preload scripts
-│   │   └── index.ts       # Secure IPC bridge
-│   ├── 📂 renderer/       # React frontend
-│   │   └── src/
-│   │       ├── 📂 features/
-│   │       │   ├── dashboard/   # Analytics & stats
-│   │       │   ├── orders/      # POS & order management
-│   │       │   ├── payments/    # Payment processing
-│   │       │   ├── settings/    # Admin configuration
-│   │       │   └── tables/      # Table management
-│   │       ├── 📂 components/   # Shared UI components
-│   │       ├── 📂 hooks/        # Custom React hooks
-│   │       └── 📂 lib/          # Utilities & helpers
-│   ├── 📂 shared/         # Shared types & constants
-│   └── 📂 stories/        # Storybook stories
+│   ├── 📂 main/                    # Electron ana süreç
+│   │   ├── index.ts                # Uygulama giriş noktası + pencere yönetimi
+│   │   ├── 📂 db/                  # Prisma istemci yapılandırması
+│   │   ├── 📂 ipc/                 # IPC yönlendirici + 9 handler modülü
+│   │   │   └── 📂 routes/          # order, table, product, category, payment,
+│   │   │                           # admin, expense, log, maintenance, reporting
+│   │   ├── 📂 services/            # İş mantığı katmanı (7 servis)
+│   │   │   ├── OrderService.ts     # Sipariş CRUD, ürün ekleme/çıkarma, kilitleme
+│   │   │   ├── ReportingService.ts # Z-raporu, aylık rapor, dashboard verileri
+│   │   │   ├── MaintenanceService.ts # DB bakım, veri sıfırlama, arşivleme
+│   │   │   ├── AdminService.ts     # PIN yönetimi, güvenlik sorusu
+│   │   │   ├── ProductService.ts   # Ürün & favori yönetimi
+│   │   │   ├── ExpenseService.ts   # Gider kayıt ve takip
+│   │   │   └── LogService.ts       # Aktivite loglama (kuyruk sistemi)
+│   │   └── 📂 lib/                 # Logger, DB bakım cron
+│   ├── 📂 preload/                 # Güvenli IPC köprüsü (Context Isolation)
+│   ├── 📂 renderer/                # React frontend
+│   │   └── 📂 src/
+│   │       ├── App.tsx             # Ana layout, sidebar navigasyon, sayfa geçişleri
+│   │       ├── 📂 features/        # Feature-based modüler yapı
+│   │       │   ├── dashboard/      # Gerçek zamanlı satış metrikleri
+│   │       │   ├── orders/         # POS arayüzü, sepet, ürün seçimi
+│   │       │   ├── payments/       # Ödeme işleme, adisyon bölme
+│   │       │   ├── reports/        # Aylık rapor görünümleri
+│   │       │   ├── settings/       # 6 sekmeli yönetim paneli
+│   │       │   └── tables/         # Görsel masa düzeni
+│   │       ├── 📂 components/      # Paylaşılan UI bileşenleri (21 Radix tabanlı)
+│   │       ├── 📂 hooks/           # useOrder, useInventory, useTables, useSound, useTheme
+│   │       ├── 📂 store/           # Zustand mağazaları (cart, table, settings, toast)
+│   │       ├── 📂 services/        # Renderer-side IPC servis çağrıları (9 modül)
+│   │       └── 📂 lib/             # Yardımcı fonksiyonlar, utils
+│   └── 📂 shared/                  # Paylaşılan tipler ve sabitler
 ├── 📂 prisma/
-│   └── schema.prisma      # Database schema
-├── 📂 build/              # Build resources & icons
-├── 📂 resources/          # Application assets
-├── electron.vite.config.ts
-├── package.json
-└── README.md
+│   └── schema.prisma               # 10 model: Product, Category, Table, Order, vb.
+├── 📂 .github/workflows/
+│   └── build.yml                   # GitHub Actions CI/CD (Windows NSIS build)
+├── 📂 build/                       # Platform ikonları (ico, icns, png)
+├── 📂 scripts/                     # DB reset betikleri
+├── electron-builder.yml            # Build yapılandırması (ASAR, NSIS, code signing)
+├── electron.vite.config.ts         # Vite yapılandırması (main + preload + renderer)
+└── package.json
 ```
 
 ---
 
-## 📜 Available Scripts
+## 📜 Kullanılabilir Scriptler
 
-| Command                 | Description                          |
-| ----------------------- | ------------------------------------ |
-| `npm run dev`           | Start development server with HMR    |
-| `npm run build`         | Build for production (all platforms) |
-| `npm run build:win`     | Build Windows executable             |
-| `npm run build:mac`     | Build macOS application              |
-| `npm run build:linux`   | Build Linux AppImage                 |
-| `npm run lint`          | Run ESLint code analysis             |
-| `npm run format`        | Format code with Prettier            |
-| `npm run test`          | Run unit tests with Vitest           |
-| `npm run typecheck`     | Run TypeScript type checking         |
-| `npm run storybook`     | Launch Storybook on port 6006        |
-| `npm run db:reset`      | Reset database (destructive)         |
-| `npm run db:soft-reset` | Soft reset database                  |
+| Komut                   | Açıklama                                       |
+| ----------------------- | ---------------------------------------------- |
+| `npm run dev`           | HMR ile geliştirme sunucusu başlat             |
+| `npm run build`         | Prisma generate + typecheck + production build |
+| `npm run build:win`     | Windows `.exe` installer oluştur (NSIS)        |
+| `npm run build:mac`     | macOS `.dmg` oluştur                           |
+| `npm run build:linux`   | Linux AppImage oluştur                         |
+| `npm run lint`          | ESLint ile kod analizi                         |
+| `npm run format`        | Prettier ile kod biçimlendirme                 |
+| `npm run test`          | Vitest ile birim testleri çalıştır             |
+| `npm run typecheck`     | TypeScript tip kontrolü (node + web)           |
+| `npm run db:reset`      | Veritabanını tamamen sıfırla ⚠️                |
+| `npm run db:soft-reset` | Veritabanını yumuşak sıfırla                   |
 
 ---
 
-## 🧪 Testing
-
-Caffio uses **Vitest** for unit testing and **Playwright** for end-to-end testing.
+## 🧪 Test
 
 ```bash
-# Run all tests
+# Tüm testleri çalıştır
 npm run test
 
-# Run tests in watch mode
+# İzleme modunda çalıştır
 npm run test -- --watch
 
-# Run with coverage
+# Kapsam raporuyla çalıştır
 npm run test -- --coverage
 ```
 
----
-
-## 📚 Component Documentation
-
-Caffio uses **Storybook** for interactive component documentation and development.
-
-```bash
-# Start Storybook
-npm run storybook
-
-# Build static documentation
-npm run build-storybook
-```
-
-Visit [http://localhost:6006](http://localhost:6006) to explore components.
+- **Birim Testler:** Vitest 4 + Testing Library
+- **Tarayıcı Testleri:** Playwright + `@vitest/browser-playwright`
+- **Kapsam:** `@vitest/coverage-v8`
 
 ---
 
-## 🏗️ Building for Production
+## 🏗️ Production Build
 
 ### Windows
 
@@ -222,68 +264,159 @@ Visit [http://localhost:6006](http://localhost:6006) to explore components.
 npm run build:win
 ```
 
-Output: `dist/caffio-1.0.0-setup.exe` (installer) and portable version
+Çıktı: `dist/Caffio-Setup-1.0.0.exe` (NSIS installer)
 
-### macOS
+**Build özellikleri:**
 
-```bash
-npm run build:mac
+- ASAR paketleme (native modüller hariç tutulur)
+- Maksimum sıkıştırma
+- Masaüstü kısayolu oluşturma
+- Özel kurulum dizini seçme
+- Prisma şeması ve veritabanı `extraResources` olarak dahil
+
+### CI/CD (GitHub Actions)
+
+Her `main` branch push'unda otomatik build tetiklenir:
+
+1. Bağımlılık kurulumu (`npm install --legacy-peer-deps`)
+2. Prisma generate + Native rebuild
+3. TypeScript build
+4. Node modules cerrahi budaması (yalnızca runtime deps)
+5. `electron-builder` ile NSIS installer oluşturma
+6. Artifact olarak GitHub'a yükleme (5 gün saklama)
+
+---
+
+## 🗄️ Veritabanı Şeması
+
+```mermaid
+erDiagram
+    Category ||--o{ Product : has
+    Table ||--o{ Order : has
+    Order ||--o{ OrderItem : contains
+    Order ||--o{ Transaction : has
+    Product ||--o{ OrderItem : "ordered as"
+
+    Product {
+        string id PK
+        string name
+        int price
+        boolean isFavorite
+        boolean isDeleted
+    }
+    Category {
+        string id PK
+        string name
+        string icon
+    }
+    Table {
+        string id PK
+        string name UK
+    }
+    Order {
+        string id PK
+        string status
+        int totalAmount
+        boolean isLocked
+    }
+    OrderItem {
+        string id PK
+        int quantity
+        int unitPrice
+        boolean isPaid
+    }
+    Transaction {
+        string id PK
+        int amount
+        string paymentMethod
+    }
+    DailySummary {
+        string id PK
+        datetime date UK
+        int totalCash
+        int totalCard
+        int totalExpenses
+        int netProfit
+        int totalVat
+    }
+    MonthlyReport {
+        string id PK
+        datetime monthDate UK
+        int totalRevenue
+        int totalExpenses
+        int netProfit
+    }
+    Expense {
+        string id PK
+        string description
+        int amount
+        string category
+    }
+    ActivityLog {
+        string id PK
+        string action
+        string tableName
+        string details
+    }
+    AppSettings {
+        string id PK
+        string adminPin
+        string securityQuestion
+    }
 ```
 
-Output: `dist/caffio-1.0.0.dmg`
+---
 
-### Linux
+## 🔒 Güvenlik
 
-```bash
-npm run build:linux
-```
-
-Output: `dist/caffio-1.0.0.AppImage`
+| Önlem                   | Açıklama                                                |
+| ----------------------- | ------------------------------------------------------- |
+| **Context Isolation**   | Renderer süreci Node.js'ten tamamen izole               |
+| **Güvenli IPC**         | Tüm süreçler arası iletişim Zod şemalarıyla doğrulanır  |
+| **CSP Başlıkları**      | Content Security Policy ile XSS saldırılarını önler     |
+| **PIN Koruması**        | Yönetim fonksiyonları PIN kimlik doğrulamasıyla korunur |
+| **Güvenlik Sorusu**     | PIN unutma durumunda kurtarma mekanizması               |
+| **Çevrim Dışı Çalışma** | Runtime'da harici bağımlılık yok, tamamen offline       |
+| **Frameless Pencere**   | Özel başlık çubuğu, DevTools production'da devre dışı   |
+| **Graceful Shutdown**   | Uygulama kapanırken DB bağlantısı güvenle kapatılır     |
 
 ---
 
-## 🔒 Security
+## 🔧 Geliştirme Ortamı
 
-Caffio implements several security best practices:
+### Önerilen VS Code Eklentileri
 
-- **Context Isolation** — Renderer process is isolated from Node.js
-- **Secure IPC** — All inter-process communication is validated with Zod schemas
-- **Content Security Policy** — Strict CSP headers prevent XSS attacks
-- **PIN Protection** — Admin functions are protected with PIN authentication
-- **No Remote Code** — Fully offline-capable, no external dependencies at runtime
+- [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) — Kod analizi
+- [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) — Otomatik biçimlendirme
+- [Tailwind CSS IntelliSense](https://marketplace.visualstudio.com/items?itemName=bradlc.vscode-tailwindcss) — CSS tamamlama
+- [Prisma](https://marketplace.visualstudio.com/items?itemName=Prisma.prisma) — Şema desteği
 
----
+### Proje Kuralları
 
-## 🔧 IDE Setup
-
-### Recommended Extensions
-
-- [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) — JavaScript/TypeScript linting
-- [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) — Code formatting
-- [Tailwind CSS IntelliSense](https://marketplace.visualstudio.com/items?itemName=bradlc.vscode-tailwindcss) — CSS completions
-- [Prisma](https://marketplace.visualstudio.com/items?itemName=Prisma.prisma) — Database schema support
+- **TypeScript Strict Mode** — Tüm kodlar tip güvenli
+- **ESLint** — `@electron-toolkit` + `@eslint-react` kural setleri
+- **Prettier** — Otomatik kod biçimlendirme
+- **Feature-Based Architecture** — Her özellik kendi dizininde yaşar
 
 ---
 
-## 🤝 Contributing
+## 🤝 Katkıda Bulunma
 
-Contributions are welcome! Please follow these steps:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+1. Repository'yi fork edin
+2. Feature branch oluşturun (`git checkout -b feature/harika-ozellik`)
+3. Değişikliklerinizi commit edin (`git commit -m 'Harika özellik ekle'`)
+4. Branch'i push edin (`git push origin feature/harika-ozellik`)
+5. Pull Request açın
 
 ---
 
-## 📄 License
+## 📄 Lisans
 
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+Bu proje **MIT Lisansı** ile lisanslanmıştır — detaylar için [LICENSE](LICENSE) dosyasına bakın.
 
 ---
 
-## 👨‍💻 Author
+## 👨‍💻 Geliştirici
 
 **Baran**
 
@@ -292,5 +425,5 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 ---
 
 <p align="center">
-  Made with ☕ and ❤️
+  ☕ ile yapıldı — <strong>Caffio</strong>
 </p>
