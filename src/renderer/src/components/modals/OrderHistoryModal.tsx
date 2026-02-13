@@ -104,14 +104,14 @@ export function OrderHistoryModal(): React.JSX.Element {
       <DialogTrigger asChild>
         <Button variant="outline" className="gap-2">
           <History className="w-4 h-4" />
-          SİPARİŞ GEÇMİŞİ
+          Sipariş Geçmişi
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[96vw] max-w-[96vw] w-full max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <History className="w-5 h-5" />
-            SİPARİŞ GEÇMİŞİ
+            Sipariş Geçmişi
           </DialogTitle>
         </DialogHeader>
 
@@ -137,10 +137,10 @@ export function OrderHistoryModal(): React.JSX.Element {
             className="gap-2"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            YENİLE
+            Yenile
           </Button>
           <div className="ml-auto text-sm text-muted-foreground">
-            TOPLAM <strong className="text-foreground">{totalCount}</strong> SİPARİŞ
+            Toplam <strong className="text-foreground">{totalCount}</strong> sipariş
           </div>
         </div>
 

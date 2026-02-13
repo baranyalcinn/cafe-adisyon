@@ -356,6 +356,9 @@ export function SettingsView({
             </p>
           </div>
         </div>
+
+        <div className="flex-1" />
+        <div id="settings-header-actions" className="flex items-center gap-2" />
       </div>
 
       {/* Detail Content */}

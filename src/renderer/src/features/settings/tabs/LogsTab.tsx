@@ -3,13 +3,12 @@ import {
   History,
   Monitor,
   ShoppingCart,
-  RefreshCw,
   Search,
   Activity,
   ChevronRight,
-  Clock
+  Clock,
+  RefreshCw
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
   Table,
@@ -149,6 +148,20 @@ const SYSTEM_ACTIONS = [
   'VACUUM',
   'SOFT_RESET'
 ]
+
+/** Parse log detail strings like "Adisyon kapatıldı. Ödenenler: 1x Item1, 1x Item2" */
+function parseLogDetail(
+  detail: string
+): { summary: string; items: { qty: number; name: string }[] } | null {
+  const match = detail.match(/^(.+?)\.\s*Ödenenler:\s*(.+)$/)
+  if (!match) return null
+  const summary = match[1]
+  const items = match[2].split(',').map((s) => {
+    const m = s.trim().match(/^(\d+)x\s+(.+)$/)
+    return m ? { qty: parseInt(m[1]), name: m[2] } : { qty: 1, name: s.trim() }
+  })
+  return { summary, items }
+}
 
 export function LogsTab(): React.JSX.Element {
   const [logs, setLogs] = useState<ActivityLog[]>([])
@@ -304,7 +317,7 @@ export function LogsTab(): React.JSX.Element {
           currentGroup.action === 'ADD_ITEM' &&
           currentGroup.tableName === log.tableName &&
           Math.abs(new Date(currentGroup.createdAt).getTime() - new Date(log.createdAt).getTime()) <
-            2 * 60 * 1000
+          2 * 60 * 1000
         ) {
           currentGroup.groupCount = (currentGroup.groupCount || 1) + 1
 
@@ -379,15 +392,6 @@ export function LogsTab(): React.JSX.Element {
               className="w-48 h-9 pl-9 bg-muted/30 border-none rounded-lg text-sm transition-all focus:w-64 focus:bg-muted/50"
             />
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => loadLogs(false)}
-            disabled={isLoading}
-            className="h-9 w-9 rounded-lg hover:bg-muted/50"
-          >
-            <RefreshCw size={14} className={cn(isLoading && 'animate-spin')} />
-          </Button>
         </div>
       </div>
 
@@ -432,7 +436,7 @@ export function LogsTab(): React.JSX.Element {
       {/* Background-Integrated Table */}
       <div className="flex-1 overflow-hidden">
         <div className="h-full overflow-auto custom-scrollbar">
-          <Table>
+          <Table className="table-fixed w-full">
             <TableHeader className="sticky top-0 bg-background/60 backdrop-blur-3xl z-10 border-b border-border/40">
               <TableRow className="hover:bg-transparent border-0">
                 <TableHead className="w-[140px] pl-6 text-[10px] font-black tracking-[0.2em] text-muted-foreground/40">
@@ -542,8 +546,8 @@ export function LogsTab(): React.JSX.Element {
                               exit={{ height: 0, opacity: 0 }}
                               className="overflow-hidden bg-muted/10"
                             >
-                              <div className="p-6 grid grid-cols-3 gap-6">
-                                <div className="col-span-2 space-y-4">
+                              <div className="p-6 grid grid-cols-[1fr_auto] gap-6">
+                                <div className="min-w-0 space-y-4">
                                   <div className="bg-background/50 p-6 rounded-2xl border border-border/30 shadow-sm">
                                     <p className="text-[10px] font-black tracking-widest text-muted-foreground/40 leading-none mb-4">
                                       SİPARİŞ DETAYI
@@ -553,21 +557,50 @@ export function LogsTab(): React.JSX.Element {
                                         {log.groupItems?.map((item, idx) => (
                                           <p
                                             key={idx}
-                                            className="text-base font-bold leading-relaxed text-foreground/90 border-b border-border/5 last:border-0 pb-2 last:pb-0"
+                                            className="text-base font-bold leading-relaxed text-foreground/90 border-b border-border/5 last:border-0 pb-2 last:pb-0 break-words"
                                           >
                                             {item.details}
                                           </p>
                                         ))}
                                       </div>
                                     ) : (
-                                      <p className="text-base font-bold leading-relaxed text-foreground/90">
-                                        {log.details}
-                                      </p>
+                                      (() => {
+                                        const parsed = parseLogDetail(log.details || '')
+                                        if (parsed) {
+                                          return (
+                                            <div className="space-y-3">
+                                              <p className="text-sm font-semibold text-foreground/70">
+                                                {parsed.summary}
+                                              </p>
+                                              <div className="space-y-1.5">
+                                                {parsed.items.map((item, idx) => (
+                                                  <div
+                                                    key={idx}
+                                                    className="flex items-center gap-3 py-1.5 border-b border-border/5 last:border-0"
+                                                  >
+                                                    <span className="inline-flex items-center justify-center min-w-[2.5rem] h-6 px-2 rounded-lg bg-primary/10 text-primary text-xs font-black tabular-nums">
+                                                      {item.qty}×
+                                                    </span>
+                                                    <span className="text-sm font-bold text-foreground/90">
+                                                      {item.name}
+                                                    </span>
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          )
+                                        }
+                                        return (
+                                          <p className="text-base font-bold leading-relaxed text-foreground/90 break-words">
+                                            {log.details}
+                                          </p>
+                                        )
+                                      })()
                                     )}
                                   </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 gap-6 border-l border-border/30 pl-6 h-fit">
+                                <div className="grid grid-cols-1 gap-6 border-l border-border/30 pl-6 h-fit w-48 flex-shrink-0">
                                   {/* Action Type */}
                                   <div className="flex gap-4 items-start">
                                     <div

@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { Plus, RefreshCw } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { Expense } from '@shared/types'
 import { ExpensesTable } from '../components/ExpensesTable'
 import { RevenueSidebar } from '../components/RevenueSidebar'
 import { ExpenseSheet } from '../components/ExpenseSheet'
-import { cn } from '@/lib/utils'
+import { createPortal } from 'react-dom'
 
 // Using api directly from window as defined in preload
 const api = window.api
@@ -153,8 +153,24 @@ export function ExpensesTab(): React.JSX.Element {
     }
   }
 
+  // Portal target for header actions
+  const [headerTarget, setHeaderTarget] = useState<HTMLElement | null>(null)
+  useEffect(() => {
+    setHeaderTarget(document.getElementById('settings-header-actions'))
+  }, [])
+
   return (
     <div className="h-full flex flex-row overflow-hidden bg-background">
+      {/* Header Actions via Portal */}
+      {headerTarget &&
+        createPortal(
+          <Button onClick={handleAddExpense} className="gap-2 font-bold px-6 rounded-xl h-9">
+            <Plus className="w-5 h-5" />
+            GİDER EKLE
+          </Button>,
+          headerTarget
+        )}
+
       {/* Sidebar */}
       <RevenueSidebar
         stats={stats}
@@ -165,18 +181,6 @@ export function ExpensesTab(): React.JSX.Element {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Action Header */}
-        <header className="h-14 flex-none border-b bg-background flex items-center justify-end px-6 gap-3">
-          <Button variant="outline" size="sm" onClick={loadExpenses} disabled={isLoading}>
-            <RefreshCw className={cn('w-4 h-4 mr-2', isLoading && 'animate-spin')} />
-            YENİLE
-          </Button>
-          <Button onClick={handleAddExpense} className="gap-2 font-bold px-6 rounded-xl h-9">
-            <Plus className="w-5 h-5" />
-            GİDER EKLE
-          </Button>
-        </header>
-
         {/* Content Area */}
         <main className="flex-1 overflow-y-auto p-8">
           <div className="max-w-6xl mx-auto">

@@ -1,4 +1,4 @@
-import { Plus, Trash2, LayoutGrid, AlertTriangle, RefreshCw } from 'lucide-react'
+import { Plus, Trash2, LayoutGrid, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import {
@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils'
 import { useState } from 'react'
 
 export function TablesTab(): React.JSX.Element {
-  const { data: tables = [], refetch, isLoading } = useTables(false)
+  const { data: tables = [], refetch } = useTables(false)
   // We can keep useTableStore if needed for other things, but here we just need data.
   // const { tables, addTable, removeTable } = useTableStore() // Removed
 
@@ -77,14 +77,6 @@ export function TablesTab(): React.JSX.Element {
 
   return (
     <Card className="h-full flex flex-col border-0 shadow-none bg-transparent">
-      {/* Action Header */}
-      <div className="flex-none py-4 px-8 border-b bg-background/50 backdrop-blur z-10 w-full flex justify-end">
-        <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading}>
-          <RefreshCw className={cn('w-4 h-4 mr-2', isLoading && 'animate-spin')} />
-          YENİLE
-        </Button>
-      </div>
-
       <div className="flex-1 overflow-y-auto p-8">
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4">
           {/* Add Table Quick Card */}

@@ -6,7 +6,6 @@ import {
   HardDrive,
   AlertTriangle,
   CheckCircle,
-  ShieldCheck,
   FileJson,
   FileSpreadsheet,
   Settings2
@@ -108,13 +107,6 @@ export function MaintenanceTab(): React.JSX.Element {
 
   return (
     <Card className="h-full flex flex-col border-0 shadow-none bg-transparent">
-      {/* Action Header */}
-      <div className="flex-none py-4 px-8 border-b bg-background/50 backdrop-blur z-10 w-full flex justify-end">
-        <div className="p-2 bg-primary/10 rounded-full text-primary">
-          <ShieldCheck className="w-5 h-5" />
-        </div>
-      </div>
-
       <div className="flex-1 overflow-y-auto p-8">
         <div className="max-w-5xl mx-auto space-y-8">
           {/* Result Banner */}

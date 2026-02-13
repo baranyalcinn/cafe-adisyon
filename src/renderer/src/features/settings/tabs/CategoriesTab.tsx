@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Plus, Trash2, Tag, Layers, RefreshCw } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Plus, Trash2, Tag, Layers } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
@@ -21,10 +21,10 @@ import {
 import { cafeApi } from '@/lib/api'
 import { useInventory } from '@/hooks/useInventory'
 import { toast } from '@/store/useToastStore'
-import { cn } from '@/lib/utils'
+import { createPortal } from 'react-dom'
 
 export function CategoriesTab(): React.JSX.Element {
-  const { categories, products, refetchCategories, isLoading } = useInventory()
+  const { categories, products, refetchCategories } = useInventory()
   const [newCategoryName, setNewCategoryName] = useState('')
   const [deleteCategoryId, setDeleteCategoryId] = useState<string | null>(null)
   const [showDeleteCategoryDialog, setShowDeleteCategoryDialog] = useState(false)
@@ -72,36 +72,34 @@ export function CategoriesTab(): React.JSX.Element {
     }
   }
 
+  // Portal target for header actions
+  const [headerTarget, setHeaderTarget] = useState<HTMLElement | null>(null)
+  useEffect(() => {
+    setHeaderTarget(document.getElementById('settings-header-actions'))
+  }, [])
+
   return (
     <Card className="h-full flex flex-col border-0 shadow-none bg-transparent">
-      {/* Action Header */}
-      <div className="flex-none py-4 px-8 border-b bg-background/50 backdrop-blur z-10 w-full">
-        <div className="flex items-center justify-end gap-3">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => refetchCategories()}
-            disabled={isLoading}
-            className="font-bold tracking-wider"
-          >
-            <RefreshCw className={cn('w-4 h-4 mr-2', isLoading && 'animate-spin')} />
-            YENİLE
-          </Button>
-          <div className="relative">
-            <Input
-              placeholder="Yeni kategori adı..."
-              value={newCategoryName}
-              onChange={(e) => setNewCategoryName(e.target.value)}
-              className="w-48 h-9 bg-background/50"
-              onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
-            />
-          </div>
-          <Button onClick={handleAddCategory} size="sm" className="gap-2 font-bold px-4">
-            <Plus className="w-4 h-4" />
-            EKLE
-          </Button>
-        </div>
-      </div>
+      {/* Action Header via Portal */}
+      {headerTarget &&
+        createPortal(
+          <>
+            <div className="relative">
+              <Input
+                placeholder="Yeni kategori adı..."
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                className="w-48 h-9 bg-background/50"
+                onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
+              />
+            </div>
+            <Button onClick={handleAddCategory} size="sm" className="gap-2 font-bold px-4">
+              <Plus className="w-4 h-4" />
+              EKLE
+            </Button>
+          </>,
+          headerTarget
+        )}
 
       {/* Main List Area */}
       <div className="flex-1 overflow-y-auto p-8">

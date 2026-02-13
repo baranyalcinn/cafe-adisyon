@@ -131,7 +131,7 @@ export function EndOfDayModal({ open, onClose }: EndOfDayModalProps): React.JSX.
           {step === 'checking' && (
             <div className="flex flex-col items-center justify-center py-8 gap-4">
               <Loader2 className="w-12 h-12 text-primary animate-spin" />
-              <p className="text-muted-foreground">AÇIK MASALAR KONTROL EDİLİYOR...</p>
+              <p className="text-muted-foreground">Açık masalar kontrol ediliyor...</p>
             </div>
           )}
 
@@ -143,7 +143,7 @@ export function EndOfDayModal({ open, onClose }: EndOfDayModalProps): React.JSX.
                 <div>
                   <p className="font-semibold">AÇIK MASALAR VAR!</p>
                   <p className="text-sm">
-                    GÜN SONU YAPABİLMEK İÇİN ÖNCE AŞAĞIDAKİ MASALARI KAPATMANIZ GEREKİYOR.
+                    Gün sonu yapabilmek için önce aşağıdaki masaları kapatmanız gerekiyor.
                   </p>
                 </div>
               </div>
@@ -176,7 +176,7 @@ export function EndOfDayModal({ open, onClose }: EndOfDayModalProps): React.JSX.
                 <CheckCircle className="w-6 h-6 flex-shrink-0" />
                 <div>
                   <p className="font-semibold">TÜM MASALAR KAPALI</p>
-                  <p className="text-sm">GÜN SONU İŞLEMİ BAŞLATILABİLİR.</p>
+                  <p className="text-sm">Gün sonu işlemi başlatılabilir.</p>
                 </div>
               </div>
 
@@ -184,13 +184,10 @@ export function EndOfDayModal({ open, onClose }: EndOfDayModalProps): React.JSX.
                 <p className="font-medium">YAPILACAK İŞLEMLER:</p>
                 <ul className="text-sm text-muted-foreground space-y-1">
                   <li className="flex items-center gap-2">
-                    <FileText className="w-4 h-4" /> Z-RAPORU OLUŞTURULACAK
+                    <FileText className="w-4 h-4" /> Z-Raporu oluşturulacak
                   </li>
                   <li className="flex items-center gap-2">
-                    <Database className="w-4 h-4" /> VERİTABANI YEDEKLENECEK
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Database className="w-4 h-4" /> VERİTABANI OPTİMİZE EDİLECEK (VACUUM)
+                    <Database className="w-4 h-4" /> Veritabanı yedeklenecek
                   </li>
                 </ul>
               </div>
@@ -266,7 +263,7 @@ export function EndOfDayModal({ open, onClose }: EndOfDayModalProps): React.JSX.
                   <span className="font-mono">
                     {formatCurrency(
                       Math.round(parseFloat(actualCashInput) * 100) -
-                        (expectedTotals.cash - expectedTotals.expenses)
+                      (expectedTotals.cash - expectedTotals.expenses)
                     )}
                   </span>
                 </div>
@@ -274,7 +271,7 @@ export function EndOfDayModal({ open, onClose }: EndOfDayModalProps): React.JSX.
 
               <div className="flex gap-2">
                 <Button variant="outline" className="flex-1" onClick={() => setStep('confirm')}>
-                  Geri
+                  GERİ
                 </Button>
                 <Button
                   className="flex-1 bg-primary font-bold shadow-lg shadow-primary/20"
@@ -307,7 +304,7 @@ export function EndOfDayModal({ open, onClose }: EndOfDayModalProps): React.JSX.
                 <CheckCircle className="w-6 h-6 flex-shrink-0" />
                 <div>
                   <p className="font-semibold">GÜN SONU TAMAMLANDI!</p>
-                  <p className="text-sm">TÜM İŞLEMLER BAŞARIYLA GERÇEKLEŞTİRİLDİ.</p>
+                  <p className="text-sm">Tüm işlemler başarıyla gerçekleştirildi.</p>
                 </div>
               </div>
 
