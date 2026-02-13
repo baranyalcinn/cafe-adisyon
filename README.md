@@ -114,11 +114,16 @@ graph TD
         SQLite[(LibSQL / SQLite)]
     end
 
-    Renderer :::renderer --> IPC :::ipc
-    IPC --> Main :::main
+    Renderer --> IPC
+    IPC --> Main
     Handlers --> Services
-    Services --> Prisma :::db
+    Services --> Prisma
     Prisma --> SQLite
+
+    class Renderer renderer
+    class Main main
+    class IPC ipc
+    class Database db
 ```
 
 ---
