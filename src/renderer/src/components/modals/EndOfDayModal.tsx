@@ -263,7 +263,7 @@ export function EndOfDayModal({ open, onClose }: EndOfDayModalProps): React.JSX.
                   <span className="font-mono">
                     {formatCurrency(
                       Math.round(parseFloat(actualCashInput) * 100) -
-                      (expectedTotals.cash - expectedTotals.expenses)
+                        (expectedTotals.cash - expectedTotals.expenses)
                     )}
                   </span>
                 </div>

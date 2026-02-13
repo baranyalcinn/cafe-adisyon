@@ -951,7 +951,7 @@ export function DashboardView(): React.JSX.Element {
                     {formatCurrency(
                       zReportHistory.length > 0
                         ? zReportHistory.reduce((acc, curr) => acc + curr.totalRevenue, 0) /
-                        zReportHistory.length
+                            zReportHistory.length
                         : 0
                     )}
                   </div>

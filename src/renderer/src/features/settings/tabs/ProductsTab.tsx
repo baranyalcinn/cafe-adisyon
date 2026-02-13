@@ -152,8 +152,6 @@ export function ProductsTab(): React.JSX.Element {
 
         {/* Right Content */}
         <div className="flex-1 h-full bg-background flex flex-col">
-
-
           <div className="flex-1 overflow-y-auto p-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-20">
               {/* Add Product Card */}

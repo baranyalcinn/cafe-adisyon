@@ -317,7 +317,7 @@ export function LogsTab(): React.JSX.Element {
           currentGroup.action === 'ADD_ITEM' &&
           currentGroup.tableName === log.tableName &&
           Math.abs(new Date(currentGroup.createdAt).getTime() - new Date(log.createdAt).getTime()) <
-          2 * 60 * 1000
+            2 * 60 * 1000
         ) {
           currentGroup.groupCount = (currentGroup.groupCount || 1) + 1
 

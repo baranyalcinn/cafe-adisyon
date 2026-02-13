@@ -53,7 +53,8 @@ export default defineConfig({
           '@libsql/win32-x64-msvc',
           'bufferutil',
           'utf-8-validate',
-          'detect-libc'
+          'detect-libc',
+          'electron'
         ]
       }
     }
