@@ -16,7 +16,6 @@ directories:
 
 compression: maximum
 asar: true
-detectUpdateChannel: false
 files:
   - out/**/*
   - package.json

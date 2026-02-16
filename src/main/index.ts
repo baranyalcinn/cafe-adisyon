@@ -10,16 +10,10 @@ import { basePrisma } from './db/prisma'
 const isDev = process.env.NODE_ENV === 'development'
 const isPackaged = app.isPackaged
 
-// Configure Auto Updater (Production Only)
-if (!isDev && isPackaged) {
-  autoUpdater.logger = electronLog
-  autoUpdater.autoDownload = true
-  autoUpdater.allowDowngrade = false
-  autoUpdater.allowPrerelease = false
-}
-
-// Graceful Shutdown Flags
+// Quit flag for graceful shutdown
 let isQuitting = false
+let updateCheckRetries = 0
+const MAX_RETRIES = 3
 
 function createWindow(): void {
   // Create the browser window - optimized for POS application
@@ -72,7 +66,7 @@ function createWindow(): void {
       responseHeaders: {
         ...details.responseHeaders,
         'Content-Security-Policy': [
-          "default-src 'self' 'unsafe-inline' data:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: resource: blob: file:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://api.caffio.app;"
+          "default-src 'self' 'unsafe-inline' data:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: resource: blob: file:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://api.caffio.app https://github.com https://*.github.com;"
         ]
       }
     })
@@ -95,6 +89,15 @@ function createWindow(): void {
 }
 
 // --- Auto Updater Global Configuration ---
+
+// Configure Auto Updater (Production Only)
+if (!isDev && isPackaged) {
+  autoUpdater.logger = electronLog
+  autoUpdater.autoDownload = true
+  autoUpdater.allowDowngrade = false
+  autoUpdater.allowPrerelease = false
+  autoUpdater.autoInstallOnAppQuit = true
+}
 
 // Send events to all windows
 function sendToAllWindows(channel: string, ...args: unknown[]): void {
@@ -129,17 +132,24 @@ autoUpdater.on('checking-for-update', () => {
 })
 
 autoUpdater.on('update-available', (info) => {
+  updateCheckRetries = 0
   logger.info('AutoUpdater', `Update available: ${info.version}`)
-  sendToAllWindows('update-available', info)
+  sendToAllWindows('update-available', { version: info.version })
 })
 
 autoUpdater.on('update-not-available', () => {
+  updateCheckRetries = 0
   logger.info('AutoUpdater', 'Update not available')
   sendToAllWindows('update-not-available')
 })
 
 autoUpdater.on('download-progress', (progress) => {
-  sendToAllWindows('download-progress', progress)
+  // logger.info('AutoUpdater', `Downloaded ${Math.round(progress.percent)}%`) // Optional: Log progress
+  sendToAllWindows('download-progress', {
+    percent: Math.round(progress.percent),
+    transferred: progress.transferred,
+    total: progress.total
+  })
 })
 
 autoUpdater.on('update-downloaded', async (info) => {
@@ -164,16 +174,32 @@ autoUpdater.on('update-downloaded', async (info) => {
   sendToAllWindows('update-downloaded', {
     version: info.version,
     releaseNotes: info.releaseNotes,
+    releaseDate: info.releaseDate,
+    currentVersion: app.getVersion(),
     safeToUpdate
   })
 })
 
 autoUpdater.on('error', (err) => {
   logger.error('AutoUpdater', err)
-  sendToAllWindows('update-error', {
-    message: err.message || 'Bilinmeyen güncelleme hatası',
-    canRetry: true
-  })
+
+  // Network Error Retry Mechanism
+  if (err.message?.includes('net::') && updateCheckRetries < MAX_RETRIES) {
+    updateCheckRetries++
+    logger.info('AutoUpdater', `Retrying... (${updateCheckRetries}/${MAX_RETRIES})`)
+
+    setTimeout(() => {
+      if (!isDev && isPackaged) {
+        autoUpdater.checkForUpdatesAndNotify()
+      }
+    }, 30000) // Retry after 30 seconds
+  } else {
+    updateCheckRetries = 0
+    sendToAllWindows('update-error', {
+      message: err.message || 'Bilinmeyen güncelleme hatası',
+      canRetry: true
+    })
+  }
 })
 
 // Global IPC for restarting after update
@@ -183,9 +209,21 @@ ipcMain.on('restart_app', () => {
 })
 
 // Manual Check IPC
-ipcMain.on('check-for-updates', () => {
-  if (!isDev && isPackaged) {
-    autoUpdater.checkForUpdatesAndNotify()
+ipcMain.handle('check-for-updates-manual', async () => {
+  if (!isDev && !isPackaged) {
+    return { available: false, message: 'Dev modunda güncelleme yok' }
+  }
+
+  try {
+    const result = await autoUpdater.checkForUpdates()
+    return {
+      available: result !== null,
+      version: result?.updateInfo.version,
+      currentVersion: app.getVersion()
+    }
+  } catch (error) {
+    logger.error('Manual update check failed', error)
+    return { available: false, error: (error as Error).message }
   }
 })
 
@@ -224,11 +262,20 @@ if (!gotTheLock) {
 
     createWindow()
 
+    logger.info('App', `Starting Caffio v${app.getVersion()}`)
+
     // Check for updates (Production Only)
     // We wait a bit to let the window load
     setTimeout(() => {
       if (!isDev && isPackaged) {
         autoUpdater.checkForUpdatesAndNotify()
+        // Check daily
+        setInterval(
+          () => {
+            autoUpdater.checkForUpdatesAndNotify()
+          },
+          24 * 60 * 60 * 1000
+        )
       }
     }, 3000)
 
