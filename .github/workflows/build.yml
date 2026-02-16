@@ -50,7 +50,7 @@ jobs:
       # STEP 1: Install electron-builder globally BEFORE surgery
       # This ensures the build tool is completely independent of local node_modules
       - name: Install Electron Builder Globally
-        run: npm install -g electron-builder@26.4.0
+        run: npm install -g electron-builder@latest
 
       # STEP 2: Prune node_modules to keep ONLY runtime native deps
       # electron-builder runs from global, so we don't need any build tools locally
@@ -81,7 +81,22 @@ jobs:
             "formdata-polyfill",
             "bufferutil",
             "utf-8-validate",
-            "detect-libc"
+            "detect-libc",
+            "electron-updater",
+            "electron-log",
+            "semver",
+            "builder-util-runtime",
+            "fs-extra",
+            "lodash.escaperegexp",
+            "js-yaml",
+            "lazy-val",
+            "lodash.isequal",
+            "tiny-typed-emitter",
+            "graceful-fs",
+            "jsonfile",
+            "universalify",
+            "sax",
+            "debug"
           )
           Write-Host "Starting manual surgery - keeping ONLY runtime deps..."
           Move-Item node_modules node_modules_full

@@ -50,7 +50,7 @@ jobs:
 
       # STEP 1: Install electron-builder globally
       - name: Install Electron Builder Globally
-        run: npm install -g electron-builder@26.4.0
+        run: npm install -g electron-builder@latest
 
       # STEP 2: Prune node_modules to keep ONLY runtime native deps
       - name: Prepare for Packaging
@@ -82,7 +82,20 @@ jobs:
             "utf-8-validate",
             "detect-libc",
             "electron-updater",
-            "electron-log"
+            "electron-log",
+            "semver",
+            "builder-util-runtime",
+            "fs-extra",
+            "lodash.escaperegexp",
+            "js-yaml",
+            "lazy-val",
+            "lodash.isequal",
+            "tiny-typed-emitter",
+            "graceful-fs",
+            "jsonfile",
+            "universalify",
+            "sax",
+            "debug"
           )
           Write-Host "Starting manual surgery - keeping ONLY runtime deps..."
           Move-Item node_modules node_modules_full
