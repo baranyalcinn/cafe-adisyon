@@ -6,6 +6,9 @@ publish:
   provider: github
   owner: baranyalcinn
   repo: cafe-adisyon
+  releaseType: release
+
+detectUpdateChannel: true
 
 directories:
   buildResources: build

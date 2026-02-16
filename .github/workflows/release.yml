@@ -80,7 +80,9 @@ jobs:
             "formdata-polyfill",
             "bufferutil",
             "utf-8-validate",
-            "detect-libc"
+            "detect-libc",
+            "electron-updater",
+            "electron-log"
           )
           Write-Host "Starting manual surgery - keeping ONLY runtime deps..."
           Move-Item node_modules node_modules_full

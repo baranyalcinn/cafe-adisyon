@@ -6,9 +6,20 @@ import { logger, electronLog } from './lib/logger'
 import { dbMaintenance } from './lib/db-maintenance'
 import { basePrisma } from './db/prisma'
 
-// Configure Auto Updater
-autoUpdater.logger = electronLog
-autoUpdater.autoDownload = true
+// Configuration constants
+const isDev = process.env.NODE_ENV === 'development'
+const isPackaged = app.isPackaged
+
+// Configure Auto Updater (Production Only)
+if (!isDev && isPackaged) {
+  autoUpdater.logger = electronLog
+  autoUpdater.autoDownload = true
+  autoUpdater.allowDowngrade = false
+  autoUpdater.allowPrerelease = false
+}
+
+// Graceful Shutdown Flags
+let isQuitting = false
 
 function createWindow(): void {
   // Create the browser window - optimized for POS application
@@ -83,45 +94,99 @@ function createWindow(): void {
   }
 }
 
-// Auto Updater Events - Defined globally to prevent duplicate listeners
-autoUpdater.on('checking-for-update', () => {
-  logger.info('AutoUpdater', 'Checking for update...')
+// --- Auto Updater Global Configuration ---
+
+// Send events to all windows
+function sendToAllWindows(channel: string, ...args: unknown[]): void {
   BrowserWindow.getAllWindows().forEach((win) => {
-    win.webContents.send('checking-for-update')
+    win.webContents.send(channel, ...args)
   })
+}
+
+// Safety Check IPC
+ipcMain.handle('can-update-safely', async () => {
+  try {
+    // Check for open orders (OPEN, PREPARING, SERVED, etc.)
+    // We assume 'COMPLETED' and 'CANCELLED' are the only safe statuses.
+    const openOrders = await basePrisma.order.count({
+      where: {
+        status: {
+          notIn: ['COMPLETED', 'CANCELLED']
+        }
+      }
+    })
+    return openOrders === 0
+  } catch (error) {
+    logger.error('Safety Check', error)
+    return false // Fail safe
+  }
 })
 
-autoUpdater.on('update-available', () => {
-  logger.info('AutoUpdater', 'Update available')
-  BrowserWindow.getAllWindows().forEach((win) => {
-    win.webContents.send('update-available')
-  })
+// Auto Updater Events
+autoUpdater.on('checking-for-update', () => {
+  logger.info('AutoUpdater', 'Checking for update...')
+  sendToAllWindows('checking-for-update')
+})
+
+autoUpdater.on('update-available', (info) => {
+  logger.info('AutoUpdater', `Update available: ${info.version}`)
+  sendToAllWindows('update-available', info)
 })
 
 autoUpdater.on('update-not-available', () => {
   logger.info('AutoUpdater', 'Update not available')
-  BrowserWindow.getAllWindows().forEach((win) => {
-    win.webContents.send('update-not-available')
-  })
+  sendToAllWindows('update-not-available')
 })
 
-autoUpdater.on('update-downloaded', () => {
-  logger.info('AutoUpdater', 'Update downloaded')
-  BrowserWindow.getAllWindows().forEach((win) => {
-    win.webContents.send('update-downloaded')
+autoUpdater.on('download-progress', (progress) => {
+  sendToAllWindows('download-progress', progress)
+})
+
+autoUpdater.on('update-downloaded', async (info) => {
+  logger.info('AutoUpdater', `Update downloaded: ${info.version}`)
+
+  // Check if safe to update
+  let safeToUpdate = false
+  try {
+    const openOrders = await basePrisma.order.count({
+      where: {
+        status: {
+          notIn: ['COMPLETED', 'CANCELLED']
+        }
+      }
+    })
+    safeToUpdate = openOrders === 0
+  } catch (e) {
+    logger.error('AutoUpdater', e)
+  }
+
+  // Notify Renderer
+  sendToAllWindows('update-downloaded', {
+    version: info.version,
+    releaseNotes: info.releaseNotes,
+    safeToUpdate
   })
 })
 
 autoUpdater.on('error', (err) => {
   logger.error('AutoUpdater', err)
-  BrowserWindow.getAllWindows().forEach((win) => {
-    win.webContents.send('update-error', err.message || 'Unknown update error')
+  sendToAllWindows('update-error', {
+    message: err.message || 'Bilinmeyen güncelleme hatası',
+    canRetry: true
   })
 })
 
 // Global IPC for restarting after update
 ipcMain.on('restart_app', () => {
+  isQuitting = true // Bypass graceful shutdown check
   autoUpdater.quitAndInstall(true, true)
+})
+
+// Manual Check IPC
+ipcMain.on('check-for-updates', () => {
+  if (!isDev && isPackaged) {
+    autoUpdater.checkForUpdatesAndNotify()
+  }
 })
 
 // Force GPU acceleration features for maximum performance
@@ -145,7 +210,6 @@ if (!gotTheLock) {
 
   // This method will be called when Electron has finished
   // initialization and is ready to create browser windows.
-  // Some APIs can only be used after this event occurs.
   app.whenReady().then(async () => {
     // Set app user model id for windows
     if (process.platform === 'win32') {
@@ -160,10 +224,13 @@ if (!gotTheLock) {
 
     createWindow()
 
-    // Check for updates
-    if (app.isPackaged) {
-      autoUpdater.checkForUpdatesAndNotify()
-    }
+    // Check for updates (Production Only)
+    // We wait a bit to let the window load
+    setTimeout(() => {
+      if (!isDev && isPackaged) {
+        autoUpdater.checkForUpdatesAndNotify()
+      }
+    }, 3000)
 
     // Power Monitor
     powerMonitor.on('suspend', () => {
@@ -191,9 +258,7 @@ if (!gotTheLock) {
   })
 }
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
+// Quit when all windows are closed, except on macOS.
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
@@ -202,20 +267,21 @@ app.on('window-all-closed', () => {
 
 // Graceful shutdown — flush pending operations before exit
 app.on('before-quit', async (event) => {
-  // We need to prevent immediate quit to allow DB disconnect,
-  // but if we preventDefault, we must call app.exit() ourself.
-  // However, autoUpdater.quitAndInstall() might trigger this too.
+  // If explicitly quitting (e.g. for update), skip this check
+  if (isQuitting || !basePrisma) return
 
-  if (!basePrisma) return
-
+  // Prevent immediate quit to allow DB disconnect
   event.preventDefault()
+  isQuitting = true // Prevent infinite loop if we call app.quit() again
+
   try {
     await basePrisma.$disconnect()
     logger.info('App', 'Graceful shutdown completed')
   } catch (error) {
     logger.error('Shutdown error', error)
+  } finally {
+    app.exit(0)
   }
-  app.exit(0)
 })
 
 // Global Exception Handlers
