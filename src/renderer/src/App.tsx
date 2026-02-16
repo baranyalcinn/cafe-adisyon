@@ -11,6 +11,7 @@ import '@/styles/globals.css'
 import { Toaster } from '@/components/ui/toaster'
 import { TitleBar } from '@/components/TitleBar'
 import { AnimatePresence, motion, Variants } from 'framer-motion'
+import { UpdateNotifier } from '@/components/UpdateNotifier'
 
 const SettingsView = lazy(() =>
   import('@/features/settings/SettingsView').then((m) => ({ default: m.SettingsView }))
@@ -128,6 +129,7 @@ function App(): React.JSX.Element {
       </div>
 
       <Toaster />
+      <UpdateNotifier />
     </div>
   )
 }

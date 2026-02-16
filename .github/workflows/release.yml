@@ -1,0 +1,123 @@
+name: Release Cafe Adisyon
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    permissions:
+      contents: write
+      actions: write
+
+    steps:
+      - name: Kodları Çek
+        uses: actions/checkout@v4
+
+      # Swap Alanı (8GB) - Extra güvenlik için tutuyoruz
+      - name: Set Pagefile (Swap)
+        uses: al-cheb/configure-pagefile-action@v1.4
+        with:
+          minimum-size: 8GB
+          maximum-size: 8GB
+          disk-root: 'C:'
+
+      - name: Node.js Kur (v24)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Temiz Kurulum
+        run: |
+          # 1. Eski kilit dosyasını sil (Temiz sayfa)
+          if (Test-Path package-lock.json) { Remove-Item package-lock.json }
+          # 2. Node Modules varsa sil
+          if (Test-Path node_modules) { Remove-Item node_modules -Recurse -Force -ErrorAction SilentlyContinue }
+          # 3. Bağımlılıkları Yükle
+          npm install --legacy-peer-deps
+
+      - name: Prisma Generate
+        run: npx prisma generate
+
+      - name: Native Rebuild
+        run: npm run rebuild --if-present
+
+      - name: TypeScript Build
+        run: npm run build
+
+      # STEP 1: Install electron-builder globally
+      - name: Install Electron Builder Globally
+        run: npm install -g electron-builder@26.4.0
+
+      # STEP 2: Prune node_modules to keep ONLY runtime native deps
+      - name: Prepare for Packaging
+        run: |
+          # Runtime dependencies that must be preserved
+          # Format: "scope/package" for scoped, "package" for regular
+          $essential = @(
+            "@libsql/client",
+            "@libsql/core",
+            "@libsql/hrana-client",
+            "@libsql/isomorphic-fetch",
+            "@libsql/isomorphic-ws",
+            "@libsql/win32-x64-msvc",
+            "@neon-rs/load",
+            "libsql",
+            "js-base64",
+            "ws",
+            "cross-fetch",
+            "node-fetch",
+            "node-fetch-native",
+            "whatwg-url",
+            "webidl-conversions",
+            "tr46",
+            "web-streams-polyfill",
+            "data-uri-to-buffer",
+            "fetch-blob",
+            "formdata-polyfill",
+            "bufferutil",
+            "utf-8-validate",
+            "detect-libc"
+          )
+          Write-Host "Starting manual surgery - keeping ONLY runtime deps..."
+          Move-Item node_modules node_modules_full
+          New-Item -ItemType Directory -Path node_modules
+          foreach ($mod in $essential) {
+            $srcPath = "node_modules_full/$mod"
+            $dstPath = "node_modules/$mod"
+            
+            if (Test-Path $srcPath) {
+              # Handle scoped packages (e.g., @libsql/client)
+              if ($mod.StartsWith("@")) {
+                $scope = $mod.Split("/")[0]
+                if (!(Test-Path "node_modules/$scope")) { 
+                  New-Item -ItemType Directory -Path "node_modules/$scope" | Out-Null
+                }
+              }
+              Copy-Item -Path $srcPath -Destination $dstPath -Recurse -Force
+              Write-Host "Preserved: $mod"
+            } else {
+              Write-Host "Not found (skipping): $mod"
+            }
+          }
+          # Cleanup
+          Remove-Item node_modules_full -Recurse -Force
+          Write-Host "Surgery complete. Only runtime dependencies remain."
+      # STEP 3: Run electron-builder from GLOBAL installation with PUBLISH flag
+      - name: Build & Publish Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_OPTIONS: '--max-old-space-size=8192'
+          DEBUG: electron-builder
+        run: electron-builder --win --publish always
+
+      # Optional: Upload artifacts to Action run as backup
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Release-Builds
+          path: dist/*.exe
+          retention-days: 5

@@ -32,6 +32,7 @@ export function Toaster(): React.JSX.Element | null {
           <div className="flex-1 overflow-hidden">
             {toast.title && <h4 className="font-semibold text-sm">{toast.title}</h4>}
             {toast.description && <p className="text-sm opacity-90 mt-1">{toast.description}</p>}
+            {toast.action && <div className="mt-2 text-sm">{toast.action}</div>}
           </div>
 
           <button
