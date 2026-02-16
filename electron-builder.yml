@@ -44,6 +44,8 @@ files:
   - node_modules/universalify/**
   - node_modules/sax/**
   - node_modules/debug/**
+  - node_modules/ms/**
+  - node_modules/argparse/**
 
   # Kaynak kodları hariç tut
   - '!**/*.ts'
