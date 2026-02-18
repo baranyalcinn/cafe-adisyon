@@ -44,7 +44,7 @@ export const ProductCard = memo(function ProductCard({
       <div className="relative flex flex-col p-4 bg-background border-2 border-primary/20 rounded-2xl shadow-lg animate-in zoom-in-95 duration-200">
         <div className="space-y-3">
           <div>
-            <h3 className="font-bold text-sm tracking-tight text-muted-foreground">ÜRÜN ADI</h3>
+            <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.15em] mb-1">ÜRÜN ADI</h3>
             <Input
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
@@ -53,7 +53,7 @@ export const ProductCard = memo(function ProductCard({
             />
           </div>
           <div>
-            <label className="text-[10px] font-bold text-muted-foreground">FİYAT (₺)</label>
+            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.15em] mb-1">FİYAT (₺)</label>
             <Input
               type="number"
               value={editPrice}
@@ -116,7 +116,7 @@ export const ProductCard = memo(function ProductCard({
           onClick={() => setIsEditing(true)}
           title="Fiyatı düzenlemek için tıkla"
         >
-          <span className="text-2xl font-black text-primary tracking-tight group-hover/price:underline decoration-dashed decoration-primary/30 underline-offset-4">
+          <span className="text-2xl font-black text-primary tabular-nums tracking-tighter group-hover/price:underline decoration-dashed decoration-primary/30 underline-offset-4">
             {formatCurrency(product.price).replace('₺', '')}
           </span>
           <span className="text-xs font-bold text-muted-foreground ml-0.5">₺</span>

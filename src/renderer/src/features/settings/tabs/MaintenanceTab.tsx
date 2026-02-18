@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { cafeApi } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
@@ -107,8 +108,8 @@ export function MaintenanceTab(): React.JSX.Element {
 
   return (
     <Card className="h-full flex flex-col border-0 shadow-none bg-transparent">
-      <div className="flex-1 overflow-y-auto p-8">
-        <div className="max-w-5xl mx-auto space-y-8">
+      <ScrollArea className="flex-1">
+        <div className="p-8 max-w-5xl mx-auto space-y-8">
           {/* Result Banner */}
           {lastResult && (
             <div
@@ -276,7 +277,7 @@ export function MaintenanceTab(): React.JSX.Element {
             </p>
           </div>
         </div>
-      </div>
+      </ScrollArea>
     </Card>
   )
 }

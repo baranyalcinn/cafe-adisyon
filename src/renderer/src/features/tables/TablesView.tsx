@@ -99,16 +99,16 @@ const TableCard = memo(
               </div>
 
               <div className="text-center space-y-2">
-                <span className="text-lg font-black text-foreground tracking-tight block">
+                <span className="text-lg font-bold text-foreground tracking-tight block">
                   {name}
                 </span>
                 <div
                   className={cn(
-                    'text-[12px] font-black tracking-widest px-4 py-1.5 rounded-xl border-2 transition-colors',
+                    'text-[10px] font-bold tracking-[0.15em] px-3 py-1 rounded-full border transition-all duration-300',
                     hasOpenOrder
-                      ? 'border-info/40 bg-info/15 text-info'
-                      : 'border-success/40 bg-success/15 text-success',
-                    isLocked && 'border-warning/40 bg-warning/15 text-warning'
+                      ? 'border-info/20 bg-info/10 text-info'
+                      : 'border-success/20 bg-success/10 text-success',
+                    isLocked && 'border-warning/20 bg-warning/10 text-warning'
                   )}
                 >
                   {isLocked ? 'KİLİTLİ' : hasOpenOrder ? 'DOLU' : 'BOŞ'}
@@ -249,7 +249,7 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
       <div className="flex-none py-4 px-8 border-b bg-background/80 backdrop-blur-md z-10 w-full mb-2">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold tracking-tight">Masalar</h2>
+            <h2 className="text-2xl font-bold tracking-tight">Masalar</h2>
           </div>
         </div>
       </div>
@@ -328,8 +328,8 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
           </div>
           {tables.filter((t) => t.id !== transferModal.sourceTableId && !t.hasOpenOrder).length ===
             0 && (
-            <p className="text-muted-foreground text-center">Transfer için uygun boş masa yok.</p>
-          )}
+              <p className="text-muted-foreground text-center">Transfer için uygun boş masa yok.</p>
+            )}
           <DialogFooter>
             <Button
               variant="ghost"
@@ -374,10 +374,10 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
           </div>
           {tables.filter((t) => t.id !== mergeModal.sourceTableId && t.hasOpenOrder).length ===
             0 && (
-            <p className="text-muted-foreground text-center">
-              Birleştirme için uygun dolu masa yok.
-            </p>
-          )}
+              <p className="text-muted-foreground text-center">
+                Birleştirme için uygun dolu masa yok.
+              </p>
+            )}
           <DialogFooter>
             <Button
               variant="ghost"

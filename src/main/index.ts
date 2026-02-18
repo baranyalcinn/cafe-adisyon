@@ -2,6 +2,7 @@ import { app, shell, BrowserWindow, ipcMain, powerMonitor } from 'electron'
 import { join } from 'path'
 import { autoUpdater } from 'electron-updater'
 import { registerAllHandlers } from './ipc'
+import { IPC_CHANNELS } from '../shared/types'
 import { logger, electronLog } from './lib/logger'
 import { dbMaintenance } from './lib/db-maintenance'
 import { basePrisma } from './db/prisma'
@@ -203,27 +204,30 @@ autoUpdater.on('error', (err) => {
 })
 
 // Global IPC for restarting after update
-ipcMain.on('restart_app', () => {
+ipcMain.on(IPC_CHANNELS.SYSTEM_RESTART, () => {
   isQuitting = true // Bypass graceful shutdown check
   autoUpdater.quitAndInstall(true, true)
 })
 
 // Manual Check IPC
-ipcMain.handle('check-for-updates-manual', async () => {
+ipcMain.handle(IPC_CHANNELS.SYSTEM_CHECK_UPDATE, async () => {
   if (!isDev && !isPackaged) {
-    return { available: false, message: 'Dev modunda güncelleme yok' }
+    return { success: true, data: { available: false, message: 'Dev modunda güncelleme yok' } }
   }
 
   try {
     const result = await autoUpdater.checkForUpdates()
     return {
-      available: result !== null,
-      version: result?.updateInfo.version,
-      currentVersion: app.getVersion()
+      success: true,
+      data: {
+        available: result !== null,
+        version: result?.updateInfo.version,
+        currentVersion: app.getVersion()
+      }
     }
   } catch (error) {
     logger.error('Manual update check failed', error)
-    return { available: false, error: (error as Error).message }
+    return { success: false, error: (error as Error).message }
   }
 })
 

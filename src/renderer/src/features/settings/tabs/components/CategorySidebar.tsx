@@ -58,7 +58,9 @@ export const CategorySidebar = memo(
       <div className="flex flex-col h-full w-full max-w-[280px]">
         <div className="p-4 border-b bg-background/50 backdrop-blur">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="font-bold text-sm tracking-tight text-muted-foreground">KATEGORİLER</h3>
+            <h3 className="font-bold text-[10px] tracking-[0.15em] text-muted-foreground/70 uppercase">
+              KATEGORİLER
+            </h3>
             <Button
               size="icon"
               variant="ghost"
@@ -135,7 +137,9 @@ export const CategorySidebar = memo(
                   </div>
                 ) : (
                   <>
-                    <span className="truncate text-sm">{category.name}</span>
+                    <span className="truncate text-sm font-bold tracking-tight">
+                      {category.name}
+                    </span>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button

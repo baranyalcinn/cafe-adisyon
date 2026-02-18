@@ -263,7 +263,11 @@ const api = {
   // System
   system: {
     check: (): Promise<ApiResponse<{ dbPath: string; connection: boolean; tableCount: number }>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.SYSTEM_CHECK)
+      ipcRenderer.invoke(IPC_CHANNELS.SYSTEM_CHECK),
+    checkUpdate: (): Promise<
+      ApiResponse<{ available: boolean; version?: string; currentVersion?: string }>
+    > => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM_CHECK_UPDATE),
+    restart: (): void => ipcRenderer.send(IPC_CHANNELS.SYSTEM_RESTART)
   },
 
   // Reports
@@ -277,6 +281,11 @@ const api = {
     minimize: (): void => ipcRenderer.send(IPC_CHANNELS.WINDOW_MINIMIZE),
     maximize: (): void => ipcRenderer.send(IPC_CHANNELS.WINDOW_MAXIMIZE),
     close: (): void => ipcRenderer.send(IPC_CHANNELS.WINDOW_CLOSE)
+  },
+
+  // Events
+  on: (channel: string, callback: (...args: unknown[]) => void) => {
+    ipcRenderer.on(channel, (_event, ...args) => callback(...args))
   }
 }
 

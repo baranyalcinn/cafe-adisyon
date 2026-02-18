@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import type { Expense } from '@shared/types'
 import { ExpensesTable } from '../components/ExpensesTable'
 import { RevenueSidebar } from '../components/RevenueSidebar'
@@ -182,8 +183,8 @@ export function ExpensesTab(): React.JSX.Element {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Content Area */}
-        <main className="flex-1 overflow-y-auto p-8">
-          <div className="max-w-6xl mx-auto">
+        <ScrollArea className="flex-1">
+          <div className="p-8 max-w-6xl mx-auto">
             <ExpensesTable
               data={filteredExpenses}
               onUpdate={handleUpdate}
@@ -192,7 +193,7 @@ export function ExpensesTab(): React.JSX.Element {
               isLoading={isLoading}
             />
           </div>
-        </main>
+        </ScrollArea>
       </div>
 
       {/* Side Drawer */}

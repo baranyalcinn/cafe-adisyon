@@ -193,6 +193,21 @@ export interface MonthlyReport {
   updatedAt: Date
 }
 
+// Update Information
+export interface UpdateInfo {
+  version: string
+  files: {
+    url: string
+    sha512: string
+    size: number
+  }[]
+  path: string
+  sha512: string
+  releaseName?: string
+  releaseNotes?: string | Array<string>
+  releaseDate: string
+}
+
 // IPC Channel names
 export const IPC_CHANNELS = {
   // Tables
@@ -283,6 +298,8 @@ export const IPC_CHANNELS = {
 
   // System
   SYSTEM_CHECK: 'system:check',
+  SYSTEM_CHECK_UPDATE: 'system:checkUpdate',
+  SYSTEM_RESTART: 'system:restart',
 
   // Window Controls
   WINDOW_MINIMIZE: 'window:minimize',

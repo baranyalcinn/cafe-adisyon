@@ -10,6 +10,7 @@ import {
   RefreshCw
 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   Table,
   TableBody,
@@ -434,8 +435,8 @@ export function LogsTab(): React.JSX.Element {
       </div>
 
       {/* Background-Integrated Table */}
-      <div className="flex-1 overflow-hidden">
-        <div className="h-full overflow-auto custom-scrollbar">
+      <div className="flex-1 min-h-0">
+        <ScrollArea className="h-full">
           <Table className="table-fixed w-full">
             <TableHeader className="sticky top-0 bg-background/60 backdrop-blur-3xl z-10 border-b border-border/40">
               <TableRow className="hover:bg-transparent border-0">
@@ -665,7 +666,7 @@ export function LogsTab(): React.JSX.Element {
               </TableRow>
             </TableBody>
           </Table>
-        </div>
+        </ScrollArea>
       </div>
     </div>
   )

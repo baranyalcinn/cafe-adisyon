@@ -1,3 +1,5 @@
+import { type UpdateInfo } from '../../../shared/types'
+
 const api = window.api
 
 export const adminService = {
@@ -85,6 +87,26 @@ export const adminService = {
       const result = await api.system.check()
       if (!result.success) throw new Error(result.error)
       return result.data
+    },
+    async checkUpdate(): Promise<{
+      available: boolean
+      version?: string
+      currentVersion?: string
+    }> {
+      const result = await api.system.checkUpdate()
+      if (!result.success) throw new Error(result.error)
+      return result.data
+    },
+    restart(): void {
+      api.system.restart()
+    },
+    onUpdate(callback: (event: string, data: unknown) => void): void {
+      api.on('checking-for-update', () => callback('checking', null))
+      api.on('update-available', (info: unknown) => callback('available', info as UpdateInfo))
+      api.on('update-not-available', () => callback('not-available', null))
+      api.on('download-progress', (progress: unknown) => callback('progress', progress))
+      api.on('update-downloaded', (info: unknown) => callback('downloaded', info as UpdateInfo))
+      api.on('update-error', (err: unknown) => callback('error', err))
     }
   }
 }
