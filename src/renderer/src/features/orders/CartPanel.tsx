@@ -161,7 +161,7 @@ export const CartPanel = React.memo(function CartPanel({
         <div className="flex flex-col">
           <h2 className="text-base font-black tracking-tight flex items-center gap-3 text-foreground">
             Adisyon
-            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-primary/15 text-primary tracking-tighter border border-primary/20">
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/15 text-primary tracking-[0.1em] border border-primary/20 uppercase">
               {order?.items?.length || 0} ÜRÜN
             </span>
           </h2>
@@ -275,7 +275,7 @@ export const CartPanel = React.memo(function CartPanel({
                 <div className="mt-8 pt-6 border-t border-dashed border-emerald-500/20">
                   <div className="flex items-center gap-2 mb-4 px-1 text-emerald-500/40">
                     <HistoryIcon className="w-3.5 h-3.5" />
-                    <span className="text-[10px] font-black tracking-[0.2em]">
+                    <span className="text-[10px] font-bold tracking-[0.15em] uppercase">
                       ÖDENMİŞ KALEMLER
                     </span>
                   </div>
@@ -314,7 +314,7 @@ export const CartPanel = React.memo(function CartPanel({
 
                                 <div className="px-2.5 py-1 bg-emerald-500/10 rounded-lg border border-emerald-500/20 flex items-center gap-1.5 shadow-sm transition-all duration-500 group-hover/item:bg-emerald-500/20">
                                   <CheckCircle className="w-3 h-3 text-emerald-500" />
-                                  <span className="text-[10px] font-black text-emerald-500 tracking-tighter">
+                                  <span className="text-[10px] font-bold text-emerald-500 tracking-[0.15em] uppercase">
                                     ÖDENDİ
                                   </span>
                                 </div>
@@ -380,7 +380,7 @@ export const CartPanel = React.memo(function CartPanel({
                 }}
                 disabled={remainingAmount <= 0}
                 className={cn(
-                  'h-14 px-10 rounded-2xl font-black text-sm tracking-wider transition-all duration-300 active:scale-95 flex-1 max-w-[180px]',
+                  'h-14 px-10 rounded-2xl font-bold text-sm tracking-[0.1em] uppercase transition-all duration-300 active:scale-95 flex-1 max-w-[180px]',
                   remainingAmount <= 0
                     ? 'bg-muted text-muted-foreground/40 cursor-not-allowed border border-border/20 shadow-none'
                     : 'bg-primary text-primary-foreground hover:bg-primary/95 hover:scale-[1.02] shadow-sm'

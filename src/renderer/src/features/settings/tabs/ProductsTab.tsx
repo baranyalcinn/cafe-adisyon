@@ -165,7 +165,9 @@ export function ProductsTab(): React.JSX.Element {
                       className="w-full space-y-3 animate-in fade-in zoom-in-95"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <p className="text-xs font-bold text-primary text-center">YENİ ÜRÜN EKLE</p>
+                      <p className="text-[10px] font-bold text-primary text-center tracking-[0.15em] uppercase">
+                        YENİ ÜRÜN EKLE
+                      </p>
                       <Input
                         placeholder="Ürün Adı"
                         value={newProductName}
@@ -203,7 +205,7 @@ export function ProductsTab(): React.JSX.Element {
                       <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
                         <Plus className="w-5 h-5 text-muted-foreground" />
                       </div>
-                      <span className="font-bold text-sm text-muted-foreground">
+                      <span className="font-bold text-[10px] text-muted-foreground tracking-[0.15em] uppercase">
                         YENİ ÜRÜN EKLE
                       </span>
                     </>

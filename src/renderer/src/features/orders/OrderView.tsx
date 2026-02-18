@@ -148,7 +148,7 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
           <Button
             variant="ghost"
             onClick={onBack}
-            className="gap-2 mb-2 w-full justify-start hover:bg-primary/10 hover:text-primary transition-all duration-300 rounded-lg text-sm font-semibold h-10"
+            className="gap-2 mb-2 w-full justify-start hover:bg-primary/10 hover:text-primary transition-all duration-300 rounded-lg text-[10px] font-bold uppercase tracking-[0.1em] h-10"
           >
             <ArrowLeft className="w-4 h-4" />
             Masalara Dön
@@ -281,11 +281,13 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
       <div className="flex-1 flex flex-col h-full overflow-hidden section-panel glass-panel !border-t-0 !border-b-0">
         <div className="z-10 relative h-14 px-4 border-b border-white/10 bg-gradient-to-r from-background via-background/95 to-background flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-2.5">
-            <h2 className="text-lg font-bold tracking-tight text-foreground/90">
+            <h2 className="text-2xl font-bold tracking-tight text-foreground/90 tabular-nums">
               {selectedTableName || 'Masa'}
             </h2>
             <div className="h-4 w-px bg-border/20" />
-            <span className="text-primary/70 font-semibold tracking-tight text-sm">Sipariş</span>
+            <span className="text-primary/70 font-bold tracking-[0.15em] text-[10px] uppercase">
+              Sipariş
+            </span>
           </div>
 
           <div className="flex items-center bg-muted/20 p-1 rounded-xl border border-white/5 shadow-inner backdrop-blur-sm">

@@ -287,7 +287,7 @@ export function DashboardView(): React.JSX.Element {
               size="sm"
               onClick={loadStats}
               disabled={isLoading}
-              className="gap-2 rounded-xl text-muted-foreground hover:bg-muted/50 hover:text-foreground font-black tracking-wide text-[10px]"
+              className="gap-2 rounded-xl text-muted-foreground hover:bg-muted/50 hover:text-foreground font-bold tracking-[0.1em] text-[10px] uppercase h-9 px-4"
             >
               <RefreshCw className={cn('w-3.5 h-3.5', isLoading && 'animate-spin')} />
               Yenile
@@ -297,7 +297,7 @@ export function DashboardView(): React.JSX.Element {
 
             <Button
               onClick={() => setShowEndOfDayModal(true)}
-              className="gap-4 h-9 px-5 rounded-xl font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-lg shadow-destructive/20 active:scale-95 transition-all text-xs tracking-wide"
+              className="gap-3 h-9 px-5 rounded-xl font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-lg shadow-destructive/20 active:scale-95 transition-all text-xs tracking-widest uppercase"
             >
               <Moon className="w-3.5 h-3.5" />
               Gün Sonu
@@ -315,7 +315,7 @@ export function DashboardView(): React.JSX.Element {
 
             <div className="relative z-10 flex items-start justify-between">
               <div className="space-y-1">
-                <span className="text-xs font-bold text-muted-foreground/60 tracking-widest">
+                <span className="text-[10px] font-bold text-muted-foreground/60 tracking-[0.15em] uppercase">
                   Bugünkü Toplam Ciro
                 </span>
                 <div className="flex items-center gap-2 mt-1">
@@ -323,7 +323,9 @@ export function DashboardView(): React.JSX.Element {
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
                   </span>
-                  <span className="text-[10px] font-bold text-success">Güncel Veriler</span>
+                  <span className="text-[10px] font-bold text-success uppercase tracking-[0.1em]">
+                    Güncel Veriler
+                  </span>
                 </div>
               </div>
               <div className="h-12 w-12 rounded-2xl bg-success/10 flex items-center justify-center transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-[0_0_15px_rgba(var(--color-success),0.15)]">
@@ -383,7 +385,7 @@ export function DashboardView(): React.JSX.Element {
             <div className="premium-card ambient-glow px-5 py-4 flex items-center justify-between group">
               <div>
                 <p className="text-[10px] font-bold text-muted-foreground/60 tracking-widest mb-0.5 text-destructive/80">
-                  Bugünkü Gider
+                  BUĞÜNKÜ GİDER
                 </p>
                 <p className="text-2xl font-black text-destructive tabular-nums">
                   {formatCurrency(stats?.dailyExpenses || 0)}
@@ -401,7 +403,7 @@ export function DashboardView(): React.JSX.Element {
             <div className="premium-card ambient-glow px-5 py-4 flex items-center justify-between group">
               <div>
                 <p className="text-[10px] font-bold text-muted-foreground/60 tracking-widest mb-0.5">
-                  Dolu Masa
+                  DOLU MASA
                 </p>
                 <p className="text-2xl font-black text-warning tabular-nums">
                   {stats?.openTables || 0}
@@ -416,7 +418,7 @@ export function DashboardView(): React.JSX.Element {
             <div className="premium-card ambient-glow px-5 py-4 flex items-center justify-between group">
               <div>
                 <p className="text-[10px] font-bold text-muted-foreground/60 tracking-widest mb-0.5">
-                  Ortalama Sipariş Tutarı
+                  ORTALAMA SİPARİŞ TUTARI
                 </p>
                 <p className="text-2xl font-black text-success tabular-nums">
                   {formatCurrency(

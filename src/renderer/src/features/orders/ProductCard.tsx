@@ -67,7 +67,7 @@ function ProductCardComponent({
           <p className="font-bold text-[15px] line-clamp-2 text-foreground/90 group-hover:text-primary transition-colors leading-[1.2] mb-0.5">
             {product.name.replace(/([a-z])([A-Z])/g, '$1 $2')}
           </p>
-          <p className="text-[12px] font-black text-emerald-600 tabular-nums">
+          <p className="text-[12px] font-bold text-emerald-600 tabular-nums tracking-tighter">
             {formatCurrency(product.price)}
           </p>
         </div>
@@ -110,7 +110,7 @@ function ProductCardComponent({
         <h3 className="font-bold text-[16px] leading-tight text-left line-clamp-2 text-foreground/85 group-hover:text-primary transition-colors">
           {product.name.replace(/([a-z])([A-Z])/g, '$1 $2')}
         </h3>
-        <p className="text-[15px] font-black text-emerald-600 tabular-nums tracking-tight mt-auto">
+        <p className="text-[15px] font-bold text-emerald-600 tabular-nums tracking-tighter mt-auto">
           {formatCurrency(product.price)}
         </p>
       </div>

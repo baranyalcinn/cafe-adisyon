@@ -1,6 +1,7 @@
 import { useState, memo, useCallback } from 'react'
 import { cn } from '@/lib/utils'
 import { Coffee, ArrowRightLeft, Combine } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { useCartStore } from '@/store/useCartStore'
 import { cafeApi } from '@/lib/api'
 import { toast } from '@/store/useToastStore'
@@ -52,11 +53,16 @@ const TableCard = memo(
               'hover:-translate-y-1 active:scale-95 !overflow-visible'
             )}
           >
-            <div
+            <motion.div
+              layout
               className={cn(
-                'relative w-full h-full flex flex-col items-center justify-center gap-4 p-8 rounded-[2.5rem] overflow-hidden bg-background/50 backdrop-blur-sm',
-                hasOpenOrder ? 'bg-info/[0.04]' : 'bg-success/[0.04]',
-                isLocked && 'bg-warning/[0.04]'
+                'relative w-full h-full flex flex-col items-center justify-center gap-4 p-8 rounded-[2.5rem] overflow-hidden transition-all duration-500',
+                hasOpenOrder
+                  ? 'bg-info/5 border border-info/10 shadow-[0_8px_32px_-12px_rgba(var(--color-info),0.1)]'
+                  : 'bg-success/5 border border-success/10 shadow-[0_8px_32px_-12px_rgba(var(--color-success),0.1)]',
+                isLocked &&
+                  'bg-warning/5 border border-warning/10 shadow-[0_8px_32px_-12px_rgba(var(--color-warning),0.1)]',
+                'group-hover:border-primary/20 group-hover:bg-primary/[0.02]'
               )}
             >
               {/* Subtle Glow Effect */}
@@ -106,15 +112,15 @@ const TableCard = memo(
                   className={cn(
                     'text-[10px] font-bold tracking-[0.15em] px-3 py-1 rounded-full border transition-all duration-300',
                     hasOpenOrder
-                      ? 'border-info/20 bg-info/10 text-info'
-                      : 'border-success/20 bg-success/10 text-success',
-                    isLocked && 'border-warning/20 bg-warning/10 text-warning'
+                      ? 'border-info/30 bg-info/15 text-info'
+                      : 'border-success/30 bg-success/15 text-success',
+                    isLocked && 'border-warning/30 bg-warning/15 text-warning'
                   )}
                 >
                   {isLocked ? 'KİLİTLİ' : hasOpenOrder ? 'DOLU' : 'BOŞ'}
                 </div>
               </div>
-            </div>
+            </motion.div>
           </button>
         </ContextMenuTrigger>
         {hasOpenOrder && (
@@ -246,10 +252,41 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
   return (
     <div className="h-full flex flex-col overflow-hidden bg-background">
       {/* Header Section */}
-      <div className="flex-none py-4 px-8 border-b bg-background/80 backdrop-blur-md z-10 w-full mb-2">
+      <div className="flex-none py-6 px-8 border-b bg-background z-10 w-full mb-2">
         <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">Masalar</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-foreground/90">Masalar</h2>
+          <div className="flex items-center gap-8">
+            {/* Dolu Masa Stat */}
+            <div className="flex items-center gap-3 group cursor-default">
+              <div className="relative flex items-center justify-center">
+                <div className="w-2 h-2 rounded-full bg-info shadow-[0_0_12px_rgba(var(--color-info),0.6)]" />
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xl font-black tabular-nums text-foreground">
+                  {tables.filter((t) => t.hasOpenOrder).length}
+                </span>
+                <span className="text-[10px] font-bold text-muted-foreground/80 tracking-[0.2em] uppercase">
+                  DOLU
+                </span>
+              </div>
+            </div>
+
+            <div className="w-[1px] h-4 bg-border" />
+
+            {/* Boş Masa Stat */}
+            <div className="flex items-center gap-3 group cursor-default">
+              <div className="relative flex items-center justify-center">
+                <div className="w-2 h-2 rounded-full bg-success shadow-[0_0_12px_rgba(var(--color-success),0.6)]" />
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xl font-black tabular-nums text-foreground">
+                  {tables.filter((t) => !t.hasOpenOrder).length}
+                </span>
+                <span className="text-[10px] font-bold text-muted-foreground/80 tracking-[0.2em] uppercase">
+                  BOŞ
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -267,24 +304,21 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
             ))}
           </div>
         ) : (
-          <>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-6">
-              {tables.map((table) => (
-                <TableCard
-                  key={table.id}
-                  id={table.id}
-                  name={table.name}
-                  hasOpenOrder={!!table.hasOpenOrder}
-                  isLocked={table.isLocked}
-                  onClick={onTableSelect}
-                  onTransfer={handleTransferClick}
-                  onMerge={handleMergeClick}
-                />
-              ))}
-            </div>
-
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-6">
+            {tables.map((table) => (
+              <TableCard
+                key={table.id}
+                id={table.id}
+                name={table.name}
+                hasOpenOrder={!!table.hasOpenOrder}
+                isLocked={table.isLocked}
+                onClick={onTableSelect}
+                onTransfer={handleTransferClick}
+                onMerge={handleMergeClick}
+              />
+            ))}
             {tables.length === 0 && (
-              <div className="flex flex-col items-center justify-center h-64 text-center">
+              <div className="col-span-full flex flex-col items-center justify-center h-64 text-center">
                 <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
                   <Coffee className="w-8 h-8 text-muted-foreground/50" />
                 </div>
@@ -294,7 +328,7 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
                 </p>
               </div>
             )}
-          </>
+          </div>
         )}
       </div>
 
@@ -328,8 +362,8 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
           </div>
           {tables.filter((t) => t.id !== transferModal.sourceTableId && !t.hasOpenOrder).length ===
             0 && (
-              <p className="text-muted-foreground text-center">Transfer için uygun boş masa yok.</p>
-            )}
+            <p className="text-muted-foreground text-center">Transfer için uygun boş masa yok.</p>
+          )}
           <DialogFooter>
             <Button
               variant="ghost"
@@ -374,10 +408,10 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
           </div>
           {tables.filter((t) => t.id !== mergeModal.sourceTableId && t.hasOpenOrder).length ===
             0 && (
-              <p className="text-muted-foreground text-center">
-                Birleştirme için uygun dolu masa yok.
-              </p>
-            )}
+            <p className="text-muted-foreground text-center">
+              Birleştirme için uygun dolu masa yok.
+            </p>
+          )}
           <DialogFooter>
             <Button
               variant="ghost"
