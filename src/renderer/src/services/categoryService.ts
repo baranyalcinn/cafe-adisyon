@@ -1,25 +1,29 @@
-import { Category } from '../../../shared/types'
-
-const api = window.api
+import { commands } from '../lib/bindings'
+import { Category } from '@shared/types'
+import { unwrap } from '../lib/utils'
+import { mapCategory } from '../lib/mappers'
 
 export const categoryService = {
   async getAll(): Promise<Category[]> {
-    const result = await api.categories.getAll()
-    if (!result.success) throw new Error(result.error)
-    return result.data
+    const res = await commands.getAllCategories()
+    return unwrap(res).map(mapCategory)
   },
+
   async create(name: string): Promise<Category> {
-    const result = await api.categories.create(name)
-    if (!result.success) throw new Error(result.error)
-    return result.data
+    const res = await commands.createCategory(name)
+    return mapCategory(unwrap(res))
   },
+
   async update(id: string, data: { name?: string; icon?: string }): Promise<Category> {
-    const result = await api.categories.update(id, data)
-    if (!result.success) throw new Error(result.error)
-    return result.data
+    const res = await commands.updateCategory(id, {
+      name: data.name || null,
+      icon: data.icon || null
+    })
+    return mapCategory(unwrap(res))
   },
+
   async delete(id: string): Promise<void> {
-    const result = await api.categories.delete(id)
-    if (!result.success) throw new Error(result.error)
+    const res = await commands.deleteCategory(id)
+    unwrap(res)
   }
 }

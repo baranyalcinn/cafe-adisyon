@@ -8,7 +8,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger
-} from '@renderer/components/ui/dropdown-menu'
+} from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import { type Category } from '@/lib/api'
 

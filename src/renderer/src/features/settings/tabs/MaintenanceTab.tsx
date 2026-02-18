@@ -8,12 +8,15 @@ import {
   CheckCircle,
   FileJson,
   FileSpreadsheet,
-  Settings2
+  Settings2,
+  PlusCircle,
+  Upload
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { cafeApi } from '@/lib/api'
 import { cn } from '@/lib/utils'
+import { open } from '@tauri-apps/plugin-dialog'
 
 interface ActionResult {
   success: boolean
@@ -25,6 +28,8 @@ export function MaintenanceTab(): React.JSX.Element {
   const [isExporting, setIsExporting] = useState(false)
   const [isVacuuming, setIsVacuuming] = useState(false)
   const [isBacking, setIsBacking] = useState(false)
+  const [isSeeding, setIsSeeding] = useState(false)
+  const [isImporting, setIsImporting] = useState(false)
   const [lastResult, setLastResult] = useState<ActionResult | null>(null)
 
   const handleArchive = async (): Promise<void> => {
@@ -54,7 +59,7 @@ export function MaintenanceTab(): React.JSX.Element {
   const handleExport = async (format: 'json' | 'csv'): Promise<void> => {
     setIsExporting(true)
     try {
-      const result = await cafeApi.maintenance.exportData(format)
+      const result = await cafeApi.maintenance.exportData()
       setLastResult({
         success: true,
         message: `${result.count} kayıt dışa aktarıldı: ${result.filepath}`
@@ -72,7 +77,7 @@ export function MaintenanceTab(): React.JSX.Element {
   const handleVacuum = async (): Promise<void> => {
     setIsVacuuming(true)
     try {
-      await cafeApi.maintenance.vacuum()
+      await cafeApi.maintenance.vacuumDatabase()
       setLastResult({
         success: true,
         message: 'Veritabanı optimize edildi ve dosya boyutu küçültüldü.'
@@ -90,10 +95,10 @@ export function MaintenanceTab(): React.JSX.Element {
   const handleBackup = async (): Promise<void> => {
     setIsBacking(true)
     try {
-      const result = await cafeApi.maintenance.backup()
+      const result = await cafeApi.maintenance.backupDatabase()
       setLastResult({
         success: true,
-        message: `Yedek oluşturuldu: ${result.backupPath}`
+        message: `Yedek oluşturuldu: ${result.path}`
       })
     } catch (error) {
       setLastResult({
@@ -102,6 +107,60 @@ export function MaintenanceTab(): React.JSX.Element {
       })
     } finally {
       setIsBacking(false)
+    }
+  }
+
+  const handleSeed = async (): Promise<void> => {
+    setIsSeeding(true)
+    try {
+      const result = await cafeApi.seed.seedDatabase()
+      setLastResult({
+        success: true,
+        message: `${result.categories} kategori, ${result.products} ürün, ${result.tables} masa eklendi.`
+      })
+    } catch (error) {
+      setLastResult({
+        success: false,
+        message: error instanceof Error ? error.message : 'Örnek veri ekleme başarısız'
+      })
+    } finally {
+      setIsSeeding(false)
+    }
+  }
+
+  const handleImportLegacy = async (): Promise<void> => {
+    // 1. Confirm action
+    if (!confirm('Eski veriler mevcut verilerin üzerine eklenecek. Devam etmek istiyor musunuz?')) return
+
+    // 2. Open file dialog selection
+    try {
+      const selected = await open({
+        multiple: false,
+        filters: [{
+          name: 'SQLite Database',
+          extensions: ['db', 'sqlite', 'sqlite3']
+        }]
+      })
+
+      if (selected === null) return // User cancelled
+
+      setIsImporting(true)
+      const path = Array.isArray(selected) ? selected[0] : selected
+
+      // 3. Call API with selected path
+      const result = await cafeApi.maintenance.importLegacyData(path)
+
+      setLastResult({
+        success: result.success,
+        message: result.message
+      })
+    } catch (error) {
+      setLastResult({
+        success: false,
+        message: error instanceof Error ? error.message : 'Veri aktarımı başarısız'
+      })
+    } finally {
+      setIsImporting(false)
     }
   }
 
@@ -257,6 +316,52 @@ export function MaintenanceTab(): React.JSX.Element {
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     **1 yıldan eski** sipariş, gider ve Z-Raporu verilerini kalıcı olarak siler.
                     Alanı boşaltır ve performansı artırır.
+                  </p>
+                </div>
+
+                <div className="p-5 rounded-2xl border bg-primary/5 hover:bg-primary/10 transition-colors group border-primary/10">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="p-2.5 bg-primary/10 rounded-xl text-primary border border-primary/20">
+                      <PlusCircle className="w-5 h-5" />
+                    </div>
+                    <Button
+                      variant="default"
+                      onClick={handleSeed}
+                      disabled={isSeeding}
+                      size="sm"
+                      className="bg-primary hover:bg-primary/90"
+                    >
+                      {isSeeding ? 'Ekleniyor...' : 'Örnek Veri Ekle'}
+                    </Button>
+                  </div>
+                  <h4 className="font-bold text-base mb-1 text-primary">
+                    Başlangıç Verileri
+                  </h4>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Uygulamayı test etmek için örnek masalar ve kategoriler ekler. Mevcut verilere zarar vermez.
+                  </p>
+                </div>
+
+                <div className="p-5 rounded-2xl border bg-warning/5 hover:bg-warning/10 transition-colors group border-warning/10">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="p-2.5 bg-warning/10 rounded-xl text-warning border border-warning/20">
+                      <Upload className="w-5 h-5" />
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={handleImportLegacy}
+                      disabled={isImporting}
+                      size="sm"
+                      className="border-warning/50 text-warning hover:bg-warning/10"
+                    >
+                      {isImporting ? 'Aktarılıyor...' : 'Eski Verileri Yükle'}
+                    </Button>
+                  </div>
+                  <h4 className="font-bold text-base mb-1 text-warning">
+                    Eski Verileri Getir
+                  </h4>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Önceki sürümden kalan verileri (siparişler, ürünler, raporlar) içeri aktarır.
                   </p>
                 </div>
               </div>

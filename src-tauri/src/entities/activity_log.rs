@@ -1,0 +1,23 @@
+use sea_orm::entity::prelude::*;
+use serde::{Deserialize, Serialize};
+use specta::Type;
+
+#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize, Type)]
+#[sea_orm(table_name = "ActivityLog")]
+pub struct Model {
+    #[sea_orm(primary_key, auto_increment = false)]
+    pub id: String,
+    pub action: String,
+    #[sea_orm(column_name = "tableName")]
+    pub table_name: Option<String>,
+    #[sea_orm(column_name = "userName")]
+    pub user_name: Option<String>,
+    pub details: Option<String>,
+    #[sea_orm(column_name = "createdAt")]
+    pub created_at: Option<String>,
+}
+
+#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+pub enum Relation {}
+
+impl ActiveModelBehavior for ActiveModel {}

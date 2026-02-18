@@ -1,15 +1,9 @@
-import { useState } from 'react'
-
+/**
+ * Versions component — removed (Electron-specific)
+ * This file is kept as an empty stub to prevent import errors.
+ */
 function Versions(): React.JSX.Element {
-  const [versions] = useState(window.electron.process.versions)
-
-  return (
-    <ul className="versions">
-      <li className="electron-version">Electron v{versions.electron}</li>
-      <li className="chrome-version">Chromium v{versions.chrome}</li>
-      <li className="node-version">Node v{versions.node}</li>
-    </ul>
-  )
+  return <></>
 }
 
 export default Versions

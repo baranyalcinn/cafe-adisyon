@@ -240,19 +240,6 @@ export function DashboardView(): React.JSX.Element {
 
   useEffect(() => {
     loadStats()
-
-    // Listen for real-time updates from backend
-    const removeListener = (
-      window as {
-        electron?: { ipcRenderer: { on: (channel: string, callback: () => void) => () => void } }
-      }
-    ).electron?.ipcRenderer.on('dashboard:update', () => {
-      loadStats()
-    })
-
-    return () => {
-      removeListener?.()
-    }
   }, [loadStats])
 
   // Portal target for header actions (must be before any early returns)

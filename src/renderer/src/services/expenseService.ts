@@ -1,33 +1,44 @@
-import { Expense } from '../../../shared/types'
-
-const api = window.api
+import { commands } from '../lib/bindings'
+import { Expense } from '@shared/types'
+import { unwrap } from '../lib/utils'
+import { mapExpense } from '../lib/mappers'
 
 export const expenseService = {
-  create: async (data: {
+  async create(data: {
     description: string
     amount: number
     category?: string
     paymentMethod?: string
-  }): Promise<Expense> => {
-    const response = await window.api.expenses.create(data)
-    if (!response.success) throw new Error(response.error)
-    return response.data
+  }): Promise<Expense> {
+    const res = await commands.createExpense({
+      description: data.description,
+      amount: data.amount,
+      category: data.category || null,
+      paymentMethod: data.paymentMethod || null
+    })
+    return mapExpense(unwrap(res))
   },
-  update: async (
+
+  async update(
     id: string,
     data: { description?: string; amount?: number; category?: string; paymentMethod?: string }
-  ): Promise<Expense> => {
-    const response = await window.api.expenses.update(id, data)
-    if (!response.success) throw new Error(response.error)
-    return response.data
+  ): Promise<Expense> {
+    const res = await commands.updateExpense(id, {
+      description: data.description || null,
+      amount: data.amount || null,
+      category: data.category || null,
+      paymentMethod: data.paymentMethod || null
+    })
+    return mapExpense(unwrap(res))
   },
+
   async getAll(): Promise<Expense[]> {
-    const result = await api.expenses.getAll()
-    if (!result.success) throw new Error(result.error)
-    return result.data
+    const res = await commands.getAllExpenses()
+    return unwrap(res).map(mapExpense)
   },
+
   async delete(id: string): Promise<void> {
-    const result = await api.expenses.delete(id)
-    if (!result.success) throw new Error(result.error)
+    const res = await commands.deleteExpense(id)
+    unwrap(res)
   }
 }

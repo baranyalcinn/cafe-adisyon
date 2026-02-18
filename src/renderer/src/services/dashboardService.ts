@@ -1,21 +1,20 @@
-import { DashboardStats, ExtendedDashboardStats, RevenueTrendItem } from '../../../shared/types'
-
-const api = window.api
+import { commands } from '../lib/bindings'
+import { DashboardStats, ExtendedDashboardStats, RevenueTrendItem } from '@shared/types'
+import { unwrap } from '../lib/utils'
 
 export const dashboardService = {
   async getStats(): Promise<DashboardStats> {
-    const result = await api.dashboard.getStats()
-    if (!result.success) throw new Error(result.error)
-    return result.data
+    const res = await commands.getDashboardStats()
+    return unwrap(res)
   },
+
   async getExtendedStats(): Promise<ExtendedDashboardStats> {
-    const result = await api.dashboard.getExtendedStats()
-    if (!result.success) throw new Error(result.error)
-    return result.data
+    const res = await commands.getExtendedDashboardStats()
+    return unwrap(res)
   },
+
   async getRevenueTrend(days: number = 7): Promise<RevenueTrendItem[]> {
-    const result = await api.dashboard.getRevenueTrend(days)
-    if (!result.success) throw new Error(result.error)
-    return result.data
+    const res = await commands.getRevenueTrend(days)
+    return unwrap(res)
   }
 }

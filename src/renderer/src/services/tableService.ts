@@ -1,25 +1,26 @@
-import { Table } from '../../../shared/types'
-
-const api = window.api
+import { commands } from '../lib/bindings'
+import { Table } from '@shared/types'
+import { unwrap } from '../lib/utils'
 
 export const tableService = {
   async getAll(): Promise<Table[]> {
-    const result = await api.tables.getAll()
-    if (!result.success) throw new Error(result.error)
-    return result.data
+    const res = await commands.getAllTables()
+    return unwrap(res)
   },
-  async getWithStatus(): Promise<(Table & { hasOpenOrder: boolean })[]> {
-    const result = await api.tables.getWithStatus()
-    if (!result.success) throw new Error(result.error)
-    return result.data
-  },
+
   async create(name: string): Promise<Table> {
-    const result = await api.tables.create(name)
-    if (!result.success) throw new Error(result.error)
-    return result.data
+    const res = await commands.createTable(name)
+    return unwrap(res)
   },
+
   async delete(id: string): Promise<void> {
-    const result = await api.tables.delete(id)
-    if (!result.success) throw new Error(result.error)
+    const res = await commands.deleteTable(id)
+    unwrap(res)
+  },
+
+  async getWithStatus(): Promise<Table[]> {
+    const res = await commands.getTableStatus()
+    // TableStatusResponse { id, name, hasOpenOrder, isLocked } matches Table interface structurally for these fields
+    return unwrap(res) as unknown as Table[]
   }
 }

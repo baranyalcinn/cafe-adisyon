@@ -19,7 +19,7 @@ interface UseOrderResult {
   }) => Promise<{ order: Order; completed: boolean }>
   toggleLock: UseMutateFunction<void | undefined, Error, void, unknown>
   deleteOrder: UseMutateFunction<void, Error, string, unknown>
-  markItemsPaid: (items: { id: string; quantity: number }[]) => Promise<Order>
+  markItemsPaid: (items: { id: string; quantity: number }[]) => Promise<Order | null>
   isLocked: boolean
 }
 

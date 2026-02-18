@@ -1,6 +1,7 @@
-import { Order, PaymentMethod, Transaction } from '../../../shared/types'
-
-const api = window.api
+import { commands } from '../lib/bindings'
+import { Order, PaymentMethod, Transaction } from '@shared/types'
+import { unwrap } from '../lib/utils'
+import { mapTransaction, mapOrder } from '../lib/mappers'
 
 export const paymentService = {
   async create(
@@ -8,13 +9,16 @@ export const paymentService = {
     amount: number,
     paymentMethod: PaymentMethod
   ): Promise<{ order: Order; completed: boolean }> {
-    const result = await api.payments.create(orderId, amount, paymentMethod)
-    if (!result.success) throw new Error(result.error)
-    return result.data
+    const res = await commands.createPayment(orderId, amount, paymentMethod)
+    const data = unwrap(res)
+    return {
+      order: mapOrder(data.order),
+      completed: data.completed
+    }
   },
+
   async getByOrder(orderId: string): Promise<Transaction[]> {
-    const result = await api.payments.getByOrder(orderId)
-    if (!result.success) throw new Error(result.error)
-    return result.data
+    const res = await commands.getPaymentsByOrder(orderId)
+    return unwrap(res).map(mapTransaction)
   }
 }

@@ -6,9 +6,7 @@ import { ExpensesTable } from '../components/ExpensesTable'
 import { RevenueSidebar } from '../components/RevenueSidebar'
 import { ExpenseSheet } from '../components/ExpenseSheet'
 import { createPortal } from 'react-dom'
-
-// Using api directly from window as defined in preload
-const api = window.api
+import { expenseService } from '@/services/expenseService'
 
 export function ExpensesTab(): React.JSX.Element {
   const [expenses, setExpenses] = useState<Expense[]>([])
@@ -26,10 +24,8 @@ export function ExpensesTab(): React.JSX.Element {
   const loadExpenses = async (): Promise<void> => {
     setIsLoading(true)
     try {
-      const result = await api.expenses.getAll()
-      if (result.success && result.data) {
-        setExpenses(result.data)
-      }
+      const data = await expenseService.getAll()
+      setExpenses(data)
     } catch (error) {
       console.error('Failed to load expenses:', error)
     } finally {
@@ -110,10 +106,8 @@ export function ExpensesTab(): React.JSX.Element {
 
   const handleDelete = useCallback(async (id: string): Promise<void> => {
     try {
-      const result = await api.expenses.delete(id)
-      if (result.success) {
-        setExpenses((prev) => prev.filter((e) => e.id !== id))
-      }
+      await expenseService.delete(id)
+      setExpenses((prev) => prev.filter((e) => e.id !== id))
     } catch (error) {
       console.error('Failed to delete expense:', error)
     }
@@ -121,10 +115,8 @@ export function ExpensesTab(): React.JSX.Element {
 
   const handleUpdate = useCallback(async (id: string, data: Partial<Expense>): Promise<void> => {
     try {
-      const result = await api.expenses.update(id, data)
-      if (result.success && result.data) {
-        setExpenses((prev) => prev.map((e) => (e.id === id ? result.data! : e)))
-      }
+      const updated = await expenseService.update(id, data)
+      setExpenses((prev) => prev.map((e) => (e.id === id ? updated : e)))
     } catch (error) {
       console.error('Failed to update expense:', error)
       throw error
@@ -138,14 +130,12 @@ export function ExpensesTab(): React.JSX.Element {
         await handleUpdate(selectedExpense.id, data)
       } else {
         // Create
-        const result = await api.expenses.create({
+        const created = await expenseService.create({
           description: data.description!,
           amount: data.amount!,
           category: data.category
         })
-        if (result.success && result.data) {
-          setExpenses((prev) => [result.data!, ...prev])
-        }
+        setExpenses((prev) => [created, ...prev])
       }
       setIsSheetOpen(false)
     } catch (error) {

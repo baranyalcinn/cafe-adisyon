@@ -1,20 +1,21 @@
 {
-  "extends": "@electron-toolkit/tsconfig/tsconfig.node.json",
-  "include": [
-    "electron.vite.config.*",
-    "src/main/**/*",
-    "src/preload/**/*",
-    "src/shared/**/*",
-    "src/generated/**/*",
-    "prisma.config.ts"
-  ],
   "compilerOptions": {
-    "composite": true,
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
     "moduleResolution": "bundler",
+    "composite": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
     "baseUrl": ".",
-    "paths": {},
-    "types": [
-      "electron-vite/node"
-    ]
-  }
+    "paths": {}
+  },
+  "include": [
+    "vite.config.ts"
+  ]
 }

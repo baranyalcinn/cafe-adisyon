@@ -179,7 +179,7 @@ export function SettingsView({
   useEffect(() => {
     const checkPinStatus = async (): Promise<void> => {
       try {
-        const { required } = await cafeApi.admin.checkStatus()
+        const { required } = await cafeApi.admin.checkAdminStatus()
         if (!required) {
           setIsUnlocked(true)
         }
@@ -191,6 +191,11 @@ export function SettingsView({
     }
     checkPinStatus()
   }, [])
+  /* Note: Skipping context lines for brevity, applying 2nd chunk manually via multi_replace if needed, but tool is single replace. 
+     I will use multi_replace instead? No, replace_file_content document says "use multi_replace for non-contiguous".
+     I have two edits in SettingsView.tsx at line 182 and 862.
+     I MUST use multi_replace_file_content.
+  */
 
   // Recovery Settings state
   const [securityQuestion, setSecurityQuestion] = useState('')
@@ -859,7 +864,7 @@ export function SettingsView({
                               )
                             ) {
                               try {
-                                await cafeApi.seed.database()
+                                await cafeApi.seed.seedDatabase()
                                 await Promise.all([
                                   refetchTables(),
                                   refetchProducts(),

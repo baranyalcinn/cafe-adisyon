@@ -1,29 +1,35 @@
 import React from 'react'
 import { Minus, Square, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { getCurrentWindow } from '@tauri-apps/api/window'
 
 export function TitleBar(): React.JSX.Element {
+  const appWindow = getCurrentWindow()
+
   const handleMinimize = (): void => {
-    window.api.window.minimize()
+    appWindow.minimize()
   }
 
   const handleMaximize = (): void => {
-    window.api.window.maximize()
+    appWindow.toggleMaximize()
   }
 
   const handleClose = (): void => {
-    window.api.window.close()
+    appWindow.close()
   }
 
   return (
-    <div className="titlebar-drag h-8 bg-background/95 border-b border-border/10 flex items-center justify-between px-3 select-none backdrop-blur-md">
+    <div
+      data-tauri-drag-region
+      className="h-8 bg-background/95 border-b border-border/10 flex items-center justify-between px-3 select-none backdrop-blur-md"
+    >
       {/* App Title */}
-      <div className="flex items-center gap-3 titlebar-no-drag">
+      <div className="flex items-center gap-3">
         <span className="text-sm font-bold text-foreground/80 tracking-wide pl-2">Caffio</span>
       </div>
 
       {/* Window Controls */}
-      <div className="flex items-center gap-1 titlebar-no-drag">
+      <div className="flex items-center gap-1">
         <Button
           variant="ghost"
           size="icon"

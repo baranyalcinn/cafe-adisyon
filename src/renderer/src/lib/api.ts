@@ -62,10 +62,30 @@ export const cafeApi = {
   expenses: expenseService,
 
   // Admin & System
-  admin: adminService.auth,
-  maintenance: adminService.maintenance,
-  seed: adminService.seed,
-  system: adminService.system,
+  // Admin & System
+  admin: {
+    verifyPin: adminService.verifyPin,
+    checkAdminStatus: adminService.checkAdminStatus,
+    changePin: adminService.changePin,
+    setRecovery: adminService.setRecovery,
+    getRecoveryQuestion: adminService.getRecoveryQuestion,
+    resetPin: adminService.resetPin
+  },
+  maintenance: {
+    vacuumDatabase: adminService.vacuumDatabase,
+    backupDatabase: adminService.backupDatabase,
+    archiveOldData: adminService.archiveOldData,
+    exportData: adminService.exportDatabase,
+    checkEndOfDay: reportService.endOfDay.check,
+    executeEndOfDay: reportService.endOfDay.execute,
+    importLegacyData: adminService.importLegacyData
+  },
+  seed: {
+    seedDatabase: adminService.seedDatabase
+  },
+  system: {
+    check: adminService.systemCheck
+  },
 
   // Reporting
   zReport: reportService.zReport,

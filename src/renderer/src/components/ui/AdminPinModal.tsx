@@ -114,7 +114,7 @@ export function AdminPinModal({
     setIsVerifying(true)
     try {
       const result = await cafeApi.admin.verifyPin(pinCode)
-      if (result.valid) {
+      if (result) {
         // Haptic feel - success
         onSuccess(pinCode)
         onOpenChange(false)

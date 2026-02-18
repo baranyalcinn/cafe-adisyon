@@ -5,10 +5,10 @@ class SoundManager {
 
   private getContext(): AudioContext {
     if (!this.context) {
-      const AudioContext =
+      const Ctx: typeof AudioContext =
         window.AudioContext ||
         (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
-      this.context = new AudioContext()
+      this.context = new Ctx()
     }
     if (!this.context) throw new Error('AudioContext failed to initialize')
     return this.context

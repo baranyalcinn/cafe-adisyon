@@ -8,7 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator
-} from '@renderer/components/ui/dropdown-menu'
+} from '@/components/ui/dropdown-menu'
 import { formatCurrency } from '@/lib/utils'
 import { type Product } from '@/lib/api'
 import { cn } from '@/lib/utils'

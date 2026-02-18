@@ -1,8 +1,4 @@
 /// <reference types="vite/client" />
-import type { ApiType } from '../../preload/index'
 
-declare global {
-  interface Window {
-    api: ApiType
-  }
-}
+// Tauri globals are available via @tauri-apps/api imports
+// No window.api or window.electron needed — Tauri uses invoke() pattern
