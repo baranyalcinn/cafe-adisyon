@@ -1,11 +1,11 @@
-import { app, shell, BrowserWindow, ipcMain, powerMonitor } from 'electron'
-import { join } from 'path'
+import { app, BrowserWindow, ipcMain, powerMonitor, shell } from 'electron'
 import { autoUpdater } from 'electron-updater'
-import { registerAllHandlers } from './ipc'
+import { join } from 'path'
 import { IPC_CHANNELS } from '../shared/types'
-import { logger, electronLog } from './lib/logger'
+import { disconnectDb, prisma } from './db/prisma'
+import { registerAllHandlers } from './ipc'
 import { dbMaintenance } from './lib/db-maintenance'
-import { basePrisma } from './db/prisma'
+import { electronLog, logger } from './lib/logger'
 
 // Configuration constants
 const isDev = process.env.NODE_ENV === 'development'
@@ -35,7 +35,7 @@ function createWindow(): void {
     backgroundColor: '#000000', // Optimize startup paint
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false
+      sandbox: true
     }
   })
 
@@ -112,7 +112,7 @@ ipcMain.handle('can-update-safely', async () => {
   try {
     // Check for open orders (OPEN, PREPARING, SERVED, etc.)
     // We assume 'COMPLETED' and 'CANCELLED' are the only safe statuses.
-    const openOrders = await basePrisma.order.count({
+    const openOrders = await prisma.order.count({
       where: {
         status: {
           notIn: ['COMPLETED', 'CANCELLED']
@@ -159,7 +159,7 @@ autoUpdater.on('update-downloaded', async (info) => {
   // Check if safe to update
   let safeToUpdate = false
   try {
-    const openOrders = await basePrisma.order.count({
+    const openOrders = await prisma.order.count({
       where: {
         status: {
           notIn: ['COMPLETED', 'CANCELLED']
@@ -319,14 +319,14 @@ app.on('window-all-closed', () => {
 // Graceful shutdown — flush pending operations before exit
 app.on('before-quit', async (event) => {
   // If explicitly quitting (e.g. for update), skip this check
-  if (isQuitting || !basePrisma) return
+  if (isQuitting || !prisma) return
 
   // Prevent immediate quit to allow DB disconnect
   event.preventDefault()
   isQuitting = true // Prevent infinite loop if we call app.quit() again
 
   try {
-    await basePrisma.$disconnect()
+    await disconnectDb()
     logger.info('App', 'Graceful shutdown completed')
   } catch (error) {
     logger.error('Shutdown error', error)

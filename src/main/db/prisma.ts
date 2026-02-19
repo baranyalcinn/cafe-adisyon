@@ -1,8 +1,8 @@
-import { PrismaClient } from '../../generated/prisma/client'
 import { PrismaLibSql } from '@prisma/adapter-libsql'
 import { app } from 'electron'
-import path from 'path'
 import * as fs from 'fs'
+import path from 'path'
+import { PrismaClient } from '../../generated/prisma/client'
 
 // Get the database path - in production use userData, in dev use project root
 const isDev = process.env.NODE_ENV === 'development'
@@ -96,4 +96,9 @@ const prisma = basePrisma.$extends({
   }
 })()
 
-export { prisma, basePrisma, dbPath }
+// Helper to disconnect DB (since basePrisma is not exported)
+export const disconnectDb = async (): Promise<void> => {
+  await basePrisma.$disconnect()
+}
+
+export { dbPath, prisma }
