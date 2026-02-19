@@ -6,8 +6,8 @@ import {
   ApiResponse,
   Category,
   DailySummary,
-  DashboardStats,
   Expense,
+  ExpenseStats,
   ExtendedDashboardStats,
   IPC_CHANNELS,
   MonthlyReport,
@@ -120,8 +120,6 @@ const api = {
 
   // Dashboard
   dashboard: {
-    getStats: (): Promise<ApiResponse<DashboardStats>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.DASHBOARD_GET_STATS),
     getExtendedStats: (): Promise<ApiResponse<ExtendedDashboardStats>> =>
       ipcRenderer.invoke(IPC_CHANNELS.DASHBOARD_GET_EXTENDED_STATS),
     getRevenueTrend: (days: number = 7): Promise<ApiResponse<RevenueTrendItem[]>> =>
@@ -219,8 +217,22 @@ const api = {
       amount: number
       category?: string
     }): Promise<ApiResponse<Expense>> => ipcRenderer.invoke(IPC_CHANNELS.EXPENSES_CREATE, data),
-    getAll: (): Promise<ApiResponse<Expense[]>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.EXPENSES_GET_ALL),
+    getAll: (options?: {
+      limit?: number
+      offset?: number
+      search?: string
+      category?: string
+      startDate?: string
+      endDate?: string
+    }): Promise<ApiResponse<{ expenses: Expense[]; totalCount: number; hasMore: boolean }>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.EXPENSES_GET_ALL, options),
+    getStats: (options?: {
+      search?: string
+      category?: string
+      startDate?: string
+      endDate?: string
+    }): Promise<ApiResponse<ExpenseStats>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.EXPENSES_GET_STATS, options),
     update: (
       id: string,
       data: { description?: string; amount?: number; category?: string }
@@ -286,7 +298,12 @@ const api = {
 
   // Events
   on: (channel: string, callback: (...args: unknown[]) => void) => {
-    ipcRenderer.on(channel, (_event, ...args) => callback(...args))
+    const subscription = (_event: Electron.IpcRendererEvent, ...args: unknown[]): void =>
+      callback(...args)
+    ipcRenderer.on(channel, subscription)
+    return () => {
+      ipcRenderer.removeListener(channel, subscription)
+    }
   }
 }
 

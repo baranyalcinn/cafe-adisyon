@@ -93,7 +93,7 @@ export interface ExtendedDashboardStats extends DashboardStats {
   openTables: number
   pendingOrders: number
   hourlyActivity: HourlyActivityItem[]
-  categoryBreakdown: { categoryName: string; revenue: number; quantity: number }[]
+  categoryBreakdown: { categoryName: string; revenue: number; quantity: number; icon?: string }[]
   bottomProducts: { productId: string; productName: string; quantity: number }[]
   dailyExpenses: number
 }
@@ -182,6 +182,15 @@ export interface Expense {
   createdAt: Date
 }
 
+export interface ExpenseStats {
+  todayTotal: number
+  monthTotal: number
+  topCategory?: {
+    name: string
+    total: number
+  }
+}
+
 // Monthly Report
 export interface MonthlyReport {
   id: string
@@ -256,6 +265,7 @@ export const IPC_CHANNELS = {
   // Expenses
   EXPENSES_CREATE: 'expenses:create',
   EXPENSES_GET_ALL: 'expenses:getAll',
+  EXPENSES_GET_STATS: 'expenses:getStats',
   EXPENSES_UPDATE: 'expenses:update',
   EXPENSES_DELETE: 'expenses:delete',
 

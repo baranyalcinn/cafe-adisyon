@@ -1,4 +1,3 @@
-import { Plus, Trash2, LayoutGrid, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import {
@@ -8,14 +7,15 @@ import {
   DialogFooter,
   DialogTitle
 } from '@/components/ui/dialog'
-import { cafeApi } from '@/lib/api'
-import { toast } from '@/store/useToastStore'
 import { useTables } from '@/hooks/useTables'
+import { cafeApi } from '@/lib/api'
 import { cn } from '@/lib/utils'
+import { toast } from '@/store/useToastStore'
+import { AlertTriangle, LayoutGrid, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
 export function TablesTab(): React.JSX.Element {
-  const { data: tables = [], refetch } = useTables(false)
+  const { data: tables = [], refetch } = useTables()
   // We can keep useTableStore if needed for other things, but here we just need data.
   // const { tables, addTable, removeTable } = useTableStore() // Removed
 

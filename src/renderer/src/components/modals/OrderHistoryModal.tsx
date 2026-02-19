@@ -1,5 +1,13 @@
-import { useState, useEffect, useCallback } from 'react'
-import { formatCurrency } from '@/lib/utils'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
 import {
   Table,
   TableBody,
@@ -8,20 +16,12 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { Calendar, ChevronLeft, ChevronRight, History, RefreshCw } from 'lucide-react'
 import { cafeApi, type Order } from '@/lib/api'
+import { formatCurrency } from '@/lib/utils'
 import { format } from 'date-fns'
 import { tr } from 'date-fns/locale'
+import { Calendar, ChevronLeft, ChevronRight, History, RefreshCw } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
 
 export function OrderHistoryModal(): React.JSX.Element {
   const [open, setOpen] = useState(false)
@@ -246,7 +246,7 @@ export function OrderHistoryModal(): React.JSX.Element {
                                       {order.payments.map((p) => (
                                         <div key={p.id} className="flex justify-between mt-1">
                                           <span>
-                                            {p.paymentMethod === 'CASH' ? 'NAKİT' : 'KREDİ KARTI'}
+                                            {p.paymentMethod === 'CASH' ? 'NAKİT' : 'KART'}
                                           </span>
                                           <span className="tabular-nums">
                                             {formatCurrency(p.amount)}

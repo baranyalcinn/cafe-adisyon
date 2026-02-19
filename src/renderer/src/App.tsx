@@ -58,7 +58,7 @@ function App(): React.JSX.Element {
 
       <div className="flex-1 flex overflow-hidden">
         {/* Sidebar - Ayrıştırılmış ve daha temiz */}
-        <aside className="w-20 flex flex-col items-center py-6 bg-card/40 backdrop-blur-2xl border-r border-border/10 z-50 transition-all duration-500">
+        <aside className="w-20 flex flex-col items-center py-6 bg-card/40 backdrop-blur-2xl border-r border-border/20 z-50 transition-all duration-500">
           <LogoSection />
 
           <nav className="flex-1 flex flex-col gap-4 pt-10">
@@ -160,8 +160,8 @@ function LogoSection(): React.JSX.Element {
           <div className="flex items-center gap-1">
             {[
               { color: 'text-rose-500', offset: 'translate-y-1', delay: '0s' },
-              { color: 'text-rose-500/70', offset: 'translate-y-0', delay: '0.1s' },
-              { color: 'text-rose-500/40', offset: '-translate-y-1', delay: '0.2s' }
+              { color: 'text-rose-500/90', offset: 'translate-y-0', delay: '0.1s' },
+              { color: 'text-rose-500/65', offset: '-translate-y-1', delay: '0.2s' }
             ].map((config, i) => (
               <div
                 key={i}
@@ -180,7 +180,7 @@ function LogoSection(): React.JSX.Element {
 
           {/* Minimalist Cafe Text */}
           <div className="flex flex-col items-center">
-            <span className="text-[9px] font-black text-rose-500/40 dark:text-rose-500/30 uppercase tracking-[0.3em] transition-all duration-500 group-hover:text-rose-500 group-hover:tracking-[0.45em] relative">
+            <span className="text-[9px] font-black text-rose-500/70 dark:text-rose-500/50 uppercase tracking-[0.3em] transition-all duration-500 group-hover:text-rose-500 group-hover:tracking-[0.45em] relative">
               CAFE
               <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-[1px] bg-rose-500/20 group-hover:w-6 transition-all duration-500" />
             </span>

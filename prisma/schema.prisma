@@ -53,6 +53,7 @@ model Order {
   payments    Transaction[]
 
   @@index([tableId, status])
+  @@index([status, createdAt])
   @@index([status])
   @@index([createdAt])
 }

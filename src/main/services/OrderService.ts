@@ -1,9 +1,9 @@
-import { prisma } from '../db/prisma'
-import { logger } from '../lib/logger'
-import { logService } from './LogService'
 import { BrowserWindow } from 'electron'
 import { ApiResponse, Order } from '../../shared/types'
+import { prisma } from '../db/prisma'
+import { logger } from '../lib/logger'
 import { toPlain } from '../lib/toPlain'
+import { logService } from './LogService'
 
 export class OrderService {
   private broadcastDashboardUpdate(): void {
@@ -326,14 +326,19 @@ export class OrderService {
 
       // Wrap entire operation in a transaction for atomicity
       const result = await prisma.$transaction(async (tx) => {
+        // Batch fetch all items at once instead of N+1 individual queries
+        const itemIds = items.map((i) => i.id)
+        const orderItems = await tx.orderItem.findMany({
+          where: { id: { in: itemIds } },
+          include: { product: true }
+        })
+
+        const itemMap = new Map(orderItems.map((oi) => [oi.id, oi]))
         let resolvedOrderId: string | null = null
         const paidItemsLog: string[] = []
 
         for (const { id, quantity } of items) {
-          const orderItem = await tx.orderItem.findUnique({
-            where: { id },
-            include: { product: true }
-          })
+          const orderItem = itemMap.get(id)
           if (!orderItem) continue
 
           resolvedOrderId = orderItem.orderId
@@ -484,11 +489,12 @@ export class OrderService {
   // --- Private Helpers ---
 
   private async recalculateOrderTotal(orderId: string): Promise<Order> {
-    const orderItems = await prisma.orderItem.findMany({
-      where: { orderId }
+    // Use aggregate to calculate total without fetching all items
+    const aggregate = await prisma.orderItem.findMany({
+      where: { orderId },
+      select: { quantity: true, unitPrice: true }
     })
-
-    const total = orderItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
+    const total = aggregate.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
 
     const updated = await prisma.order.update({
       where: { id: orderId },
@@ -535,13 +541,11 @@ export class OrderService {
         }
       })
 
-      // Log activity
-      const toTable = await prisma.table.findUnique({ where: { id: targetTableId } })
-
+      // Log activity — use updatedOrder.table (already fetched via include)
       await logService.createLog(
         'TRANSFER_TABLE',
         undefined,
-        `${sourceOrder.table?.name || 'Masa'} -> ${toTable?.name} taşındı`
+        `${sourceOrder.table?.name || 'Masa'} -> ${updatedOrder.table?.name || 'Masa'} taşındı`
       )
 
       return { success: true, data: toPlain<Order>(updatedOrder) }
@@ -555,7 +559,7 @@ export class OrderService {
     try {
       const result = await prisma.$transaction(
         async (tx) => {
-          // 1. Get items from source order
+          // 1. Get source items
           const sourceItems = await tx.orderItem.findMany({
             where: { orderId: sourceOrderId }
           })
@@ -564,55 +568,90 @@ export class OrderService {
             throw new Error('Kaynak adisyonda ürün bulunamadı.')
           }
 
-          // 2. Get items from target order to check duplicates
+          // 2. Get source and target order totals (for smart calculation)
+          const [sourceOrder, targetOrder] = await Promise.all([
+            tx.order.findUnique({ where: { id: sourceOrderId }, select: { totalAmount: true } }),
+            tx.order.findUnique({
+              where: { id: targetOrderId },
+              select: { totalAmount: true }
+              // We need target items only to check for duplicates, but we can do a targeted fetch
+              // Optimization: We still need target items to match products.
+            })
+          ])
+
           const targetItems = await tx.orderItem.findMany({
             where: { orderId: targetOrderId }
           })
 
-          // 3. Move items logic with quantity merging
+          // 3. Separate items into "Move" (unique) and "Merge" (duplicate)
+          const itemsToMoveIds: string[] = []
+          const itemsToMerge: { sourceId: string; targetId: string; quantity: number }[] = []
+
           for (const sourceItem of sourceItems) {
             const existingItem = targetItems.find(
-              (t) => t.productId === sourceItem.productId && !t.isPaid && !sourceItem.isPaid
+              (t) =>
+                t.productId === sourceItem.productId &&
+                !t.isPaid &&
+                !sourceItem.isPaid &&
+                t.unitPrice === sourceItem.unitPrice
             )
 
             if (existingItem) {
-              // Update quantity of existing item
-              await tx.orderItem.update({
-                where: { id: existingItem.id },
-                data: { quantity: existingItem.quantity + sourceItem.quantity }
+              itemsToMerge.push({
+                sourceId: sourceItem.id,
+                targetId: existingItem.id,
+                quantity: sourceItem.quantity
               })
-              // Delete source item since it's merged
-              await tx.orderItem.delete({ where: { id: sourceItem.id } })
             } else {
-              // Move item to target order (just update orderId)
-              await tx.orderItem.update({
-                where: { id: sourceItem.id },
-                data: { orderId: targetOrderId }
-              })
+              itemsToMoveIds.push(sourceItem.id)
             }
           }
 
-          // 4. Move payments
+          // 4. Batch Move Unique Items
+          if (itemsToMoveIds.length > 0) {
+            await tx.orderItem.updateMany({
+              where: { id: { in: itemsToMoveIds } },
+              data: { orderId: targetOrderId }
+            })
+          }
+
+          // 5. Update Duplicate Items (Increment Quantity)
+          // Unfortunately, standard Prisma doesn't support "updateMany set quantity = quantity + specific_val"
+          // for different values in one go without raw SQL. So we strictly loop updates for duplicates.
+          // Yet, since we filtered out "Move" items, this loop is smaller.
+          for (const item of itemsToMerge) {
+            // Find current quantity of target item (it might have been updated in this loop if multiple source items match same target)
+            // But usually unique constraint prevents multiple same-product lines.
+            // Safe approach: Increment specific target item.
+            // Optimization: We could use raw query, but let's stick to simple update for safety.
+            await tx.orderItem.update({
+              where: { id: item.targetId },
+              data: { quantity: { increment: item.quantity } }
+            })
+          }
+
+          // 6. Batch Delete Source Items (that were merged)
+          if (itemsToMerge.length > 0) {
+            await tx.orderItem.deleteMany({
+              where: { id: { in: itemsToMerge.map((i) => i.sourceId) } }
+            })
+          }
+
+          // 7. Move payments
           await tx.transaction.updateMany({
             where: { orderId: sourceOrderId },
             data: { orderId: targetOrderId }
           })
 
-          // 5. Delete source order
+          // 8. Delete source order
           await tx.order.delete({ where: { id: sourceOrderId } })
 
-          // 6. Recalculate target order total
-          const allTargetItems = await tx.orderItem.findMany({
-            where: { orderId: targetOrderId }
-          })
-          const totalAmount = allTargetItems.reduce(
-            (sum, item) => sum + item.quantity * item.unitPrice,
-            0
-          )
+          // 9. Calculate new total smartly (No extra findMany!)
+          const newTotal = (sourceOrder?.totalAmount || 0) + (targetOrder?.totalAmount || 0)
 
           const updatedOrder = await tx.order.update({
             where: { id: targetOrderId },
-            data: { totalAmount },
+            data: { totalAmount: newTotal },
             include: {
               items: { include: { product: true } },
               payments: true,
@@ -623,7 +662,7 @@ export class OrderService {
           return toPlain<Order>(updatedOrder)
         },
         {
-          timeout: 20000 // Increase timeout to 20s
+          timeout: 20000
         }
       )
 

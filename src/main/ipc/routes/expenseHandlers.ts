@@ -1,8 +1,8 @@
 import { ipcMain } from 'electron'
+import { expenseSchemas, validateInput } from '../../../shared/ipc-schemas'
 import { IPC_CHANNELS } from '../../../shared/types'
 import { expenseService } from '../../services/ExpenseService'
 import { reportingService } from '../../services/ReportingService'
-import { expenseSchemas, validateInput } from '../../../shared/ipc-schemas'
 
 export function registerExpenseHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.EXPENSES_CREATE, async (_, data) => {
@@ -19,7 +19,13 @@ export function registerExpenseHandlers(): void {
     return result
   })
 
-  ipcMain.handle(IPC_CHANNELS.EXPENSES_GET_ALL, () => expenseService.getAllExpenses())
+  ipcMain.handle(IPC_CHANNELS.EXPENSES_GET_ALL, (_, options) =>
+    expenseService.getAllExpenses(options)
+  )
+
+  ipcMain.handle(IPC_CHANNELS.EXPENSES_GET_STATS, (_, options) =>
+    expenseService.getExpenseStats(options)
+  )
 
   ipcMain.handle(IPC_CHANNELS.EXPENSES_UPDATE, async (_, id, data) => {
     const validation = validateInput(expenseSchemas.update, { id, data })

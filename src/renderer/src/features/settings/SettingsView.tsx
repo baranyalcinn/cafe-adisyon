@@ -161,7 +161,7 @@ export function SettingsView({
 }: SettingsViewProps): React.JSX.Element {
   const soundEnabled = useSettingsStore((state) => state.soundEnabled)
   const toggleSound = useSettingsStore((state) => state.toggleSound)
-  const { data: tables = [], refetch: refetchTables } = useTables(false)
+  const { data: tables = [], refetch: refetchTables } = useTables()
   const { products, refetchProducts, refetchCategories } = useInventory()
   const tableCount = tables.length
   const productCount = products.length
@@ -384,7 +384,7 @@ export function SettingsView({
                 </div>
                 <div className="flex-1 flex flex-col">
                   <h3 className="mb-2 text-xl font-bold tracking-tight">{item.label}</h3>
-                  <p className="line-clamp-3 text-sm leading-relaxed text-muted-foreground opacity-80">
+                  <p className="line-clamp-3 text-sm leading-relaxed text-muted-foreground">
                     {item.description}
                   </p>
                 </div>
@@ -423,9 +423,7 @@ export function SettingsView({
           </div>
           <div>
             <h2 className="font-bold text-lg tracking-tight leading-none">{activeItem?.label}</h2>
-            <p className="text-xs text-muted-foreground mt-1 opacity-80">
-              {activeItem?.description}
-            </p>
+            <p className="text-xs text-muted-foreground mt-1">{activeItem?.description}</p>
           </div>
         </div>
 
@@ -489,7 +487,7 @@ export function SettingsView({
                     <CardContent className="space-y-5 px-5 pb-5">
                       {/* Theme Mode */}
                       <div className="space-y-3">
-                        <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.15em] ml-1">
+                        <label className="text-[10px] font-bold text-muted-foreground/90 uppercase tracking-[0.15em] ml-1">
                           Tema Modu
                         </label>
                         <div className="grid grid-cols-2 gap-2.5">
@@ -553,7 +551,7 @@ export function SettingsView({
                       {/* Color Scheme */}
                       <div className="space-y-3">
                         <div className="flex items-center justify-between ml-1">
-                          <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.15em]">
+                          <label className="text-[10px] font-bold text-muted-foreground/90 uppercase tracking-[0.15em]">
                             Renk Teması
                           </label>
                           <span className="text-xs font-bold text-primary uppercase tracking-wider">
@@ -596,7 +594,7 @@ export function SettingsView({
                             <span className="text-sm font-bold block leading-none mb-1">
                               Ses Efektleri
                             </span>
-                            <span className="text-xs text-muted-foreground/70">
+                            <span className="text-xs text-muted-foreground/90">
                               Bildirim ve etkileşim sesleri
                             </span>
                           </div>

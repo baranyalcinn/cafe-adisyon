@@ -238,7 +238,7 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
       {/* Header Section */}
       <div className="flex-none py-6 px-8 border-b bg-background z-10 w-full mb-2">
         <div className="flex items-center justify-between">
-          <h2 className="text-3xl font-bold tracking-tight text-foreground/90">Masalar</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-foreground">Masalar</h2>
           <div className="flex items-center gap-8">
             {/* Dolu Masa Stat */}
             <div className="flex items-center gap-3 group cursor-default">
@@ -304,7 +304,7 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
             {tables.length === 0 && (
               <div className="col-span-full flex flex-col items-center justify-center h-64 text-center">
                 <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-                  <Coffee className="w-8 h-8 text-muted-foreground/50" />
+                  <Coffee className="w-8 h-8 text-muted-foreground/80" />
                 </div>
                 <h3 className="text-lg font-semibold">Henüz masa yok</h3>
                 <p className="text-muted-foreground max-w-sm mt-2">

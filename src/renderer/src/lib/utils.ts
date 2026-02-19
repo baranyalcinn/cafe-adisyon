@@ -6,12 +6,11 @@ export function cn(...inputs: ClassValue[]): string {
 }
 
 export function formatCurrency(amountInCents: number): string {
-  return new Intl.NumberFormat('tr-TR', {
-    style: 'currency',
-    currency: 'TRY',
+  const formatted = new Intl.NumberFormat('tr-TR', {
+    style: 'decimal',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0
-  })
-    .format(amountInCents / 100)
-    .replace('₺', '₺ ')
+  }).format(amountInCents / 100)
+
+  return `${formatted} ₺`
 }

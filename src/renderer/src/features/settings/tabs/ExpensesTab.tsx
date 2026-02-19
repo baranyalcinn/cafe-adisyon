@@ -1,12 +1,11 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import type { Expense } from '@shared/types'
+import { Plus } from 'lucide-react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { ExpenseSheet } from '../components/ExpenseSheet'
 import { ExpensesTable } from '../components/ExpensesTable'
 import { RevenueSidebar } from '../components/RevenueSidebar'
-import { ExpenseSheet } from '../components/ExpenseSheet'
-import { createPortal } from 'react-dom'
 
 // Using api directly from window as defined in preload
 const api = window.api
@@ -27,19 +26,46 @@ export function ExpensesTab(): React.JSX.Element {
   const loadExpenses = async (): Promise<void> => {
     setIsLoading(true)
     try {
+      // Load expenses (default limit is now 500 in backend)
       const result = await api.expenses.getAll()
       if (result.success && result.data) {
-        setExpenses(result.data)
+        // Handle both legacy (Array) and new (Object) response formats during HMR/Update
+        const data = result.data as unknown as Expense[] | { expenses: Expense[] }
+        if (Array.isArray(data)) {
+          setExpenses(data)
+        } else {
+          setExpenses(data.expenses)
+        }
       }
     } catch (error) {
       console.error('Failed to load expenses:', error)
+      setExpenses([])
     } finally {
       setIsLoading(false)
     }
   }
 
+  // Stats State
+  const [stats, setStats] = useState<{
+    todayTotal: number
+    monthTotal: number
+    topCategory?: { name: string; total: number }
+  }>({ todayTotal: 0, monthTotal: 0 })
+
+  const loadStats = async (): Promise<void> => {
+    try {
+      const result = await api.expenses.getStats()
+      if (result.success && result.data) {
+        setStats(result.data)
+      }
+    } catch (error) {
+      console.error('Failed to load stats:', error)
+    }
+  }
+
   useEffect(() => {
     loadExpenses()
+    loadStats()
   }, [])
 
   const handleFilterChange = (key: string, value: string): void => {
@@ -50,6 +76,9 @@ export function ExpensesTab(): React.JSX.Element {
     return Array.from(new Set(expenses.map((e) => e.category).filter(Boolean))) as string[]
   }, [expenses])
 
+  // Client-side filtering for search/category on loaded items
+  // Note: For full infinite scroll, this should be server-side too,
+  // but for now we have 500 items loaded which covers most cases.
   const filteredExpenses = useMemo(() => {
     return expenses.filter((e) => {
       const matchesSearch = e.description.toLowerCase().includes(filters.search.toLowerCase())
@@ -71,30 +100,6 @@ export function ExpensesTab(): React.JSX.Element {
       return matchesSearch && matchesCategory && matchesDate
     })
   }, [expenses, filters])
-
-  // Analytics
-  const stats = useMemo(() => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
-
-    const todayTotal = expenses
-      .filter((e) => new Date(e.createdAt) >= today)
-      .reduce((sum, e) => sum + e.amount, 0)
-
-    const monthTotal = expenses
-      .filter((e) => new Date(e.createdAt) >= firstDayOfMonth)
-      .reduce((sum, e) => sum + e.amount, 0)
-
-    const topCategory = categories
-      .map((cat) => ({
-        name: cat,
-        total: expenses.filter((e) => e.category === cat).reduce((sum, e) => sum + e.amount, 0)
-      }))
-      .sort((a, b) => b.total - a.total)[0]
-
-    return { todayTotal, monthTotal, topCategory }
-  }, [expenses, categories])
 
   const handleAddExpense = (): void => {
     setSelectedExpense(null)
@@ -183,8 +188,9 @@ export function ExpensesTab(): React.JSX.Element {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Content Area */}
-        <ScrollArea className="flex-1">
-          <div className="p-8 max-w-6xl mx-auto">
+        {/* Content Area */}
+        <div className="flex-1 overflow-hidden p-6">
+          <div className="h-full max-w-6xl mx-auto">
             <ExpensesTable
               data={filteredExpenses}
               onUpdate={handleUpdate}
@@ -193,7 +199,7 @@ export function ExpensesTab(): React.JSX.Element {
               isLoading={isLoading}
             />
           </div>
-        </ScrollArea>
+        </div>
       </div>
 
       {/* Side Drawer */}

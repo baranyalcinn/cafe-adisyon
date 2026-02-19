@@ -1,9 +1,9 @@
-import React, { memo, useCallback } from 'react'
-import { Plus, Star } from 'lucide-react'
-import { getCategoryIcon } from './order-icons'
-import { cn, formatCurrency } from '@/lib/utils'
 import { soundManager } from '@/lib/sound'
+import { cn, formatCurrency } from '@/lib/utils'
 import { toast } from '@/store/useToastStore'
+import { Plus, Star } from 'lucide-react'
+import React, { memo, useCallback } from 'react'
+import { getCategoryIcon } from './order-icons'
 
 import type { Product } from '@/lib/api'
 
@@ -59,19 +59,19 @@ function ProductCardComponent({
           <div className="w-10 h-10 rounded-xl bg-muted/30 shrink-0 flex items-center justify-center group-hover:bg-primary/5 transition-colors">
             {getCategoryIcon(
               product.category?.icon,
-              'w-5 h-5 text-foreground/30 group-hover:text-primary transition-colors'
+              'w-5 h-5 text-foreground/50 group-hover:text-primary transition-colors'
             )}
           </div>
         )}
         <div className="flex-1 min-w-0 flex flex-col justify-center py-0.5">
-          <p className="font-bold text-[15px] line-clamp-2 text-foreground/90 group-hover:text-primary transition-colors leading-[1.2] mb-0.5">
+          <p className="font-bold text-[15px] line-clamp-2 text-foreground group-hover:text-primary transition-colors leading-[1.2] mb-0.5">
             {product.name.replace(/([a-z])([A-Z])/g, '$1 $2')}
           </p>
           <p className="text-[12px] font-bold text-emerald-600 tabular-nums tracking-tighter">
             {formatCurrency(product.price)}
           </p>
         </div>
-        <div className="w-8 h-8 rounded-full flex items-center justify-center bg-muted/20 text-muted-foreground/30 group-hover:bg-primary/10 group-hover:text-primary transition-all shrink-0">
+        <div className="w-8 h-8 rounded-full flex items-center justify-center bg-muted/20 text-muted-foreground/60 group-hover:bg-primary/10 group-hover:text-primary transition-all shrink-0">
           <Plus className="w-4 h-4" />
         </div>
       </button>
@@ -84,7 +84,7 @@ function ProductCardComponent({
       onClick={handleClick}
       disabled={isLocked}
       className={cn(
-        'group relative flex flex-col p-4 w-full rounded-[1.75rem] bg-card border border-border/10 shadow-sm overflow-hidden transition-all duration-300',
+        'group relative flex flex-col p-4 w-full h-full rounded-[1.75rem] bg-card border border-border/10 shadow-sm overflow-hidden transition-all duration-300',
         isLocked
           ? 'opacity-50 cursor-not-allowed'
           : 'hover:border-primary/20 hover:shadow-md hover:scale-[1.02] active:scale-[0.98]'
@@ -101,13 +101,13 @@ function ProductCardComponent({
         <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
         {getCategoryIcon(
           product.category?.icon,
-          'w-10 h-10 text-foreground/15 group-hover:text-primary/30 transition-all duration-500 group-hover:scale-110'
+          'w-10 h-10 text-foreground/35 group-hover:text-primary/50 transition-all duration-500 group-hover:scale-110'
         )}
       </div>
 
       {/* Bottom Section - Content */}
-      <div className="flex flex-col items-start gap-1 px-1 min-h-[3.6rem] w-full">
-        <h3 className="font-bold text-[16px] leading-tight text-left line-clamp-2 text-foreground/85 group-hover:text-primary transition-colors">
+      <div className="flex flex-col items-start gap-1 px-1 flex-1 w-full">
+        <h3 className="font-bold text-[16px] leading-tight text-left line-clamp-2 text-foreground group-hover:text-primary transition-colors">
           {product.name.replace(/([a-z])([A-Z])/g, '$1 $2')}
         </h3>
         <p className="text-[15px] font-bold text-emerald-600 tabular-nums tracking-tighter mt-auto">

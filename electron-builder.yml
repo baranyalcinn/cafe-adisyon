@@ -1,6 +1,5 @@
-appId: com.caffio.caffio
+appId: com.caffio.app
 productName: Caffio
-electronVersion: 40.4.0
 
 publish:
   provider: github
@@ -72,7 +71,7 @@ asarUnpack:
   - 'node_modules/utf-8-validate/**/*'
   - 'node_modules/detect-libc/**/*'
 
-npmRebuild: false
+npmRebuild: true
 buildDependenciesFromSource: false
 
 win:

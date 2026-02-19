@@ -32,6 +32,12 @@
   --color-border: var(--stone-border);
   --color-ring: var(--emerald-accent);
 
+  /* Fallback aliases for standard shadcn/tailwind compatibility */
+  --foreground: var(--color-foreground);
+  --muted: var(--color-muted);
+  --muted-foreground: var(--color-muted-foreground);
+  --border: var(--color-border);
+
   /* Shadows */
   --shadow-premium: 0 20px 50px -12px rgba(0, 0, 0, 0.08), 0 8px 16px -4px rgba(0, 0, 0, 0.04);
   --shadow-soft: 0 4px 12px 0 rgba(0, 0, 0, 0.03);
@@ -85,6 +91,12 @@
   --color-border: oklch(0.24 0.01 250);
   --color-input: oklch(0.24 0.01 250);
   --color-ring: oklch(0.5 0 0);
+
+  /* Fallback aliases for dark mode */
+  --foreground: var(--color-foreground);
+  --muted: var(--color-muted);
+  --muted-foreground: var(--color-muted-foreground);
+  --border: var(--color-border);
 
   --color-sidebar: oklch(0.12 0.01 250);
   --color-sidebar-foreground: oklch(0.95 0.005 250);
@@ -247,6 +259,21 @@ textarea,
 * {
   @apply border-border;
   box-sizing: border-box;
+}
+
+/* Global Lucide Icon Visibility Boost */
+.lucide {
+  stroke-width: 2.25px !important; /* Slightly thicker for premium feel */
+  stroke: currentColor;
+  transition:
+    transform 0.2s ease,
+    stroke-width 0.2s ease;
+}
+
+/* Secondary/Small icons in lists can be slightly thinner if needed, but 2.25 is a good baseline */
+.premium-item .lucide,
+.premium-card .lucide {
+  stroke-width: 2.5px !important; /* Even more prominent in cards */
 }
 
 /* Title Bar Drag Regions */

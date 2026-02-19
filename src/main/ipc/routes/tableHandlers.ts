@@ -1,8 +1,8 @@
 import { ipcMain } from 'electron'
+import { tableSchemas, validateInput } from '../../../shared/ipc-schemas'
+import { IPC_CHANNELS } from '../../../shared/types'
 import { prisma } from '../../db/prisma'
 import { logger } from '../../lib/logger'
-import { IPC_CHANNELS } from '../../../shared/types'
-import { tableSchemas, validateInput } from '../../../shared/ipc-schemas'
 
 export function registerTableHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.TABLES_GET_ALL, async () => {
@@ -72,12 +72,32 @@ export function registerTableHandlers(): void {
 
     try {
       await prisma.$transaction(async (tx) => {
-        const orders = await tx.order.findMany({ where: { tableId: validation.data.id } })
-        for (const order of orders) {
-          await tx.transaction.deleteMany({ where: { orderId: order.id } })
-          await tx.orderItem.deleteMany({ where: { orderId: order.id } })
+        // 1. Get all orders for this table to find their IDs
+        const orders = await tx.order.findMany({
+          where: { tableId: validation.data.id },
+          select: { id: true }
+        })
+
+        const orderIds = orders.map((o) => o.id)
+
+        if (orderIds.length > 0) {
+          // 2. Batch delete transactions for these orders
+          await tx.transaction.deleteMany({
+            where: { orderId: { in: orderIds } }
+          })
+
+          // 3. Batch delete order items for these orders
+          await tx.orderItem.deleteMany({
+            where: { orderId: { in: orderIds } }
+          })
+
+          // 4. Batch delete the orders themselves
+          await tx.order.deleteMany({
+            where: { id: { in: orderIds } }
+          })
         }
-        await tx.order.deleteMany({ where: { tableId: validation.data.id } })
+
+        // 5. Finally, delete the table
         await tx.table.delete({ where: { id: validation.data.id } })
       })
 

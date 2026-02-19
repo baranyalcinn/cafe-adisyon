@@ -141,34 +141,31 @@ export function ExpensesTable({
       normalized.includes('gıda') ||
       normalized.includes('yiyecek')
     )
-      return 'bg-orange-500/10 text-orange-500 border-orange-500/10 hover:bg-orange-500/20'
-    if (normalized.includes('temizlik') || normalized.includes('hijyen'))
-      return 'bg-cyan-500/10 text-cyan-500 border-cyan-500/10 hover:bg-cyan-500/20'
-    if (normalized.includes('market') || normalized.includes('alışveriş'))
-      return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/10 hover:bg-emerald-500/20'
+      return 'text-orange-500'
+    if (normalized.includes('temizlik') || normalized.includes('hijyen')) return 'text-cyan-500'
+    if (normalized.includes('market') || normalized.includes('alışveriş')) return 'text-emerald-500'
     if (
       normalized.includes('personel') ||
       normalized.includes('maaş') ||
       normalized.includes('avans')
     )
-      return 'bg-purple-500/10 text-purple-500 border-purple-500/10 hover:bg-purple-500/20'
+      return 'text-purple-500'
     if (
       normalized.includes('fatura') ||
       normalized.includes('elektrik') ||
       normalized.includes('su') ||
       normalized.includes('internet')
     )
-      return 'bg-rose-500/10 text-rose-500 border-rose-500/10 hover:bg-rose-500/20'
-    if (normalized.includes('kira') || normalized.includes('aidat'))
-      return 'bg-indigo-500/10 text-indigo-500 border-indigo-500/10 hover:bg-indigo-500/20'
+      return 'text-rose-500'
+    if (normalized.includes('kira') || normalized.includes('aidat')) return 'text-indigo-500'
     if (
       normalized.includes('teknik') ||
       normalized.includes('tamir') ||
       normalized.includes('bakım')
     )
-      return 'bg-amber-500/10 text-amber-500 border-amber-500/10 hover:bg-amber-500/20'
+      return 'text-amber-500'
 
-    return 'bg-blue-500/10 text-blue-500 border-blue-500/10 hover:bg-blue-500/20'
+    return 'text-blue-500'
   }
 
   return (
@@ -334,27 +331,27 @@ export function ExpensesTable({
                           {expense.category && (
                             <span
                               className={cn(
-                                'inline-flex items-center justify-center px-2.5 py-1 rounded-md text-[10px] font-black tracking-wider uppercase border transition-colors cursor-default',
+                                'text-[11px] font-black tracking-wider',
                                 getCategoryColor(expense.category)
                               )}
                             >
-                              {expense.category}
+                              {expense.category.toLocaleUpperCase('tr-TR')}
                             </span>
                           )}
                         </TableCell>
                         <TableCell className="py-4">
                           <div
                             className={cn(
-                              'inline-flex items-center gap-1.5 px-2 py-1 rounded-md border text-[10px] font-bold tracking-wider',
+                              'flex items-center gap-1.5 text-[11px] font-bold tracking-wider',
                               expense.paymentMethod === 'CARD'
-                                ? 'bg-purple-500/5 text-purple-600 border-purple-200/20'
-                                : 'bg-emerald-500/5 text-emerald-600 border-emerald-200/20'
+                                ? 'text-purple-600'
+                                : 'text-emerald-600'
                             )}
                           >
                             {expense.paymentMethod === 'CARD' ? (
-                              <CreditCard className="w-3 h-3" />
+                              <CreditCard className="w-3.5 h-3.5" />
                             ) : (
-                              <Wallet className="w-3 h-3" />
+                              <Wallet className="w-3.5 h-3.5" />
                             )}
                             {expense.paymentMethod === 'CARD' ? 'KART' : 'NAKİT'}
                           </div>

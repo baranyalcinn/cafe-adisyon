@@ -153,7 +153,7 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
             Masalara Dön
           </Button>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/80" />
             <Input
               ref={searchInputRef}
               placeholder="Ürün ara..."
@@ -179,7 +179,7 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
                 value="favorites"
                 className="text-[12px] font-bold rounded-lg transition-all duration-300 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm border-none outline-none group gap-2"
               >
-                <Star className="w-3.5 h-3.5 fill-muted-foreground/30 group-data-[state=active]:fill-primary/80 group-data-[state=active]:text-primary transition-all duration-300" />
+                <Star className="w-3.5 h-3.5 fill-muted-foreground/60 group-data-[state=active]:fill-primary/80 group-data-[state=active]:text-primary transition-all duration-300" />
                 Favoriler
               </TabsTrigger>
             </TabsList>
@@ -220,7 +220,7 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
                         'w-full justify-start h-11 rounded-2xl gap-3 px-4 font-bold transition-all relative overflow-hidden group/cat',
                         activeCategory === category.id
                           ? 'bg-primary text-primary-foreground shadow-md shadow-primary/10'
-                          : 'text-muted-foreground/60 hover:bg-muted/40 hover:text-foreground'
+                          : 'text-muted-foreground/85 hover:bg-muted/40 hover:text-foreground'
                       )}
                       onClick={() => {
                         setActiveCategory(category.id)
@@ -265,7 +265,7 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
                   ))}
                   {favoriteProducts.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-8 text-muted-foreground/50 gap-2">
-                      <Star className="w-8 h-8 opacity-20" />
+                      <Star className="w-8 h-8 opacity-40" />
                       <p className="text-xs font-medium">Favori ürün yok</p>
                     </div>
                   )}
@@ -284,7 +284,7 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
               {selectedTableName || 'Masa'}
             </h2>
             <div className="h-4 w-[1px] bg-border" />
-            <span className="text-muted-foreground/50 font-bold tracking-[0.2em] text-[10px] uppercase">
+            <span className="text-muted-foreground/80 font-bold tracking-[0.2em] text-[10px] uppercase">
               SİPARİŞ
             </span>
           </div>
@@ -301,7 +301,7 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
                 'w-9 h-8 rounded-lg outline-none transition-all duration-300',
                 viewMode === 'grid'
                   ? 'bg-background text-primary shadow-sm'
-                  : 'text-muted-foreground/60 hover:text-foreground hover:bg-muted/50'
+                  : 'text-muted-foreground/80 hover:text-foreground hover:bg-muted/50'
               )}
             >
               <LayoutGrid className="w-4 h-4" />
@@ -346,7 +346,7 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
                 {filteredProducts.slice(0, visibleLimit).map((product) => (
                   <div
                     key={product.id}
-                    className="gpu-accelerated animate-in fade-in zoom-in-95 duration-300"
+                    className="flex h-full gpu-accelerated animate-in fade-in zoom-in-95 duration-300"
                   >
                     <ProductCard
                       product={product}

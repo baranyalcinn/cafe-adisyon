@@ -175,7 +175,7 @@ export const CartPanel = React.memo(function CartPanel({
               'h-8 w-8 rounded-lg transition-all duration-300',
               isLocked
                 ? 'text-amber-500 bg-amber-500/15 border border-amber-500/20 shadow-sm'
-                : 'text-muted-foreground/40 hover:text-foreground hover:bg-muted/60'
+                : 'text-muted-foreground/70 hover:text-foreground hover:bg-muted/60'
             )}
             title={isLocked ? 'Masayı Aç' : 'Masayı Kilitle'}
           >
@@ -189,7 +189,7 @@ export const CartPanel = React.memo(function CartPanel({
               'h-8 w-8 rounded-lg transition-all duration-300',
               !order?.items?.length
                 ? 'opacity-0 pointer-events-none'
-                : 'text-muted-foreground/40 hover:text-destructive hover:bg-destructive/15 hover:border-destructive/20'
+                : 'text-muted-foreground/70 hover:text-destructive hover:bg-destructive/15 hover:border-destructive/20'
             )}
             onClick={() => setShowDeleteDialog(true)}
             disabled={!order?.items || order.items.length === 0}
@@ -256,7 +256,7 @@ export const CartPanel = React.memo(function CartPanel({
               {/* Paid Items Group (Archived look) */}
               {processedItems.some((i) => i.isPaid) && (
                 <div className="mt-8 pt-6 border-t border-dashed border-border/60">
-                  <div className="flex items-center gap-2 mb-4 px-1 text-muted-foreground/40">
+                  <div className="flex items-center gap-2 mb-4 px-1 text-muted-foreground/70">
                     <HistoryIcon className="w-3.5 h-3.5" />
                     <span className="text-[10px] font-black tracking-[0.2em] uppercase">
                       ÖDENMİŞ KALEMLER
@@ -270,7 +270,7 @@ export const CartPanel = React.memo(function CartPanel({
                         return (
                           <div
                             key={`${item.productId}-paid-group`}
-                            className="relative origin-top flex items-center justify-between gap-x-2 px-3 pl-4.5 group/item rounded-lg border shadow-none mb-2 transform-gpu cursor-default select-none transition-all duration-500 ease-out bg-muted/5 border-border/10 opacity-40 scale-[0.98] hover:opacity-100 hover:scale-100 hover:bg-muted/10 hover:border-border/20 animate-in fade-in duration-300"
+                            className="relative origin-top flex items-center justify-between gap-x-2 px-3 pl-4.5 group/item rounded-lg border shadow-none mb-2 transform-gpu cursor-default select-none transition-all duration-500 ease-out bg-muted/5 border-border/10 opacity-90 scale-[0.98] hover:opacity-100 hover:scale-100 hover:bg-muted/10 hover:border-border/20 animate-in fade-in duration-300"
                           >
                             <div className="w-full flex items-center justify-between py-1">
                               <div className="absolute left-0 top-0 bottom-0 w-1 transition-all duration-300 group-hover/item:w-1.5 bg-success/20" />
@@ -278,24 +278,24 @@ export const CartPanel = React.memo(function CartPanel({
                               <div className="flex items-baseline gap-2 flex-1 min-w-0">
                                 <div className="shrink-0 flex justify-start min-w-[1.4rem]">
                                   {item.quantity > 1 && (
-                                    <span className="text-[14px] font-bold text-rose-500/60 tabular-nums inline-block">
+                                    <span className="text-[14px] font-bold text-rose-500/80 tabular-nums inline-block">
                                       x{item.quantity}
                                     </span>
                                   )}
                                 </div>
-                                <p className="font-bold text-[15px] tracking-tight leading-snug break-words line-clamp-2 transition-all duration-500 text-muted-foreground/40">
+                                <p className="font-bold text-[15px] tracking-tight leading-snug break-words line-clamp-2 transition-all duration-500 text-foreground/80">
                                   {productName.replace(/([a-z])([A-Z])/g, '$1 $2')}
                                 </p>
                               </div>
 
                               <div className="flex items-center gap-4 ml-2">
-                                <p className="text-[14px] font-black tabular-nums transition-all duration-500 text-muted-foreground/30">
+                                <p className="text-[14px] font-black tabular-nums transition-all duration-500 text-foreground/60">
                                   {formatCurrency(item.unitPrice * item.quantity)}
                                 </p>
 
                                 <div className="px-2.5 py-1 bg-success/5 rounded-lg border border-border/10 flex items-center gap-1.5 shadow-none transition-all duration-500 group-hover/item:bg-success/10">
                                   <CheckCircle className="w-3 h-3 text-success/50" />
-                                  <span className="text-[10px] font-black text-success/60 tracking-[0.2em] uppercase">
+                                  <span className="text-[10px] font-black text-success/80 tracking-[0.2em] uppercase">
                                     ÖDENDİ
                                   </span>
                                 </div>
@@ -312,20 +312,20 @@ export const CartPanel = React.memo(function CartPanel({
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center p-8 text-center animate-in fade-in zoom-in duration-500">
             <div className="w-20 h-20 rounded-full bg-muted/30 flex items-center justify-center mb-6 group-hover/panel:scale-110 transition-transform duration-500">
-              <ShoppingBag className="w-10 h-10 text-muted-foreground/20" />
+              <ShoppingBag className="w-10 h-10 text-muted-foreground/40" />
             </div>
             <h3 className="text-lg font-black text-muted-foreground/60 mb-2">Adisyon Boş</h3>
-            <p className="text-sm text-muted-foreground/30 max-w-[200px] leading-relaxed">
+            <p className="text-sm text-muted-foreground/60 max-w-[200px] leading-relaxed">
               Siparişe ürün eklemek için soldaki menüyü kullanın.
             </p>
           </div>
         )}
       </div>
 
-      <div className="shrink-0 p-6 bg-background border-t border-border z-20 space-y-5">
+      <div className="shrink-0 p-5.5 bg-background border-t border-border z-20 space-y-5">
         <div className="space-y-4">
           <div className="flex justify-between items-center px-1">
-            <span className="text-[13px] font-bold text-muted-foreground/60 tracking-[0.1em] uppercase">
+            <span className="text-[13px] font-bold text-foreground/80 tracking-[0.1em] uppercase">
               Ara Toplam
             </span>
             <PremiumAmount amount={total} size="md" color="foreground" fontWeight="bold" />
@@ -333,7 +333,7 @@ export const CartPanel = React.memo(function CartPanel({
 
           {paidAmount > 0 && (
             <div className="flex justify-between items-center px-1 animate-in fade-in slide-in-from-bottom-2 duration-400">
-              <span className="text-[13px] font-bold text-success/60 tracking-[0.1em] uppercase">
+              <span className="text-[13px] font-bold text-success/80 tracking-[0.1em] uppercase">
                 Ödenen
               </span>
               <PremiumAmount amount={-paidAmount} size="md" color="success" fontWeight="bold" />
@@ -343,7 +343,7 @@ export const CartPanel = React.memo(function CartPanel({
           <div className="pt-4 border-t border-border">
             <div className="flex justify-between items-end px-1 gap-4">
               <div className="flex flex-col">
-                <span className="text-[10px] font-black text-muted-foreground/40 tracking-[0.2em] mb-1.5 uppercase">
+                <span className="text-[10px] font-black text-muted-foreground/70 tracking-[0.2em] mb-1.5 uppercase">
                   ÖDENECEK TUTAR
                 </span>
                 <PremiumAmount amount={remainingAmount} size="2xl" fontWeight="black" />

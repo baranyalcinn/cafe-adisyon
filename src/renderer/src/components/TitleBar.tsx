@@ -1,6 +1,6 @@
-import React from 'react'
-import { Minus, Square, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Minus, Square, X } from 'lucide-react'
+import React from 'react'
 
 export function TitleBar(): React.JSX.Element {
   const handleMinimize = (): void => {
@@ -16,10 +16,10 @@ export function TitleBar(): React.JSX.Element {
   }
 
   return (
-    <div className="titlebar-drag h-8 bg-background/95 border-b border-border/10 flex items-center justify-between px-3 select-none backdrop-blur-md">
+    <div className="titlebar-drag h-8 bg-background/95 border-b border-border/20 flex items-center justify-between px-3 select-none backdrop-blur-md">
       {/* App Title */}
       <div className="flex items-center gap-3 titlebar-no-drag">
-        <span className="text-sm font-bold text-foreground/80 tracking-wide pl-2">Caffio</span>
+        <span className="text-sm font-bold text-foreground tracking-wide pl-2">Caffio</span>
       </div>
 
       {/* Window Controls */}

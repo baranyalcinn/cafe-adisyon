@@ -24,7 +24,7 @@ export const expenseService = {
   async getAll(): Promise<Expense[]> {
     const result = await api.expenses.getAll()
     if (!result.success) throw new Error(result.error)
-    return result.data
+    return result.data.expenses
   },
   async delete(id: string): Promise<void> {
     const result = await api.expenses.delete(id)

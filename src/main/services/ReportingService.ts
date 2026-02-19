@@ -1,7 +1,6 @@
 import {
   ApiResponse,
   DailySummary,
-  DashboardStats,
   ExtendedDashboardStats,
   MonthlyReport,
   RevenueTrendItem
@@ -41,49 +40,42 @@ export class ReportingService {
 
       const startDate = lastReport ? lastReport.createdAt : new Date(0)
 
-      // Get ALL closed orders since the last Z-Report (For Order Count)
+      // 1. Get ALL closed orders count since last report
       const periodicOrdersCount = await prisma.order.count({
         where: {
           status: 'CLOSED',
-          createdAt: {
-            gt: startDate,
-            lte: now
-          }
+          createdAt: { gt: startDate, lte: now }
         }
       })
 
-      // Get ALL transactions (payments) since the last Z-Report (For Revenue)
-      const periodicTransactions = await prisma.transaction.findMany({
-        where: {
-          createdAt: {
-            gt: startDate,
-            lte: now
-          }
-        }
+      // 2. Get Revenue & Payment Breakdown using Aggregation
+      const [transactionAgg, paymentMethodAgg] = await Promise.all([
+        // Total revenue from all transactions
+        prisma.transaction.aggregate({
+          where: { createdAt: { gt: startDate, lte: now } },
+          _sum: { amount: true }
+        }),
+        // Breakdown by payment method
+        prisma.transaction.groupBy({
+          by: ['paymentMethod'],
+          where: { createdAt: { gt: startDate, lte: now } },
+          _sum: { amount: true }
+        })
+      ])
+
+      const totalRevenue = transactionAgg._sum.amount || 0
+
+      // Extract cash/card totals from groupBy result
+      const totalCash = paymentMethodAgg.find((p) => p.paymentMethod === 'CASH')?._sum.amount || 0
+      const totalCard = paymentMethodAgg.find((p) => p.paymentMethod === 'CARD')?._sum.amount || 0
+
+      // 3. Get Total Expenses using Aggregation
+      const expenseAgg = await prisma.expense.aggregate({
+        where: { createdAt: { gt: startDate, lte: now } },
+        _sum: { amount: true }
       })
+      const totalExpenses = expenseAgg._sum.amount || 0
 
-      // Get expenses in the same period
-      const periodicExpenses = await prisma.expense.findMany({
-        where: {
-          createdAt: {
-            gt: startDate,
-            lte: now
-          }
-        }
-      })
-
-      // Calculate totals from TRANSACTIONS
-      const totalCash = periodicTransactions
-        .filter((t) => t.paymentMethod === 'CASH')
-        .reduce((sum, t) => sum + t.amount, 0)
-
-      const totalCard = periodicTransactions
-        .filter((t) => t.paymentMethod === 'CARD')
-        .reduce((sum, t) => sum + t.amount, 0)
-
-      const totalRevenue = totalCash + totalCard
-
-      const totalExpenses = periodicExpenses.reduce((sum, e) => sum + e.amount, 0)
       const netProfit = totalRevenue - totalExpenses
       const totalVat = Math.round(totalRevenue * 0.1)
 
@@ -201,14 +193,16 @@ export class ReportingService {
       allProducts.length > topProductLimit ? [...allProducts].reverse().slice(0, 5) : []
 
     // Category breakdown
-    const categoryMap = new Map<string, { revenue: number; quantity: number }>()
+    const categoryMap = new Map<string, { revenue: number; quantity: number; icon?: string }>()
     todayItems.forEach((item) => {
       const catName =
         (item.product as unknown as { category?: { name: string } }).category?.name || 'Diğer'
+      const catIcon = (item.product as unknown as { category?: { icon?: string } }).category?.icon
       const existing = categoryMap.get(catName) || { revenue: 0, quantity: 0 }
       categoryMap.set(catName, {
         revenue: existing.revenue + item.quantity * item.unitPrice,
-        quantity: existing.quantity + item.quantity
+        quantity: existing.quantity + item.quantity,
+        icon: catIcon
       })
     })
     const categoryBreakdown = Array.from(categoryMap.entries())
@@ -227,20 +221,7 @@ export class ReportingService {
     }
   }
 
-  async getDashboardStats(): Promise<ApiResponse<DashboardStats>> {
-    try {
-      const { dailyRevenue, totalOrders, paymentMethodBreakdown, topProducts } =
-        await this.getBaseStats(5)
-
-      return {
-        success: true,
-        data: { dailyRevenue, totalOrders, paymentMethodBreakdown, topProducts }
-      }
-    } catch (error) {
-      logger.error('ReportingService.getDashboardStats', error)
-      return { success: false, error: String(error) }
-    }
-  }
+  // NOTE: getDashboardStats removed — only getExtendedDashboardStats is used by the frontend.
 
   async getExtendedDashboardStats(): Promise<ApiResponse<ExtendedDashboardStats>> {
     try {
@@ -365,28 +346,23 @@ export class ReportingService {
       const startOfMonth = new Date(Date.UTC(date.getFullYear(), date.getMonth(), 1))
       const endOfMonth = new Date(Date.UTC(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59))
 
-      // 1. Get Revenue (Transactions)
-      const revenueAgg = await prisma.transaction.aggregate({
-        where: {
-          createdAt: { gte: startOfMonth, lte: endOfMonth }
-        },
-        _sum: { amount: true }
-      })
-
-      // 2. Get Order Count
-      const orderCount = await prisma.order.count({
-        where: {
-          status: 'CLOSED',
-          createdAt: { gte: startOfMonth, lte: endOfMonth }
-        }
-      })
-
-      const expenseAgg = await prisma.expense.aggregate({
-        where: {
-          createdAt: { gte: startOfMonth, lte: endOfMonth }
-        },
-        _sum: { amount: true }
-      })
+      // Parallel fetch: 3 queries at once instead of sequential
+      const [revenueAgg, orderCount, expenseAgg] = await Promise.all([
+        prisma.transaction.aggregate({
+          where: { createdAt: { gte: startOfMonth, lte: endOfMonth } },
+          _sum: { amount: true }
+        }),
+        prisma.order.count({
+          where: {
+            status: 'CLOSED',
+            createdAt: { gte: startOfMonth, lte: endOfMonth }
+          }
+        }),
+        prisma.expense.aggregate({
+          where: { createdAt: { gte: startOfMonth, lte: endOfMonth } },
+          _sum: { amount: true }
+        })
+      ])
 
       const totalRevenue = revenueAgg._sum.amount || 0
       const totalExpenses = expenseAgg._sum.amount || 0

@@ -1,5 +1,5 @@
-import React from 'react'
 import { cn, formatCurrency } from '@/lib/utils'
+import React from 'react'
 
 interface PremiumAmountProps {
   amount: number
@@ -17,10 +17,12 @@ export const PremiumAmount: React.FC<PremiumAmountProps> = ({
   fontWeight = 'extrabold'
 }) => {
   const formatted = formatCurrency(amount)
-  // Split symbol and amount (assuming format is "₺ 100")
-  const parts = formatted.split(' ')
-  const symbol = parts[0] || '₺'
-  const value = parts[1] || '0'
+  // Robust symbol detection: extract non-digit/non-separator characters
+  // Turkish format: "135 ₺", English format: "₺ 135"
+  const isNegative = amount < 0
+  const absoluteAmountString = formatted.replace('-', '')
+  const symbol = absoluteAmountString.replace(/[0-9\s.,]/g, '') || '₺'
+  const value = absoluteAmountString.replace(symbol, '').trim()
 
   const sizeClasses = {
     sm: 'text-sm',
@@ -55,22 +57,23 @@ export const PremiumAmount: React.FC<PremiumAmountProps> = ({
     <div className={cn('inline-flex items-baseline tabular-nums leading-none', className)}>
       <span
         className={cn(
-          'font-medium opacity-50 mr-[0.15em] transition-opacity',
-          sizeClasses[size],
-          colorClasses[color]
-        )}
-      >
-        {symbol}
-      </span>
-      <span
-        className={cn(
           'tracking-tight transition-all',
           sizeClasses[size],
           colorClasses[color],
           weightClasses[fontWeight]
         )}
       >
+        {isNegative && '-'}
         {value}
+      </span>
+      <span
+        className={cn(
+          'font-medium opacity-50 ml-[0.15em] transition-opacity',
+          sizeClasses[size === '2xl' ? 'lg' : size === 'md' ? 'sm' : size],
+          colorClasses[color]
+        )}
+      >
+        {symbol}
       </span>
     </div>
   )
