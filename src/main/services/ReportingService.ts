@@ -1,6 +1,3 @@
-import { prisma } from '../db/prisma'
-import { logger } from '../lib/logger'
-import { logService } from './LogService'
 import {
   ApiResponse,
   DailySummary,
@@ -9,6 +6,9 @@ import {
   MonthlyReport,
   RevenueTrendItem
 } from '../../shared/types'
+import { prisma } from '../db/prisma'
+import { logger } from '../lib/logger'
+import { logService } from './LogService'
 
 export class ReportingService {
   /**
@@ -346,7 +346,7 @@ export class ReportingService {
         ).length
 
         result.push({
-          date: date.toLocaleDateString('tr-TR', { weekday: 'short', day: 'numeric' }),
+          date: date.toISOString(),
           revenue: dayRevenue,
           orderCount: dayOrderCount
         })

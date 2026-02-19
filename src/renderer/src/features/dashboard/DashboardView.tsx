@@ -1,29 +1,25 @@
 import { useCallback, useEffect, useState } from 'react'
+import { parseISO } from 'date-fns'
 import { createPortal } from 'react-dom'
 import {
-  TrendingUp,
-  CreditCard,
-  Banknote,
-  ShoppingBag,
   Users,
   RefreshCw,
-  X,
   ReceiptText,
   Moon,
   Calendar,
-  AlertCircle,
-  History,
+  History as HistoryIcon,
   PieChart as PieChartIcon,
   BarChart3,
-  Wallet,
   ArrowDownRight,
-  TrendingDown,
-  ChevronRight
+  ChevronRight,
+  TrendingUp,
+  CreditCard,
+  Banknote,
+  ShoppingBag
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   Select,
   SelectContent,
@@ -42,8 +38,8 @@ import {
 import {
   cafeApi,
   type ExtendedDashboardStats,
-  type RevenueTrendItem,
-  type DailySummary
+  type DailySummary,
+  type RevenueTrendItem
 } from '@/lib/api'
 import { formatCurrency, cn } from '@/lib/utils'
 import {
@@ -67,26 +63,53 @@ import { EndOfDayModal } from '@/components/modals/EndOfDayModal'
 import { OrderHistoryModal } from '@/components/modals/OrderHistoryModal'
 import { type MonthlyReport } from '@/lib/api'
 
-// Custom Tooltip Components for theme compatibility
+interface TooltipPayloadEntry {
+  value: number | string
+  name: string
+  dataKey: string | number
+  payload: Record<string, unknown>
+  color?: string
+  fill?: string
+}
+
 interface CustomTooltipProps {
   active?: boolean
-  payload?: Array<{
-    value: number
-    name: string
-    dataKey: string | number
-    payload: Record<string, unknown>
-  }>
+  payload?: TooltipPayloadEntry[]
   label?: string
 }
 
-function RevenueTooltip({ active, payload, label }: CustomTooltipProps): React.JSX.Element | null {
+function RevenueTooltip({
+  active,
+  payload,
+  label
+}: {
+  active?: boolean
+  payload?: TooltipPayloadEntry[]
+  label?: string
+}): React.JSX.Element | null {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-card text-card-foreground border border-border rounded-lg px-4 py-3 shadow-lg">
-        <p className="text-sm font-semibold mb-1">{label}</p>
-        <p className="text-lg font-bold text-success tabular-nums">
-          {formatCurrency(payload[0].value)}
+      <div className="bg-background/95 backdrop-blur-md border border-border p-4 rounded-2xl shadow-2xl min-w-[160px]">
+        <p className="text-[10px] font-black text-muted-foreground/40 tracking-[0.2em] uppercase mb-2">
+          {label && !isNaN(parseISO(label).getTime())
+            ? parseISO(label).toLocaleDateString('tr-TR', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long'
+              })
+            : label}
         </p>
+        <div className="flex flex-col gap-0.5">
+          <p className="text-2xl font-black text-foreground tabular-nums">
+            {formatCurrency(payload[0].value as number)}
+          </p>
+          <div className="flex items-center gap-2">
+            <span className="flex h-1.5 w-1.5 rounded-full bg-primary" />
+            <span className="text-[10px] font-bold text-primary tracking-widest uppercase">
+              GÜNLÜK GELİR
+            </span>
+          </div>
+        </div>
       </div>
     )
   }
@@ -144,42 +167,6 @@ function MonthlyTooltip({ active, payload, label }: CustomTooltipProps): React.J
     )
   }
   return null
-}
-
-interface ChartTickProps {
-  x?: number
-  y?: number
-  payload?: { value: string | number }
-  fontSize?: number
-  formatter?: (value: number) => string
-}
-
-const CustomYAxisTick = ({
-  x,
-  y,
-  payload,
-  fontSize = 11,
-  formatter
-}: ChartTickProps): React.JSX.Element | null => {
-  if (x === undefined || y === undefined || !payload) return null
-
-  const formattedValue = formatter ? formatter(payload.value as number) : payload.value
-
-  return (
-    <g transform={`translate(${x},${y})`}>
-      <text
-        x={-8}
-        y={0}
-        dy={4}
-        textAnchor="end"
-        fill="currentColor"
-        fontSize={fontSize}
-        className="fill-muted-foreground/80 font-medium whitespace-nowrap"
-      >
-        {formattedValue}
-      </text>
-    </g>
-  )
 }
 
 export function DashboardView(): React.JSX.Element {
@@ -306,209 +293,233 @@ export function DashboardView(): React.JSX.Element {
           headerTarget
         )}
 
-      <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gradient-to-b from-background to-muted/20 pb-12">
-        {/* Main KPI Bento Grid Row */}
-        <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-12 gap-4">
-          {/* Daily Revenue - The Hero Card */}
-          <div className="lg:col-span-6 premium-card ambient-glow relative overflow-hidden group p-6 flex flex-col justify-between">
-            <div className="absolute right-0 top-0 h-64 w-64 translate-x-16 -translate-y-16 rounded-full bg-success/10 transition-all duration-700 group-hover:bg-success/15" />
+      <div className="flex-1 overflow-y-auto px-8 pb-12 space-y-10 bg-background custom-scrollbar">
+        {/* Header Section */}
+        <div className="flex flex-col gap-1 pt-8">
+          <div className="flex items-center gap-3">
+            <h1 className="text-4xl font-black tracking-tight text-foreground">Yönetim Paneli</h1>
+            <div className="h-6 w-[1px] bg-border mt-1" />
+            <span className="text-muted-foreground/40 font-black tracking-[0.3em] text-[12px] uppercase mt-2">
+              DASHBOARD
+            </span>
+          </div>
+        </div>
 
-            <div className="relative z-10 flex items-start justify-between">
-              <div className="space-y-1">
-                <span className="text-[10px] font-bold text-muted-foreground/60 tracking-[0.15em] uppercase">
-                  Bugünkü Toplam Ciro
-                </span>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
-                  </span>
-                  <span className="text-[10px] font-bold text-success uppercase tracking-[0.1em]">
-                    Güncel Veriler
-                  </span>
-                </div>
-              </div>
-              <div className="h-12 w-12 rounded-2xl bg-success/10 flex items-center justify-center transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-[0_0_15px_rgba(var(--color-success),0.15)]">
-                <TrendingUp className="w-6 h-6 text-success" />
+        {/* Top KPI Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="bg-background border border-border rounded-[2rem] p-6 shadow-sm flex flex-col justify-between group transition-all duration-300 hover:border-primary/20">
+            <div className="flex items-start justify-between">
+              <span className="text-[10px] font-black text-muted-foreground/50 tracking-[0.2em] uppercase">
+                BUGÜNKÜ CİRO
+              </span>
+              <div className="p-3 bg-primary/5 rounded-2xl group-hover:scale-110 transition-transform">
+                <TrendingUp className="w-5 h-5 text-primary" />
               </div>
             </div>
-
-            <div className="relative z-10 mt-4">
-              <div className="text-5xl font-black tabular-nums tracking-tighter text-foreground filter drop-shadow-sm">
+            <div className="mt-4">
+              <div className="text-3xl font-black tabular-nums">
                 {formatCurrency(stats?.dailyRevenue || 0)}
               </div>
-              {(() => {
-                const today = revenueTrend[revenueTrend.length - 1]?.revenue || 0
-                const yesterday = revenueTrend[revenueTrend.length - 2]?.revenue || 0
-                const change = yesterday > 0 ? ((today - yesterday) / yesterday) * 100 : 0
-                if (yesterday === 0 && today === 0) return null
-                return (
-                  <div className="flex items-center gap-3 mt-3">
-                    <div
-                      className={cn(
-                        'px-2.5 py-1 rounded-lg border text-[10px] font-black uppercase tracking-wider',
-                        change >= 0
-                          ? 'bg-success/10 border-success/20 text-success'
-                          : 'bg-destructive/10 border-destructive/20 text-destructive'
-                      )}
-                    >
-                      {change >= 0 ? '+' : ''}
-                      {change.toFixed(1)}%
-                    </div>
-                    <p className="text-[10px] font-bold text-muted-foreground/60 tracking-wide uppercase">
-                      DÜNE GÖRE PERFORMANS
-                    </p>
-                  </div>
-                )
-              })()}
+              <div className="flex items-center gap-2 mt-2">
+                <span className="flex h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
+                <span className="text-[10px] font-bold text-success uppercase tracking-widest">
+                  CANLI
+                </span>
+              </div>
             </div>
           </div>
 
-          {/* Orders & Today's Expense Container */}
-          <div className="lg:col-span-3 grid grid-rows-2 gap-4">
-            {/* Total Orders */}
-            <div className="premium-card ambient-glow px-5 py-4 flex items-center justify-between group">
-              <div>
-                <p className="text-[10px] font-bold text-muted-foreground/60 tracking-widest mb-0.5">
-                  SİPARİŞLER
-                </p>
-                <p className="text-2xl font-black text-info tabular-nums">
-                  {stats?.totalOrders || 0}
-                </p>
-              </div>
-              <div className="h-10 w-10 rounded-xl bg-info/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+          <div className="bg-background border border-border rounded-[2rem] p-6 shadow-sm flex flex-col justify-between group transition-all duration-300 hover:border-info/20">
+            <div className="flex items-start justify-between">
+              <span className="text-[10px] font-black text-muted-foreground/50 tracking-[0.2em] uppercase">
+                SİPARİŞLER
+              </span>
+              <div className="p-3 bg-info/5 rounded-2xl group-hover:scale-110 transition-transform">
                 <ShoppingBag className="w-5 h-5 text-info" />
               </div>
             </div>
-
-            {/* Today's Expense */}
-            <div className="premium-card ambient-glow px-5 py-4 flex items-center justify-between group">
-              <div>
-                <p className="text-[10px] font-bold text-muted-foreground/60 tracking-widest mb-0.5 text-destructive/80">
-                  BUĞÜNKÜ GİDER
-                </p>
-                <p className="text-2xl font-black text-destructive tabular-nums">
-                  {formatCurrency(stats?.dailyExpenses || 0)}
-                </p>
-              </div>
-              <div className="h-10 w-10 rounded-xl bg-destructive/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <ArrowDownRight className="w-5 h-5 text-destructive" />
+            <div className="mt-4">
+              <div className="text-3xl font-black tabular-nums">{stats?.totalOrders || 0}</div>
+              <div className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-widest mt-2">
+                TOPLAM ADET
               </div>
             </div>
           </div>
 
-          {/* Open Tables & Pending Orders Container */}
-          <div className="lg:col-span-3 grid grid-rows-2 gap-4">
-            {/* Open Tables */}
-            <div className="premium-card ambient-glow px-5 py-4 flex items-center justify-between group">
-              <div>
-                <p className="text-[10px] font-bold text-muted-foreground/60 tracking-widest mb-0.5">
-                  DOLU MASA
-                </p>
-                <p className="text-2xl font-black text-warning tabular-nums">
-                  {stats?.openTables || 0}
-                </p>
-              </div>
-              <div className="h-10 w-10 rounded-xl bg-warning/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+          <div className="bg-background border border-border rounded-[2rem] p-6 shadow-sm flex flex-col justify-between group transition-all duration-300 hover:border-warning/20">
+            <div className="flex items-start justify-between">
+              <span className="text-[10px] font-black text-muted-foreground/50 tracking-[0.2em] uppercase">
+                DOLU MASA
+              </span>
+              <div className="p-3 bg-warning/5 rounded-2xl group-hover:scale-110 transition-transform">
                 <Users className="w-5 h-5 text-warning" />
               </div>
             </div>
-
-            {/* Avg Order Value (Replaced Pending Orders) */}
-            <div className="premium-card ambient-glow px-5 py-4 flex items-center justify-between group">
-              <div>
-                <p className="text-[10px] font-bold text-muted-foreground/60 tracking-widest mb-0.5">
-                  ORTALAMA SİPARİŞ TUTARI
-                </p>
-                <p className="text-2xl font-black text-success tabular-nums">
-                  {formatCurrency(
-                    stats?.totalOrders
-                      ? Math.round((stats.dailyRevenue || 0) / stats.totalOrders)
-                      : 0
-                  )}
-                </p>
+            <div className="mt-4">
+              <div className="text-3xl font-black tabular-nums">{stats?.openTables || 0}</div>
+              <div className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-widest mt-2">
+                AKTİF SERVİS
               </div>
-              <div className="h-10 w-10 rounded-xl bg-success/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Wallet className="w-5 h-5 text-success" />
+            </div>
+          </div>
+
+          <div className="bg-background border border-border rounded-[2rem] p-6 shadow-sm flex flex-col justify-between group transition-all duration-300 hover:border-destructive/20">
+            <div className="flex items-start justify-between">
+              <span className="text-[10px] font-black text-muted-foreground/50 tracking-[0.2em] uppercase">
+                GÜNLÜK GİDER
+              </span>
+              <div className="p-3 bg-destructive/5 rounded-2xl group-hover:scale-110 transition-transform">
+                <ArrowDownRight className="w-5 h-5 text-destructive" />
+              </div>
+            </div>
+            <div className="mt-4">
+              <div className="text-3xl font-black tabular-nums text-destructive">
+                {formatCurrency(stats?.dailyExpenses || 0)}
+              </div>
+              <div className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-widest mt-2">
+                TOPLAM MALİYET
               </div>
             </div>
           </div>
         </div>
 
+        {/* Weekly Trend Section */}
+        <div className="bg-background border border-border rounded-[2.5rem] p-10 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-primary/10">
+          <div className="flex items-center gap-4 mb-10">
+            <div className="p-3 bg-primary/5 rounded-2xl border border-primary/10">
+              <TrendingUp className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h3 className="text-xl font-black text-foreground">Haftalık Performans</h3>
+              <p className="text-sm text-muted-foreground/60 font-medium">
+                Son 7 günlük ciro değişimi
+              </p>
+            </div>
+          </div>
+          <div className="h-[300px] w-full">
+            {revenueTrend.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={revenueTrend} margin={{ left: 10, right: 10 }}>
+                  <defs>
+                    <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#007AFF" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#007AFF" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid
+                    strokeDasharray="4 4"
+                    vertical={false}
+                    stroke="hsl(var(--border))"
+                    opacity={0.2}
+                  />
+                  <XAxis
+                    dataKey="date"
+                    axisLine={false}
+                    tickLine={false}
+                    padding={{ left: 20, right: 20 }}
+                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontWeight: 700 }}
+                    dy={12}
+                    dx={20}
+                    tickFormatter={(str) => {
+                      try {
+                        const date = parseISO(str)
+                        if (isNaN(date.getTime())) return str
+                        return `${date.getDate()} ${date.toLocaleDateString('tr-TR', { weekday: 'short' })}`
+                      } catch {
+                        return str
+                      }
+                    }}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    width={65}
+                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontWeight: 700 }}
+                    tickFormatter={(val) => `${Math.round(val / 100)} ₺`}
+                  />
+                  <Tooltip content={<RevenueTooltip />} />
+                  <Area
+                    type="monotone"
+                    dataKey="revenue"
+                    stroke="#007AFF"
+                    strokeWidth={4}
+                    fillOpacity={1}
+                    fill="url(#revenueGradient)"
+                    animationDuration={1500}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-muted-foreground/40 italic text-sm">
+                Veri toplanıyor...
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Hourly Activity & Payment Summary Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Hourly Activity Chart */}
-          <div className="lg:col-span-2 premium-card ambient-glow p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                <BarChart3 className="w-4 h-4 text-primary" />
+          <div className="lg:col-span-2 bg-background border border-border rounded-[2.5rem] p-10 shadow-sm">
+            <div className="flex items-center gap-4 mb-10">
+              <div className="p-3 bg-muted/30 rounded-2xl border border-border/5">
+                <BarChart3 className="w-5 h-5 text-foreground/70" />
               </div>
               <div>
-                <h3 className="text-sm font-black text-foreground tracking-wider">
-                  Saatlik Satış Yoğunluğu
-                </h3>
-                <p className="text-[10px] font-bold text-muted-foreground/80 tracking-wide">
-                  Günün En Yoğun Saatleri
+                <h3 className="text-xl font-black text-foreground">Saatlik Satış Yoğunluğu</h3>
+                <p className="text-sm text-muted-foreground/60 font-medium">
+                  Günün en yoğun saatleri
                 </p>
               </div>
             </div>
-            <div className="h-[200px] w-full">
+            <div className="h-[250px] w-full">
               {stats?.hourlyActivity && stats.hourlyActivity.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={stats.hourlyActivity.filter((h) => h.revenue > 0)}
-                    margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
-                  >
+                  <BarChart data={stats.hourlyActivity.filter((h) => h.revenue > 0)}>
                     <defs>
                       <linearGradient id="hourlyGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={1} />
-                        <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.5} />
+                        <stop offset="0%" stopColor="#34C759" stopOpacity={0.8} />
+                        <stop offset="100%" stopColor="#34C759" stopOpacity={0.2} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid
                       strokeDasharray="3 3"
-                      stroke="var(--color-border)"
                       vertical={false}
+                      stroke="hsl(var(--border))"
+                      opacity={0.3}
                     />
                     <XAxis
                       dataKey="hour"
-                      stroke="currentColor"
-                      fontSize={11}
-                      tickLine={false}
                       axisLine={false}
-                      className="fill-muted-foreground"
+                      tickLine={false}
+                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontWeight: 600 }}
+                      dy={10}
                     />
                     <YAxis
-                      stroke="currentColor"
-                      fontSize={11}
-                      tickLine={false}
                       axisLine={false}
-                      width={85}
-                      tick={
-                        <CustomYAxisTick
-                          formatter={(value: number) =>
-                            `${((value || 0) / 100).toLocaleString('tr-TR', {
-                              minimumFractionDigits: 0,
-                              maximumFractionDigits: 0
-                            })} ₺`
-                          }
-                        />
-                      }
-                      className="fill-muted-foreground"
+                      tickLine={false}
+                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontWeight: 600 }}
+                      tickFormatter={(value) => `${value / 100}₺`}
                     />
                     <Tooltip
+                      cursor={{ fill: 'hsl(var(--muted))', opacity: 0.1 }}
                       content={({ active, payload }) => {
                         if (active && payload && payload.length) {
+                          const data = payload[0].payload as {
+                            hour: string
+                            revenue: number
+                            orderCount: number
+                          }
                           return (
-                            <div className="bg-background/95 backdrop-blur-md border border-white/10 p-3 rounded-xl shadow-xl">
-                              <p className="text-xs font-bold text-foreground mb-1">
-                                {payload[0].payload.hour}
+                            <div className="bg-background border border-border p-4 rounded-2xl shadow-xl">
+                              <p className="text-xs font-black text-muted-foreground/60 tracking-widest mb-1">
+                                {data.hour}
                               </p>
-                              <p className="text-sm font-black text-primary">
-                                {formatCurrency(payload[0].value as number)}
+                              <p className="text-lg font-black text-foreground">
+                                {formatCurrency(data.revenue)}
                               </p>
-                              <p className="text-[10px] text-muted-foreground mt-1">
-                                {payload[0].payload.orderCount} Sipariş
+                              <p className="text-[10px] font-bold text-primary mt-1 uppercase tracking-widest">
+                                {data.orderCount} SİPARİŞ
                               </p>
                             </div>
                           )
@@ -519,49 +530,49 @@ export function DashboardView(): React.JSX.Element {
                     <Bar
                       dataKey="revenue"
                       fill="url(#hourlyGradient)"
-                      radius={[4, 4, 0, 0]}
-                      barSize={20}
+                      radius={[6, 6, 0, 0]}
+                      barSize={24}
                     />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
-                  Henüz veri yok
+                <div className="h-full flex items-center justify-center text-muted-foreground/40 italic text-sm">
+                  Veri toplanıyor...
                 </div>
               )}
             </div>
           </div>
 
           {/* Compact Payment Summary */}
-          <div className="premium-card ambient-glow p-5 flex flex-col justify-center gap-6">
+          <div className="bg-background border border-border rounded-[2.5rem] p-10 shadow-sm flex flex-col justify-center space-y-10">
             <div className="flex items-center justify-between group">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-success/10 rounded-xl group-hover:scale-110 transition-transform">
-                  <Banknote className="w-5 h-5 text-success" />
+              <div className="flex items-center gap-4">
+                <div className="p-4 bg-success/5 rounded-2xl border border-success/10 group-hover:scale-105 transition-transform">
+                  <Banknote className="w-6 h-6 text-success" />
                 </div>
                 <div>
-                  <p className="text-[14px] font-bold text-muted-foreground/60 tracking-widest">
-                    Nakit
+                  <p className="text-[11px] font-black text-muted-foreground/50 tracking-[0.2em] uppercase mb-1">
+                    NAKİT
                   </p>
-                  <p className="text-3xl font-black text-foreground tabular-nums">
+                  <p className="text-4xl font-black text-foreground tabular-nums">
                     {formatCurrency(stats?.paymentMethodBreakdown?.cash || 0)}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="w-full h-px bg-border/50" />
+            <div className="h-px bg-border/50" />
 
             <div className="flex items-center justify-between group">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-info/10 rounded-xl group-hover:scale-110 transition-transform">
-                  <CreditCard className="w-5 h-5 text-info" />
+              <div className="flex items-center gap-4">
+                <div className="p-4 bg-info/5 rounded-2xl border border-info/10 group-hover:scale-105 transition-transform">
+                  <CreditCard className="w-6 h-6 text-info" />
                 </div>
                 <div>
-                  <p className="text-[14px] font-bold text-muted-foreground/60 tracking-widest">
-                    Kart
+                  <p className="text-[11px] font-black text-muted-foreground/50 tracking-[0.2em] uppercase mb-1">
+                    KART
                   </p>
-                  <p className="text-3xl font-black text-foreground tabular-nums">
+                  <p className="text-4xl font-black text-foreground tabular-nums">
                     {formatCurrency(stats?.paymentMethodBreakdown?.card || 0)}
                   </p>
                 </div>
@@ -569,92 +580,16 @@ export function DashboardView(): React.JSX.Element {
             </div>
           </div>
         </div>
-
-        {/* Revenue Trend Chart */}
-        <div className="premium-card ambient-glow p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <TrendingUp className="w-4 h-4 text-primary" />
-            </div>
-            <h3 className="text-sm font-black text-foreground tracking-wider">
-              Son 7 Gün Hasılat Trendi
-            </h3>
-          </div>
-          <div className="h-[280px] w-full">
-            {revenueTrend.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={revenueTrend} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-                  <defs>
-                    <linearGradient id="revenueAreaGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#10b981" stopOpacity={0.35} />
-                      <stop offset="100%" stopColor="#10b981" stopOpacity={0.02} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="var(--color-border)"
-                    vertical={false}
-                  />
-                  <XAxis
-                    dataKey="date"
-                    stroke="currentColor"
-                    fontSize={13}
-                    tickLine={false}
-                    axisLine={false}
-                    className="fill-foreground"
-                  />
-                  <YAxis
-                    stroke="currentColor"
-                    fontSize={13}
-                    tickLine={false}
-                    axisLine={false}
-                    width={90}
-                    tick={
-                      <CustomYAxisTick
-                        fontSize={13}
-                        formatter={(value: number) =>
-                          `${((value || 0) / 100).toLocaleString('tr-TR', {
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 0
-                          })} ₺`
-                        }
-                      />
-                    }
-                    className="fill-foreground"
-                  />
-                  <Tooltip content={<RevenueTooltip />} />
-                  <Area
-                    type="monotone"
-                    dataKey="revenue"
-                    stroke="#10b981"
-                    strokeWidth={3}
-                    fill="url(#revenueAreaGradient)"
-                    dot={{ r: 4, fill: '#10b981', strokeWidth: 2, stroke: '#fff' }}
-                    activeDot={{ r: 6, fill: '#10b981', strokeWidth: 2, stroke: '#fff' }}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-full text-muted-foreground">
-                Henüz veri yok
+        {/* Categories & Selling Products */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="bg-background border border-border rounded-[2.5rem] p-10 shadow-sm">
+            <div className="flex items-center gap-4 mb-10">
+              <div className="p-3 bg-muted/30 rounded-2xl border border-border/5">
+                <PieChartIcon className="w-5 h-5 text-foreground/70" />
               </div>
-            )}
-          </div>
-        </div>
-
-        {/* Category Breakdown & Top/Bottom Products */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Category Breakdown Donut */}
-          <div className="premium-card ambient-glow p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="h-8 w-8 rounded-lg bg-warning/10 flex items-center justify-center">
-                <PieChartIcon className="w-4 h-4 text-warning" />
-              </div>
-              <h3 className="text-sm font-black text-foreground tracking-wider">
-                Kategori Bazlı Satış Dağılımı
-              </h3>
+              <h3 className="text-xl font-black text-foreground">Kategori Dağılımı</h3>
             </div>
-            <div className="h-[280px] w-full">
+            <div className="h-[300px] w-full">
               {stats?.categoryBreakdown && stats.categoryBreakdown.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -664,27 +599,26 @@ export function DashboardView(): React.JSX.Element {
                         value: c.revenue,
                         quantity: c.quantity
                       }))}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={100}
-                      paddingAngle={3}
+                      innerRadius={80}
+                      outerRadius={110}
+                      paddingAngle={5}
                       dataKey="value"
                     >
                       {stats.categoryBreakdown.map((_, index) => (
                         <Cell
-                          key={`cell-${index}`}
+                          key={index}
                           fill={
                             [
-                              'hsl(142, 71%, 45%)',
-                              'hsl(217, 91%, 60%)',
-                              'hsl(38, 92%, 50%)',
-                              'hsl(0, 84%, 60%)',
-                              'hsl(262, 83%, 58%)',
-                              'hsl(180, 60%, 45%)',
-                              'hsl(330, 80%, 55%)'
+                              '#007AFF', // Blue
+                              '#FF2D55', // Pink
+                              '#34C759', // Green
+                              '#FF9500', // Orange
+                              '#AF52DE', // Purple
+                              '#5AC8FA', // Teal
+                              '#FFCC00' // Yellow
                             ][index % 7]
                           }
+                          stroke="none"
                         />
                       ))}
                     </Pie>
@@ -697,12 +631,16 @@ export function DashboardView(): React.JSX.Element {
                             quantity: number
                           }
                           return (
-                            <div className="bg-card text-card-foreground border border-border rounded-lg px-4 py-3 shadow-lg">
-                              <p className="text-sm font-bold mb-1">{data.name}</p>
-                              <p className="text-sm font-bold text-success tabular-nums">
+                            <div className="bg-background border border-border p-4 rounded-2xl shadow-xl">
+                              <p className="text-xs font-black text-muted-foreground/60 tracking-widest mb-1">
+                                {data.name}
+                              </p>
+                              <p className="text-lg font-black text-foreground">
                                 {formatCurrency(data.value)}
                               </p>
-                              <p className="text-xs text-muted-foreground">{data.quantity} adet</p>
+                              <p className="text-[10px] font-bold text-muted-foreground/40 mt-1">
+                                {data.quantity} ADET SATIŞ
+                              </p>
                             </div>
                           )
                         }
@@ -712,463 +650,275 @@ export function DashboardView(): React.JSX.Element {
                   </PieChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex items-center justify-center h-full text-muted-foreground">
-                  Henüz veri yok
+                <div className="h-full flex items-center justify-center text-muted-foreground/40 italic text-sm">
+                  Veri toplanıyor...
                 </div>
               )}
             </div>
-            {/* Legend */}
-            {stats?.categoryBreakdown && stats.categoryBreakdown.length > 0 && (
-              <div className="flex flex-wrap gap-3 mt-4 justify-center">
-                {stats.categoryBreakdown.map((cat, index) => (
-                  <div key={cat.categoryName} className="flex items-center gap-1.5">
-                    <div
-                      className="w-2.5 h-2.5 rounded-full"
-                      style={{
-                        backgroundColor: [
-                          'hsl(142, 71%, 45%)',
-                          'hsl(217, 91%, 60%)',
-                          'hsl(38, 92%, 50%)',
-                          'hsl(0, 84%, 60%)',
-                          'hsl(262, 83%, 58%)',
-                          'hsl(180, 60%, 45%)',
-                          'hsl(330, 80%, 55%)'
-                        ][index % 7]
-                      }}
-                    />
-                    <span className="text-sm font-bold text-foreground/80">{cat.categoryName}</span>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
 
-          {/* Top Products - Horizontal Bar Chart */}
-          <div className="lg:col-span-2 premium-card ambient-glow p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="h-8 w-8 rounded-lg bg-success/10 flex items-center justify-center">
-                <ShoppingBag className="w-4 h-4 text-success" />
+          <div className="bg-background border border-border rounded-[2.5rem] p-10 shadow-sm">
+            <div className="flex items-center gap-4 mb-10">
+              <div className="p-3 bg-muted/30 rounded-2xl border border-border/5">
+                <ShoppingBag className="w-5 h-5 text-foreground/70" />
               </div>
-              <h3 className="text-sm font-black text-foreground tracking-wider">
-                En Çok Satan Ürünler
-              </h3>
+              <h3 className="text-xl font-black text-foreground">En Çok Satanlar</h3>
             </div>
-            <div className="h-[280px] w-full">
+            <div className="h-[300px] w-full">
               {productData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={productData} layout="vertical" margin={{ left: 0, right: 20 }}>
-                    <defs>
-                      <linearGradient id="barGradient" x1="0" y1="0" x2="1" y2="0">
-                        <stop offset="0%" stopColor="#10b981" />
-                        <stop offset="100%" stopColor="#059669" />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      stroke="var(--color-border)"
-                      horizontal={false}
-                    />
-                    <XAxis
-                      type="number"
-                      stroke="currentColor"
-                      fontSize={13}
-                      tickLine={false}
-                      axisLine={false}
-                      className="fill-foreground"
-                    />
+                  <BarChart data={productData} layout="vertical" margin={{ left: 20 }}>
+                    <XAxis type="number" hide />
                     <YAxis
                       type="category"
                       dataKey="name"
-                      width={130}
-                      stroke="currentColor"
-                      fontSize={13}
-                      tickLine={false}
                       axisLine={false}
-                      className="fill-foreground"
+                      tickLine={false}
+                      tick={{ fill: 'hsl(var(--foreground))', fontSize: 11, fontWeight: 700 }}
+                      width={100}
                     />
                     <Tooltip
                       content={<ProductTooltip />}
-                      cursor={{ fill: '#10b981', fillOpacity: 0.1 }}
+                      cursor={{ fill: 'hsl(var(--muted))', opacity: 0.1 }}
                     />
-                    <Bar
-                      dataKey="quantity"
-                      fill="url(#barGradient)"
-                      radius={[0, 6, 6, 0]}
-                      maxBarSize={28}
-                    />
+                    <Bar dataKey="quantity" fill="#007AFF" radius={[0, 6, 6, 0]} barSize={20} />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex items-center justify-center h-full text-muted-foreground">
-                  Henüz satış verisi yok
+                <div className="h-full flex items-center justify-center text-muted-foreground/40 italic text-sm">
+                  Veri toplanıyor...
                 </div>
               )}
             </div>
+          </div>
+        </div>
 
-            {/* Bottom Products */}
-            {stats?.bottomProducts && stats.bottomProducts.length > 0 && (
-              <div className="mt-6 pt-5 border-t border-border/20">
-                <div className="flex items-center gap-2 mb-4">
-                  <TrendingDown className="w-4 h-4 text-destructive/70" />
-                  <h4 className="text-xs font-black text-muted-foreground tracking-widest">
-                    En Az Satan Ürünler
-                  </h4>
-                </div>
-                <div className="grid grid-cols-5 gap-3">
-                  {stats.bottomProducts.map((product, index) => (
-                    <div
-                      key={product.productId}
-                      className="flex flex-col items-center gap-2 p-3 rounded-xl bg-muted/20 border border-border/10 hover:bg-muted/30 transition-colors group/card h-full min-h-[110px]"
-                    >
-                      <span className="text-lg font-black text-destructive/70 tabular-nums group-hover/card:scale-110 transition-transform">
-                        {product.quantity}
-                      </span>
-                      <span className="text-xs font-bold text-muted-foreground text-center leading-[1.3] w-full line-clamp-2 px-1">
-                        {product.productName}
-                      </span>
-                      <div className="mt-auto flex flex-col items-center">
-                        <span className="text-[9px] font-black text-muted-foreground/30 group-hover/card:text-muted-foreground/50 transition-colors uppercase tracking-[0.2em]">
-                          #{index + 1}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+        {/* Monthly Performance Charts */}
+        <div className="bg-background border border-border rounded-[2.5rem] p-10 shadow-sm">
+          <div className="flex items-center justify-between mb-10">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-muted/30 rounded-2xl border border-border/5">
+                <Calendar className="w-5 h-5 text-foreground/70" />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-foreground">Aylık Performans</h3>
+                <p className="text-sm text-muted-foreground/60 font-medium">
+                  Gelir, Gider ve Kar Analizi
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="h-[400px] w-full">
+            {monthlyReports.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart
+                  data={[...monthlyReports].reverse().map((r) => ({
+                    name: new Date(r.monthDate).toLocaleDateString('tr-TR', {
+                      month: 'short',
+                      year: '2-digit'
+                    }),
+                    revenue: r.totalRevenue,
+                    expenses: r.totalExpenses,
+                    profit: r.netProfit
+                  }))}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    vertical={false}
+                    stroke="hsl(var(--border))"
+                    opacity={0.3}
+                  />
+                  <XAxis
+                    dataKey="name"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 11, fontWeight: 600 }}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    width={65}
+                    tick={{ fontSize: 11, fontWeight: 600 }}
+                    tickFormatter={(val) => `${Math.round(val / 100)} ₺`}
+                  />
+                  <Tooltip content={<MonthlyTooltip />} />
+                  <Legend verticalAlign="top" height={36} iconType="circle" />
+                  <Bar
+                    dataKey="revenue"
+                    name="Ciro"
+                    fill="#34C759"
+                    radius={[4, 4, 0, 0]}
+                    barSize={32}
+                  />
+                  <Bar
+                    dataKey="expenses"
+                    name="Gider"
+                    fill="#FF3B30"
+                    radius={[4, 4, 0, 0]}
+                    barSize={32}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="profit"
+                    name="Net Kar"
+                    stroke="#007AFF"
+                    strokeWidth={3}
+                    dot={{ fill: '#007AFF', r: 4, strokeWidth: 2, stroke: '#fff' }}
+                    activeDot={{ r: 6, strokeWidth: 0 }}
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-muted-foreground/40 italic text-sm text-center">
+                Henüz yeterli veri birikmedi.
+                <br />
+                Z-Raporları oluştukça aylık analiz görünür hale gelecektir.
               </div>
             )}
           </div>
         </div>
 
-        {/* Monthly analysis section */}
-        <div className="space-y-6 pt-4">
+        {/* History Section */}
+        <div className="bg-background border border-border rounded-[2.5rem] p-10 shadow-sm space-y-8">
           <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-foreground">Aylık Analiz</h2>
-              <p className="text-[10px] font-bold text-muted-foreground/80 tracking-wide uppercase">
-                Son 12 Ayın Gelir, Gider ve Kar Durumu
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 xl:grid-cols-4 lg:grid-rows-2 gap-6">
-            {/* Monthly Sales Chart */}
-            <div className="xl:col-span-3 lg:row-span-2 premium-card ambient-glow p-6">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Calendar className="w-4 h-4 text-primary" />
-                </div>
-                <h3 className="text-sm font-black text-foreground tracking-wider">
-                  Aylık Gelir-Gider Analizi
-                </h3>
-              </div>
-              <div className="h-[300px] w-full">
-                {monthlyReports.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={380}>
-                    <ComposedChart
-                      data={[...monthlyReports].reverse().map((r) => ({
-                        name: new Date(r.monthDate).toLocaleDateString('tr-TR', {
-                          month: 'short',
-                          year: '2-digit'
-                        }),
-                        revenue: r.totalRevenue,
-                        expenses: r.totalExpenses,
-                        profit: r.netProfit
-                      }))}
-                      margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.2} />
-                      <XAxis dataKey="name" fontSize={11} tickLine={false} axisLine={false} />
-                      <YAxis
-                        fontSize={10}
-                        tickLine={false}
-                        axisLine={false}
-                        width={75}
-                        tick={
-                          <CustomYAxisTick
-                            fontSize={10}
-                            formatter={(val: number) => `${(val / 100000).toFixed(0)}k ₺`}
-                          />
-                        }
-                      />
-                      <Tooltip content={<MonthlyTooltip />} />
-                      <Legend verticalAlign="top" height={36} iconType="circle" />
-                      <Bar
-                        dataKey="revenue"
-                        name="Ciro"
-                        fill="var(--color-success)"
-                        radius={[6, 6, 0, 0]}
-                        maxBarSize={40}
-                      />
-                      <Bar
-                        dataKey="expenses"
-                        name="Gider"
-                        fill="var(--color-destructive)"
-                        radius={[6, 6, 0, 0]}
-                        maxBarSize={40}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="profit"
-                        name="Net Kar"
-                        stroke="var(--color-primary)"
-                        strokeWidth={4}
-                        dot={{ r: 5, fill: 'var(--color-primary)', strokeWidth: 2, stroke: '#fff' }}
-                      />
-                    </ComposedChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="flex items-center justify-center h-[380px] text-muted-foreground italic">
-                    Henüz aylık analiz verisi toplanmadı
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Monthly Summary */}
-            <div className="xl:col-span-1 lg:row-span-2 premium-card ambient-glow p-6 flex flex-col">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="h-8 w-8 rounded-lg bg-warning/10 flex items-center justify-center">
-                  <PieChartIcon className="w-4 h-4 text-warning" />
-                </div>
-                <h3 className="text-sm font-black text-foreground tracking-wider">Hasılat Özeti</h3>
-              </div>
-
-              <div className="flex-1 flex flex-col justify-center gap-8">
-                <div>
-                  <p className="text-[10px] font-black text-muted-foreground/60 tracking-widest mb-1.5">
-                    {filterMonth !== 'all' ? 'Seçili Dönem Ciro' : 'Görüntülenen Ciro'}
-                  </p>
-                  <div className="text-3xl font-black text-success tabular-nums">
-                    {formatCurrency(
-                      zReportHistory.reduce((acc, curr) => acc + curr.totalRevenue, 0)
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <p className="text-[10px] font-black text-muted-foreground/60 tracking-widest mb-1.5">
-                    Ortalama Günlük
-                  </p>
-                  <div className="text-3xl font-black text-foreground tabular-nums">
-                    {formatCurrency(
-                      zReportHistory.length > 0
-                        ? zReportHistory.reduce((acc, curr) => acc + curr.totalRevenue, 0) /
-                            zReportHistory.length
-                        : 0
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <p className="text-[10px] font-black text-muted-foreground/60 tracking-widest mb-1.5">
-                    En Yüksek Gün
-                  </p>
-                  <div className="text-3xl font-black text-primary tabular-nums">
-                    {formatCurrency(Math.max(...zReportHistory.map((s) => s.totalRevenue), 0))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Z-Report History */}
-        <div className="premium-card ambient-glow p-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shadow-sm">
-                <History className="w-5 h-5 text-primary" />
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-muted/30 rounded-2xl border border-border/5">
+                <HistoryIcon className="w-5 h-5 text-foreground/70" />
               </div>
               <div>
-                <h3 className="text-sm font-black text-foreground tracking-wider">
-                  Z-Raporu Geçmişi
-                </h3>
-                <p className="text-[10px] font-bold text-muted-foreground/60 tracking-widest mt-0.5">
-                  Arşiv ve Kayıtlar
+                <h3 className="text-xl font-black text-foreground">Z-Raporu Geçmişi</h3>
+                <p className="text-sm text-muted-foreground/60 font-medium">
+                  Arşivlenmiş gün sonu raporları
                 </p>
               </div>
             </div>
 
-            {/* Premium Filter Bar */}
-            <div className="flex items-center gap-2 bg-muted/20 p-1.5 rounded-2xl border border-white/5 shadow-inner">
-              <div className="flex items-center gap-2 px-3 border-r border-white/10 mr-1">
-                <Calendar className="w-3.5 h-3.5 text-muted-foreground/60" />
-                <span className="text-[10px] font-black text-muted-foreground/60 tracking-widest">
-                  Filtrele
-                </span>
-              </div>
-
-              <div className="flex gap-2">
-                <Select value={filterYear} onValueChange={setFilterYear}>
-                  <SelectTrigger className="h-9 w-[100px] rounded-xl border-none bg-background/50 backdrop-blur-sm text-[11px] font-bold shadow-sm focus:ring-primary/20">
-                    <SelectValue placeholder="Yıl" />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl border-white/10 bg-background/95 backdrop-blur-md">
-                    {[2024, 2025, 2026].map((year) => (
-                      <SelectItem
-                        key={year}
-                        value={year.toString()}
-                        className="text-[11px] font-bold rounded-lg"
-                      >
-                        {year}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <Select value={filterMonth} onValueChange={setFilterMonth}>
-                  <SelectTrigger className="h-9 w-[140px] rounded-xl border-none bg-background/50 backdrop-blur-sm text-[11px] font-bold shadow-sm focus:ring-primary/20">
-                    <SelectValue placeholder="Ay Seçin" />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl border-white/10 bg-background/95 backdrop-blur-md">
-                    <SelectItem value="all" className="text-[11px] font-bold rounded-lg">
-                      Son 30 Gün
+            <div className="flex items-center gap-2 bg-muted/30 p-1 rounded-2xl border border-border/10">
+              <Select value={filterYear} onValueChange={setFilterYear}>
+                <SelectTrigger className="h-9 w-24 bg-background border-none shadow-none text-[10px] font-black uppercase tracking-widest rounded-xl">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[2024, 2025, 2026].map((year) => (
+                    <SelectItem
+                      key={year}
+                      value={year.toString()}
+                      className="text-[11px] font-bold"
+                    >
+                      {year}
                     </SelectItem>
-                    {[
-                      'Ocak',
-                      'Şubat',
-                      'Mart',
-                      'Nisan',
-                      'Mayıs',
-                      'Haziran',
-                      'Temmuz',
-                      'Ağustos',
-                      'Eylül',
-                      'Ekim',
-                      'Kasım',
-                      'Aralık'
-                    ].map((month, index) => (
-                      <SelectItem
-                        key={month}
-                        value={index.toString()}
-                        className="text-[11px] font-bold rounded-lg"
-                      >
-                        {month}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                {filterMonth !== 'all' && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setFilterMonth('all')}
-                    className="h-9 w-9 rounded-xl hover:bg-destructive/10 hover:text-destructive transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                )}
-              </div>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterMonth} onValueChange={setFilterMonth}>
+                <SelectTrigger className="h-9 w-32 bg-background border-none shadow-none text-[10px] font-black uppercase tracking-widest rounded-xl">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all" className="text-[11px] font-bold">
+                    SON 30 GÜN
+                  </SelectItem>
+                  {[
+                    'OCAK',
+                    'ŞUBAT',
+                    'MART',
+                    'NİSAN',
+                    'MAYIS',
+                    'HAZİRAN',
+                    'TEMMUZ',
+                    'AĞUSTOS',
+                    'EYLÜL',
+                    'EKİM',
+                    'KASIM',
+                    'ARALIK'
+                  ].map((m, i) => (
+                    <SelectItem key={m} value={i.toString()} className="text-[11px] font-bold">
+                      {m}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
-          {zReportHistory.length === 0 ? (
-            <div className="text-center text-muted-foreground py-8">
-              Henüz Z-Raporu oluşturulmamış. Gün sonunda yukarıdaki butona tıklayarak rapor
-              oluşturabilirsiniz.
-            </div>
-          ) : (
-            <ScrollArea className="h-[460px] -mx-1 pr-1">
-              <Table>
-                <TableHeader className="bg-muted/30 sticky top-0 z-10 shadow-sm border-y border-white/5">
-                  <TableRow className="hover:bg-transparent border-none">
-                    <TableHead className="py-4 pl-6 font-black text-[10px] text-muted-foreground tracking-[0.15em]">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-3 h-3" />
-                        TARİH
-                      </div>
-                    </TableHead>
-                    <TableHead className="text-right font-black text-[10px] text-muted-foreground tracking-[0.15em]">
-                      <div className="flex items-center justify-end gap-2">
-                        <Banknote className="w-3 h-3" />
-                        NAKİT
-                      </div>
-                    </TableHead>
-                    <TableHead className="text-right font-black text-[10px] text-muted-foreground tracking-[0.15em]">
-                      <div className="flex items-center justify-end gap-2">
-                        <CreditCard className="w-3 h-3" />
-                        KART
-                      </div>
-                    </TableHead>
-                    <TableHead className="text-right font-black text-[10px] text-muted-foreground tracking-[0.15em]">
-                      <div className="flex items-center justify-end gap-2 text-foreground/80">
-                        <TrendingUp className="w-3 h-3" />
-                        TOPLAM
-                      </div>
-                    </TableHead>
-                    <TableHead className="text-right font-black text-[10px] text-muted-foreground tracking-[0.15em]">
-                      <div className="flex items-center justify-end gap-2">
-                        <ShoppingBag className="w-3 h-3" />
-                        SİPARİŞ
-                      </div>
-                    </TableHead>
-                    <TableHead className="w-[40px] px-0" />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {zReportHistory.map((report) => (
-                    <TableRow
-                      key={report.id}
-                      className="group cursor-pointer hover:bg-primary/[0.03] transition-all duration-200 border-white/5 h-16"
-                      onClick={() => setSelectedReport(report)}
-                    >
-                      <TableCell className="pl-6 font-bold text-sm text-foreground/70 group-hover:text-foreground transition-colors">
-                        {new Date(report.date).toLocaleDateString('tr-TR', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric'
-                        })}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        <div className="inline-flex items-baseline">
-                          <span className="text-xs font-medium text-success/50 mr-1">₺</span>
-                          <span className="font-extrabold text-success tracking-tight">
-                            {formatCurrency(report.totalCash).split(' ')[1]}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        <div className="inline-flex items-baseline">
-                          <span className="text-xs font-medium text-info/50 mr-1">₺</span>
-                          <span className="font-extrabold text-info tracking-tight">
-                            {formatCurrency(report.totalCard).split(' ')[1]}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        <div className="inline-flex items-baseline">
-                          <span className="text-xs font-medium text-foreground/30 mr-1">₺</span>
-                          <span className="text-md font-black text-foreground tracking-tighter">
-                            {formatCurrency(report.totalRevenue).split(' ')[1]}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums font-black text-muted-foreground/80 text-sm">
+
+          <div className="rounded-2xl border border-border/50 overflow-hidden shadow-sm">
+            <Table>
+              <TableHeader className="bg-muted/30">
+                <TableRow className="border-border/50 hover:bg-transparent">
+                  <TableHead className="py-4 pl-6 text-[10px] font-black text-muted-foreground/60 tracking-widest">
+                    TARİH
+                  </TableHead>
+                  <TableHead className="text-right text-[10px] font-black text-muted-foreground/60 tracking-widest">
+                    NAKİT
+                  </TableHead>
+                  <TableHead className="text-right text-[10px] font-black text-muted-foreground/60 tracking-widest">
+                    KART
+                  </TableHead>
+                  <TableHead className="text-right text-[10px] font-black text-foreground tracking-widest">
+                    TOPLAM
+                  </TableHead>
+                  <TableHead className="text-right text-[10px] font-black text-muted-foreground/60 tracking-widest pr-10">
+                    SİPARİŞ
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {zReportHistory.map((report) => (
+                  <TableRow
+                    key={report.id}
+                    className="border-border/50 hover:bg-muted/10 cursor-pointer h-16 group"
+                    onClick={() => setSelectedReport(report)}
+                  >
+                    <TableCell className="pl-6 font-bold text-sm text-foreground/80">
+                      {new Date(report.date).toLocaleDateString('tr-TR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                      })}
+                    </TableCell>
+                    <TableCell className="text-right font-bold tabular-nums text-success/70">
+                      {formatCurrency(report.totalCash)}
+                    </TableCell>
+                    <TableCell className="text-right font-bold tabular-nums text-info/70">
+                      {formatCurrency(report.totalCard)}
+                    </TableCell>
+                    <TableCell className="text-right font-black tabular-nums text-foreground">
+                      {formatCurrency(report.totalRevenue)}
+                    </TableCell>
+                    <TableCell className="text-right font-bold tabular-nums text-muted-foreground/60 pr-10">
+                      <div className="flex items-center justify-end gap-3">
                         {report.orderCount}
-                      </TableCell>
-                      <TableCell className="pr-4 text-center">
-                        <ChevronRight className="w-4 h-4 text-muted-foreground/20 group-hover:text-primary transition-all duration-300 group-hover:translate-x-0.5" />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </ScrollArea>
-          )}
+                        <ChevronRight className="w-4 h-4 text-muted-foreground/20 group-hover:text-primary transition-all group-hover:translate-x-1" />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {zReportHistory.length === 0 && (
+                  <TableRow>
+                    <TableCell
+                      colSpan={5}
+                      className="h-40 text-center text-muted-foreground/40 italic text-sm"
+                    >
+                      Kayıtlı Z-Raporu bulunamadı.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       </div>
 
-      {/* Z-Report Detail Modal */}
-      {/* Z-Report Detail Modal - Redesigned for better fit and visuals */}
+      {/* Detail Modals */}
       <Dialog open={!!selectedReport} onOpenChange={(open) => !open && setSelectedReport(null)}>
-        <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden border-border bg-background shadow-lg [&>button]:hidden">
+        <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden border-border bg-background shadow-2xl rounded-[2.5rem] [&>button]:hidden">
           {selectedReport && (
             <div className="flex flex-col">
-              <div className="px-6 py-4 border-b bg-muted/20 flex items-center justify-between">
+              <div className="px-10 py-8 border-b bg-muted/10 flex items-center justify-between">
                 <div>
-                  <h2 className="text-lg font-bold tracking-tight">Z RAPORU DETAYI</h2>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Calendar className="w-3.5 h-3.5" />
+                  <h2 className="text-2xl font-black tracking-tight">Rapor Detayı</h2>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium mt-1">
+                    <Calendar className="w-4 h-4 opacity-50" />
                     <span>
                       {new Date(selectedReport.date).toLocaleDateString('tr-TR', {
                         weekday: 'long',
@@ -1179,97 +929,65 @@ export function DashboardView(): React.JSX.Element {
                     </span>
                   </div>
                 </div>
-                <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
-                  <ReceiptText className="w-5 h-5 text-primary" />
+                <div className="h-14 w-14 bg-primary/10 rounded-2xl flex items-center justify-center">
+                  <ReceiptText className="w-7 h-7 text-primary" />
                 </div>
               </div>
 
-              <div className="p-6 space-y-6">
-                {/* Summary Grid */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-4 rounded-xl border bg-card flex flex-col gap-1">
-                    <span className="text-xs font-semibold text-muted-foreground">GÜNLÜK CİRO</span>
-                    <span className="text-2xl font-bold tabular-nums tracking-tight">
+              <div className="p-10 space-y-8">
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="p-6 rounded-3xl border border-border bg-background shadow-sm space-y-1">
+                    <span className="text-[10px] font-black text-muted-foreground/40 tracking-widest uppercase">
+                      GÜNLÜK HASILAT
+                    </span>
+                    <div className="text-2xl font-black tabular-nums">
                       {formatCurrency(selectedReport.totalRevenue)}
-                    </span>
+                    </div>
                   </div>
-                  <div className="p-4 rounded-xl border bg-card flex flex-col gap-1">
-                    <span className="text-xs font-semibold text-muted-foreground">
-                      SİPARİŞ SAYISI
+                  <div className="p-6 rounded-3xl border border-border bg-background shadow-sm space-y-1">
+                    <span className="text-[10px] font-black text-muted-foreground/40 tracking-widest uppercase">
+                      TOPLAM SİPARİŞ
                     </span>
-                    <span className="text-2xl font-bold tabular-nums tracking-tight">
-                      {selectedReport.orderCount}
-                    </span>
+                    <div className="text-2xl font-black tabular-nums">
+                      {selectedReport.orderCount} ADET
+                    </div>
                   </div>
                 </div>
 
-                {/* Details Table */}
-                <div className="border rounded-xl overflow-hidden">
-                  <div className="bg-muted/30 px-4 py-2 border-b text-xs font-bold text-muted-foreground">
-                    ÖDEME DAĞILIMI
-                  </div>
-                  <div className="divide-y">
-                    <div className="flex justify-between items-center p-4 bg-card">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                          <Banknote className="w-4 h-4 text-emerald-600" />
+                <div className="space-y-4">
+                  <h4 className="text-[11px] font-black text-muted-foreground/40 tracking-[0.2em] uppercase px-1">
+                    Ödeme Kanalları
+                  </h4>
+                  <div className="border border-border rounded-3xl overflow-hidden divide-y divide-border">
+                    <div className="flex justify-between items-center p-5 bg-background hover:bg-muted/5 transition-colors">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-success/5 flex items-center justify-center">
+                          <Banknote className="w-5 h-5 text-success" />
                         </div>
-                        <span className="font-bold text-xs">NAKİT</span>
+                        <span className="font-bold text-sm">NAKİT ÖDEMELER</span>
                       </div>
-                      <span className="font-bold tabular-nums text-emerald-600">
+                      <span className="font-black tabular-nums text-success">
                         {formatCurrency(selectedReport.totalCash)}
                       </span>
                     </div>
-                    <div className="flex justify-between items-center p-4 bg-card">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                          <CreditCard className="w-4 h-4 text-blue-600" />
+                    <div className="flex justify-between items-center p-5 bg-background hover:bg-muted/5 transition-colors">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-info/5 flex items-center justify-center">
+                          <CreditCard className="w-5 h-5 text-info" />
                         </div>
-                        <span className="font-bold text-xs">KREDİ KARTI</span>
+                        <span className="font-bold text-sm">KREDİ KARTI</span>
                       </div>
-                      <span className="font-bold tabular-nums text-blue-600">
+                      <span className="font-black tabular-nums text-info">
                         {formatCurrency(selectedReport.totalCard)}
                       </span>
                     </div>
                   </div>
                 </div>
 
-                {/* Financial Summary */}
-                <div className="border rounded-xl overflow-hidden">
-                  <div className="bg-muted/30 px-4 py-2 border-b text-xs font-bold text-muted-foreground">
-                    FİNANSAL ÖZET
-                  </div>
-                  <div className="divide-y bg-card">
-                    <div className="flex justify-between items-center p-3 px-4">
-                      <span className="text-xs font-bold text-muted-foreground">NET SATIŞLAR</span>
-                      <span className="text-sm font-bold tabular-nums">
-                        {formatCurrency(selectedReport.totalRevenue - selectedReport.totalVat)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center p-3 px-4">
-                      <span className="text-xs font-bold text-muted-foreground">KDV (%10)</span>
-                      <span className="text-sm font-bold tabular-nums">
-                        {formatCurrency(selectedReport.totalVat)}
-                      </span>
-                    </div>
-                    {selectedReport.cancelCount > 0 && (
-                      <div className="flex justify-between items-center p-3 px-4 bg-red-50/50 dark:bg-red-900/10">
-                        <span className="text-sm font-bold text-red-600 flex items-center gap-2">
-                          <AlertCircle className="w-3.5 h-3.5" /> İPTAL EDİLENLER
-                        </span>
-                        <span className="text-sm font-bold text-red-600">
-                          {selectedReport.cancelCount}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="pt-2">
+                <div className="pt-4">
                   <Button
-                    variant="outline"
-                    className="w-full h-11 font-semibold hover:bg-destructive hover:text-destructive-foreground hover:scale-105 active:scale-95 transition-all duration-300"
                     onClick={() => setSelectedReport(null)}
+                    className="w-full h-14 rounded-2xl font-black text-xs tracking-widest uppercase bg-muted text-foreground hover:bg-muted/80"
                   >
                     KAPAT
                   </Button>
@@ -1280,7 +998,6 @@ export function DashboardView(): React.JSX.Element {
         </DialogContent>
       </Dialog>
 
-      {/* End of Day Modal */}
       <EndOfDayModal open={showEndOfDayModal} onClose={() => setShowEndOfDayModal(false)} />
     </div>
   )

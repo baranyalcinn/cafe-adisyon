@@ -1,12 +1,10 @@
-import { useState, memo, useCallback } from 'react'
-import { cn } from '@/lib/utils'
-import { Coffee, ArrowRightLeft, Combine } from 'lucide-react'
-import { motion } from 'framer-motion'
-import { useCartStore } from '@/store/useCartStore'
-import { cafeApi } from '@/lib/api'
-import { toast } from '@/store/useToastStore'
-import { useTables } from '@/hooks/useTables'
-import { TableCardSkeleton } from './TableCardSkeleton'
+import { Button } from '@/components/ui/button'
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger
+} from '@/components/ui/context-menu'
 import {
   Dialog,
   DialogContent,
@@ -15,13 +13,14 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuTrigger
-} from '@/components/ui/context-menu'
+import { useTables } from '@/hooks/useTables'
+import { cafeApi } from '@/lib/api'
+import { cn } from '@/lib/utils'
+import { useCartStore } from '@/store/useCartStore'
+import { toast } from '@/store/useToastStore'
+import { ArrowRightLeft, Coffee, Combine, Lock } from 'lucide-react'
+import { memo, useCallback, useState } from 'react'
+import { TableCardSkeleton } from './TableCardSkeleton'
 
 interface TableCardProps {
   id: string
@@ -53,8 +52,7 @@ const TableCard = memo(
               'hover:-translate-y-1 active:scale-95 !overflow-visible'
             )}
           >
-            <motion.div
-              layout
+            <div
               className={cn(
                 'relative w-full h-full flex flex-col items-center justify-center gap-4 p-8 rounded-[2.5rem] overflow-hidden transition-all duration-500',
                 hasOpenOrder
@@ -76,21 +74,7 @@ const TableCard = memo(
 
               {isLocked && (
                 <div className="absolute top-3 left-3 bg-warning/20 p-2 rounded-xl ring-2 ring-warning/30 animate-in fade-in zoom-in duration-500 z-10">
-                  <div className="w-3.5 h-3.5 text-warning">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="w-full h-full"
-                    >
-                      <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                    </svg>
-                  </div>
+                  <Lock className="w-3.5 h-3.5 text-warning" strokeWidth={3} />
                 </div>
               )}
 
@@ -120,7 +104,7 @@ const TableCard = memo(
                   {isLocked ? 'KİLİTLİ' : hasOpenOrder ? 'DOLU' : 'BOŞ'}
                 </div>
               </div>
-            </motion.div>
+            </div>
           </button>
         </ContextMenuTrigger>
         {hasOpenOrder && (
@@ -340,40 +324,46 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
         }
       >
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Masa Transferi</DialogTitle>
-            <DialogDescription>
-              {sourceTableName} masasının siparişini hangi masaya aktarmak istiyorsunuz?
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid grid-cols-3 gap-2 py-4">
-            {tables
-              .filter((t) => t.id !== transferModal.sourceTableId && !t.hasOpenOrder)
-              .map((table) => (
+          {transferModal.open && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Masa Transferi</DialogTitle>
+                <DialogDescription>
+                  {sourceTableName} masasının siparişini hangi masaya aktarmak istiyorsunuz?
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid grid-cols-3 gap-2 py-4">
+                {tables
+                  .filter((t) => t.id !== transferModal.sourceTableId && !t.hasOpenOrder)
+                  .map((table) => (
+                    <Button
+                      key={table.id}
+                      variant="outline"
+                      onClick={() => handleTransferToTable(table.id)}
+                      disabled={isProcessing}
+                    >
+                      {table.name}
+                    </Button>
+                  ))}
+              </div>
+              {tables.filter((t) => t.id !== transferModal.sourceTableId && !t.hasOpenOrder)
+                .length === 0 && (
+                <p className="text-muted-foreground text-center">
+                  Transfer için uygun boş masa yok.
+                </p>
+              )}
+              <DialogFooter>
                 <Button
-                  key={table.id}
-                  variant="outline"
-                  onClick={() => handleTransferToTable(table.id)}
-                  disabled={isProcessing}
+                  variant="ghost"
+                  onClick={() =>
+                    setTransferModal({ open: false, sourceTableId: null, sourceOrderId: null })
+                  }
                 >
-                  {table.name}
+                  İptal
                 </Button>
-              ))}
-          </div>
-          {tables.filter((t) => t.id !== transferModal.sourceTableId && !t.hasOpenOrder).length ===
-            0 && (
-            <p className="text-muted-foreground text-center">Transfer için uygun boş masa yok.</p>
+              </DialogFooter>
+            </>
           )}
-          <DialogFooter>
-            <Button
-              variant="ghost"
-              onClick={() =>
-                setTransferModal({ open: false, sourceTableId: null, sourceOrderId: null })
-              }
-            >
-              İptal
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -385,43 +375,47 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
         }
       >
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Masa Birleştirme</DialogTitle>
-            <DialogDescription>
-              {mergeSourceTableName} masasının siparişini hangi masayla birleştirmek istiyorsunuz?
-              (Kaynak masa silinecek)
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid grid-cols-3 gap-2 py-4">
-            {tables
-              .filter((t) => t.id !== mergeModal.sourceTableId && t.hasOpenOrder)
-              .map((table) => (
+          {mergeModal.open && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Masa Birleştirme</DialogTitle>
+                <DialogDescription>
+                  {mergeSourceTableName} masasının siparişini hangi masayla birleştirmek
+                  istiyorsunuz? (Kaynak masa silinecek)
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid grid-cols-3 gap-2 py-4">
+                {tables
+                  .filter((t) => t.id !== mergeModal.sourceTableId && t.hasOpenOrder)
+                  .map((table) => (
+                    <Button
+                      key={table.id}
+                      variant="outline"
+                      onClick={() => handleMergeWithTable(table.id)}
+                      disabled={isProcessing}
+                    >
+                      {table.name}
+                    </Button>
+                  ))}
+              </div>
+              {tables.filter((t) => t.id !== mergeModal.sourceTableId && t.hasOpenOrder).length ===
+                0 && (
+                <p className="text-muted-foreground text-center">
+                  Birleştirme için uygun dolu masa yok.
+                </p>
+              )}
+              <DialogFooter>
                 <Button
-                  key={table.id}
-                  variant="outline"
-                  onClick={() => handleMergeWithTable(table.id)}
-                  disabled={isProcessing}
+                  variant="ghost"
+                  onClick={() =>
+                    setMergeModal({ open: false, sourceTableId: null, sourceOrderId: null })
+                  }
                 >
-                  {table.name}
+                  İptal
                 </Button>
-              ))}
-          </div>
-          {tables.filter((t) => t.id !== mergeModal.sourceTableId && t.hasOpenOrder).length ===
-            0 && (
-            <p className="text-muted-foreground text-center">
-              Birleştirme için uygun dolu masa yok.
-            </p>
+              </DialogFooter>
+            </>
           )}
-          <DialogFooter>
-            <Button
-              variant="ghost"
-              onClick={() =>
-                setMergeModal({ open: false, sourceTableId: null, sourceOrderId: null })
-              }
-            >
-              İptal
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

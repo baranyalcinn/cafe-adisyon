@@ -8,6 +8,7 @@ export function useTables(interval: number | false = 10000): UseQueryResult<Tabl
       // We can use the service directly or via api wrapper
       return cafeApi.tables.getWithStatus()
     },
+    staleTime: 5_000, // Polling handles freshness; avoid redundant refetches on mount/focus
     // Refresh interval for polling (until we have websockets)
     refetchInterval: interval
   })

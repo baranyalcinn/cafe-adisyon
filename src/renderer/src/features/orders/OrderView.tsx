@@ -143,12 +143,12 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
   return (
     <div className="flex h-full bg-background">
       {/* Left Panel - Categories & Search */}
-      <div className="w-60 glass-panel border-r border-border/30 !border-t-0 !border-b-0 flex flex-col h-full min-h-0 animate-in slide-in-from-left duration-300">
+      <div className="w-60 bg-background border-r border-border flex flex-col h-full min-h-0 animate-in slide-in-from-left duration-300">
         <div className="p-4 pt-6">
           <Button
             variant="ghost"
             onClick={onBack}
-            className="gap-2 mb-2 w-full justify-start hover:bg-primary/10 hover:text-primary transition-all duration-300 rounded-lg text-[10px] font-bold uppercase tracking-[0.1em] h-10"
+            className="gap-2 mb-2 w-full justify-start hover:bg-muted/50 transition-all duration-300 rounded-lg text-[10px] font-bold uppercase tracking-[0.1em] h-10"
           >
             <ArrowLeft className="w-4 h-4" />
             Masalara Dön
@@ -162,7 +162,7 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
                 setSearchQuery(e.target.value)
                 setVisibleLimit(40)
               }}
-              className="pl-9 h-10 bg-muted/20 border-border/10 focus:bg-background/80 transition-all rounded-lg text-sm"
+              className="pl-9 h-10 bg-muted/20 border-border/5 focus:bg-muted/40 transition-all rounded-lg text-sm"
             />
           </div>
         </div>
@@ -172,13 +172,13 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
             <TabsList className="w-full grid grid-cols-2 p-1 bg-muted/30 h-11 mb-4 rounded-xl border border-border/10 flex-shrink-0">
               <TabsTrigger
                 value="categories"
-                className="text-[12px] font-bold rounded-lg transition-all duration-300 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-soft border-none outline-none group"
+                className="text-[12px] font-bold rounded-lg transition-all duration-300 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm border-none outline-none group"
               >
                 Kategoriler
               </TabsTrigger>
               <TabsTrigger
                 value="favorites"
-                className="text-[12px] font-bold rounded-lg transition-all duration-300 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-soft border-none outline-none group gap-2"
+                className="text-[12px] font-bold rounded-lg transition-all duration-300 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm border-none outline-none group gap-2"
               >
                 <Star className="w-3.5 h-3.5 fill-muted-foreground/30 group-data-[state=active]:fill-primary/80 group-data-[state=active]:text-primary transition-all duration-300" />
                 Favoriler
@@ -196,7 +196,7 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
                     className={cn(
                       'w-full justify-start h-11 rounded-2xl gap-3 px-4 font-bold transition-all relative overflow-hidden group/cat',
                       activeCategory === null
-                        ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
+                        ? 'bg-primary text-primary-foreground shadow-md shadow-primary/10'
                         : 'text-muted-foreground/60 hover:bg-muted/40 hover:text-foreground'
                     )}
                     onClick={() => {
@@ -220,7 +220,7 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
                       className={cn(
                         'w-full justify-start h-11 rounded-2xl gap-3 px-4 font-bold transition-all relative overflow-hidden group/cat',
                         activeCategory === category.id
-                          ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
+                          ? 'bg-primary text-primary-foreground shadow-md shadow-primary/10'
                           : 'text-muted-foreground/60 hover:bg-muted/40 hover:text-foreground'
                       )}
                       onClick={() => {
@@ -278,19 +278,19 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
       </div>
 
       {/* Center Panel - Products Grid */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden section-panel glass-panel !border-t-0 !border-b-0">
-        <div className="z-10 relative h-14 px-4 border-b border-white/10 bg-gradient-to-r from-background via-background/95 to-background flex items-center justify-between flex-shrink-0">
-          <div className="flex items-center gap-2.5">
-            <h2 className="text-2xl font-bold tracking-tight text-foreground/90 tabular-nums">
+      <div className="flex-1 flex flex-col h-full overflow-hidden bg-background">
+        <div className="z-10 relative h-14 px-6 border-b border-border bg-background flex items-center justify-between flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <h2 className="text-2xl font-bold tracking-tight text-foreground tabular-nums">
               {selectedTableName || 'Masa'}
             </h2>
-            <div className="h-4 w-px bg-border/20" />
-            <span className="text-primary/70 font-bold tracking-[0.15em] text-[10px] uppercase">
-              Sipariş
+            <div className="h-4 w-[1px] bg-border" />
+            <span className="text-muted-foreground/50 font-bold tracking-[0.2em] text-[10px] uppercase">
+              SİPARİŞ
             </span>
           </div>
 
-          <div className="flex items-center bg-muted/20 p-1 rounded-xl border border-white/5 shadow-inner backdrop-blur-sm">
+          <div className="flex items-center bg-muted/20 p-1 rounded-xl border border-border/5">
             <Button
               variant="ghost"
               size="icon"
@@ -301,8 +301,8 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
               className={cn(
                 'w-9 h-8 rounded-lg outline-none transition-all duration-300',
                 viewMode === 'grid'
-                  ? 'bg-background text-primary shadow-md shadow-black/20'
-                  : 'text-muted-foreground/60 hover:text-foreground hover:bg-white/5'
+                  ? 'bg-background text-primary shadow-sm'
+                  : 'text-muted-foreground/60 hover:text-foreground hover:bg-muted/50'
               )}
             >
               <LayoutGrid className="w-4 h-4" />
@@ -317,8 +317,8 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
               className={cn(
                 'w-9 h-8 rounded-lg outline-none transition-all duration-300',
                 viewMode === 'list'
-                  ? 'bg-background text-primary shadow-md shadow-black/20'
-                  : 'text-muted-foreground/60 hover:text-foreground hover:bg-white/5'
+                  ? 'bg-background text-primary shadow-sm'
+                  : 'text-muted-foreground/60 hover:text-foreground hover:bg-muted/50'
               )}
             >
               <List className="w-4 h-4" />
