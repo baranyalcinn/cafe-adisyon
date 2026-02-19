@@ -1,35 +1,5 @@
-import { useState, useEffect, Suspense, lazy } from 'react'
-import {
-  Sun,
-  Moon,
-  Lock,
-  KeyRound,
-  Volume2,
-  VolumeX,
-  LayoutGrid,
-  Tags,
-  Coffee,
-  Receipt,
-  LayoutDashboard,
-  History,
-  Wrench,
-  Settings as SettingsIcon,
-  LogOut,
-  ArrowLeft,
-  ChevronRight,
-  ShieldCheck,
-  Database,
-  RefreshCw,
-  Activity,
-  Palette,
-  Speaker,
-  CheckCircle2,
-  Download,
-  AlertCircle,
-  ArrowUpCircle
-} from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
 import {
   Select,
@@ -38,10 +8,45 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select'
+import {
+  Activity,
+  AlertCircle,
+  ArrowLeft,
+  ArrowUpCircle,
+  CheckCircle2,
+  ChevronRight,
+  Coffee,
+  Database,
+  Download,
+  History,
+  KeyRound,
+  LayoutDashboard,
+  LayoutGrid,
+  Lock,
+  LogOut,
+  Moon,
+  Palette,
+  Receipt,
+  RefreshCw,
+  Settings as SettingsIcon,
+  ShieldCheck,
+  Speaker,
+  Sun,
+  Tags,
+  Volume2,
+  VolumeX,
+  Wrench
+} from 'lucide-react'
+import { Suspense, lazy, useEffect, useState } from 'react'
 // Re-add missing imports
-import { cafeApi } from '@/lib/api'
-import { type UpdateInfo } from '@shared/types'
+import { AdminPinModal } from '@/components/ui/AdminPinModal'
+import { useInventory } from '@/hooks/useInventory'
+import { useTables } from '@/hooks/useTables'
 import { type ColorScheme } from '@/hooks/useTheme'
+import { cafeApi } from '@/lib/api'
+import { cn } from '@/lib/utils'
+import { useSettingsStore } from '@/store/useSettingsStore'
+import { type UpdateInfo } from '@shared/types'
 
 // Lazy load heavy components
 const DashboardView = lazy(() =>
@@ -63,11 +68,6 @@ const MaintenanceTab = lazy(() =>
 const ExpensesTab = lazy(() =>
   import('./tabs/ExpensesTab').then((module) => ({ default: module.ExpensesTab }))
 )
-import { AdminPinModal } from '@/components/ui/AdminPinModal'
-import { useSettingsStore } from '@/store/useSettingsStore'
-import { useTables } from '@/hooks/useTables'
-import { useInventory } from '@/hooks/useInventory'
-import { cn } from '@/lib/utils'
 
 interface SettingsViewProps {
   isDark: boolean
@@ -215,6 +215,20 @@ export function SettingsView({
   const [updateStatus, setUpdateStatus] = useState<
     'idle' | 'checking' | 'available' | 'not-available' | 'downloading' | 'downloaded' | 'error'
   >('idle')
+  const [appVersion, setAppVersion] = useState<string>('...')
+
+  useEffect(() => {
+    const getVersion = async (): Promise<void> => {
+      try {
+        const version = await window.api.system.getVersion()
+        setAppVersion(`v${version}`)
+      } catch (error) {
+        console.error('Failed to get version:', error)
+        setAppVersion('v1.0.0')
+      }
+    }
+    getVersion()
+  }, [])
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null)
   const [downloadProgress, setDownloadProgress] = useState(0)
 
@@ -829,7 +843,7 @@ export function SettingsView({
                           Yazılım Güncelleme
                         </CardTitle>
                         <span className="text-[10px] font-bold px-3 py-1 rounded-full bg-muted border border-border/50 font-mono tracking-tighter">
-                          v1.0.1
+                          {appVersion}
                         </span>
                       </div>
                       <CardDescription className="text-sm text-muted-foreground/80 font-medium">

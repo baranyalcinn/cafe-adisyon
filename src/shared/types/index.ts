@@ -299,6 +299,7 @@ export const IPC_CHANNELS = {
   // System
   SYSTEM_CHECK: 'system:check',
   SYSTEM_CHECK_UPDATE: 'system:checkUpdate',
+  SYSTEM_GET_VERSION: 'system:getVersion',
   SYSTEM_RESTART: 'system:restart',
 
   // Window Controls

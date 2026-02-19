@@ -1,22 +1,22 @@
-import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
-import {
-  IPC_CHANNELS,
-  ApiResponse,
-  Table,
-  Category,
-  Product,
-  Order,
-  Transaction,
-  Expense,
-  DashboardStats,
-  ExtendedDashboardStats,
-  RevenueTrendItem,
-  DailySummary,
-  ActivityLog,
-  MonthlyReport
-} from '../shared/types'
+import { contextBridge, ipcRenderer } from 'electron'
 import type { OrderStatus, PaymentMethod } from '../shared/types'
+import {
+  ActivityLog,
+  ApiResponse,
+  Category,
+  DailySummary,
+  DashboardStats,
+  Expense,
+  ExtendedDashboardStats,
+  IPC_CHANNELS,
+  MonthlyReport,
+  Order,
+  Product,
+  RevenueTrendItem,
+  Table,
+  Transaction
+} from '../shared/types'
 
 // Type-safe API for renderer process
 const api = {
@@ -267,6 +267,7 @@ const api = {
     checkUpdate: (): Promise<
       ApiResponse<{ available: boolean; version?: string; currentVersion?: string }>
     > => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM_CHECK_UPDATE),
+    getVersion: (): Promise<string> => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM_GET_VERSION),
     restart: (): void => ipcRenderer.send(IPC_CHANNELS.SYSTEM_RESTART)
   },
 

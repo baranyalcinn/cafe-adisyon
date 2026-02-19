@@ -237,6 +237,11 @@ ipcMain.handle(IPC_CHANNELS.SYSTEM_CHECK_UPDATE, async () => {
   }
 })
 
+// Get System Version IPC
+ipcMain.handle(IPC_CHANNELS.SYSTEM_GET_VERSION, () => {
+  return app.getVersion()
+})
+
 // Force GPU acceleration features for maximum performance
 app.commandLine.appendSwitch('enable-gpu-rasterization')
 app.commandLine.appendSwitch('ignore-gpu-blocklist')

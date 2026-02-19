@@ -1,23 +1,25 @@
-import { useCallback, useEffect, useState } from 'react'
 import { parseISO } from 'date-fns'
-import { createPortal } from 'react-dom'
 import {
-  Users,
-  RefreshCw,
-  ReceiptText,
-  Moon,
-  Calendar,
-  History as HistoryIcon,
-  PieChart as PieChartIcon,
-  BarChart3,
   ArrowDownRight,
-  ChevronRight,
-  TrendingUp,
-  CreditCard,
   Banknote,
-  ShoppingBag
+  BarChart3,
+  Calendar,
+  ChevronRight,
+  CreditCard,
+  History as HistoryIcon,
+  Moon,
+  PieChart as PieChartIcon,
+  ReceiptText,
+  RefreshCw,
+  ShoppingBag,
+  TrendingUp,
+  Users
 } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 
+import { EndOfDayModal } from '@/components/modals/EndOfDayModal'
+import { OrderHistoryModal } from '@/components/modals/OrderHistoryModal'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import {
@@ -37,31 +39,29 @@ import {
 } from '@/components/ui/table'
 import {
   cafeApi,
-  type ExtendedDashboardStats,
   type DailySummary,
+  type ExtendedDashboardStats,
+  type MonthlyReport,
   type RevenueTrendItem
 } from '@/lib/api'
-import { formatCurrency, cn } from '@/lib/utils'
+import { cn, formatCurrency } from '@/lib/utils'
 import {
-  AreaChart,
   Area,
-  Line,
-  BarChart,
+  AreaChart,
   Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
+  BarChart,
   CartesianGrid,
+  Cell,
   ComposedChart,
   Legend,
-  PieChart,
+  Line,
   Pie,
-  Cell
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis
 } from 'recharts'
-import { EndOfDayModal } from '@/components/modals/EndOfDayModal'
-import { OrderHistoryModal } from '@/components/modals/OrderHistoryModal'
-import { type MonthlyReport } from '@/lib/api'
 
 interface TooltipPayloadEntry {
   value: number | string
@@ -307,7 +307,7 @@ export function DashboardView(): React.JSX.Element {
 
         {/* Top KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-background border border-border rounded-[2rem] p-6 shadow-sm flex flex-col justify-between group transition-all duration-300 hover:border-primary/20">
+          <div className="bg-card border border-border rounded-[2rem] p-6 shadow-sm flex flex-col justify-between group transition-all duration-300 hover:border-primary/20">
             <div className="flex items-start justify-between">
               <span className="text-[10px] font-black text-muted-foreground/50 tracking-[0.2em] uppercase">
                 BUGÜNKÜ CİRO
@@ -329,7 +329,7 @@ export function DashboardView(): React.JSX.Element {
             </div>
           </div>
 
-          <div className="bg-background border border-border rounded-[2rem] p-6 shadow-sm flex flex-col justify-between group transition-all duration-300 hover:border-info/20">
+          <div className="bg-card border border-border rounded-[2rem] p-6 shadow-sm flex flex-col justify-between group transition-all duration-300 hover:border-info/20">
             <div className="flex items-start justify-between">
               <span className="text-[10px] font-black text-muted-foreground/50 tracking-[0.2em] uppercase">
                 SİPARİŞLER
@@ -346,7 +346,7 @@ export function DashboardView(): React.JSX.Element {
             </div>
           </div>
 
-          <div className="bg-background border border-border rounded-[2rem] p-6 shadow-sm flex flex-col justify-between group transition-all duration-300 hover:border-warning/20">
+          <div className="bg-card border border-border rounded-[2rem] p-6 shadow-sm flex flex-col justify-between group transition-all duration-300 hover:border-warning/20">
             <div className="flex items-start justify-between">
               <span className="text-[10px] font-black text-muted-foreground/50 tracking-[0.2em] uppercase">
                 DOLU MASA
@@ -363,7 +363,7 @@ export function DashboardView(): React.JSX.Element {
             </div>
           </div>
 
-          <div className="bg-background border border-border rounded-[2rem] p-6 shadow-sm flex flex-col justify-between group transition-all duration-300 hover:border-destructive/20">
+          <div className="bg-card border border-border rounded-[2rem] p-6 shadow-sm flex flex-col justify-between group transition-all duration-300 hover:border-destructive/20">
             <div className="flex items-start justify-between">
               <span className="text-[10px] font-black text-muted-foreground/50 tracking-[0.2em] uppercase">
                 GÜNLÜK GİDER
@@ -384,7 +384,7 @@ export function DashboardView(): React.JSX.Element {
         </div>
 
         {/* Weekly Trend Section */}
-        <div className="bg-background border border-border rounded-[2.5rem] p-10 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-primary/10">
+        <div className="bg-card border border-border rounded-[2.5rem] p-10 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-primary/10">
           <div className="flex items-center gap-4 mb-10">
             <div className="p-3 bg-primary/5 rounded-2xl border border-primary/10">
               <TrendingUp className="w-5 h-5 text-primary" />
@@ -460,7 +460,7 @@ export function DashboardView(): React.JSX.Element {
         {/* Hourly Activity & Payment Summary Row */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Hourly Activity Chart */}
-          <div className="lg:col-span-2 bg-background border border-border rounded-[2.5rem] p-10 shadow-sm">
+          <div className="lg:col-span-2 bg-card border border-border rounded-[2.5rem] p-10 shadow-sm">
             <div className="flex items-center gap-4 mb-10">
               <div className="p-3 bg-muted/30 rounded-2xl border border-border/5">
                 <BarChart3 className="w-5 h-5 text-foreground/70" />
@@ -511,7 +511,7 @@ export function DashboardView(): React.JSX.Element {
                             orderCount: number
                           }
                           return (
-                            <div className="bg-background border border-border p-4 rounded-2xl shadow-xl">
+                            <div className="bg-card border border-border p-4 rounded-2xl shadow-xl">
                               <p className="text-xs font-black text-muted-foreground/60 tracking-widest mb-1">
                                 {data.hour}
                               </p>
@@ -544,7 +544,7 @@ export function DashboardView(): React.JSX.Element {
           </div>
 
           {/* Compact Payment Summary */}
-          <div className="bg-background border border-border rounded-[2.5rem] p-10 shadow-sm flex flex-col justify-center space-y-10">
+          <div className="bg-card border border-border rounded-[2.5rem] p-10 shadow-sm flex flex-col justify-center space-y-10">
             <div className="flex items-center justify-between group">
               <div className="flex items-center gap-4">
                 <div className="p-4 bg-success/5 rounded-2xl border border-success/10 group-hover:scale-105 transition-transform">
@@ -582,7 +582,7 @@ export function DashboardView(): React.JSX.Element {
         </div>
         {/* Categories & Selling Products */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="bg-background border border-border rounded-[2.5rem] p-10 shadow-sm">
+          <div className="bg-card border border-border rounded-[2.5rem] p-10 shadow-sm">
             <div className="flex items-center gap-4 mb-10">
               <div className="p-3 bg-muted/30 rounded-2xl border border-border/5">
                 <PieChartIcon className="w-5 h-5 text-foreground/70" />
