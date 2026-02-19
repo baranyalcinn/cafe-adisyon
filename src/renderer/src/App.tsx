@@ -1,43 +1,23 @@
-import { useState, useEffect, Suspense, lazy, useCallback } from 'react'
-import { LayoutGrid, Settings, Loader2 } from 'lucide-react'
+import { TitleBar } from '@/components/TitleBar'
 import { Button } from '@/components/ui/button'
-import { TablesView } from '@/features/tables/TablesView'
+import { Toaster } from '@/components/ui/toaster'
+import { UpdateNotifier } from '@/components/UpdateNotifier'
 import { OrderView } from '@/features/orders/OrderView'
-import { useTableStore } from '@/store/useTableStore'
+import { TablesView } from '@/features/tables/TablesView'
 import { useInventoryPrefetch } from '@/hooks/useInventory'
 import { useTheme } from '@/hooks/useTheme'
 import { cn } from '@/lib/utils'
+import { useTableStore } from '@/store/useTableStore'
 import '@/styles/globals.css'
-import { Toaster } from '@/components/ui/toaster'
-import { TitleBar } from '@/components/TitleBar'
-import { AnimatePresence, motion, Variants } from 'framer-motion'
-import { UpdateNotifier } from '@/components/UpdateNotifier'
+
+import { LayoutGrid, Loader2, Settings } from 'lucide-react'
+import { Suspense, lazy, useCallback, useEffect, useState } from 'react'
 
 const SettingsView = lazy(() =>
   import('@/features/settings/SettingsView').then((m) => ({ default: m.SettingsView }))
 )
 
 type ViewType = 'tables' | 'order' | 'settings'
-
-const viewVariants: Variants = {
-  initial: (direction: number) => ({
-    opacity: 0,
-    x: direction > 0 ? 20 : -20,
-    scale: 0.98
-  }),
-  animate: {
-    opacity: 1,
-    x: 0,
-    scale: 1,
-    transition: { duration: 0.4, ease: 'circOut' }
-  },
-  exit: (direction: number) => ({
-    opacity: 0,
-    x: direction < 0 ? 20 : -20,
-    scale: 0.98,
-    transition: { duration: 0.2 }
-  })
-}
 
 function App(): React.JSX.Element {
   const [currentView, setCurrentView] = useState<ViewType>('tables')
@@ -102,29 +82,23 @@ function App(): React.JSX.Element {
 
         {/* Main Content Area */}
         <main className="flex-1 relative bg-muted/5">
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-              key={currentView}
-              variants={viewVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              className="absolute inset-0 overflow-hidden"
-            >
-              <Suspense fallback={<LoadingFallback />}>
-                {currentView === 'tables' && <TablesView onTableSelect={handleTableSelect} />}
-                {currentView === 'order' && <OrderView onBack={handleBackToTables} />}
-                {currentView === 'settings' && (
-                  <SettingsView
-                    isDark={isDark}
-                    onThemeToggle={toggleTheme}
-                    colorScheme={colorScheme}
-                    onColorSchemeChange={setColorScheme}
-                  />
-                )}
-              </Suspense>
-            </motion.div>
-          </AnimatePresence>
+          <div
+            key={currentView}
+            className="absolute inset-0 overflow-hidden animate-in fade-in duration-300"
+          >
+            <Suspense fallback={<LoadingFallback />}>
+              {currentView === 'tables' && <TablesView onTableSelect={handleTableSelect} />}
+              {currentView === 'order' && <OrderView onBack={handleBackToTables} />}
+              {currentView === 'settings' && (
+                <SettingsView
+                  isDark={isDark}
+                  onThemeToggle={toggleTheme}
+                  colorScheme={colorScheme}
+                  onColorSchemeChange={setColorScheme}
+                />
+              )}
+            </Suspense>
+          </div>
         </main>
       </div>
 
@@ -159,11 +133,7 @@ function NavButton({ active, onClick, icon: Icon, label }: NavButtonProps): Reac
         title={label}
       >
         {active && (
-          <motion.div
-            layoutId="activeNavBackground"
-            className="absolute inset-0 bg-primary z-0"
-            transition={{ duration: 0.3, ease: 'circOut' }}
-          />
+          <div className="absolute inset-0 bg-primary z-0 rounded-2xl transition-all duration-300" />
         )}
         <Icon
           className={cn(
@@ -187,36 +157,26 @@ function LogoSection(): React.JSX.Element {
 
         <div className="flex flex-col items-center gap-2 relative z-10">
           {/* Staggered Vertical 7s - Prevents 'M' look */}
-          <motion.div
-            className="flex items-center gap-1"
-            initial="hidden"
-            animate="show"
-            variants={{
-              show: { transition: { staggerChildren: 0.1 } }
-            }}
-          >
+          <div className="flex items-center gap-1">
             {[
-              { color: 'text-rose-500', offset: 'translate-y-1' },
-              { color: 'text-rose-500/70', offset: 'translate-y-0' },
-              { color: 'text-rose-500/40', offset: '-translate-y-1' }
+              { color: 'text-rose-500', offset: 'translate-y-1', delay: '0s' },
+              { color: 'text-rose-500/70', offset: 'translate-y-0', delay: '0.1s' },
+              { color: 'text-rose-500/40', offset: '-translate-y-1', delay: '0.2s' }
             ].map((config, i) => (
-              <motion.div
+              <div
                 key={i}
-                variants={{
-                  hidden: { opacity: 0, y: 10 },
-                  show: { opacity: 1, y: 0 }
-                }}
+                style={{ animationDelay: config.delay }}
                 className={cn(
-                  'w-4 h-6 rounded-md border border-rose-500/10 bg-rose-500/[0.02] dark:bg-rose-500/[0.05] flex items-center justify-center font-[1000] text-base transition-all duration-500 group-hover:border-rose-500/30 group-hover:bg-rose-500/10 shadow-sm',
+                  'w-4 h-6 rounded-md border border-rose-500/10 bg-rose-500/[0.02] dark:bg-rose-500/[0.05] flex items-center justify-center font-[1000] text-base transition-all duration-500 group-hover:border-rose-500/30 group-hover:bg-rose-500/10 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-500 fill-mode-both',
                   config.color,
                   config.offset,
                   'group-hover:translate-y-0'
                 )}
               >
                 7
-              </motion.div>
+              </div>
             ))}
-          </motion.div>
+          </div>
 
           {/* Minimalist Cafe Text */}
           <div className="flex flex-col items-center">
@@ -234,14 +194,10 @@ function LogoSection(): React.JSX.Element {
 function LoadingFallback(): React.JSX.Element {
   return (
     <div className="flex items-center justify-center h-full">
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="flex flex-col items-center gap-2"
-      >
+      <div className="flex flex-col items-center gap-2 animate-in fade-in duration-300">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
         <span className="text-xs text-muted-foreground font-medium">Yükleniyor...</span>
-      </motion.div>
+      </div>
     </div>
   )
 }

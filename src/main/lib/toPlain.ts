@@ -1,14 +1,9 @@
 ﻿/**
- * Strips Prisma's `$extends` client wrapper types by doing a
- * structured clone.  This is safe for SQLite data types
- * (no BigInt / Decimal), and lets us return clean shared-interface
- * objects without `as unknown as T` casts everywhere.
- *
- * Uses `structuredClone` instead of `JSON.parse(JSON.stringify)` for:
- * - Lower CPU usage (no string serialization)
- * - Lower RAM spikes (no intermediate string)
- * - Preserves Date objects
+ * Prisma'nın $extends wrapper tiplerinden kurtulmak için tipi sadece cast eder.
+ * Gerçek serileştirme işlemini Electron'un IPC katmanına (Structured Clone) bırakır.
+ * Bu yöntem JSON.stringify'dan çok daha hızlıdır ve bellek sıçraması yapmaz.
  */
 export function toPlain<T>(data: unknown): T {
-  return structuredClone(data) as T
+  if (data === null || data === undefined) return data as T
+  return data as T
 }

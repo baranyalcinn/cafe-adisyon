@@ -1,4 +1,11 @@
-import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu'
+import { Input } from '@/components/ui/input'
 import {
   Table,
   TableBody,
@@ -7,30 +14,21 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
-import { formatCurrency } from '@/lib/utils'
-import {
-  CreditCard,
-  Wallet,
-  ArrowUpDown,
-  MoreHorizontal,
-  Check,
-  X,
-  Pencil,
-  Trash2,
-  RefreshCw,
-  History
-} from 'lucide-react'
+import { cn, formatCurrency } from '@/lib/utils'
 import type { Expense } from '@shared/types'
-import { motion, AnimatePresence } from 'framer-motion'
-import { cn } from '@/lib/utils'
+import {
+  ArrowUpDown,
+  Check,
+  CreditCard,
+  History,
+  MoreHorizontal,
+  Pencil,
+  RefreshCw,
+  Trash2,
+  Wallet,
+  X
+} from 'lucide-react'
+import { useState } from 'react'
 
 interface ExpensesTableProps {
   data: Expense[]
@@ -217,16 +215,12 @@ export function ExpensesTable({
                 </TableCell>
               </TableRow>
             ) : (
-              <AnimatePresence>
+              <>
                 {sortedData.map((expense) => (
-                  <motion.tr
+                  <tr
                     key={expense.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.2 }}
                     className={cn(
-                      'group transition-colors border-b border-border/10',
+                      'group transition-colors border-b border-border/10 animate-in fade-in duration-200',
                       editingId === expense.id ? 'bg-primary/5' : 'hover:bg-muted/30'
                     )}
                   >
@@ -404,9 +398,9 @@ export function ExpensesTable({
                         </TableCell>
                       </>
                     )}
-                  </motion.tr>
+                  </tr>
                 ))}
-              </AnimatePresence>
+              </>
             )}
           </TableBody>
         </Table>

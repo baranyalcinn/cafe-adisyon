@@ -7,6 +7,11 @@ import { registerAllHandlers } from './ipc'
 import { dbMaintenance } from './lib/db-maintenance'
 import { electronLog, logger } from './lib/logger'
 
+// Chromium memory optimizations for POS
+app.commandLine.appendSwitch('js-flags', '--max-old-space-size=350')
+app.commandLine.appendSwitch('disable-software-rasterizer')
+app.commandLine.appendSwitch('force-color-profile', 'srgb')
+
 // Configuration constants
 const isDev = process.env.NODE_ENV === 'development'
 const isPackaged = app.isPackaged
@@ -35,7 +40,8 @@ function createWindow(): void {
     backgroundColor: '#000000', // Optimize startup paint
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: true
+      sandbox: true,
+      backgroundThrottling: true
     }
   })
 

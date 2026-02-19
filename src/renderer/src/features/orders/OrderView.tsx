@@ -1,20 +1,19 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Search, Star, LayoutGrid, List } from 'lucide-react'
-import { Input } from '@/components/ui/input'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
-import { useTableStore } from '@/store/useTableStore'
+import { Input } from '@/components/ui/input'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useInventory } from '@/hooks/useInventory'
 import { useOrder } from '@/hooks/useOrder'
+import { useSound } from '@/hooks/useSound'
+import { Product } from '@/lib/api'
+import { cn } from '@/lib/utils'
+import { useTableStore } from '@/store/useTableStore'
+import { ArrowLeft, LayoutGrid, List, Search, Star } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { PaymentModal } from '../payments/PaymentModal'
+import { CartPanel } from './CartPanel'
 import { ProductCard } from './ProductCard'
 import { getCategoryIcon } from './order-icons'
-import { CartPanel } from './CartPanel'
-import { PaymentModal } from '../payments/PaymentModal'
-import { cn } from '@/lib/utils'
-import { Product } from '@/lib/api'
-import { useSound } from '@/hooks/useSound'
 
 interface OrderViewProps {
   onBack: () => void
@@ -336,7 +335,7 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
                 ))}
               </div>
             ) : (
-              <motion.div
+              <div
                 className={cn(
                   'gap-2.5 gpu-accelerated',
                   viewMode === 'grid'
@@ -344,30 +343,20 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
                     : 'flex flex-col max-w-4xl mx-auto px-4'
                 )}
               >
-                <AnimatePresence mode="popLayout">
-                  {filteredProducts.slice(0, visibleLimit).map((product) => (
-                    <motion.div
-                      layout="position"
-                      key={product.id}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.9 }}
-                      transition={{
-                        duration: 0.3,
-                        ease: 'easeOut'
-                      }}
-                      className="gpu-accelerated"
-                    >
-                      <ProductCard
-                        product={product}
-                        compact={viewMode === 'list'}
-                        isLocked={isLocked}
-                        onAdd={handleAddToCart}
-                      />
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </motion.div>
+                {filteredProducts.slice(0, visibleLimit).map((product) => (
+                  <div
+                    key={product.id}
+                    className="gpu-accelerated animate-in fade-in zoom-in-95 duration-300"
+                  >
+                    <ProductCard
+                      product={product}
+                      compact={viewMode === 'list'}
+                      isLocked={isLocked}
+                      onAdd={handleAddToCart}
+                    />
+                  </div>
+                ))}
+              </div>
             )}
 
             {/* Loading Sentinel */}

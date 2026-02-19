@@ -1,14 +1,3 @@
-import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react'
-import {
-  History,
-  Monitor,
-  ShoppingCart,
-  Search,
-  Activity,
-  ChevronRight,
-  Clock,
-  RefreshCw
-} from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
@@ -21,17 +10,28 @@ import {
 } from '@/components/ui/table'
 import { cafeApi, type ActivityLog } from '@/lib/api'
 import { cn } from '@/lib/utils'
-import { motion } from 'framer-motion'
 import {
-  startOfDay,
+  Activity,
+  ChevronRight,
+  Clock,
+  History,
+  Monitor,
+  RefreshCw,
+  Search,
+  ShoppingCart
+} from 'lucide-react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+
+import {
   endOfDay,
-  subDays,
-  startOfWeek,
-  endOfWeek,
-  startOfMonth,
   endOfMonth,
+  endOfWeek,
   format,
-  isWithinInterval
+  isWithinInterval,
+  startOfDay,
+  startOfMonth,
+  startOfWeek,
+  subDays
 } from 'date-fns'
 import { tr } from 'date-fns/locale'
 
@@ -481,13 +481,10 @@ export function LogsTab(): React.JSX.Element {
                   const isGroup = log.groupCount && log.groupCount > 1
                   return (
                     <React.Fragment key={log.id}>
-                      <motion.tr
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.05 }}
+                      <tr
                         onClick={() => setExpandedLogId(isExpanded ? null : log.id)}
                         className={cn(
-                          'group cursor-pointer transition-colors border-b border-border/10',
+                          'group cursor-pointer transition-colors border-b border-border/10 animate-in fade-in duration-300',
                           isExpanded ? 'bg-primary/5' : 'hover:bg-muted/30'
                         )}
                       >
@@ -536,17 +533,12 @@ export function LogsTab(): React.JSX.Element {
                             )}
                           />
                         </TableCell>
-                      </motion.tr>
+                      </tr>
 
                       {isExpanded && (
                         <TableRow className="hover:bg-transparent border-0">
                           <TableCell colSpan={5} className="p-0">
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: 'auto', opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              className="overflow-hidden bg-muted/10"
-                            >
+                            <div className="overflow-hidden bg-muted/10 animate-in fade-in slide-in-from-top-2 duration-200">
                               <div className="p-6 grid grid-cols-[1fr_auto] gap-6">
                                 <div className="min-w-0 space-y-4">
                                   <div className="bg-background/50 p-6 rounded-2xl border border-border/30 shadow-sm">
@@ -646,7 +638,7 @@ export function LogsTab(): React.JSX.Element {
                                   </div>
                                 </div>
                               </div>
-                            </motion.div>
+                            </div>
                           </TableCell>
                         </TableRow>
                       )}

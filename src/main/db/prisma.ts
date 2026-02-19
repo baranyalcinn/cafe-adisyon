@@ -90,7 +90,7 @@ const prisma = basePrisma.$extends({
     await basePrisma.$executeRawUnsafe('PRAGMA cache_size = -64000;')
     await basePrisma.$executeRawUnsafe('PRAGMA temp_store = MEMORY;')
     await basePrisma.$executeRawUnsafe('PRAGMA busy_timeout = 5000;')
-    await basePrisma.$executeRawUnsafe('PRAGMA mmap_size = 67108864;')
+    await basePrisma.$executeRawUnsafe('PRAGMA mmap_size = 16777216;')
   } catch (error) {
     console.error('Failed to set SQLite pragmas:', error)
   }

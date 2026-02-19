@@ -37,7 +37,6 @@
     "detect-libc": "^2.0.2",
     "electron-log": "^5.4.3",
     "electron-updater": "^6.7.3",
-    "framer-motion": "^12.29.2",
     "js-base64": "^3.7.7",
     "libsql": "^0.5.22",
     "react-error-boundary": "^6.1.0"

@@ -6,7 +6,6 @@ import { useSound } from '@/hooks/useSound'
 import { Order } from '@/lib/api'
 import { soundManager } from '@/lib/sound'
 import { cn, formatCurrency } from '@/lib/utils'
-import { AnimatePresence, motion } from 'framer-motion'
 import {
   CheckCircle,
   History as HistoryIcon,
@@ -206,7 +205,7 @@ export const CartPanel = React.memo(function CartPanel({
           <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-muted-foreground/10 hover:scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent">
             <div className="p-4 flex flex-col min-h-min space-y-2">
               {/* Unpaid Items Group */}
-              <AnimatePresence initial={false}>
+              <>
                 {processedItems
                   .filter((i) => !i.isPaid)
                   .map((item) => {
@@ -214,27 +213,21 @@ export const CartPanel = React.memo(function CartPanel({
                     return (
                       <div
                         key={item.id}
-                        className="relative origin-top flex items-center justify-between gap-x-2 px-3 pl-4.5 group/item rounded-lg border shadow-sm transform-gpu cursor-pointer select-none transition-all duration-300 bg-muted/20 border-border/40 hover:bg-muted/40 hover:border-border/60 active:scale-[0.98]"
+                        className="relative origin-top flex items-center justify-between gap-x-2 px-3 pl-4.5 group/item rounded-lg border shadow-sm transform-gpu cursor-pointer select-none transition-all duration-300 bg-muted/20 border-border/40 hover:bg-muted/40 hover:border-border/60 active:scale-[0.98] animate-in fade-in duration-300"
                       >
                         <div className="w-full flex items-center justify-between py-1">
                           <div className="absolute left-0 top-0 bottom-0 w-1 transition-all duration-300 group-hover/item:w-1.5 bg-primary/40" />
 
                           <div className="flex items-baseline gap-2 flex-1 min-w-0">
                             <div className="shrink-0 flex justify-start min-w-[1.4rem]">
-                              <AnimatePresence mode="wait">
-                                {item.quantity > 1 && (
-                                  <motion.span
-                                    key={`qty-${item.quantity}`}
-                                    initial={{ scale: 0.5, opacity: 0 }}
-                                    animate={{ scale: 1, opacity: 1 }}
-                                    exit={{ scale: 0.5, opacity: 0 }}
-                                    transition={{ duration: 0.15, ease: 'easeOut' }}
-                                    className="text-[14px] font-bold text-rose-500 tabular-nums inline-block"
-                                  >
-                                    x{item.quantity}
-                                  </motion.span>
-                                )}
-                              </AnimatePresence>
+                              {item.quantity > 1 && (
+                                <span
+                                  key={`qty-${item.quantity}`}
+                                  className="text-[14px] font-bold text-rose-500 tabular-nums inline-block transition-all duration-150"
+                                >
+                                  x{item.quantity}
+                                </span>
+                              )}
                             </div>
                             <p className="font-bold text-[15px] tracking-tight leading-snug break-words line-clamp-2 transition-all duration-500 text-foreground/90">
                               {productName.replace(/([a-z])([A-Z])/g, '$1 $2')}
@@ -258,7 +251,7 @@ export const CartPanel = React.memo(function CartPanel({
                       </div>
                     )
                   })}
-              </AnimatePresence>
+              </>
 
               {/* Paid Items Group (Archived look) */}
               {processedItems.some((i) => i.isPaid) && (
@@ -269,7 +262,7 @@ export const CartPanel = React.memo(function CartPanel({
                       ÖDENMİŞ KALEMLER
                     </span>
                   </div>
-                  <AnimatePresence>
+                  <>
                     {processedItems
                       .filter((i) => i.isPaid)
                       .map((item) => {
@@ -311,7 +304,7 @@ export const CartPanel = React.memo(function CartPanel({
                           </div>
                         )
                       })}
-                  </AnimatePresence>
+                  </>
                 </div>
               )}
             </div>

@@ -10,7 +10,7 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60, // 1 minute
-      gcTime: 1000 * 60 * 5, // 5 minutes
+      gcTime: 1000 * 60, // 1 minute - free memory quickly for POS
       refetchOnWindowFocus: false // POS app: polling handles freshness, avoid redundant refetches
     }
   }
