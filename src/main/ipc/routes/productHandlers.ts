@@ -6,7 +6,9 @@ import { productService } from '../../services/ProductService'
 import { productSchemas, validateInput } from '../../../shared/ipc-schemas'
 
 export function registerProductHandlers(): void {
-  ipcMain.handle(IPC_CHANNELS.PRODUCTS_GET_ALL, async () => productService.getAllProducts())
+  ipcMain.handle(IPC_CHANNELS.PRODUCTS_GET_ALL, async () => {
+    return productService.getAllProducts()
+  })
 
   ipcMain.handle(IPC_CHANNELS.PRODUCTS_CREATE, async (_, data) => {
     const validation = validateInput(productSchemas.create, data)

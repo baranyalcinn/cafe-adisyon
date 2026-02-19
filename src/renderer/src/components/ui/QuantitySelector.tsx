@@ -1,18 +1,20 @@
-import { Plus, Minus, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Minus, Plus, Trash2 } from 'lucide-react'
 
 interface QuantitySelectorProps {
   quantity: number
   onUpdate: (newQuantity: number) => void
   isLocked?: boolean
   className?: string
+  showNumber?: boolean
 }
 
 export function QuantitySelector({
   quantity,
   onUpdate,
   isLocked,
-  className
+  className,
+  showNumber = true
 }: QuantitySelectorProps): React.JSX.Element {
   return (
     <div
@@ -38,9 +40,11 @@ export function QuantitySelector({
         {quantity === 1 ? <Trash2 className="w-3 h-3" /> : <Minus className="w-3 h-3" />}
       </button>
 
-      <span className="w-5 text-center font-black text-[10px] tabular-nums text-foreground/90 select-none">
-        {quantity}
-      </span>
+      {showNumber && (
+        <span className="w-5 text-center font-black text-[10px] tabular-nums text-foreground/90 select-none">
+          {quantity}
+        </span>
+      )}
 
       <button
         type="button"

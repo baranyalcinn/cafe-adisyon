@@ -290,26 +290,9 @@ export class ReportingService {
 
   async getRevenueTrend(days: number = 7): Promise<ApiResponse<RevenueTrendItem[]>> {
     try {
-      // Calculate date range
-      const endDate = new Date()
-      const startDate = new Date()
-      startDate.setHours(0, 0, 0, 0)
-      startDate.setDate(startDate.getDate() - (days - 1))
-
-      // Batch fetch: 2 queries instead of 2*N
-      const [allTransactions, allOrders] = await Promise.all([
-        prisma.transaction.findMany({
-          where: { createdAt: { gte: startDate, lte: endDate } },
-          select: { amount: true, createdAt: true }
-        }),
-        prisma.order.findMany({
-          where: { status: 'CLOSED', createdAt: { gte: startDate, lte: endDate } },
-          select: { createdAt: true }
-        })
-      ])
-
-      // Group by day in-memory
       const result: RevenueTrendItem[] = []
+      const promises: Promise<void>[] = []
+
       for (let i = days - 1; i >= 0; i--) {
         const date = new Date()
         date.setHours(0, 0, 0, 0)
@@ -318,20 +301,30 @@ export class ReportingService {
         const nextDay = new Date(date)
         nextDay.setDate(nextDay.getDate() + 1)
 
-        const dayRevenue = allTransactions
-          .filter((t) => t.createdAt >= date && t.createdAt < nextDay)
-          .reduce((sum, t) => sum + t.amount, 0)
+        const promise = (async () => {
+          const [revenueAgg, orderCount] = await Promise.all([
+            prisma.transaction.aggregate({
+              where: { createdAt: { gte: date, lt: nextDay } },
+              _sum: { amount: true }
+            }),
+            prisma.order.count({
+              where: { status: 'CLOSED', createdAt: { gte: date, lt: nextDay } }
+            })
+          ])
 
-        const dayOrderCount = allOrders.filter(
-          (o) => o.createdAt >= date && o.createdAt < nextDay
-        ).length
+          result.push({
+            date: date.toISOString(),
+            revenue: revenueAgg._sum.amount || 0,
+            orderCount
+          })
+        })()
 
-        result.push({
-          date: date.toISOString(),
-          revenue: dayRevenue,
-          orderCount: dayOrderCount
-        })
+        promises.push(promise)
       }
+
+      await Promise.all(promises)
+      // Sort result by date to ensure chronological order after async parallel execution
+      result.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
       return { success: true, data: result }
     } catch (error) {

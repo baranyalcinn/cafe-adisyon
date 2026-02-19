@@ -64,7 +64,6 @@ export class OrderService {
     unitPrice: number
   ): Promise<ApiResponse<Order>> {
     try {
-      // Use transaction to prevent race condition on concurrent adds of same product
       const txResult = await prisma.$transaction(async (tx) => {
         const existingItem = await tx.orderItem.findFirst({
           where: { orderId, productId, isPaid: false }
@@ -81,25 +80,41 @@ export class OrderService {
           })
         }
 
-        // Fetch product name and table name inside the transaction to avoid N+1
-        const [product, order] = await Promise.all([
-          tx.product.findUnique({ where: { id: productId }, select: { name: true } }),
-          tx.order.findUnique({ where: { id: orderId }, include: { table: true } })
+        // Recalculate order total inside the SAME transaction
+        const aggregate = await tx.orderItem.findMany({
+          where: { orderId },
+          select: { quantity: true, unitPrice: true }
+        })
+        const total = aggregate.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
+
+        const [updatedOrder, product] = await Promise.all([
+          tx.order.update({
+            where: { id: orderId },
+            data: { totalAmount: total },
+            include: {
+              items: { include: { product: true } },
+              payments: true,
+              table: true
+            }
+          }),
+          tx.product.findUnique({ where: { id: productId }, select: { name: true } })
         ])
 
-        return { productName: product?.name || 'Ürün', tableName: order?.table?.name }
+        return {
+          updatedOrder: toPlain<Order>(updatedOrder),
+          productName: product?.name || 'Ürün',
+          tableName: updatedOrder.table?.name
+        }
       })
 
-      const updatedOrder = await this.recalculateOrderTotal(orderId)
-
-      // Log activity using data already fetched inside the transaction
+      // Log activity
       await logService.createLog(
         'ADD_ITEM',
         txResult.tableName,
         `${quantity}x ${txResult.productName} eklendi`
       )
 
-      return { success: true, data: updatedOrder }
+      return { success: true, data: txResult.updatedOrder }
     } catch (error) {
       logger.error('OrderService.addItem', error)
       return { success: false, error: 'Ürün eklenemedi.' }
@@ -112,13 +127,30 @@ export class OrderService {
         return this.removeItem(itemId)
       }
 
-      const item = await prisma.orderItem.update({
-        where: { id: itemId },
-        data: { quantity }
+      const txResult = await prisma.$transaction(async (tx) => {
+        const item = await tx.orderItem.update({
+          where: { id: itemId },
+          data: { quantity }
+        })
+
+        const aggregate = await tx.orderItem.findMany({
+          where: { orderId: item.orderId },
+          select: { quantity: true, unitPrice: true }
+        })
+        const total = aggregate.reduce((sum, curr) => sum + curr.quantity * curr.unitPrice, 0)
+
+        const updated = await tx.order.update({
+          where: { id: item.orderId },
+          data: { totalAmount: total },
+          include: {
+            items: { include: { product: true } },
+            payments: true
+          }
+        })
+        return toPlain<Order>(updated)
       })
 
-      const updatedOrder = await this.recalculateOrderTotal(item.orderId)
-      return { success: true, data: updatedOrder }
+      return { success: true, data: txResult }
     } catch (error) {
       logger.error('OrderService.updateItem', error)
       return { success: false, error: 'Ürün güncellenemedi.' }
@@ -127,20 +159,41 @@ export class OrderService {
 
   async removeItem(itemId: string): Promise<ApiResponse<Order>> {
     try {
-      const item = await prisma.orderItem.delete({
-        where: { id: itemId },
-        include: { product: true, order: { include: { table: true } } }
+      const txResult = await prisma.$transaction(async (tx) => {
+        const item = await tx.orderItem.delete({
+          where: { id: itemId },
+          include: { product: true, order: { include: { table: true } } }
+        })
+
+        const aggregate = await tx.orderItem.findMany({
+          where: { orderId: item.orderId },
+          select: { quantity: true, unitPrice: true }
+        })
+        const total = aggregate.reduce((sum, curr) => sum + curr.quantity * curr.unitPrice, 0)
+
+        const updatedOrder = await tx.order.update({
+          where: { id: item.orderId },
+          data: { totalAmount: total },
+          include: {
+            items: { include: { product: true } },
+            payments: true
+          }
+        })
+
+        return {
+          updatedOrder: toPlain<Order>(updatedOrder),
+          item
+        }
       })
-      const updatedOrder = await this.recalculateOrderTotal(item.orderId)
 
       // Log activity
       await logService.createLog(
         'REMOVE_ITEM',
-        item.order?.table?.name,
-        `${item.quantity}x ${item.product?.name || 'Ürün'} çıkarıldı`
+        txResult.item.order?.table?.name,
+        `${txResult.item.quantity}x ${txResult.item.product?.name || 'Ürün'} çıkarıldı`
       )
 
-      return { success: true, data: updatedOrder }
+      return { success: true, data: txResult.updatedOrder }
     } catch (error) {
       logger.error('OrderService.removeItem', error)
       return { success: false, error: 'Ürün silinemedi.' }
@@ -242,7 +295,7 @@ export class OrderService {
         // 1. Read order with payments atomically
         const order = await tx.order.findUnique({
           where: { id: orderId },
-          include: { payments: true }
+          select: { totalAmount: true, payments: { select: { amount: true } } }
         })
 
         if (!order) throw new Error('Order not found')
@@ -270,25 +323,35 @@ export class OrderService {
           const closedOrder = await tx.order.update({
             where: { id: orderId },
             data: { status: 'CLOSED' },
-            include: { items: { include: { product: true } }, payments: true, table: true }
+            include: {
+              items: { include: { product: { select: { name: true } } } },
+              payments: true,
+              table: { select: { name: true } }
+            }
           })
-
           return { order: toPlain<Order>(closedOrder), completed: true }
         }
 
         // 5. Partial payment — return updated order
-        const updatedOrder = await tx.order.findUnique({
+        const updatedOrder = await tx.order.update({
           where: { id: orderId },
-          include: { items: { include: { product: true } }, payments: true, table: true }
+          data: {}, // Just to fetch the latest state cleanly if not closed
+          include: {
+            items: { include: { product: { select: { name: true } } } },
+            payments: true,
+            table: { select: { name: true } }
+          }
         })
 
-        return { order: toPlain<Order>(updatedOrder!), completed: false }
+        return { order: toPlain<Order>(updatedOrder), completed: false }
       })
 
       // Log outside transaction (non-critical)
+      const tableName = result.order.table?.name || 'Masa'
+
       await logService.createLog(
         method === 'CASH' ? 'PAYMENT_CASH' : 'PAYMENT_CARD',
-        result.order.table?.name,
+        tableName,
         `₺${(amount / 100).toFixed(2)} ${method === 'CASH' ? 'nakit' : 'kart'} ödeme alındı`
       )
 
@@ -375,20 +438,35 @@ export class OrderService {
       })
 
       if (result.orderId) {
-        const order = await prisma.order.findUnique({
-          where: { id: result.orderId },
-          include: { table: true }
+        // Run the aggregate and fetch in a single final transaction block to ensure atomicity
+        // and reduce separate queries. Since result is outside the transaction, we do it quickly:
+        const finalOrder = await prisma.$transaction(async (tx) => {
+          const aggregate = await tx.orderItem.findMany({
+            where: { orderId: result.orderId! },
+            select: { quantity: true, unitPrice: true }
+          })
+          const total = aggregate.reduce((sum, curr) => sum + curr.quantity * curr.unitPrice, 0)
+
+          return tx.order.update({
+            where: { id: result.orderId! },
+            data: { totalAmount: total },
+            include: {
+              items: { include: { product: { select: { name: true } } } },
+              payments: true,
+              table: { select: { name: true } }
+            }
+          })
         })
+
         if (result.logs.length > 0) {
           await logService.createLog(
             'ITEMS_PAID',
-            order?.table?.name,
+            finalOrder.table?.name,
             `Ürün ödemesi alındı: ${result.logs.join(', ')}`
           )
         }
 
-        const updated = await this.recalculateOrderTotal(result.orderId)
-        return { success: true, data: updated }
+        return { success: true, data: toPlain<Order>(finalOrder) }
       }
 
       return { success: true, data: null }
@@ -488,24 +566,6 @@ export class OrderService {
 
   // --- Private Helpers ---
 
-  private async recalculateOrderTotal(orderId: string): Promise<Order> {
-    // Use aggregate to calculate total without fetching all items
-    const aggregate = await prisma.orderItem.findMany({
-      where: { orderId },
-      select: { quantity: true, unitPrice: true }
-    })
-    const total = aggregate.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
-
-    const updated = await prisma.order.update({
-      where: { id: orderId },
-      data: { totalAmount: total },
-      include: {
-        items: { include: { product: true } },
-        payments: true
-      }
-    })
-    return toPlain<Order>(updated)
-  }
   async transferTable(orderId: string, targetTableId: string): Promise<ApiResponse<Order>> {
     try {
       // 1. Check if target table is empty

@@ -143,17 +143,18 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
     <div className="flex h-full bg-background">
       {/* Left Panel - Categories & Search */}
       <div className="w-60 bg-background border-r border-border flex flex-col h-full min-h-0 animate-in slide-in-from-left duration-300">
-        <div className="p-4 pt-6">
+        <div className="p-4 pt-6 space-y-4">
           <Button
             variant="ghost"
             onClick={onBack}
-            className="gap-2 mb-2 w-full justify-start hover:bg-muted/50 transition-all duration-300 rounded-lg text-[10px] font-bold uppercase tracking-[0.1em] h-10"
+            className="flex items-center gap-2 w-full justify-start hover:bg-muted/50 hover:translate-x-1 transition-all duration-300 rounded-xl text-sm font-black h-10 text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="w-4 h-4" />
-            Masalara Dön
+            Vazgeç
           </Button>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/80" />
+
+          <div className="group relative">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/60 transition-colors group-focus-within:text-primary" />
             <Input
               ref={searchInputRef}
               placeholder="Ürün ara..."
@@ -161,26 +162,26 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
                 setSearchQuery(e.target.value)
                 setVisibleLimit(40)
               }}
-              className="pl-9 h-10 bg-muted/20 border-border/5 focus:bg-muted/40 transition-all rounded-lg text-sm"
+              className="pl-10 h-11 bg-muted/20 border-border/5 focus:bg-muted/40 transition-all rounded-[1rem] text-sm font-medium focus:ring-1 focus:ring-primary/20"
             />
           </div>
         </div>
 
         <div className="px-3 pb-2 flex-1 flex flex-col min-h-0">
           <Tabs defaultValue="categories" className="w-full flex-1 flex flex-col min-h-0">
-            <TabsList className="w-full grid grid-cols-2 p-1 bg-muted/30 h-11 mb-4 rounded-xl border border-border/10 flex-shrink-0">
+            <TabsList className="w-full grid grid-cols-2 p-1 bg-muted/30 h-12 mb-6 rounded-2xl border border-border/10 flex-shrink-0">
               <TabsTrigger
                 value="categories"
-                className="text-[12px] font-bold rounded-lg transition-all duration-300 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm border-none outline-none group"
+                className="text-[13px] font-black rounded-xl transition-all duration-300 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-lg border-none outline-none group"
               >
-                Kategoriler
+                Menü
               </TabsTrigger>
               <TabsTrigger
                 value="favorites"
-                className="text-[12px] font-bold rounded-lg transition-all duration-300 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm border-none outline-none group gap-2"
+                className="text-[13px] font-black rounded-xl transition-all duration-300 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-lg border-none outline-none group gap-2"
               >
-                <Star className="w-3.5 h-3.5 fill-muted-foreground/60 group-data-[state=active]:fill-primary/80 group-data-[state=active]:text-primary transition-all duration-300" />
-                Favoriler
+                <Star className="w-3.5 h-3.5 fill-muted-foreground/60 group-data-[state=active]:fill-amber-500 group-data-[state=active]:text-amber-500 transition-all duration-300" />
+                Özel
               </TabsTrigger>
             </TabsList>
 
@@ -188,15 +189,15 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
               value="categories"
               className="flex-1 p-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col min-h-0"
             >
-              <ScrollArea className="h-full w-full px-3">
-                <div className="flex flex-col gap-1.5 pb-4">
+              <ScrollArea className="h-full w-full">
+                <div className="flex flex-col gap-1 pb-4">
                   <Button
                     variant="ghost"
                     className={cn(
-                      'w-full justify-start h-11 rounded-2xl gap-3 px-4 font-bold transition-all relative overflow-hidden group/cat',
+                      'w-full justify-start h-14 rounded-2xl gap-4 px-4 font-black text-[13px] transition-all relative overflow-hidden group/cat border border-transparent',
                       activeCategory === null
-                        ? 'bg-primary text-primary-foreground shadow-md shadow-primary/10'
-                        : 'text-muted-foreground/60 hover:bg-muted/40 hover:text-foreground'
+                        ? 'bg-primary/5 text-primary border-primary/10'
+                        : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground'
                     )}
                     onClick={() => {
                       setActiveCategory(null)
@@ -204,12 +205,19 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
                       playTabChange()
                     }}
                   >
-                    <LayoutGrid
+                    {activeCategory === null && (
+                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-full shadow-[0_0_10px_rgba(var(--primary),0.5)]" />
+                    )}
+                    <div
                       className={cn(
-                        'w-4 h-4 transition-transform duration-300',
-                        activeCategory === null ? 'scale-110' : 'group-hover/cat:scale-110'
+                        'w-9 h-9 flex items-center justify-center rounded-xl transition-all duration-300',
+                        activeCategory === null
+                          ? 'bg-primary/10 text-primary scale-105'
+                          : 'bg-muted/40 group-hover/cat:bg-muted/60 group-hover/cat:scale-105'
                       )}
-                    />
+                    >
+                      <LayoutGrid className="w-4 h-4" />
+                    </div>
                     Tümü
                   </Button>
                   {categories.map((category) => (
@@ -217,10 +225,10 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
                       key={category.id}
                       variant="ghost"
                       className={cn(
-                        'w-full justify-start h-11 rounded-2xl gap-3 px-4 font-bold transition-all relative overflow-hidden group/cat',
+                        'w-full justify-start h-14 rounded-2xl gap-4 px-4 font-black text-[13px] transition-all relative overflow-hidden group/cat border border-transparent',
                         activeCategory === category.id
-                          ? 'bg-primary text-primary-foreground shadow-md shadow-primary/10'
-                          : 'text-muted-foreground/85 hover:bg-muted/40 hover:text-foreground'
+                          ? 'bg-primary/5 text-primary border-primary/10'
+                          : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground'
                       )}
                       onClick={() => {
                         setActiveCategory(category.id)
@@ -228,15 +236,20 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
                         playTabChange()
                       }}
                     >
+                      {activeCategory === category.id && (
+                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-full shadow-[0_0_10px_rgba(var(--primary),0.5)]" />
+                      )}
                       <div
                         className={cn(
-                          'transition-transform duration-300',
-                          activeCategory === category.id ? 'scale-110' : 'group-hover/cat:scale-110'
+                          'w-9 h-9 flex items-center justify-center rounded-xl transition-all duration-300',
+                          activeCategory === category.id
+                            ? 'bg-primary/10 text-primary scale-105'
+                            : 'bg-muted/40 group-hover/cat:bg-muted/60 group-hover/cat:scale-105'
                         )}
                       >
                         {getCategoryIcon(category.icon, 'w-4 h-4')}
                       </div>
-                      {category.name}
+                      <span className="truncate">{category.name}</span>
                     </Button>
                   ))}
                 </div>

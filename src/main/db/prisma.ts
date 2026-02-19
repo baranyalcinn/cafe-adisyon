@@ -66,7 +66,9 @@ const WRITE_OPERATIONS = new Set([
 ])
 
 // Create base Prisma client
-const basePrisma = new PrismaClient({ adapter })
+const basePrisma = new PrismaClient({
+  adapter
+})
 
 // Extend Prisma with automatic write queueing via $allModels query interceptor
 const prisma = basePrisma.$extends({

@@ -52,6 +52,8 @@ model Order {
   items       OrderItem[]
   payments    Transaction[]
 
+  @@index([tableId])
+  @@index([tableId, createdAt])
   @@index([tableId, status])
   @@index([status, createdAt])
   @@index([status])
