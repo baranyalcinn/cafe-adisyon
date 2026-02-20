@@ -84,6 +84,7 @@ export const CartPanel = React.memo(function CartPanel({
   const total = order?.totalAmount || 0
   const paidAmount = order?.payments?.reduce((sum, p) => sum + p.amount, 0) || 0
   const remainingAmount = total - paidAmount
+  const totalQuantity = items?.reduce((sum, item) => sum + item.quantity, 0) || 0
 
   // Enter key to confirm delete dialog
   useEffect(() => {
@@ -161,10 +162,11 @@ export const CartPanel = React.memo(function CartPanel({
 
       <div className="shrink-0 h-14 px-6 border-b border-border bg-background z-20 flex items-center justify-between">
         <div className="flex flex-col">
-          <h2 className="text-base font-black tracking-tight flex items-center gap-3 text-foreground">
-            Adisyon
-            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-primary/10 text-primary tracking-[0.2em] border border-primary/20 uppercase">
-              {order?.items?.length || 0} ÜRÜN
+          <h2 className="text-base font-black tracking-tight flex items-center gap-2 text-foreground">
+            {order?.table?.name ? `Masa ${order.table.name}` : 'Adisyon'}
+            <span className="h-4 w-[1px] bg-border mx-1" />
+            <span className="text-[11px] font-black text-primary/80 uppercase tracking-wider">
+              {totalQuantity} ÜRÜN
             </span>
           </h2>
         </div>
@@ -216,7 +218,7 @@ export const CartPanel = React.memo(function CartPanel({
                     return (
                       <div
                         key={item.id}
-                        className="relative origin-top flex items-center justify-between gap-3 p-1.5 px-3 group/item rounded-xl border transition-all duration-300 bg-card/40 border-border/5 hover:border-primary/20 hover:shadow-md hover:shadow-primary/5 active:scale-[0.99] animate-in fade-in slide-in-from-right-2 duration-500"
+                        className="relative origin-top flex items-center justify-between gap-3 p-1.5 pl-2.5 pr-3 group/item rounded-xl border border-border/10 border-l-[4px] !border-l-primary transition-all duration-300 bg-card/40 hover:border-primary/20 hover:shadow-md hover:shadow-primary/5 active:scale-[0.99] animate-in fade-in slide-in-from-right-2 duration-500"
                       >
                         <div className="flex items-center gap-2.5 min-w-0 flex-1">
                           {item.quantity > 1 && (
@@ -225,14 +227,14 @@ export const CartPanel = React.memo(function CartPanel({
                             </span>
                           )}
                           <div className="min-w-0 flex-1">
-                            <p className="font-bold text-[13px] text-foreground tracking-tight break-words leading-tight">
-                              {productName.replace(/([a-z])([A-Z])/g, '$1 $2')}
+                            <p className="font-bold text-[13px] pl-0.5 text-foreground tracking-tight break-words leading-tight">
+                              {productName.replace(/([a-zğüşöçı])([A-ZĞÜŞÖÇİ])/g, '$1 $2')}
                             </p>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-3 shrink-0">
-                          <p className="text-[14px] font-black tabular-nums text-foreground/90 whitespace-nowrap">
+                        <div className="flex items-center gap-2.5 shrink-0">
+                          <p className="text-[14px] font-black tabular-nums text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md whitespace-nowrap">
                             {formatCurrency(item.unitPrice * item.quantity)}
                           </p>
                           <div className="opacity-0 group-hover/item:opacity-100 transition-opacity">
@@ -268,7 +270,7 @@ export const CartPanel = React.memo(function CartPanel({
                         return (
                           <div
                             key={`${item.productId}-paid-group`}
-                            className="relative flex items-center justify-between gap-3 p-1.5 px-3 rounded-xl bg-muted/5 border border-border/10 opacity-90 group/paid transition-all hover:opacity-100"
+                            className="relative flex items-center justify-between gap-3 p-1.5 pl-2.5 pr-3 rounded-xl bg-muted/5 border border-border/10 border-l-[4px] !border-l-emerald-500/40 opacity-90 group/paid transition-all hover:opacity-100"
                           >
                             <div className="flex items-center gap-2.5 min-w-0 flex-1">
                               {item.quantity > 1 && (
@@ -276,13 +278,13 @@ export const CartPanel = React.memo(function CartPanel({
                                   {item.quantity}x
                                 </span>
                               )}
-                              <p className="font-bold text-[13px] text-foreground/85 tracking-tight break-words leading-tight">
+                              <p className="font-bold text-[13px] pl-0.5 text-foreground/85 tracking-tight break-words leading-tight">
                                 {productName}
                               </p>
                             </div>
 
-                            <div className="flex items-center gap-3 shrink-0">
-                              <p className="text-[12px] font-black tabular-nums text-foreground/60">
+                            <div className="flex items-center gap-2.5 shrink-0">
+                              <p className="text-[12px] font-black tabular-nums text-emerald-600/80 dark:text-emerald-400/80 bg-emerald-500/5 px-2 py-0.5 rounded-md">
                                 {formatCurrency(item.unitPrice * item.quantity)}
                               </p>
                               <div className="p-1 rounded-full bg-emerald-500/5 text-emerald-500/70">
@@ -299,12 +301,13 @@ export const CartPanel = React.memo(function CartPanel({
           </div>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center p-8 text-center animate-in fade-in zoom-in duration-500">
-            <div className="w-20 h-20 rounded-full bg-muted/30 flex items-center justify-center mb-6 group-hover/panel:scale-110 transition-transform duration-500">
+            <div className="w-24 h-24 rounded-full bg-muted/20 flex items-center justify-center mb-6 border-2 border-dashed border-muted-foreground/20 group-hover/panel:scale-110 transition-transform duration-500">
               <ShoppingBag className="w-10 h-10 text-muted-foreground/40" />
             </div>
-            <h3 className="text-lg font-black text-muted-foreground/60 mb-2">Adisyon Boş</h3>
-            <p className="text-sm text-muted-foreground/60 max-w-[200px] leading-relaxed">
-              Siparişe ürün eklemek için soldaki menüyü kullanın.
+            <h3 className="text-lg font-black text-foreground/70 mb-2">Henüz Ürün Yok</h3>
+            <p className="text-[13px] font-medium text-muted-foreground/60 max-w-[220px] leading-relaxed">
+              Adisyonunuz şu an boş. Siparişe başlamak için sol taraftaki menüden ürün
+              seçebilirsiniz.
             </p>
           </div>
         )}

@@ -399,12 +399,16 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
         open={isPaymentOpen}
         onClose={() => setIsPaymentOpen(false)}
         order={order}
-        onProcessPayment={async (amount, method) => {
-          await processPayment({ amount, method })
+        onProcessPayment={async (amount, method, options) => {
+          await processPayment({ amount, method, options })
           return Promise.resolve()
         }}
-        onMarkItemsPaid={async (items) => {
-          await markItemsPaid(items)
+        onMarkItemsPaid={async (items, paymentDetails) => {
+          // As paymentDetails includes PaymentMethod rather than string, type assertion is used to bypass signature constraint.
+          await markItemsPaid(
+            items,
+            paymentDetails as { amount: number; method: string } | undefined
+          )
           return Promise.resolve()
         }}
         onPaymentComplete={() => {

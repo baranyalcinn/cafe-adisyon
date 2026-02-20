@@ -94,8 +94,11 @@ const api = {
       ipcRenderer.invoke(IPC_CHANNELS.ORDERS_TRANSFER, orderId, targetTableId),
     merge: (sourceOrderId: string, targetOrderId: string): Promise<ApiResponse<Order>> =>
       ipcRenderer.invoke(IPC_CHANNELS.ORDERS_MERGE, sourceOrderId, targetOrderId),
-    markItemsPaid: (items: { id: string; quantity: number }[]): Promise<ApiResponse<Order>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.ORDERS_MARK_ITEMS_PAID, items),
+    markItemsPaid: (
+      items: { id: string; quantity: number }[],
+      paymentDetails?: { amount: number; method: string }
+    ): Promise<ApiResponse<Order>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.ORDERS_MARK_ITEMS_PAID, { items, paymentDetails }),
     getHistory: (options?: {
       date?: string
       limit?: number
@@ -111,9 +114,10 @@ const api = {
     create: (
       orderId: string,
       amount: number,
-      paymentMethod: PaymentMethod
+      paymentMethod: PaymentMethod,
+      options?: { skipLog?: boolean }
     ): Promise<ApiResponse<{ order: Order; completed: boolean }>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.PAYMENTS_CREATE, orderId, amount, paymentMethod),
+      ipcRenderer.invoke(IPC_CHANNELS.PAYMENTS_CREATE, orderId, amount, paymentMethod, options),
     getByOrder: (orderId: string): Promise<ApiResponse<Transaction[]>> =>
       ipcRenderer.invoke(IPC_CHANNELS.PAYMENTS_GET_BY_ORDER, orderId)
   },

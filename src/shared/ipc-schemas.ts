@@ -92,12 +92,15 @@ export const orderSchemas = {
     sourceOrderId: cuidSchema,
     targetOrderId: cuidSchema
   }),
-  markItemsPaid: z.array(
-    z.object({
-      id: cuidSchema,
-      quantity: z.number().int().positive()
-    })
-  ),
+  markItemsPaid: z.object({
+    items: z.array(
+      z.object({
+        id: cuidSchema,
+        quantity: z.number().int().positive()
+      })
+    ),
+    paymentDetails: z.object({ amount: z.number(), method: z.string() }).optional()
+  }),
   delete: z.object({ orderId: cuidSchema }),
   toggleLock: z.object({
     orderId: cuidSchema,
@@ -116,7 +119,8 @@ export const paymentSchemas = {
   create: z.object({
     orderId: cuidSchema,
     amount: z.number().int().positive(),
-    paymentMethod: z.enum(['CASH', 'CARD'])
+    paymentMethod: z.enum(['CASH', 'CARD']),
+    options: z.object({ skipLog: z.boolean().optional() }).optional()
   }),
   getByOrder: z.object({ orderId: cuidSchema })
 }

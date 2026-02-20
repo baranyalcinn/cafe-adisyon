@@ -1,4 +1,4 @@
-import { Order, OrderStatus } from '../../../shared/types'
+import { Order, OrderStatus, PaymentMethod } from '../../../shared/types'
 
 const api = window.api
 
@@ -55,8 +55,23 @@ export const orderService = {
     if (!result.success) throw new Error(result.error)
     return result.data
   },
-  async markItemsPaid(items: { id: string; quantity: number }[]): Promise<Order> {
-    const result = await api.orders.markItemsPaid(items)
+  async processPayment(
+    orderId: string,
+    data: {
+      amount: number
+      method: PaymentMethod
+      options?: { skipLog?: boolean }
+    }
+  ): Promise<{ order: Order; completed: boolean }> {
+    const result = await api.payments.create(orderId, data.amount, data.method, data.options)
+    if (!result.success) throw new Error(result.error)
+    return result.data
+  },
+  async markItemsPaid(
+    items: { id: string; quantity: number }[],
+    paymentDetails?: { amount: number; method: string }
+  ): Promise<Order> {
+    const result = await api.orders.markItemsPaid(items, paymentDetails)
     if (!result.success) throw new Error(result.error)
     return result.data
   },

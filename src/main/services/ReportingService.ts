@@ -113,7 +113,7 @@ export class ReportingService {
       await logService.createLog(
         'GENERATE_ZREPORT',
         undefined,
-        `Gün sonu Z-Raporu oluşturuldu: ₺${(totalRevenue / 100).toFixed(2)}`
+        `Gün sonu Z-Raporu oluşturuldu: ₺${totalRevenue / 100}`
       )
 
       return { success: true, data: summary }

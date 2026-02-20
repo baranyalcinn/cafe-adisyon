@@ -22,8 +22,15 @@ interface PaymentModalProps {
   onClose: () => void
   onPaymentComplete?: () => void
   order: Order | null | undefined
-  onProcessPayment: (amount: number, method: PaymentMethod) => Promise<unknown>
-  onMarkItemsPaid: (items: { id: string; quantity: number }[]) => Promise<unknown>
+  onProcessPayment: (
+    amount: number,
+    method: PaymentMethod,
+    options?: { skipLog?: boolean }
+  ) => Promise<unknown>
+  onMarkItemsPaid: (
+    items: { id: string; quantity: number }[],
+    paymentDetails?: { amount: number; method: PaymentMethod }
+  ) => Promise<unknown>
 }
 
 type PaymentMode = 'full' | 'items' | 'split' | 'custom'
@@ -170,20 +177,24 @@ export function PaymentModal({
     setIsProcessing(true)
 
     try {
+      const isItemsModeWithSelection =
+        paymentMode === 'items' && Object.keys(selectedQuantities).length > 0
+
       // FIX: Only call processPayment if there is an actual amount to pay.
       // If amount is 0 (covered by credit), we skip this and just mark items.
       if (actualAmount > 0) {
-        await onProcessPayment(actualAmount, method)
+        await onProcessPayment(actualAmount, method, { skipLog: isItemsModeWithSelection })
       }
 
       // If in items mode, mark selected items as paid
       // We do this if payment succeeded OR if payment was 0 (skipped)
-      if (paymentMode === 'items' && Object.keys(selectedQuantities).length > 0) {
+      if (isItemsModeWithSelection) {
         const itemsToPay = Object.entries(selectedQuantities).map(([id, quantity]) => ({
           id,
           quantity
         }))
-        await onMarkItemsPaid(itemsToPay)
+        const paymentDetails = actualAmount > 0 ? { amount: actualAmount, method } : undefined
+        await onMarkItemsPaid(itemsToPay, paymentDetails)
       }
 
       // Determine if we should close modal

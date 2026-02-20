@@ -56,11 +56,11 @@ const TableCard = memo(
               className={cn(
                 'relative w-full h-full flex flex-col items-center justify-center gap-4 p-8 rounded-[2.5rem] overflow-hidden transition-all duration-500',
                 hasOpenOrder
-                  ? 'bg-info/5 border border-info/10 shadow-[0_8px_32px_-12px_rgba(var(--color-info),0.1)]'
-                  : 'bg-success/5 border border-success/10 shadow-[0_8px_32px_-12px_rgba(var(--color-success),0.1)]',
+                  ? 'bg-info/10 border border-info/20 shadow-[0_8px_32px_-12px_rgba(var(--color-info),0.2)]'
+                  : 'bg-success/10 border border-success/20 shadow-[0_8px_32px_-12px_rgba(var(--color-success),0.2)]',
                 isLocked &&
-                  'bg-warning/5 border border-warning/10 shadow-[0_8px_32px_-12px_rgba(var(--color-warning),0.1)]',
-                'group-hover:border-primary/20 group-hover:bg-primary/[0.02]'
+                  'bg-warning/10 border border-warning/20 shadow-[0_8px_32px_-12px_rgba(var(--color-warning),0.2)]',
+                'group-hover:border-primary/30 group-hover:bg-primary/[0.04]'
               )}
             >
               {/* Subtle Glow Effect */}
@@ -81,8 +81,8 @@ const TableCard = memo(
               <div
                 className={cn(
                   'p-4.5 rounded-[2rem] transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-inner',
-                  hasOpenOrder ? 'bg-info/20 text-info' : 'bg-success/20 text-success',
-                  isLocked && 'bg-warning/20 text-warning'
+                  hasOpenOrder ? 'bg-info/25 text-info' : 'bg-success/25 text-success',
+                  isLocked && 'bg-warning/25 text-warning'
                 )}
               >
                 <Coffee className="w-12 h-12" />
@@ -94,11 +94,11 @@ const TableCard = memo(
                 </span>
                 <div
                   className={cn(
-                    'text-[10px] font-bold tracking-[0.15em] px-3 py-1 rounded-full border transition-all duration-300',
+                    'text-[10px] font-black tracking-[0.2em] px-3 py-1 rounded-full border transition-all duration-300 uppercase shadow-sm',
                     hasOpenOrder
-                      ? 'border-info/30 bg-info/15 text-info'
-                      : 'border-success/30 bg-success/15 text-success',
-                    isLocked && 'border-warning/30 bg-warning/15 text-warning'
+                      ? 'bg-white text-info border-info/40 shadow-info/10 dark:bg-info/20 dark:text-info-foreground dark:border-info/50'
+                      : 'bg-white text-emerald-700 border-emerald-300 shadow-emerald-500/10 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800',
+                    isLocked && 'bg-white text-warning border-warning/40 shadow-warning/10'
                   )}
                 >
                   {isLocked ? 'KİLİTLİ' : hasOpenOrder ? 'DOLU' : 'BOŞ'}

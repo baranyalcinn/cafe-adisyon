@@ -288,7 +288,8 @@ export class OrderService {
   async processPayment(
     orderId: string,
     amount: number,
-    method: string
+    method: string,
+    options?: { skipLog?: boolean }
   ): Promise<ApiResponse<{ order: Order; completed: boolean }>> {
     try {
       const result = await prisma.$transaction(async (tx) => {
@@ -349,27 +350,24 @@ export class OrderService {
       // Log outside transaction (non-critical)
       const tableName = result.order.table?.name || 'Masa'
 
-      await logService.createLog(
-        method === 'CASH' ? 'PAYMENT_CASH' : 'PAYMENT_CARD',
-        tableName,
-        `₺${(amount / 100).toFixed(2)} ${method === 'CASH' ? 'nakit' : 'kart'} ödeme alındı`
-      )
-
       if (result.completed) {
-        // Find items that were unpaid before this closure (simplified: list all items as it's closed)
-        // Or better: pass the originally unpaid items from the transaction result if possible.
-        // Since we don't return them from transaction easily without refactor, we can list ALL items order had.
-        // But user wants to know what was paid *now*.
-        // In full payment, everything is paid.
-        // Let's list all items concisely.
+        // Completed -> Single combined log for Table Closure + Payment
         const itemDetails = (result.order.items || [])
           .map((i) => `${i.quantity}x ${i.product?.name}`)
           .join(', ')
 
+        const methodStr = method === 'CASH' ? 'Nakit' : 'Kart'
         await logService.createLog(
           'CLOSE_TABLE',
           result.order.table?.name,
-          `Adisyon kapatıldı. Ödenenler: ${itemDetails}`
+          `₺${amount / 100} ${methodStr} ile adisyon kapatıldı. Ödenenler: ${itemDetails}`
+        )
+      } else if (!options?.skipLog) {
+        // Not completed and not skipped -> Standard Payment Log
+        await logService.createLog(
+          method === 'CASH' ? 'PAYMENT_CASH' : 'PAYMENT_CARD',
+          tableName,
+          `₺${amount / 100} ${method === 'CASH' ? 'nakit' : 'kart'} ödeme alındı`
         )
       }
 
@@ -382,7 +380,8 @@ export class OrderService {
   }
 
   async markItemsPaid(
-    items: { id: string; quantity: number }[]
+    items: { id: string; quantity: number }[],
+    paymentDetails?: { amount: number; method: string }
   ): Promise<ApiResponse<Order | null>> {
     try {
       if (items.length === 0) return { success: true, data: null }
@@ -459,11 +458,15 @@ export class OrderService {
         })
 
         if (result.logs.length > 0) {
-          await logService.createLog(
-            'ITEMS_PAID',
-            finalOrder.table?.name,
-            `Ürün ödemesi alındı: ${result.logs.join(', ')}`
-          )
+          let logDetails = ''
+          if (paymentDetails) {
+            const methodStr = paymentDetails.method === 'CASH' ? 'Nakit' : 'Kart'
+            const formattedAmount = (paymentDetails.amount / 100).toString()
+            logDetails = `₺${formattedAmount} ${methodStr} ile Ürün ödemesi alındı: ${result.logs.join(', ')}`
+          } else {
+            logDetails = `Ürün ödemesi alındı: ${result.logs.join(', ')}`
+          }
+          await logService.createLog('ITEMS_PAID', finalOrder.table?.name, logDetails)
         }
 
         return { success: true, data: toPlain<Order>(finalOrder) }
@@ -730,7 +733,7 @@ export class OrderService {
       await logService.createLog(
         'MERGE_TABLES',
         result.table?.name,
-        `Adisyonlar birleştirildi (Toplam: ₺${(result.totalAmount / 100).toFixed(2)})`
+        `Adisyonlar birleştirildi (Toplam: ₺${result.totalAmount / 100})`
       )
 
       return { success: true as const, data: result }

@@ -382,9 +382,11 @@ export function SettingsView({
                 >
                   <item.icon className="h-8 w-8" />
                 </div>
-                <div className="flex-1 flex flex-col">
-                  <h3 className="mb-2 text-xl font-bold tracking-tight">{item.label}</h3>
-                  <p className="line-clamp-3 text-sm leading-relaxed text-muted-foreground">
+                <div className="flex-1 flex flex-col mt-2">
+                  <h3 className="mb-1.5 text-xl font-bold tracking-tight text-foreground/90">
+                    {item.label}
+                  </h3>
+                  <p className="line-clamp-3 text-[13px] font-medium leading-relaxed text-muted-foreground/70">
                     {item.description}
                   </p>
                 </div>

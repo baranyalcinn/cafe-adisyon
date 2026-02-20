@@ -1,5 +1,5 @@
-import { useQuery, useMutation, useQueryClient, UseMutateFunction } from '@tanstack/react-query'
-import { cafeApi, Order, Product, PaymentMethod } from '../lib/api'
+import { UseMutateFunction, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { cafeApi, Order, PaymentMethod, Product } from '../lib/api'
 import { toast } from '../store/useToastStore'
 
 // We need a way to generate temp IDs for optimistic updates
@@ -16,10 +16,14 @@ interface UseOrderResult {
   processPayment: (variables: {
     amount: number
     method: PaymentMethod
+    options?: { skipLog?: boolean }
   }) => Promise<{ order: Order; completed: boolean }>
   toggleLock: UseMutateFunction<void | undefined, Error, void, unknown>
   deleteOrder: UseMutateFunction<void, Error, string, unknown>
-  markItemsPaid: (items: { id: string; quantity: number }[]) => Promise<Order>
+  markItemsPaid: (
+    items: { id: string; quantity: number }[],
+    paymentDetails?: { amount: number; method: string }
+  ) => Promise<Order>
   isLocked: boolean
 }
 
@@ -204,11 +208,19 @@ export function useOrder(tableId: string | null): UseOrderResult {
 
   // 4. Payment
   const paymentMutation = useMutation({
-    mutationFn: async ({ amount, method }: { amount: number; method: PaymentMethod }) => {
+    mutationFn: async ({
+      amount,
+      method,
+      options
+    }: {
+      amount: number
+      method: PaymentMethod
+      options?: { skipLog?: boolean }
+    }) => {
       const currentOrder = orderQuery.data
       if (!currentOrder) throw new Error('No order to pay')
 
-      const result = await cafeApi.payments.create(currentOrder.id, amount, method)
+      const result = await cafeApi.payments.create(currentOrder.id, amount, method, options)
       return result
     },
     onSuccess: (data) => {
@@ -272,10 +284,16 @@ export function useOrder(tableId: string | null): UseOrderResult {
 
   // 7. Mark Items Paid
   const markItemsPaidMutation = useMutation({
-    mutationFn: async (items: { id: string; quantity: number }[]) => {
+    mutationFn: async ({
+      items,
+      paymentDetails
+    }: {
+      items: { id: string; quantity: number }[]
+      paymentDetails?: { amount: number; method: string }
+    }) => {
       const currentOrder = orderQuery.data
       if (!currentOrder) throw new Error('No order found')
-      return cafeApi.orders.markItemsPaid(items)
+      return cafeApi.orders.markItemsPaid(items, paymentDetails)
     },
     onSuccess: (updatedOrder) => {
       queryClient.setQueryData(queryKey, updatedOrder)
@@ -302,7 +320,8 @@ export function useOrder(tableId: string | null): UseOrderResult {
     removeItem: removeItemMutation.mutate,
     processPayment: paymentMutation.mutateAsync,
     toggleLock: toggleLockMutation.mutate,
-    markItemsPaid: markItemsPaidMutation.mutateAsync,
+    markItemsPaid: (items, paymentDetails) =>
+      markItemsPaidMutation.mutateAsync({ items, paymentDetails }),
     deleteOrder: deleteOrderMutation.mutate,
 
     isLocked: orderQuery.data?.isLocked ?? false

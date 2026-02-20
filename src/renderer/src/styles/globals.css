@@ -5,6 +5,13 @@
 
 /* ===== LIGHT MODE THEME (Default) - BEIGE/CREAM TONES ===== */
 @theme {
+  --font-sans:
+    'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    'Segoe UI Symbol', 'Noto Color Emoji';
+  --font-display:
+    'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+    'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+
   /* Professional UI Theme - Tailwind v4 Standard Variables */
   --bg-main: oklch(0.97 0.01 80); /* Off-white background */
   --text-main: oklch(0.2 0.02 70); /* Deep coffee text color */
@@ -241,6 +248,18 @@ body {
   min-height: 100vh;
   overflow: hidden;
   user-select: none;
+}
+
+@layer base {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em; /* Slight tightening for geometric headings */
+  }
 }
 
 /* Allow selection in inputs */

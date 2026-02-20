@@ -43,16 +43,24 @@ export function registerOrderHandlers(): void {
     return orderService.removeItem(orderItemId)
   })
 
-  ipcMain.handle(IPC_CHANNELS.PAYMENTS_CREATE, async (_, orderId, amount, paymentMethod) => {
-    const validation = validateInput(paymentSchemas.create, { orderId, amount, paymentMethod })
-    if (!validation.success) return { success: false, error: validation.error }
-    return orderService.processPayment(orderId, amount, paymentMethod)
-  })
+  ipcMain.handle(
+    IPC_CHANNELS.PAYMENTS_CREATE,
+    async (_, orderId, amount, paymentMethod, options) => {
+      const validation = validateInput(paymentSchemas.create, {
+        orderId,
+        amount,
+        paymentMethod,
+        options
+      })
+      if (!validation.success) return { success: false, error: validation.error }
+      return orderService.processPayment(orderId, amount, paymentMethod, validation.data.options)
+    }
+  )
 
-  ipcMain.handle(IPC_CHANNELS.ORDERS_MARK_ITEMS_PAID, async (_, items) => {
-    const validation = validateInput(orderSchemas.markItemsPaid, items)
+  ipcMain.handle(IPC_CHANNELS.ORDERS_MARK_ITEMS_PAID, async (_, payload) => {
+    const validation = validateInput(orderSchemas.markItemsPaid, payload)
     if (!validation.success) return { success: false, error: validation.error }
-    return orderService.markItemsPaid(validation.data)
+    return orderService.markItemsPaid(validation.data.items, validation.data.paymentDetails)
   })
 
   ipcMain.handle(IPC_CHANNELS.ORDERS_DELETE, async (_, orderId) => {

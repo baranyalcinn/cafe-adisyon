@@ -6,9 +6,10 @@ export const paymentService = {
   async create(
     orderId: string,
     amount: number,
-    paymentMethod: PaymentMethod
+    paymentMethod: PaymentMethod,
+    options?: { skipLog?: boolean }
   ): Promise<{ order: Order; completed: boolean }> {
-    const result = await api.payments.create(orderId, amount, paymentMethod)
+    const result = await api.payments.create(orderId, amount, paymentMethod, options)
     if (!result.success) throw new Error(result.error)
     return result.data
   },

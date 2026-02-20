@@ -138,6 +138,42 @@ const ACTION_CONFIG: Record<string, { label: string; color: string; dot: string;
     color: 'text-blue-500',
     dot: 'bg-blue-500',
     bg: 'bg-blue-500/5'
+  },
+  TRANSFER_TABLE: {
+    label: 'MASA TAŞIMA',
+    color: 'text-violet-500',
+    dot: 'bg-violet-500',
+    bg: 'bg-violet-500/5'
+  },
+  MERGE_TABLES: {
+    label: 'MASA BİRLEŞTİRME',
+    color: 'text-indigo-500',
+    dot: 'bg-indigo-500',
+    bg: 'bg-indigo-500/5'
+  },
+  VACUUM: {
+    label: 'OPTİMİZASYON',
+    color: 'text-teal-500',
+    dot: 'bg-teal-500',
+    bg: 'bg-teal-500/5'
+  },
+  SOFT_RESET: {
+    label: 'SİSTEM SIFIRLAMA',
+    color: 'text-rose-600',
+    dot: 'bg-rose-600',
+    bg: 'bg-rose-600/5'
+  },
+  SECURITY_RESCUE: {
+    label: 'GÜVENLİK SIFIRLAMA',
+    color: 'text-red-600',
+    dot: 'bg-red-600',
+    bg: 'bg-red-600/5'
+  },
+  SECURITY_CHANGE_PIN: {
+    label: 'PIN DEĞİŞİMİ',
+    color: 'text-amber-500',
+    dot: 'bg-amber-500',
+    bg: 'bg-amber-500/5'
   }
 }
 
@@ -154,12 +190,14 @@ const SYSTEM_ACTIONS = [
 function parseLogDetail(
   detail: string
 ): { summary: string; items: { qty: number; name: string }[] } | null {
-  const match = detail.match(/^(.+?)\.\s*Ödenenler:\s*(.+)$/)
+  // Matches variations like "... Ödenenler: <items>", "... alındı: <items>", "... boşaltıldı: <items>"
+  const match = detail.match(/^(.+?(?:Ödenenler|alındı|boşaltıldı)):\s*(.+)$/i)
   if (!match) return null
-  const summary = match[1]
+
+  const summary = match[1].trim() + ':'
   const items = match[2].split(',').map((s) => {
     const m = s.trim().match(/^(\d+)x\s+(.+)$/)
-    return m ? { qty: parseInt(m[1]), name: m[2] } : { qty: 1, name: s.trim() }
+    return m ? { qty: parseInt(m[1], 10), name: m[2] } : { qty: 1, name: s.trim() }
   })
   return { summary, items }
 }
@@ -312,29 +350,33 @@ export function LogsTab(): React.JSX.Element {
       | null = null
 
     filteredLogs.forEach((log) => {
-      if (log.action === 'ADD_ITEM') {
+      if (log.action === 'ADD_ITEM' || log.action === 'REMOVE_ITEM') {
         if (
           currentGroup &&
-          currentGroup.action === 'ADD_ITEM' &&
+          currentGroup.action === log.action &&
           currentGroup.tableName === log.tableName &&
           Math.abs(new Date(currentGroup.createdAt).getTime() - new Date(log.createdAt).getTime()) <
             2 * 60 * 1000
         ) {
           currentGroup.groupCount = (currentGroup.groupCount || 1) + 1
 
+          const actionWord = log.action === 'ADD_ITEM' ? 'eklendi' : 'çıkarıldı'
+          const regexStr = `(\\d+)x (.*) ${actionWord}`
+          const regex = new RegExp(regexStr)
+
           // Aggregate by product name
-          const match = log.details?.match(/(\d+)x (.*) eklendi/)
+          const match = log.details?.match(regex)
           if (match) {
             const qty = parseInt(match[1])
             const name = match[2]
             const existingItem = currentGroup.groupItems?.find((i) => {
-              const m = i.details.match(/(\d+)x (.*) eklendi/)
+              const m = i.details.match(regex)
               return m && m[2] === name
             })
 
             if (existingItem) {
               existingItem.count += qty
-              existingItem.details = `${existingItem.count}x ${name} eklendi`
+              existingItem.details = `${existingItem.count}x ${name} ${actionWord}`
             } else {
               currentGroup.groupItems?.push({ details: log.details || '', count: qty })
             }
@@ -342,7 +384,9 @@ export function LogsTab(): React.JSX.Element {
             currentGroup.groupItems?.push({ details: log.details || '', count: 1 })
           }
         } else {
-          const match = log.details?.match(/(\d+)x (.*) eklendi/)
+          const actionWord = log.action === 'ADD_ITEM' ? 'eklendi' : 'çıkarıldı'
+          const regex = new RegExp(`(\\d+)x (.*) ${actionWord}`)
+          const match = log.details?.match(regex)
           const qty = match ? parseInt(match[1]) : 1
           currentGroup = {
             ...log,
@@ -485,7 +529,9 @@ export function LogsTab(): React.JSX.Element {
                         onClick={() => setExpandedLogId(isExpanded ? null : log.id)}
                         className={cn(
                           'group cursor-pointer transition-colors border-b border-border/10 animate-in fade-in duration-300',
-                          isExpanded ? 'bg-primary/5' : 'hover:bg-muted/30'
+                          isExpanded
+                            ? 'bg-primary/5'
+                            : 'odd:bg-background even:bg-muted/10 hover:bg-muted/30'
                         )}
                       >
                         <TableCell className="pl-6 py-3 font-bold text-base">
@@ -516,8 +562,14 @@ export function LogsTab(): React.JSX.Element {
                         <TableCell className="py-3">
                           <span className="text-sm text-muted-foreground/80 group-hover:text-foreground transition-colors line-clamp-1 font-medium">
                             {isGroup ? (
-                              <span className="text-primary font-bold">
-                                {log.groupCount} ÜRÜN EKLENDİ
+                              <span
+                                className={cn(
+                                  'font-bold',
+                                  log.action === 'ADD_ITEM' ? 'text-primary' : 'text-emerald-500'
+                                )}
+                              >
+                                {log.groupCount} ÜRÜN{' '}
+                                {log.action === 'ADD_ITEM' ? 'EKLENDİ' : 'İPTAL EDİLDİ'}
                               </span>
                             ) : (
                               log.details
