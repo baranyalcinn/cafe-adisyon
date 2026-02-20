@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { cafeApi, Product, Category } from '../lib/api'
+import { cafeApi, Category, Product } from '../lib/api'
 
 interface InventoryHookResult {
   products: Product[]
@@ -18,18 +18,17 @@ export function useInventoryPrefetch(): { prefetchAll: () => Promise<void> } {
   const queryClient = useQueryClient()
 
   const prefetchAll = async (): Promise<void> => {
-    await Promise.all([
-      queryClient.prefetchQuery({
-        queryKey: ['products'],
-        queryFn: () => cafeApi.products.getAll(),
-        staleTime: 1000 * 60 * 5 // 5 minutes
-      }),
-      queryClient.prefetchQuery({
-        queryKey: ['categories'],
-        queryFn: () => cafeApi.categories.getAll(),
-        staleTime: 1000 * 60 * 60 // 1 hour
-      })
-    ])
+    try {
+      const response = await window.api.system.getBootBundle()
+      if (response.success && response.data) {
+        // Prime the cache with the batched response. Ensure high staleTime prevents immediate refetches.
+        queryClient.setQueryData(['products'], response.data.products)
+        queryClient.setQueryData(['categories'], response.data.categories)
+        queryClient.setQueryData(['tables'], response.data.tables)
+      }
+    } catch (error) {
+      console.error('Failed to prefetch boot bundle:', error)
+    }
   }
 
   return { prefetchAll }
@@ -39,7 +38,7 @@ export function useInventory(): InventoryHookResult {
   const productsQuery = useQuery({
     queryKey: ['products'],
     queryFn: () => cafeApi.products.getAll(),
-    staleTime: 1000 * 60 * 5 // 5 minutes
+    staleTime: 1000 * 60 * 30 // 30 minutes
   })
 
   const categoriesQuery = useQuery({

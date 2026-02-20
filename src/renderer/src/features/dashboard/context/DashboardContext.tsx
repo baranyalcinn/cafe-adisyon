@@ -5,7 +5,7 @@ import {
   type MonthlyReport,
   type RevenueTrendItem
 } from '@/lib/api'
-import React, { createContext, useContext, useState } from 'react'
+import React, { createContext, useContext, useMemo, useState } from 'react'
 
 interface DashboardContextType {
   filterMonth: string
@@ -36,21 +36,35 @@ export function DashboardProvider({ children }: { children: React.ReactNode }): 
   const { stats, revenueTrend, zReportHistory, monthlyReports, isLoading, isError, refetchAll } =
     useDashboardStats(filterMonth, filterYear)
 
-  const value = {
-    filterMonth,
-    setFilterMonth,
-    filterYear,
-    setFilterYear,
-    stats,
-    revenueTrend,
-    zReportHistory,
-    monthlyReports,
-    isLoading,
-    isError,
-    refetchAll,
-    showEndOfDayModal,
-    setShowEndOfDayModal
-  }
+  const value = useMemo(
+    () => ({
+      filterMonth,
+      setFilterMonth,
+      filterYear,
+      setFilterYear,
+      stats,
+      revenueTrend,
+      zReportHistory,
+      monthlyReports,
+      isLoading,
+      isError,
+      refetchAll,
+      showEndOfDayModal,
+      setShowEndOfDayModal
+    }),
+    [
+      filterMonth,
+      filterYear,
+      stats,
+      revenueTrend,
+      zReportHistory,
+      monthlyReports,
+      isLoading,
+      isError,
+      refetchAll,
+      showEndOfDayModal
+    ]
+  )
 
   return <DashboardContext.Provider value={value}>{children}</DashboardContext.Provider>
 }

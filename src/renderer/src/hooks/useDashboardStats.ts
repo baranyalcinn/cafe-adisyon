@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
 import {
   cafeApi,
   DailySummary,
@@ -24,23 +24,15 @@ export function useDashboardStats(
 ): UseDashboardResult {
   const queryClient = useQueryClient()
 
-  // 1. Extended Stats (Live data - 30s stale)
-  const statsQuery = useQuery({
-    queryKey: ['dashboard', 'stats'],
-    queryFn: () => cafeApi.dashboard.getExtendedStats(),
-    staleTime: 30 * 1000, // 30 seconds stale
+  // 1. Dashboard Bundle (stats, trend, monthly stats fetched in ONE call)
+  const bundleQuery = useQuery({
+    queryKey: ['dashboard', 'bundle'],
+    queryFn: () => cafeApi.dashboard.getBundle(),
+    staleTime: 30 * 1000, // 30 seconds stale for the whole batch
     refetchOnWindowFocus: true
   })
 
-  // 2. Revenue Trend (Daily data - 5m stale)
-  const trendQuery = useQuery({
-    queryKey: ['dashboard', 'trend'],
-    queryFn: () => cafeApi.dashboard.getRevenueTrend(7),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: false
-  })
-
-  // 3. Z-Report History (Historical data - 5m stale unless filtered)
+  // 2. Z-Report History (Historical data - 5m stale unless filtered, left separate for pagination controls)
   const historyQuery = useQuery({
     queryKey: ['dashboard', 'history', filterMonth, filterYear],
     queryFn: async () => {
@@ -66,13 +58,6 @@ export function useDashboardStats(
     placeholderData: (previousData) => previousData
   })
 
-  // 4. Monthly Reports (Historical data - 1h stale)
-  const monthlyQuery = useQuery({
-    queryKey: ['dashboard', 'monthly'],
-    queryFn: () => cafeApi.reports.getMonthly(12),
-    staleTime: 60 * 60 * 1000 // 1 hour
-  })
-
   // Real-time updates listener
   useEffect(() => {
     // Listen for 'dashboard:update' event from main process
@@ -82,12 +67,7 @@ export function useDashboardStats(
       }
     ).electron?.ipcRenderer.on('dashboard:update', () => {
       // Invalidate queries to trigger refetch if data is stale
-      // We use invalidateQueries instead of refetch to respect staleTime involved in active queries
-      // But for 'stats', we want immediate update usually.
-      queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] })
-      queryClient.invalidateQueries({ queryKey: ['dashboard', 'trend'] })
-      // History and Monthly usually don't change intra-day unless Z-Report is cut,
-      // but 'dashboard:update' might be generic. Let's invalidate them too but they are cheap.
+      queryClient.invalidateQueries({ queryKey: ['dashboard', 'bundle'] })
     })
 
     return () => {
@@ -95,25 +75,18 @@ export function useDashboardStats(
     }
   }, [queryClient])
 
-  const refetchAll = (): void => {
-    statsQuery.refetch()
-    trendQuery.refetch()
+  const refetchAll = useCallback((): void => {
+    bundleQuery.refetch()
     historyQuery.refetch()
-    monthlyQuery.refetch()
-  }
+  }, [bundleQuery.refetch, historyQuery.refetch])
 
   return {
-    stats: statsQuery.data,
-    revenueTrend: trendQuery.data || [],
+    stats: bundleQuery.data?.stats,
+    revenueTrend: bundleQuery.data?.revenueTrend || [],
     zReportHistory: historyQuery.data || [],
-    monthlyReports: monthlyQuery.data || [],
-    isLoading:
-      statsQuery.isLoading ||
-      trendQuery.isLoading ||
-      historyQuery.isLoading ||
-      monthlyQuery.isLoading,
-    isError:
-      statsQuery.isError || trendQuery.isError || historyQuery.isError || monthlyQuery.isError,
+    monthlyReports: bundleQuery.data?.monthlyReports || [],
+    isLoading: bundleQuery.isLoading || historyQuery.isLoading,
+    isError: bundleQuery.isError || historyQuery.isError,
     refetchAll
   }
 }

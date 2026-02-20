@@ -16,6 +16,12 @@ app.commandLine.appendSwitch('force-color-profile', 'srgb')
 const isDev = process.env.NODE_ENV === 'development'
 const isPackaged = app.isPackaged
 
+if (isDev) {
+  // Disable Chromium HTTP disk cache in development to prevent blockfile corruption (-8)
+  // that frequently occurs during rapid HMR application reloads.
+  app.commandLine.appendSwitch('disable-http-cache')
+}
+
 // Quit flag for graceful shutdown
 let isQuitting = false
 let updateCheckRetries = 0

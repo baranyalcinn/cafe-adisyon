@@ -24,10 +24,11 @@ function App(): React.JSX.Element {
   const { isDark, toggleTheme, colorScheme, setColorScheme } = useTheme()
   const selectTable = useTableStore((s) => s.selectTable)
 
-  // Prefetch logic (Sadece mount anında bir kez çalışır)
+  const [isBooting, setIsBooting] = useState(true)
   const { prefetchAll } = useInventoryPrefetch()
+
   useEffect(() => {
-    prefetchAll()
+    prefetchAll().finally(() => setIsBooting(false))
   }, [prefetchAll])
 
   const handleTableSelect = useCallback(
@@ -42,6 +43,10 @@ function App(): React.JSX.Element {
     selectTable(null, null)
     setCurrentView('tables')
   }, [selectTable])
+
+  if (isBooting) {
+    return <LoadingFallback />
+  }
 
   // Determine direction for animation based on simple view order assumption or just default
   // Ideally we would track previous view index, but for now passing 0 or handling it simply is fine.

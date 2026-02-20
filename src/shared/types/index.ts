@@ -172,6 +172,13 @@ export interface AppSettings {
   securityAnswer?: string
 }
 
+// Boot Bundle
+export interface BootBundle {
+  products: Product[]
+  categories: Category[]
+  tables: Table[]
+}
+
 // Expenses
 export interface Expense {
   id: string
@@ -189,6 +196,13 @@ export interface ExpenseStats {
     name: string
     total: number
   }
+}
+
+// Dashboard Bundle
+export interface DashboardBundle {
+  stats: ExtendedDashboardStats
+  revenueTrend: RevenueTrendItem[]
+  monthlyReports: MonthlyReport[]
 }
 
 // Monthly Report
@@ -261,6 +275,7 @@ export const IPC_CHANNELS = {
   DASHBOARD_GET_STATS: 'dashboard:getStats',
   DASHBOARD_GET_EXTENDED_STATS: 'dashboard:getExtendedStats',
   DASHBOARD_GET_REVENUE_TREND: 'dashboard:getRevenueTrend',
+  DASHBOARD_GET_BUNDLE: 'dashboard:getBundle',
 
   // Expenses
   EXPENSES_CREATE: 'expenses:create',
@@ -311,6 +326,7 @@ export const IPC_CHANNELS = {
   SYSTEM_CHECK_UPDATE: 'system:checkUpdate',
   SYSTEM_GET_VERSION: 'system:getVersion',
   SYSTEM_RESTART: 'system:restart',
+  SYSTEM_GET_BOOT_BUNDLE: 'system:getBootBundle',
 
   // Window Controls
   WINDOW_MINIMIZE: 'window:minimize',

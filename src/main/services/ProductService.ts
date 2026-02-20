@@ -5,6 +5,21 @@ import { logger } from '../lib/logger'
 import { toPlain } from '../lib/toPlain'
 import { logService } from './LogService'
 
+const PRODUCT_SELECT = {
+  id: true,
+  name: true,
+  price: true,
+  categoryId: true,
+  isFavorite: true,
+  category: {
+    select: {
+      id: true,
+      name: true,
+      icon: true
+    }
+  }
+}
+
 export class ProductService {
   async getAllProducts(): Promise<ApiResponse<Product[]>> {
     try {
@@ -13,9 +28,9 @@ export class ProductService {
           categoryId: { not: undefined },
           isDeleted: false
         },
-        include: { category: true }
+        select: PRODUCT_SELECT
       })
-      const result = toPlain<Product[]>(products)
+      const result = toPlain<Product[]>(products as unknown as Product[])
       return { success: true, data: result }
     } catch (error) {
       logger.error('ProductService.getAllProducts', error)
@@ -79,9 +94,9 @@ export class ProductService {
           categoryId,
           isDeleted: false
         },
-        include: { category: true }
+        select: PRODUCT_SELECT
       })
-      return { success: true, data: toPlain<Product[]>(products) }
+      return { success: true, data: toPlain<Product[]>(products as unknown as Product[]) }
     } catch (error) {
       logger.error('ProductService.getProductsByCategory', error)
       return { success: false, error: 'Kategori ürünleri alınamadı.' }
@@ -95,9 +110,9 @@ export class ProductService {
           isFavorite: true,
           isDeleted: false
         },
-        include: { category: true }
+        select: PRODUCT_SELECT
       })
-      return { success: true, data: toPlain<Product[]>(products) }
+      return { success: true, data: toPlain<Product[]>(products as unknown as Product[]) }
     } catch (error) {
       logger.error('ProductService.getFavorites', error)
       return { success: false, error: 'Favori ürünler alınamadı.' }
@@ -111,9 +126,9 @@ export class ProductService {
           name: { contains: query },
           isDeleted: false
         },
-        include: { category: true }
+        select: PRODUCT_SELECT
       })
-      return { success: true, data: toPlain<Product[]>(products) }
+      return { success: true, data: toPlain<Product[]>(products as unknown as Product[]) }
     } catch (error) {
       logger.error('ProductService.searchProducts', error)
       return { success: false, error: 'Ürün araması yapılamadı.' }

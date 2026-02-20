@@ -89,7 +89,7 @@ const prisma = basePrisma.$extends({
   try {
     await basePrisma.$executeRawUnsafe('PRAGMA journal_mode = WAL;')
     await basePrisma.$executeRawUnsafe('PRAGMA synchronous = NORMAL;')
-    await basePrisma.$executeRawUnsafe('PRAGMA cache_size = -64000;')
+    await basePrisma.$executeRawUnsafe('PRAGMA cache_size = -64000;') // ~64MB cache
     await basePrisma.$executeRawUnsafe('PRAGMA temp_store = MEMORY;')
     await basePrisma.$executeRawUnsafe('PRAGMA busy_timeout = 5000;')
     await basePrisma.$executeRawUnsafe('PRAGMA mmap_size = 16777216;')

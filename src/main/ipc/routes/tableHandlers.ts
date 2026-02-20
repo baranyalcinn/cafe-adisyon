@@ -19,26 +19,36 @@ export function registerTableHandlers(): void {
 
   ipcMain.handle(IPC_CHANNELS.TABLES_GET_WITH_STATUS, async () => {
     try {
-      const tables = await prisma.table.findMany({
-        include: {
-          orders: {
-            where: { status: 'OPEN' },
-            take: 1
-          }
+      const [tables, openOrders] = await Promise.all([
+        prisma.table.findMany(),
+        prisma.order.findMany({
+          where: { status: 'OPEN' },
+          select: { tableId: true, isLocked: true }
+        })
+      ])
+
+      const openOrderMap = new Map<string, boolean>()
+      for (const order of openOrders) {
+        // Assume tableId is always populated
+        if (order.tableId) {
+          openOrderMap.set(order.tableId, order.isLocked)
         }
-      })
+      }
 
       // Natural sort by name (Masa 1, Masa 2, Masa 10...)
       tables.sort((a, b) =>
         a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
       )
 
-      const tablesWithStatus = tables.map((table) => ({
-        ...table,
-        hasOpenOrder: table.orders.length > 0,
-        isLocked: table.orders.length > 0 ? table.orders[0].isLocked : false,
-        orders: undefined
-      }))
+      const tablesWithStatus = tables.map((table) => {
+        const hasOpen = openOrderMap.has(table.id)
+        return {
+          ...table,
+          hasOpenOrder: hasOpen,
+          isLocked: hasOpen ? openOrderMap.get(table.id) || false : false,
+          orders: undefined // Keep interface compatibility
+        }
+      })
 
       return { success: true, data: tablesWithStatus }
     } catch (error) {

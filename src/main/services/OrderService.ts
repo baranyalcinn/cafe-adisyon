@@ -80,17 +80,13 @@ export class OrderService {
           })
         }
 
-        // Recalculate order total inside the SAME transaction
-        const aggregate = await tx.orderItem.findMany({
-          where: { orderId },
-          select: { quantity: true, unitPrice: true }
-        })
-        const total = aggregate.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
+        // Atomically increment the totalAmount based on added items
+        const diff = quantity * unitPrice
 
         const [updatedOrder, product] = await Promise.all([
           tx.order.update({
             where: { id: orderId },
-            data: { totalAmount: total },
+            data: { totalAmount: { increment: diff } },
             include: {
               items: { include: { product: true } },
               payments: true,
@@ -128,20 +124,19 @@ export class OrderService {
       }
 
       const txResult = await prisma.$transaction(async (tx) => {
+        const oldItem = await tx.orderItem.findUnique({ where: { id: itemId } })
+        if (!oldItem) throw new Error('Item not found')
+
+        const diff = (quantity - oldItem.quantity) * oldItem.unitPrice
+
         const item = await tx.orderItem.update({
           where: { id: itemId },
           data: { quantity }
         })
 
-        const aggregate = await tx.orderItem.findMany({
-          where: { orderId: item.orderId },
-          select: { quantity: true, unitPrice: true }
-        })
-        const total = aggregate.reduce((sum, curr) => sum + curr.quantity * curr.unitPrice, 0)
-
         const updated = await tx.order.update({
           where: { id: item.orderId },
-          data: { totalAmount: total },
+          data: { totalAmount: { increment: diff } },
           include: {
             items: { include: { product: true } },
             payments: true
@@ -165,15 +160,11 @@ export class OrderService {
           include: { product: true, order: { include: { table: true } } }
         })
 
-        const aggregate = await tx.orderItem.findMany({
-          where: { orderId: item.orderId },
-          select: { quantity: true, unitPrice: true }
-        })
-        const total = aggregate.reduce((sum, curr) => sum + curr.quantity * curr.unitPrice, 0)
+        const diff = item.quantity * item.unitPrice
 
         const updatedOrder = await tx.order.update({
           where: { id: item.orderId },
-          data: { totalAmount: total },
+          data: { totalAmount: { decrement: diff } },
           include: {
             items: { include: { product: true } },
             payments: true
@@ -399,6 +390,14 @@ export class OrderService {
         let resolvedOrderId: string | null = null
         const paidItemsLog: string[] = []
 
+        const fullPayIds: string[] = []
+        const splitPayments: {
+          id: string
+          quantity: number
+          productName: string
+          orderItem: { orderId: string; productId: string; unitPrice: number; quantity: number }
+        }[] = []
+
         for (const { id, quantity } of items) {
           const orderItem = itemMap.get(id)
           if (!orderItem) continue
@@ -407,55 +406,54 @@ export class OrderService {
           const productName = orderItem.product?.name || 'Ürün'
 
           if (quantity >= orderItem.quantity) {
-            // Pay full item
-            await tx.orderItem.update({
-              where: { id },
-              data: { isPaid: true }
-            })
+            fullPayIds.push(id)
             paidItemsLog.push(`${quantity}x ${productName}`)
           } else {
-            // Split: decrement current, create new paid item
-            await tx.orderItem.update({
-              where: { id },
-              data: { quantity: orderItem.quantity - quantity }
-            })
-
-            await tx.orderItem.create({
-              data: {
-                orderId: orderItem.orderId,
-                productId: orderItem.productId,
-                quantity,
-                unitPrice: orderItem.unitPrice,
-                isPaid: true
-              }
-            })
-            paidItemsLog.push(`${quantity}x ${productName}`)
+            splitPayments.push({ id, quantity, productName, orderItem })
           }
+        }
+
+        if (fullPayIds.length > 0) {
+          await tx.orderItem.updateMany({
+            where: { id: { in: fullPayIds } },
+            data: { isPaid: true }
+          })
+        }
+
+        for (const split of splitPayments) {
+          await tx.orderItem.update({
+            where: { id: split.id },
+            data: { quantity: split.orderItem.quantity - split.quantity }
+          })
+
+          await tx.orderItem.create({
+            data: {
+              orderId: split.orderItem.orderId,
+              productId: split.orderItem.productId,
+              quantity: split.quantity,
+              unitPrice: split.orderItem.unitPrice,
+              isPaid: true
+            }
+          })
+          paidItemsLog.push(`${split.quantity}x ${split.productName}`)
         }
 
         return { orderId: resolvedOrderId, logs: paidItemsLog }
       })
 
       if (result.orderId) {
-        // Run the aggregate and fetch in a single final transaction block to ensure atomicity
-        // and reduce separate queries. Since result is outside the transaction, we do it quickly:
-        const finalOrder = await prisma.$transaction(async (tx) => {
-          const aggregate = await tx.orderItem.findMany({
-            where: { orderId: result.orderId! },
-            select: { quantity: true, unitPrice: true }
-          })
-          const total = aggregate.reduce((sum, curr) => sum + curr.quantity * curr.unitPrice, 0)
-
-          return tx.order.update({
-            where: { id: result.orderId! },
-            data: { totalAmount: total },
-            include: {
-              items: { include: { product: { select: { name: true } } } },
-              payments: true,
-              table: { select: { name: true } }
-            }
-          })
+        // The order totalAmount doesn't change when simply marking items paid or splitting them.
+        // We can just fetch the updated order data to return it directly.
+        const finalOrder = await prisma.order.findUnique({
+          where: { id: result.orderId },
+          include: {
+            items: { include: { product: { select: { name: true } } } },
+            payments: true,
+            table: { select: { name: true } }
+          }
         })
+
+        if (!finalOrder) return { success: false, error: 'Sipariş bulunamadı' }
 
         if (result.logs.length > 0) {
           let logDetails = ''

@@ -8,7 +8,8 @@ export function registerOrderHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.ORDERS_GET_OPEN_BY_TABLE, async (_, tableId) => {
     const validation = validateInput(orderSchemas.getByTable, { tableId })
     if (!validation.success) return { success: false, error: validation.error }
-    return orderService.getOpenOrderForTable(validation.data.tableId)
+    const result = await orderService.getOpenOrderForTable(validation.data.tableId)
+    return result
   })
 
   ipcMain.handle(IPC_CHANNELS.ORDERS_CREATE, async (_, tableId) => {

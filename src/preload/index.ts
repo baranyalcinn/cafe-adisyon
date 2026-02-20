@@ -127,7 +127,9 @@ const api = {
     getExtendedStats: (): Promise<ApiResponse<ExtendedDashboardStats>> =>
       ipcRenderer.invoke(IPC_CHANNELS.DASHBOARD_GET_EXTENDED_STATS),
     getRevenueTrend: (days: number = 7): Promise<ApiResponse<RevenueTrendItem[]>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.DASHBOARD_GET_REVENUE_TREND, days)
+      ipcRenderer.invoke(IPC_CHANNELS.DASHBOARD_GET_REVENUE_TREND, days),
+    getBundle: (): Promise<ApiResponse<import('../shared/types').DashboardBundle>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.DASHBOARD_GET_BUNDLE)
   },
 
   // Admin
@@ -284,7 +286,9 @@ const api = {
       ApiResponse<{ available: boolean; version?: string; currentVersion?: string }>
     > => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM_CHECK_UPDATE),
     getVersion: (): Promise<string> => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM_GET_VERSION),
-    restart: (): void => ipcRenderer.send(IPC_CHANNELS.SYSTEM_RESTART)
+    restart: (): void => ipcRenderer.send(IPC_CHANNELS.SYSTEM_RESTART),
+    getBootBundle: (): Promise<ApiResponse<import('../shared/types').BootBundle>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.SYSTEM_GET_BOOT_BUNDLE)
   },
 
   // Reports

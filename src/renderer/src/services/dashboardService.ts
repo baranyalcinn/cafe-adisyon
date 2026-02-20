@@ -12,5 +12,10 @@ export const dashboardService = {
     const result = await api.dashboard.getRevenueTrend(days)
     if (!result.success) throw new Error(result.error)
     return result.data
+  },
+  async getBundle(): Promise<import('../../../shared/types').DashboardBundle> {
+    const result = await api.dashboard.getBundle()
+    if (!result.success) throw new Error(result.error)
+    return result.data
   }
 }

@@ -1,10 +1,13 @@
 import { Prisma } from '../../generated/prisma/client'
+import { ActivityLog, ApiResponse } from '../../shared/types'
 import { prisma } from '../db/prisma'
 import { logger } from '../lib/logger'
-import { ApiResponse, ActivityLog } from '../../shared/types'
 import { toPlain } from '../lib/toPlain'
 
 export class LogService {
+  private logQueue: Prisma.ActivityLogCreateManyInput[] = []
+  private flushTimeout: NodeJS.Timeout | null = null
+
   async getRecentLogs(
     limit: number = 100,
     startDate?: string,
@@ -74,19 +77,29 @@ export class LogService {
     details?: string,
     userName?: string
   ): Promise<ApiResponse<ActivityLog>> {
+    const logEntry = { action, tableName, details, userName, createdAt: new Date() }
+    this.logQueue.push(logEntry)
+
+    if (!this.flushTimeout) {
+      this.flushTimeout = setTimeout(() => this.flushLogs(), 1000)
+    }
+
+    return { success: true, data: logEntry as ActivityLog }
+  }
+
+  private async flushLogs(): Promise<void> {
+    this.flushTimeout = null
+    if (this.logQueue.length === 0) return
+
+    const logsToCreate = [...this.logQueue]
+    this.logQueue = []
+
     try {
-      const log = await prisma.activityLog.create({
-        data: {
-          action,
-          tableName,
-          details,
-          userName
-        }
+      await prisma.activityLog.createMany({
+        data: logsToCreate
       })
-      return { success: true, data: toPlain<ActivityLog>(log) }
     } catch (error) {
-      logger.error('LogService.createLog', error)
-      return { success: false, error: 'Log kaydı oluşturulamadı.' }
+      logger.error('LogService.flushLogs', error)
     }
   }
 

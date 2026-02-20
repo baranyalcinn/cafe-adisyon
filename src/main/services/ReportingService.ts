@@ -146,38 +146,76 @@ export class ReportingService {
     }
     today.setHours(0, 0, 0, 0)
 
-    // Parallel fetch: transactions, order items, and orders
-    const [todayTransactions, todayItems, todayOrders] = await Promise.all([
-      prisma.transaction.findMany({ where: { createdAt: { gte: today } } }),
-      prisma.orderItem.findMany({
-        where: { order: { status: 'CLOSED', createdAt: { gte: today } } },
-        include: { product: { include: { category: true } } }
+    // Fetch Orders count directly
+    const totalOrders = await prisma.order.count({
+      where: { status: 'CLOSED', createdAt: { gte: today } }
+    })
+    const todayOrders = await prisma.order.findMany({
+      where: { status: 'CLOSED', createdAt: { gte: today } },
+      select: { id: true, totalAmount: true, createdAt: true }
+    })
+
+    // Parallel fetch: transaction sums and orderItem grouping
+    const [transactionAgg, paymentMethods, orderItemGroups] = await Promise.all([
+      prisma.transaction.aggregate({
+        where: { createdAt: { gte: today } },
+        _sum: { amount: true }
       }),
-      prisma.order.findMany({ where: { status: 'CLOSED', createdAt: { gte: today } } })
+      prisma.transaction.groupBy({
+        by: ['paymentMethod'],
+        where: { createdAt: { gte: today } },
+        _sum: { amount: true }
+      }),
+      prisma.orderItem.groupBy({
+        by: ['productId', 'unitPrice'],
+        where: { order: { status: 'CLOSED', createdAt: { gte: today } } },
+        _sum: { quantity: true }
+      })
     ])
 
-    const dailyRevenue = todayTransactions.reduce((sum, t) => sum + t.amount, 0)
+    const dailyRevenue = transactionAgg._sum.amount || 0
 
     const paymentMethodBreakdown = {
-      cash: todayTransactions
-        .filter((p) => p.paymentMethod === 'CASH')
-        .reduce((sum, p) => sum + p.amount, 0),
-      card: todayTransactions
-        .filter((p) => p.paymentMethod === 'CARD')
-        .reduce((sum, p) => sum + p.amount, 0)
+      cash: paymentMethods.find((p) => p.paymentMethod === 'CASH')?._sum.amount || 0,
+      card: paymentMethods.find((p) => p.paymentMethod === 'CARD')?._sum.amount || 0
     }
 
+    // Since we can't join relations in Prisma groupBy, fetch product metadata for the grouped items
+    const productIds = Array.from(new Set(orderItemGroups.map((g) => g.productId)))
+    const products = await prisma.product.findMany({
+      where: { id: { in: productIds } },
+      include: { category: true }
+    })
+
     const productCounts = new Map<string, { name: string; quantity: number }>()
-    todayItems.forEach((item) => {
-      const existing = productCounts.get(item.productId)
-      if (existing) {
-        existing.quantity += item.quantity
+    const categoryMap = new Map<string, { revenue: number; quantity: number; icon?: string }>()
+
+    orderItemGroups.forEach((group) => {
+      const quantity = group._sum.quantity || 0
+      const productId = group.productId
+      const unitPrice = group.unitPrice
+      const product = products.find((p) => p.id === productId)
+
+      const productName = product?.name || 'Ürün'
+
+      // Accumulate Product quantities (ignoring unitPrice splits here, just total quantity per product)
+      const existingProd = productCounts.get(productId)
+      if (existingProd) {
+        existingProd.quantity += quantity
       } else {
-        productCounts.set(item.productId, {
-          name: item.product.name,
-          quantity: item.quantity
-        })
+        productCounts.set(productId, { name: productName, quantity })
       }
+
+      // Accumulate Category breakdowns
+      const catName = product?.category?.name || 'Diğer'
+      const catIcon = product?.category?.icon
+      const existingCat = categoryMap.get(catName) || { revenue: 0, quantity: 0 }
+
+      categoryMap.set(catName, {
+        revenue: existingCat.revenue + quantity * unitPrice,
+        quantity: existingCat.quantity + quantity,
+        icon: catIcon
+      })
     })
 
     const allProducts = Array.from(productCounts.entries())
@@ -192,19 +230,6 @@ export class ReportingService {
     const bottomProducts =
       allProducts.length > topProductLimit ? [...allProducts].reverse().slice(0, 5) : []
 
-    // Category breakdown
-    const categoryMap = new Map<string, { revenue: number; quantity: number; icon?: string }>()
-    todayItems.forEach((item) => {
-      const catName =
-        (item.product as unknown as { category?: { name: string } }).category?.name || 'Diğer'
-      const catIcon = (item.product as unknown as { category?: { icon?: string } }).category?.icon
-      const existing = categoryMap.get(catName) || { revenue: 0, quantity: 0 }
-      categoryMap.set(catName, {
-        revenue: existing.revenue + item.quantity * item.unitPrice,
-        quantity: existing.quantity + item.quantity,
-        icon: catIcon
-      })
-    })
     const categoryBreakdown = Array.from(categoryMap.entries())
       .map(([categoryName, data]) => ({ categoryName, ...data }))
       .sort((a, b) => b.revenue - a.revenue)
@@ -212,7 +237,7 @@ export class ReportingService {
     return {
       today,
       dailyRevenue,
-      totalOrders: todayOrders.length,
+      totalOrders,
       paymentMethodBreakdown,
       topProducts,
       bottomProducts,
@@ -291,40 +316,64 @@ export class ReportingService {
   async getRevenueTrend(days: number = 7): Promise<ApiResponse<RevenueTrendItem[]>> {
     try {
       const result: RevenueTrendItem[] = []
-      const promises: Promise<void>[] = []
 
+      // 1. Calculate the start boundary
+      const startDate = new Date()
+      startDate.setHours(0, 0, 0, 0)
+      startDate.setDate(startDate.getDate() - (days - 1))
+
+      // 2. Fetch everything in 2 queries instead of (days * 2) queries
+      const [transactions, orders] = await Promise.all([
+        prisma.transaction.findMany({
+          where: { createdAt: { gte: startDate } },
+          select: { amount: true, createdAt: true }
+        }),
+        prisma.order.findMany({
+          where: { status: 'CLOSED', createdAt: { gte: startDate } },
+          select: { createdAt: true }
+        })
+      ])
+
+      // 3. O(N) Map Bucket Grouping structure
+      const toDayKey = (d: Date): string => {
+        // Enforcing local time breakdown since businesses operate on local dates, not UTC borders.
+        const year = d.getFullYear()
+        const month = String(d.getMonth() + 1).padStart(2, '0')
+        const day = String(d.getDate()).padStart(2, '0')
+        return `${year}-${month}-${day}`
+      }
+
+      const buckets = new Map<string, { revenue: number; orderCount: number }>()
+
+      for (const t of transactions) {
+        const k = toDayKey(t.createdAt)
+        const b = buckets.get(k) ?? { revenue: 0, orderCount: 0 }
+        b.revenue += t.amount
+        buckets.set(k, b)
+      }
+
+      for (const o of orders) {
+        const k = toDayKey(o.createdAt)
+        const b = buckets.get(k) ?? { revenue: 0, orderCount: 0 }
+        b.orderCount += 1
+        buckets.set(k, b)
+      }
+
+      // 4. Extract into correctly ordered result list based on `days` window
       for (let i = days - 1; i >= 0; i--) {
         const date = new Date()
         date.setHours(0, 0, 0, 0)
         date.setDate(date.getDate() - i)
 
-        const nextDay = new Date(date)
-        nextDay.setDate(nextDay.getDate() + 1)
+        const k = toDayKey(date)
+        const bucket = buckets.get(k) || { revenue: 0, orderCount: 0 }
 
-        const promise = (async () => {
-          const [revenueAgg, orderCount] = await Promise.all([
-            prisma.transaction.aggregate({
-              where: { createdAt: { gte: date, lt: nextDay } },
-              _sum: { amount: true }
-            }),
-            prisma.order.count({
-              where: { status: 'CLOSED', createdAt: { gte: date, lt: nextDay } }
-            })
-          ])
-
-          result.push({
-            date: date.toISOString(),
-            revenue: revenueAgg._sum.amount || 0,
-            orderCount
-          })
-        })()
-
-        promises.push(promise)
+        result.push({
+          date: date.toISOString(), // Keep standard payload
+          revenue: bucket.revenue,
+          orderCount: bucket.orderCount
+        })
       }
-
-      await Promise.all(promises)
-      // Sort result by date to ensure chronological order after async parallel execution
-      result.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
       return { success: true, data: result }
     } catch (error) {

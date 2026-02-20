@@ -1,8 +1,10 @@
 import { ipcMain } from 'electron'
-import { IPC_CHANNELS } from '../../../shared/types'
+import { IPC_CHANNELS, Table } from '../../../shared/types'
+import { dbPath, prisma } from '../../db/prisma'
+import { toPlain } from '../../lib/toPlain'
 import { maintenanceService } from '../../services/MaintenanceService'
+import { productService } from '../../services/ProductService'
 import { reportingService } from '../../services/ReportingService'
-import { prisma, dbPath } from '../../db/prisma'
 
 export function registerMaintenanceHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.MAINTENANCE_ARCHIVE_OLD_DATA, () =>
@@ -63,6 +65,52 @@ export function registerMaintenanceHandlers(): void {
       return { success: true, data: { dbPath, connection: true, tableCount } }
     } catch {
       return { success: true, data: { dbPath, connection: false, tableCount: 0 } }
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.SYSTEM_GET_BOOT_BUNDLE, async () => {
+    try {
+      const [productsRes, categoriesRes, tables, openOrders] = await Promise.all([
+        productService.getAllProducts(),
+        productService.getCategories(),
+        prisma.table.findMany(),
+        prisma.order.findMany({
+          where: { status: 'OPEN' },
+          select: { tableId: true, isLocked: true }
+        })
+      ])
+
+      const openOrderMap = new Map<string, boolean>()
+      for (const order of openOrders) {
+        if (order.tableId) {
+          openOrderMap.set(order.tableId, order.isLocked)
+        }
+      }
+
+      tables.sort((a, b) =>
+        a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
+      )
+
+      const tablesWithStatus = tables.map((table) => {
+        const hasOpen = openOrderMap.has(table.id)
+        return {
+          ...table,
+          hasOpenOrder: hasOpen,
+          isLocked: hasOpen ? openOrderMap.get(table.id) || false : false,
+          orders: undefined
+        }
+      })
+
+      return {
+        success: true,
+        data: {
+          products: productsRes.success ? productsRes.data : [],
+          categories: categoriesRes.success ? categoriesRes.data : [],
+          tables: toPlain<Table[]>(tablesWithStatus as unknown as Table[])
+        }
+      }
+    } catch {
+      return { success: false, error: 'Açılış verileri alınamadı.' }
     }
   })
 

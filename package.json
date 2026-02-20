@@ -29,6 +29,8 @@
     "release": "npx tsx scripts/publish-release.ts"
   },
   "dependencies": {
+    "@fontsource/inter": "^5.2.8",
+    "@fontsource/plus-jakarta-sans": "^5.2.8",
     "@libsql/client": "^0.17.0",
     "@prisma/adapter-libsql": "^7.4.0",
     "@prisma/client": "^7.4.0",

@@ -8,6 +8,27 @@ export function registerReportingHandlers(): void {
     reportingService.getExtendedDashboardStats()
   )
 
+  ipcMain.handle(IPC_CHANNELS.DASHBOARD_GET_BUNDLE, async () => {
+    const [statsResult, trendResult, monthlyResult] = await Promise.all([
+      reportingService.getExtendedDashboardStats(),
+      reportingService.getRevenueTrend(7),
+      reportingService.getMonthlyReports(12)
+    ])
+
+    if (!statsResult.success) {
+      return { success: false, error: statsResult.error || 'Dashboard verisi alınamadı.' }
+    }
+
+    return {
+      success: true,
+      data: {
+        stats: statsResult.data,
+        revenueTrend: trendResult.success ? trendResult.data : [],
+        monthlyReports: monthlyResult.success ? monthlyResult.data : []
+      }
+    }
+  })
+
   ipcMain.handle(IPC_CHANNELS.DASHBOARD_GET_REVENUE_TREND, (_, days) =>
     reportingService.getRevenueTrend(days)
   )
