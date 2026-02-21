@@ -28,86 +28,109 @@ export const ItemRow = memo(function ItemRow({ item, selected, onQtyChange }: It
     else onQtyChange(item.id, Math.min(selected + 1, item.quantity))
   }, [item.id, item.quantity, selected, onQtyChange])
 
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault()
+        handleRowClick()
+      }
+    },
+    [handleRowClick]
+  )
+
+  const isSelected = selected > 0
+
   return (
-    <button
-      key={item.id}
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={handleRowClick}
+      onKeyDown={handleKeyDown}
       className={cn(
-        'w-full text-left p-3 rounded-2xl border transition-all flex items-center justify-between gap-3',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
-        selected > 0
-          ? 'bg-primary/[0.05] border-primary/25 shadow-sm'
-          : 'bg-muted/10 border-transparent hover:border-border/15 hover:bg-muted/15'
+        // Padding'i p-3 yaparak yüksekliği daralttık
+        'group relative flex w-full items-center justify-between gap-3 rounded-2xl border p-3 text-left transition-all duration-200 ease-in-out cursor-pointer',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1',
+        isSelected
+          ? 'border-primary/40 bg-primary/[0.03] shadow-sm'
+          : 'border-border/40 bg-card hover:border-border hover:bg-muted/30'
       )}
-      title={selected <= 0 ? 'Seçmek için tıkla' : 'Artırmak için tekrar tıkla'}
+      title={!isSelected ? 'Seçmek için tıkla' : 'Artırmak için tekrar tıkla'}
     >
-      {/* Left */}
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          {/* Quantity badge */}
-          <div
-            className={cn(
-              'shrink-0 h-7 min-w-[28px] px-2 rounded-lg flex items-center justify-center',
-              'text-[12px] font-black tabular-nums border',
-              selected > 0
-                ? 'bg-primary text-white border-primary/30 shadow-sm'
-                : 'bg-background text-foreground/70 border-border/25'
-            )}
-            aria-label={`Adet: ${item.quantity}`}
+      {/* Sol Kısım: Ürün Bilgisi */}
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        {/* Stok Rozeti - Boyutu küçültüldü (h-8 w-8) */}
+        <div
+          className={cn(
+            'flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border font-mono text-[13px] font-bold transition-colors',
+            isSelected
+              ? 'border-primary/30 bg-primary text-primary-foreground shadow-sm'
+              : 'border-border/50 bg-muted/50 text-muted-foreground group-hover:bg-muted'
+          )}
+          aria-label={`Toplam adet: ${item.quantity}`}
+        >
+          {item.quantity}
+        </div>
+
+        <div className="flex flex-col min-w-0 justify-center">
+          <span className="truncate text-[15px] font-semibold text-foreground/90 leading-tight">
+            {item.product?.name}
+          </span>
+          <span className="text-[11px] font-medium text-muted-foreground mt-0.5">
+            {formatCurrency(item.unitPrice)} / adet
+          </span>
+        </div>
+      </div>
+
+      {/* Sağ Kısım: Kontroller ve Fiyat */}
+      {/* gap-4 yerine gap-2.5 kullanarak stepper'ı sağdaki fiyata iyice yaklaştırdık */}
+      <div className="flex shrink-0 items-center gap-2.5">
+        {/* Stepper Kontrolü - Boyutları hafifçe sıkılaştırıldı */}
+        <div
+          className={cn(
+            'flex items-center rounded-full border bg-background p-0.5 shadow-sm transition-opacity',
+            !isSelected &&
+              'opacity-0 pointer-events-none group-hover:opacity-100 group-focus-visible:opacity-100'
+          )}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            className="flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-30"
+            onClick={dec}
+            disabled={!isSelected}
+            title="Azalt"
           >
-            {item.quantity}
-          </div>
+            <Minus className="h-3.5 w-3.5" strokeWidth={2.5} />
+          </button>
 
-          <div className="min-w-0">
-            <div className="text-[14px] font-bold text-foreground/90 truncate">
-              {item.product?.name}
-            </div>
+          <span className="w-5 text-center font-mono text-[13px] font-bold">{selected}</span>
 
-            <div className="text-[10px] font-black text-muted-foreground/55 uppercase tracking-widest">
-              {selected > 0 ? `${selected} seçildi` : 'Tıkla: seç / artır'}
-            </div>
-          </div>
+          <button
+            type="button"
+            className="flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-30"
+            onClick={inc}
+            disabled={selected >= item.quantity}
+            title="Artır"
+          >
+            <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
+          </button>
+        </div>
+
+        {/* Toplam Fiyat */}
+        <div className="flex flex-col items-end min-w-[4.5rem]">
+          <span
+            className={cn(
+              'font-mono text-[15px] font-bold transition-colors leading-tight',
+              isSelected ? 'text-primary' : 'text-foreground/70'
+            )}
+          >
+            {formatCurrency(totalLine)}
+          </span>
+          <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/60 mt-0.5">
+            Toplam
+          </span>
         </div>
       </div>
-
-      {/* Stepper */}
-      <div
-        className="flex items-center bg-background border border-border/20 rounded-xl overflow-hidden shadow-sm shrink-0"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          type="button"
-          className="w-10 h-10 flex items-center justify-center hover:bg-muted active:bg-muted/80 text-foreground/70 transition-colors disabled:opacity-40"
-          onClick={dec}
-          disabled={selected <= 0}
-          title="Azalt"
-        >
-          <Minus className="w-3.5 h-3.5" />
-        </button>
-
-        <div className="w-10 text-center text-[12px] font-black tabular-nums">{selected}</div>
-
-        <button
-          type="button"
-          className="w-10 h-10 flex items-center justify-center hover:bg-muted active:bg-muted/80 text-foreground/70 transition-colors disabled:opacity-40"
-          onClick={inc}
-          disabled={selected >= item.quantity}
-          title="Artır"
-        >
-          <Plus className="w-3.5 h-3.5" />
-        </button>
-      </div>
-
-      {/* Right */}
-      <div className="text-right shrink-0">
-        <div className="text-[14px] font-black tabular-nums text-foreground/85 min-w-[84px]">
-          {formatCurrency(totalLine)}
-        </div>
-        <div className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest">
-          Toplam
-        </div>
-      </div>
-    </button>
+    </div>
   )
 })

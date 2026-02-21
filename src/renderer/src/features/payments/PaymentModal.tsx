@@ -183,7 +183,6 @@ export function PaymentModal({
   tableName
 }: PaymentModalProps): React.JSX.Element {
   const selectTable = useTableStore((s) => s.selectTable)
-
   const [state, dispatch] = useReducer(reducer, initialState)
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -271,7 +270,7 @@ export function PaymentModal({
     }
   }, [])
 
-  // --- Callbacks (stable refs for memoized children) ---
+  // --- Callbacks ---
 
   const handleTenderedChange = useCallback((raw: string): void => {
     const normalized = normalizeTenderedInput(raw)
@@ -460,20 +459,24 @@ export function PaymentModal({
       <DialogContent
         ref={contentRef}
         tabIndex={-1}
-        className="sm:max-w-5xl p-0 gap-0 overflow-hidden h-[680px] flex flex-col md:flex-row rounded-[2.5rem] border-border/10 shadow-4xl bg-background [&>button]:hidden duration-500 outline-none"
+        className={cn(
+          'sm:max-w-5xl p-0 gap-0 overflow-hidden h-[680px] flex flex-col md:flex-row',
+          'rounded-2xl border border-border/40 shadow-lg bg-background',
+          '[&>button]:hidden outline-none'
+        )}
       >
         {/* LEFT PANEL */}
-        <div className="w-[480px] flex flex-col border-r border-border/10 bg-background h-full transition-all duration-500">
+        <div className="w-[480px] flex flex-col border-r border-border/40 bg-background h-full">
           <div className="p-7 pb-4">
             <div className="flex items-center justify-between mb-5">
-              <div className="flex items-baseline gap-2.5">
-                <DialogTitle className="text-[26px] font-black tracking-tighter text-foreground">
+              <div className="flex items-baseline gap-3">
+                <DialogTitle className="text-[22px] font-semibold tracking-tight text-foreground">
                   Hesap Özeti
                 </DialogTitle>
 
-                <div className="flex items-center gap-2.5 text-muted-foreground/30">
-                  <span className="text-[20px] font-light">|</span>
-                  <span className="text-[14px] font-black text-primary/99 tracking-[0.2em] uppercase">
+                <div className="flex items-center gap-2 text-muted-foreground/60">
+                  <span className="text-[14px] font-medium">•</span>
+                  <span className="text-[12px] font-semibold tracking-wide">
                     {tableName || order?.table?.name || '---'}
                   </span>
                 </div>
@@ -481,21 +484,19 @@ export function PaymentModal({
             </div>
 
             {/* Balances */}
-            <div className="space-y-2.5 mb-6">
-              <div className="p-6 rounded-[2rem] bg-muted/20 border border-border/5 relative overflow-hidden group transition-all hover:bg-muted/30">
-                <div className="absolute right-0 top-0 h-24 w-24 translate-x-8 -translate-y-8 rounded-full bg-primary/5 blur-3xl transition-all group-hover:bg-primary/10" />
-
+            <div className="space-y-3 mb-6">
+              <div className="rounded-2xl border border-border/40 bg-muted/10 shadow-sm px-6 py-5">
                 <div className="flex justify-between items-start gap-4">
-                  <div className="flex flex-col items-start gap-2 relative z-10 px-2 flex-1">
-                    <span className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-[0.3em]">
+                  <div className="flex flex-col items-start gap-1.5 px-1 flex-1">
+                    <span className="text-[11px] font-semibold text-muted-foreground tracking-wide">
                       Kalan Tutar
                     </span>
                     <PremiumAmount amount={remainingAmount} size="3xl" color="primary" />
                   </div>
 
                   {paidAmount > 0 && (
-                    <div className="flex flex-col items-end gap-2 relative z-10 px-2 flex-1 animate-in fade-in slide-in-from-right-4 duration-500">
-                      <span className="text-[10px] font-black text-emerald-600/50 uppercase tracking-[0.3em]">
+                    <div className="flex flex-col items-end gap-1.5 px-1 flex-1 animate-in fade-in duration-200">
+                      <span className="text-[11px] font-semibold text-muted-foreground tracking-wide">
                         Ödenen
                       </span>
                       <PremiumAmount amount={paidAmount} size="2xl" color="success" />
@@ -506,7 +507,7 @@ export function PaymentModal({
             </div>
 
             {/* Mode Tabs */}
-            <div className="flex p-1 bg-muted/40 rounded-2xl mb-4 gap-1 border border-border/5 shadow-inner">
+            <div className="flex p-1 bg-muted/30 rounded-2xl gap-1 border border-border/40">
               {[
                 { id: 'full', label: 'Tümü' },
                 { id: 'split', label: 'Bölüştür' },
@@ -516,10 +517,10 @@ export function PaymentModal({
                   key={mode.id}
                   onClick={() => dispatch({ type: 'SET_MODE', mode: mode.id as PaymentMode })}
                   className={cn(
-                    'flex-1 h-9 rounded-xl text-[11px] font-black transition-all duration-300 uppercase tracking-tight',
+                    'flex-1 h-9 rounded-xl text-[12px] font-semibold transition',
                     state.paymentMode === mode.id
-                      ? 'bg-background text-foreground shadow-md border border-border/10'
-                      : 'text-muted-foreground/50 hover:text-foreground/70'
+                      ? 'bg-background text-foreground border border-border/40 shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
                   )}
                 >
                   {mode.label}
@@ -531,35 +532,31 @@ export function PaymentModal({
           {/* Mode Specific */}
           <div className="flex-1 overflow-auto px-7 pb-7 scrollbar-hide">
             {state.paymentMode === 'full' && (
-              <div className="h-full flex flex-col items-center justify-center text-center space-y-3 py-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="w-16 h-16 rounded-[1.5rem] bg-primary/10 flex items-center justify-center">
-                  <Banknote className="w-8 h-8 text-primary/60" />
+              <div className="h-full flex flex-col items-center justify-center text-center space-y-3 py-6 animate-in fade-in duration-200">
+                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
+                  <Banknote className="w-7 h-7 text-primary/70" />
                 </div>
                 <div className="space-y-1">
-                  <p className="text-[15px] font-black text-foreground/80 tracking-tight">
-                    Hızlı Hesap Kapama
-                  </p>
-                  <p className="text-[11px] font-medium text-muted-foreground/60">
-                    Tüm bakiyeye odaklanıldı
-                  </p>
+                  <p className="text-[14px] font-semibold text-foreground">Hızlı Hesap Kapama</p>
+                  <p className="text-[12px] text-muted-foreground">Tüm bakiyeye odaklanıldı</p>
                 </div>
               </div>
             )}
 
             {state.paymentMode === 'split' && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="space-y-6 animate-in fade-in duration-200">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between px-1">
-                    <span className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest">
+                    <span className="text-[11px] font-semibold text-muted-foreground tracking-wide">
                       Kişi Sayısı
                     </span>
-                    <span className="text-base font-black text-primary">{split.n} Kişi</span>
+                    <span className="text-sm font-semibold text-foreground">{split.n} kişi</span>
                   </div>
 
                   <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
-                      className="flex-1 h-12 rounded-xl bg-muted/20 border-border/10 text-xl"
+                      className="flex-1 h-12 rounded-xl bg-background border-border/40"
                       onClick={() =>
                         dispatch({ type: 'SET_SPLIT', value: clamp(split.n - 1, 2, 20) })
                       }
@@ -568,7 +565,7 @@ export function PaymentModal({
                     </Button>
                     <Button
                       variant="outline"
-                      className="flex-1 h-12 rounded-xl bg-muted/20 border-border/10 text-xl"
+                      className="flex-1 h-12 rounded-xl bg-background border-border/40"
                       onClick={() =>
                         dispatch({ type: 'SET_SPLIT', value: clamp(split.n + 1, 2, 20) })
                       }
@@ -583,8 +580,10 @@ export function PaymentModal({
                         key={n}
                         variant={split.n === n ? 'default' : 'outline'}
                         className={cn(
-                          'h-11 rounded-xl text-[12px] font-black',
-                          split.n === n ? 'shadow-lg bg-primary' : 'bg-muted/10 border-border/10'
+                          'h-11 rounded-xl text-[12px] font-semibold',
+                          split.n === n
+                            ? 'bg-primary text-primary-foreground shadow-sm'
+                            : 'bg-background border-border/40'
                         )}
                         onClick={() => dispatch({ type: 'SET_SPLIT', value: n })}
                       >
@@ -594,25 +593,23 @@ export function PaymentModal({
                   </div>
                 </div>
 
-                <div className="p-6 rounded-[2rem] bg-primary/[0.04] border border-primary/10 text-center relative overflow-hidden shadow-sm">
-                  <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent" />
-                  <p className="text-[10px] font-black text-primary/60 uppercase tracking-widest mb-1.5 relative z-10">
+                <div className="rounded-2xl border border-border/40 bg-background shadow-sm p-6 text-center">
+                  <p className="text-[11px] font-semibold text-muted-foreground tracking-wide mb-2">
                     Kişi Başı — {split.idx + 1}/{split.n}
                   </p>
-                  <div className="relative z-10">
-                    <PremiumAmount amount={split.share} size="2xl" color="primary" />
-                  </div>
+
+                  <PremiumAmount amount={split.share} size="2xl" color="primary" />
 
                   {split.remainder > 0 && (
-                    <p className="mt-2 text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest relative z-10">
+                    <p className="mt-2 text-[11px] text-muted-foreground">
                       İlk {split.remainder} kişi +₺0,01
                     </p>
                   )}
 
-                  <div className="mt-4 grid grid-cols-2 gap-2 relative z-10">
+                  <div className="mt-4 grid grid-cols-2 gap-2">
                     <Button
                       variant="outline"
-                      className="h-11 rounded-xl bg-muted/10 border-border/10"
+                      className="h-11 rounded-xl bg-background border-border/40"
                       onClick={() => dispatch({ type: 'SET_SPLIT_INDEX', value: 0 })}
                     >
                       Sıfırla
@@ -631,9 +628,9 @@ export function PaymentModal({
             )}
 
             {state.paymentMode === 'items' && (
-              <div className="h-full flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500 overflow-hidden">
+              <div className="h-full flex flex-col animate-in fade-in duration-200 overflow-hidden">
                 <div className="flex items-center justify-between mb-3 px-1">
-                  <span className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest">
+                  <span className="text-[11px] font-semibold text-muted-foreground tracking-wide">
                     Ürün Listesi
                   </span>
                   <button
@@ -641,7 +638,7 @@ export function PaymentModal({
                       if (isAllItemsSelected) dispatch({ type: 'CLEAR_SELECTED' })
                       else selectAllItems()
                     }}
-                    className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline transition-all"
+                    className="text-[11px] font-semibold text-primary hover:underline"
                   >
                     {isAllItemsSelected ? 'Tümünü İptal Et' : 'Tümünü Seç'}
                   </button>
@@ -663,30 +660,33 @@ export function PaymentModal({
         </div>
 
         {/* RIGHT PANEL */}
-        <div className="flex-1 flex flex-col bg-muted/5 relative h-full transition-all duration-500 overflow-hidden">
+        <div className="flex-1 flex flex-col bg-muted/5 relative h-full overflow-hidden">
           <div className="px-8 pt-4 pb-2 flex flex-col items-center">
             <div className="flex gap-4 w-full max-w-[640px] mb-8">
               {/* Total */}
-              <div className="relative group flex-[1.6]">
-                <div className="h-full py-5 rounded-[2.25rem] bg-background border border-border/10 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05),inset_0_4px_12px_rgba(0,0,0,0.05)] flex flex-col items-center justify-center transition-all hover:scale-[1.01] hover:border-emerald-500/20 relative overflow-hidden group">
-                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/[0.02] to-transparent opacity-50" />
-                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
-
-                  <span className="text-[10px] font-black text-emerald-600/70 uppercase tracking-[0.4em] mb-2 relative z-10">
+              <div className="flex-[1.6]">
+                <div
+                  className={cn(
+                    'h-full rounded-2xl border border-border/40 bg-background shadow-sm',
+                    'px-6 py-4 flex flex-col items-center justify-center'
+                  )}
+                >
+                  <span className="text-[11px] font-semibold text-muted-foreground tracking-wide mb-1">
                     Toplam Tutar
                   </span>
-
-                  <div className="flex items-center gap-1 relative z-10">
-                    <PremiumAmount amount={effectivePayment} size="4xl" color="primary" />
-                  </div>
+                  <PremiumAmount amount={effectivePayment} size="4xl" color="primary" />
                 </div>
               </div>
 
               {/* Tendered */}
-              <div className="flex-1 relative group">
-                <div className="h-full pt-3 pb-5 rounded-[2.25rem] bg-background border border-border/10 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05),inset_0_4px_12px_rgba(0,0,0,0.05)] flex flex-col items-center justify-between transition-all hover:scale-[1.01] hover:border-indigo-500/20 overflow-hidden relative">
-                  <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/[0.02] to-transparent opacity-50" />
-
+              <div className="flex-1">
+                <div
+                  className={cn(
+                    'h-full rounded-2xl border border-border/40 bg-background shadow-sm',
+                    'px-6 py-4 flex flex-col justify-between',
+                    'focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-primary/10'
+                  )}
+                >
                   {/* Accessible / focusable input (keyboard scope) */}
                   <input
                     ref={tenderedInputRef}
@@ -701,44 +701,47 @@ export function PaymentModal({
                     readOnly
                   />
 
-                  <div className="w-full flex items-center justify-between px-6 mb-1 relative z-10">
-                    <span className="text-[10px] font-black text-indigo-600/70 uppercase tracking-[0.3em] whitespace-nowrap">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-muted-foreground tracking-wide">
                       Alınan Para
                     </span>
+
                     <button
                       onClick={clearTendered}
-                      className="p-1.5 rounded-xl bg-muted text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-all active:scale-90 border border-transparent hover:border-destructive/20"
+                      className={cn(
+                        'h-9 w-9 inline-flex items-center justify-center rounded-xl',
+                        'border border-border/40 bg-background',
+                        'text-muted-foreground hover:text-destructive hover:border-destructive/30 hover:bg-destructive/5',
+                        'transition active:scale-[0.99]'
+                      )}
                       title="Sıfırla (Delete)"
+                      aria-label="Sıfırla"
                     >
                       <Plus className="w-4 h-4 rotate-45" />
                     </button>
                   </div>
 
-                  <div
-                    className="px-6 w-full flex justify-end items-end gap-1 relative z-10 cursor-text"
+                  <button
+                    className={cn(
+                      'mt-2 w-full text-right rounded-xl',
+                      'px-2 py-2',
+                      'hover:bg-muted/40 transition active:scale-[0.99]'
+                    )}
                     onClick={() => tenderedInputRef.current?.focus()}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault()
-                        tenderedInputRef.current?.focus()
-                      }
-                    }}
+                    type="button"
                     aria-label="Alınan para alanına odaklan"
                     title="Klavye girişi için tıklayın"
                   >
                     <span
                       className={cn(
-                        'font-mono text-3xl font-black tabular-nums transition-all tracking-tight',
-                        state.tenderedInput ? 'text-indigo-600' : 'text-muted-foreground/10'
+                        'font-mono tabular-nums tracking-tight',
+                        'text-3xl font-semibold',
+                        state.tenderedInput ? 'text-foreground' : 'text-muted-foreground/40'
                       )}
                     >
                       {state.tenderedInput ? formatCurrency(tendered) : '₺ 0,00'}
                     </span>
-                  </div>
-
-                  <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-indigo-600/20 to-transparent" />
+                  </button>
                 </div>
               </div>
             </div>

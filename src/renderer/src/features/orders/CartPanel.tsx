@@ -1,7 +1,6 @@
 import { PremiumAmount } from '@/components/PremiumAmount'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
-import { QuantitySelector } from '@/components/ui/QuantitySelector'
 import { useSound } from '@/hooks/useSound'
 import { Order } from '@/lib/api'
 import { soundManager } from '@/lib/sound'
@@ -9,7 +8,6 @@ import { cn, formatCurrency } from '@/lib/utils'
 import * as VisuallyHidden from '@radix-ui/react-visually-hidden'
 import {
   Banknote,
-  CheckCircle,
   History as HistoryIcon,
   Lock,
   LockOpen,
@@ -19,7 +17,8 @@ import {
   Wallet
 } from 'lucide-react'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-
+import { CartPaidItem } from './components/CartPaidItem'
+import { CartUnpaidItem } from './components/CartUnpaidItem'
 interface CartPanelProps {
   order: Order | null | undefined
   isLocked: boolean
@@ -28,6 +27,11 @@ interface CartPanelProps {
   onRemoveItem: (orderItemId: string) => void
   onToggleLock: () => void
   onDeleteOrder: (orderId: string) => void
+}
+
+// Performans için regex işlemini dışarı aldık
+const formatProductName = (name: string): string => {
+  return name.replace(/([a-zğüşöçı])([A-ZĞÜŞÖÇİ])/g, '$1 $2')
 }
 
 export const CartPanel = React.memo(function CartPanel({
@@ -52,17 +56,24 @@ export const CartPanel = React.memo(function CartPanel({
     }
   }, [])
 
-  // Memoize sorted items to prevent re-sorting on every render frame
   const items = order?.items
+
   // Process items: Group paid items by productId, keep unpaid separate
+  // Ayrıca Regex formatlama işlemini render içinden buraya taşıdık
   const processedItems = useMemo(() => {
     if (!items) return []
 
-    const unpaid = items.filter((i) => !i.isPaid)
+    const unpaid = items
+      .filter((i) => !i.isPaid)
+      .map((item) => ({
+        ...item,
+        formattedName: formatProductName(item.product?.name || 'Yeni Ürün')
+      }))
+
     const paid = items.filter((i) => i.isPaid)
 
     // Aggregate paid items
-    const aggregatedPaidMap = new Map<string, (typeof items)[0]>()
+    const aggregatedPaidMap = new Map<string, (typeof unpaid)[0]>()
     paid.forEach((item) => {
       const existing = aggregatedPaidMap.get(item.productId)
       if (existing) {
@@ -71,7 +82,10 @@ export const CartPanel = React.memo(function CartPanel({
           quantity: existing.quantity + item.quantity
         })
       } else {
-        aggregatedPaidMap.set(item.productId, { ...item })
+        aggregatedPaidMap.set(item.productId, {
+          ...item,
+          formattedName: formatProductName(item.product?.name || 'Yeni Ürün')
+        })
       }
     })
 
@@ -86,22 +100,6 @@ export const CartPanel = React.memo(function CartPanel({
   const paidAmount = order?.payments?.reduce((sum, p) => sum + p.amount, 0) || 0
   const remainingAmount = total - paidAmount
   const totalQuantity = items?.reduce((sum, item) => sum + item.quantity, 0) || 0
-
-  // Enter key to confirm delete dialog
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent): void => {
-      if (showDeleteDialog && e.key === 'Enter') {
-        e.preventDefault()
-        if (order) {
-          onDeleteOrder(order.id)
-          setShowDeleteDialog(false)
-        }
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [showDeleteDialog, order, onDeleteOrder])
 
   const handleUpdateQuantity = (
     orderItemId: string,
@@ -160,7 +158,6 @@ export const CartPanel = React.memo(function CartPanel({
   return (
     <div className="w-96 bg-background border-l border-border flex flex-col h-full animate-in slide-in-from-right duration-700 relative overflow-hidden shadow-2xl gpu-accelerated">
       {/* Premium Header */}
-
       <div className="shrink-0 h-14 px-6 border-b border-border bg-background z-20 flex items-center justify-between">
         <div className="flex flex-col">
           <h2 className="text-base font-black tracking-tight flex items-center gap-2 text-foreground">
@@ -214,44 +211,14 @@ export const CartPanel = React.memo(function CartPanel({
               <div className="space-y-1">
                 {processedItems
                   .filter((i) => !i.isPaid)
-                  .map((item) => {
-                    const productName = item.product?.name || 'Yeni Ürün'
-                    return (
-                      <div
-                        key={item.id}
-                        className="relative origin-top flex items-center justify-between gap-3 p-1.5 pl-2.5 pr-3 group/item rounded-xl border border-border/10 border-l-[4px] !border-l-primary transition-all duration-300 bg-card/40 hover:border-primary/20 hover:shadow-md hover:shadow-primary/5 active:scale-[0.99] animate-in fade-in slide-in-from-right-2 duration-500"
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                          {item.quantity > 1 && (
-                            <span className="shrink-0 text-[14px] font-black text-rose-500 tabular-nums">
-                              {item.quantity}x
-                            </span>
-                          )}
-                          <div className="min-w-0 flex-1">
-                            <p className="font-bold text-[13px] pl-0.5 text-foreground tracking-tight break-words leading-tight">
-                              {productName.replace(/([a-zğüşöçı])([A-ZĞÜŞÖÇİ])/g, '$1 $2')}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2.5 shrink-0">
-                          <p className="text-[14px] font-black tabular-nums text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md whitespace-nowrap">
-                            {formatCurrency(item.unitPrice * item.quantity)}
-                          </p>
-                          <div className="opacity-0 group-hover/item:opacity-100 transition-opacity">
-                            <QuantitySelector
-                              quantity={item.quantity}
-                              onUpdate={(newQty) =>
-                                handleUpdateQuantity(item.id, item.productId, newQty)
-                              }
-                              isLocked={isLocked}
-                              showNumber={false}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
+                  .map((item) => (
+                    <CartUnpaidItem
+                      key={item.id}
+                      item={item}
+                      isLocked={isLocked}
+                      onUpdateQuantity={handleUpdateQuantity}
+                    />
+                  ))}
               </div>
 
               {/* Paid Items Group (Archived look) */}
@@ -266,35 +233,9 @@ export const CartPanel = React.memo(function CartPanel({
                   <div className="space-y-1">
                     {processedItems
                       .filter((i) => i.isPaid)
-                      .map((item) => {
-                        const productName = item.product?.name || 'Yeni Ürün'
-                        return (
-                          <div
-                            key={`${item.productId}-paid-group`}
-                            className="relative flex items-center justify-between gap-3 p-1.5 pl-2.5 pr-3 rounded-xl bg-muted/5 border border-border/10 border-l-[4px] !border-l-emerald-500/40 opacity-90 group/paid transition-all hover:opacity-100"
-                          >
-                            <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                              {item.quantity > 1 && (
-                                <span className="text-[13px] font-black text-rose-500/80 tabular-nums shrink-0">
-                                  {item.quantity}x
-                                </span>
-                              )}
-                              <p className="font-bold text-[13px] pl-0.5 text-foreground/85 tracking-tight break-words leading-tight">
-                                {productName}
-                              </p>
-                            </div>
-
-                            <div className="flex items-center gap-2.5 shrink-0">
-                              <p className="text-[12px] font-black tabular-nums text-emerald-600/80 dark:text-emerald-400/80 bg-emerald-500/5 px-2 py-0.5 rounded-md">
-                                {formatCurrency(item.unitPrice * item.quantity)}
-                              </p>
-                              <div className="p-1 rounded-full bg-emerald-500/5 text-emerald-500/70">
-                                <CheckCircle className="w-3 h-3" />
-                              </div>
-                            </div>
-                          </div>
-                        )
-                      })}
+                      .map((item) => (
+                        <CartPaidItem key={`${item.productId}-paid-group`} item={item} />
+                      ))}
                   </div>
                 </div>
               )}
@@ -302,7 +243,7 @@ export const CartPanel = React.memo(function CartPanel({
           </div>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center p-8 text-center animate-in fade-in zoom-in duration-500">
-            <div className="w-24 h-24 rounded-full bg-muted/20 flex items-center justify-center mb-6 border-2 border-dashed border-muted-foreground/20 group-hover/panel:scale-110 transition-transform duration-500">
+            <div className="w-24 h-24 rounded-full bg-muted/20 flex items-center justify-center mb-6 border-2 border-dashed border-muted-foreground/20 transition-transform duration-500">
               <ShoppingBag className="w-10 h-10 text-muted-foreground/40" />
             </div>
             <h3 className="text-lg font-black text-foreground/70 mb-2">Henüz Ürün Yok</h3>
@@ -313,6 +254,7 @@ export const CartPanel = React.memo(function CartPanel({
           </div>
         )}
       </div>
+
       {/* Footer - Premium Glassmorphic Simplified */}
       {processedItems.length > 0 && (
         <div className="shrink-0 p-6 bg-background/80 backdrop-blur-xl border-t border-border/10 z-20 rounded-t-[2.5rem] shadow-[0_-20px_50px_-12px_rgba(0,0,0,0.1)] dark:shadow-[0_-20px_50px_-12px_rgba(0,0,0,0.4)]">
@@ -371,16 +313,25 @@ export const CartPanel = React.memo(function CartPanel({
         </div>
       )}
 
+      {/* Güvenli ve Animasyonlu Silme Modalı */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent
-          className="sm:max-w-[400px] p-0 overflow-hidden border-none bg-transparent shadow-none"
+          className="sm:max-w-[400px] p-0 overflow-hidden border-none bg-transparent shadow-none outline-none"
           aria-describedby={undefined}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              handleConfirmDelete()
+            }
+          }}
         >
           <VisuallyHidden.Root asChild>
             <DialogTitle>Adisyonu Sil</DialogTitle>
           </VisuallyHidden.Root>
-          <div className="bg-card/95 backdrop-blur-xl border border-border/50 rounded-3xl overflow-hidden shadow-2xl">
+          {/* group sınıfı eklendi */}
+          <div className="group bg-card/95 backdrop-blur-xl border border-border/50 rounded-3xl overflow-hidden shadow-2xl">
             <div className="p-8 text-center space-y-6">
+              {/* Çöp kutusu sallanma animasyonu artık stabil çalışacak */}
               <div className="w-20 h-20 bg-destructive/10 rounded-3xl flex items-center justify-center mx-auto rotate-12 group-hover:rotate-0 transition-transform duration-500 shadow-inner">
                 <Trash2 className="w-10 h-10 text-destructive" />
               </div>
