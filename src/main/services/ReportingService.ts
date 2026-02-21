@@ -133,7 +133,6 @@ export class ReportingService {
     totalOrders: number
     paymentMethodBreakdown: { cash: number; card: number }
     topProducts: { productId: string; productName: string; quantity: number }[]
-    bottomProducts: { productId: string; productName: string; quantity: number }[]
     categoryBreakdown: { categoryName: string; revenue: number; quantity: number }[]
     todayOrders: { id: string; totalAmount: number; createdAt: Date }[]
   }> {
@@ -227,8 +226,6 @@ export class ReportingService {
       .sort((a, b) => b.quantity - a.quantity)
 
     const topProducts = allProducts.slice(0, topProductLimit)
-    const bottomProducts =
-      allProducts.length > topProductLimit ? [...allProducts].reverse().slice(0, 5) : []
 
     const categoryBreakdown = Array.from(categoryMap.entries())
       .map(([categoryName, data]) => ({ categoryName, ...data }))
@@ -240,7 +237,6 @@ export class ReportingService {
       totalOrders,
       paymentMethodBreakdown,
       topProducts,
-      bottomProducts,
       categoryBreakdown,
       todayOrders
     }
@@ -255,7 +251,6 @@ export class ReportingService {
         totalOrders,
         paymentMethodBreakdown,
         topProducts,
-        bottomProducts,
         categoryBreakdown,
         todayOrders,
         today
@@ -299,7 +294,6 @@ export class ReportingService {
           totalOrders,
           paymentMethodBreakdown,
           topProducts,
-          bottomProducts,
           categoryBreakdown,
           dailyExpenses,
           openTables,
@@ -410,7 +404,7 @@ export class ReportingService {
       const totalExpenses = expenseAgg._sum.amount || 0
       const netProfit = totalRevenue - totalExpenses
 
-      logger.info(
+      logger.debug(
         'ReportingService.updateMonthlyReport',
         `Updating report for ${startOfMonth.toISOString()}: Revenue=${totalRevenue}, Expenses=${totalExpenses}, Profit=${netProfit}`
       )
@@ -447,7 +441,7 @@ export class ReportingService {
         startDate && !isNaN(new Date(startDate).getTime()) ? new Date(startDate) : undefined
       const end = endDate && !isNaN(new Date(endDate).getTime()) ? new Date(endDate) : undefined
 
-      logger.info(
+      logger.debug(
         'ReportingService.getReportsHistory',
         `Fetching reports: limit=${limit}, start=${start ? start.toISOString() : 'any'}, end=${end ? end.toISOString() : 'any'}`
       )
@@ -467,7 +461,7 @@ export class ReportingService {
         take: limit
       })
 
-      logger.info('ReportingService.getReportsHistory', `Found ${reports.length} reports`)
+      logger.debug('ReportingService.getReportsHistory', `Found ${reports.length} reports`)
       return { success: true, data: reports }
     } catch (error) {
       logger.error('ReportingService.getReportsHistory', error)

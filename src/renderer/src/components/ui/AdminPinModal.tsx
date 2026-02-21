@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from 'react'
-import { Lock, HelpCircle, RefreshCw, Delete, Fingerprint } from 'lucide-react'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { cafeApi } from '@/lib/api'
 import { cn } from '@/lib/utils'
+import * as VisuallyHidden from '@radix-ui/react-visually-hidden'
+import { Delete, Fingerprint, HelpCircle, Lock, RefreshCw } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 
 interface AdminPinModalProps {
   open: boolean
@@ -172,7 +173,11 @@ export function AdminPinModal({
           error && 'animate-shake'
         )}
         onClick={handleModalClick}
+        aria-describedby={undefined}
       >
+        <VisuallyHidden.Root asChild>
+          <DialogTitle>{title}</DialogTitle>
+        </VisuallyHidden.Root>
         <div className="relative">
           {/* Hidden input for keyboard support */}
           <input

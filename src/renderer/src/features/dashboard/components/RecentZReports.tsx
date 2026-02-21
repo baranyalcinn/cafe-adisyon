@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import {
   Select,
   SelectContent,
@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/table'
 import type { DailySummary } from '@/lib/api'
 import { formatCurrency } from '@/lib/utils'
+import * as VisuallyHidden from '@radix-ui/react-visually-hidden'
 import { Banknote, Calendar, ChevronRight, CreditCard, History, ReceiptText } from 'lucide-react'
 import React, { useState } from 'react'
 import { useDashboardContext } from '../context/DashboardContext'
@@ -156,7 +157,13 @@ export function RecentZReports(): React.JSX.Element {
       </div>
 
       <Dialog open={!!selectedReport} onOpenChange={(open) => !open && setSelectedReport(null)}>
-        <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden border-border bg-card shadow-2xl rounded-[2.5rem] [&>button]:hidden">
+        <DialogContent
+          className="sm:max-w-[500px] p-0 overflow-hidden border-border bg-card shadow-2xl rounded-[2.5rem] [&>button]:hidden"
+          aria-describedby={undefined}
+        >
+          <VisuallyHidden.Root asChild>
+            <DialogTitle>Rapor Detayı</DialogTitle>
+          </VisuallyHidden.Root>
           {selectedReport && (
             <div className="flex flex-col">
               <div className="px-10 py-8 border-b bg-muted/10 flex items-center justify-between">

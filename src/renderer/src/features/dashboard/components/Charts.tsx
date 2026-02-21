@@ -168,7 +168,7 @@ export function WeeklyTrendChart(): React.JSX.Element {
         </div>
         <div className="h-[300px] w-full">
           {revenueTrend.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%" debounce={1}>
+            <ResponsiveContainer width="100%" height="100%" debounce={1} minWidth={0}>
               <AreaChart data={revenueTrend} margin={{ left: 10, right: 25, top: 10, bottom: 5 }}>
                 <defs>
                   <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
@@ -202,9 +202,9 @@ export function WeeklyTrendChart(): React.JSX.Element {
                 <YAxis
                   axisLine={false}
                   tickLine={false}
-                  width={65}
+                  width={80}
                   tick={{ fill: 'currentColor', fontSize: 11, fontWeight: 800 }}
-                  tickFormatter={(val) => `${Math.round(val / 100)} ₺`}
+                  tickFormatter={(val) => `${(val / 100).toLocaleString('tr-TR')} ₺`}
                 />
                 <Tooltip content={<RevenueTooltip />} isAnimationActive={false} />
                 <Area
@@ -252,7 +252,7 @@ export function HourlyActivityChart(): React.JSX.Element {
             </div>
             <div className="h-[250px] w-full">
               {stats?.hourlyActivity && stats.hourlyActivity.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%" debounce={1}>
+                <ResponsiveContainer width="100%" height="100%" debounce={1} minWidth={0}>
                   <BarChart data={stats.hourlyActivity.filter((h) => h.revenue > 0)}>
                     <defs>
                       <linearGradient id="hourlyGradient" x1="0" y1="0" x2="0" y2="1">
@@ -276,8 +276,9 @@ export function HourlyActivityChart(): React.JSX.Element {
                     <YAxis
                       axisLine={false}
                       tickLine={false}
+                      width={80}
                       tick={{ fill: 'currentColor', fontSize: 11, fontWeight: 800 }}
-                      tickFormatter={(value) => `${value / 100}₺`}
+                      tickFormatter={(value) => `${(value / 100).toLocaleString('tr-TR')} ₺`}
                     />
                     <Tooltip
                       cursor={{ fill: 'var(--color-muted)', opacity: 0.1 }}
@@ -390,7 +391,7 @@ export function CategoryPieChart(): React.JSX.Element {
           {stats?.categoryBreakdown && stats.categoryBreakdown.length > 0 ? (
             <>
               <div className="w-full h-full min-h-[240px] relative">
-                <ResponsiveContainer width="100%" height="100%" debounce={50}>
+                <ResponsiveContainer width="100%" height="100%" debounce={50} minWidth={0}>
                   <PieChart>
                     <Pie
                       data={stats.categoryBreakdown.map((c, index) => {
@@ -509,12 +510,24 @@ export function TopProductsChart(): React.JSX.Element {
         </div>
         <div className="flex-1 w-full min-h-[320px]">
           {productData.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%" debounce={50}>
+            <ResponsiveContainer width="100%" height="100%" debounce={50} minWidth={0}>
               <BarChart
                 data={productData}
                 layout="vertical"
                 margin={{ left: -25, right: 50, top: 10, bottom: 10 }}
               >
+                <defs>
+                  <linearGradient id="productGradient" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.3} />
+                    <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0.85} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  horizontal={false}
+                  stroke="var(--color-border)"
+                  opacity={0.3}
+                />
                 <XAxis type="number" hide />
                 <YAxis
                   type="category"
@@ -531,7 +544,7 @@ export function TopProductsChart(): React.JSX.Element {
                 />
                 <Bar
                   dataKey="quantity"
-                  fill="#8b5cf6"
+                  fill="url(#productGradient)"
                   radius={[0, 6, 6, 0]}
                   barSize={24}
                   isAnimationActive={false}

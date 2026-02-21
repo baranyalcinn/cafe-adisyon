@@ -135,7 +135,7 @@ export function MonthlyPerformanceChart(): React.JSX.Element {
         </div>
         <div className="h-[400px] w-full mt-4">
           {monthlyData.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%" debounce={50}>
+            <ResponsiveContainer width="100%" height="100%" debounce={50} minWidth={0}>
               <ComposedChart
                 data={monthlyData}
                 margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
@@ -164,8 +164,8 @@ export function MonthlyPerformanceChart(): React.JSX.Element {
                   axisLine={false}
                   tickLine={false}
                   tick={{ fill: 'currentColor', fontSize: 11, fontWeight: 800 }}
-                  tickFormatter={(val) => `${val / 1000}k ₺`}
-                  width={80}
+                  tickFormatter={(val) => `${(val / 100).toLocaleString('tr-TR')} ₺`}
+                  width={90}
                 />
                 <Tooltip content={<MonthlyTooltip />} isAnimationActive={false} />
                 <Bar

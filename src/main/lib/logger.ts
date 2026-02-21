@@ -15,6 +15,8 @@ if (isDev) {
 }
 
 class Logger {
+  private isDev = process.env.NODE_ENV === 'development'
+
   error(context: string, error: unknown): void {
     const errorMessage = error instanceof Error ? error.stack || error.message : String(error)
     log.error(`[${context}] ${errorMessage}`)
@@ -22,6 +24,13 @@ class Logger {
 
   info(context: string, message: string): void {
     log.info(`[${context}] ${message}`)
+  }
+
+  /** Only logs in development mode — use for verbose operational details */
+  debug(context: string, message: string): void {
+    if (this.isDev) {
+      log.debug(`[${context}] ${message}`)
+    }
   }
 }
 

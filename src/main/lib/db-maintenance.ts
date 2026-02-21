@@ -37,7 +37,7 @@ export class DBMaintenance {
    */
   private async runMigrations(): Promise<void> {
     try {
-      logger.info('DBMaintenance', 'Running auto-migrations...')
+      logger.debug('DBMaintenance', 'Running auto-migrations...')
 
       // Migration 1: Add updatedAt column to Order table
       await this.addColumnIfNotExists('Order', 'updatedAt', 'DATETIME')
@@ -96,7 +96,7 @@ export class DBMaintenance {
         await prisma.$executeRawUnsafe(sql)
       }
 
-      logger.info('DBMaintenance', `Auto-migrations completed. ${indexes.length} indexes synced.`)
+      logger.debug('DBMaintenance', `Auto-migrations completed. ${indexes.length} indexes synced.`)
     } catch (error) {
       // Migrations failing should NOT block app startup
       logger.error('DBMaintenance Migrations', error)
@@ -115,7 +115,7 @@ export class DBMaintenance {
       const exists = columns.some((c) => c.name === column)
       if (!exists) {
         await prisma.$executeRawUnsafe(`ALTER TABLE "${table}" ADD COLUMN "${column}" ${type}`)
-        logger.info('DBMaintenance', `Added column ${table}.${column}`)
+        logger.debug('DBMaintenance', `Added column ${table}.${column}`)
       }
     } catch (error) {
       logger.error(`DBMaintenance AddColumn ${table}.${column}`, error)
@@ -136,12 +136,12 @@ export class DBMaintenance {
   private async runVacuum(): Promise<void> {
     try {
       if (!(await this.shouldVacuum())) {
-        logger.info('DBMaintenance', 'VACUUM skipped (last run < 7 days ago)')
+        logger.debug('DBMaintenance', 'VACUUM skipped (last run < 7 days ago)')
         return
       }
       await prisma.$executeRawUnsafe('VACUUM;')
       await fs.promises.writeFile(path.join(this.backupDir, '.last-vacuum'), '')
-      logger.info('DBMaintenance', 'VACUUM executed.')
+      logger.debug('DBMaintenance', 'VACUUM executed.')
     } catch (error) {
       logger.error('DBMaintenance Vacuum', error)
       throw error
@@ -155,7 +155,7 @@ export class DBMaintenance {
 
       // Use VACUUM INTO for a consistent snapshot (safe during active writes)
       await prisma.$executeRawUnsafe(`VACUUM INTO '${backupPath.replace(/'/g, "''")}'`)
-      logger.info('DBMaintenance', `Backup created at ${backupPath}`)
+      logger.debug('DBMaintenance', `Backup created at ${backupPath}`)
     } catch (error) {
       logger.error('DBMaintenance Backup', error)
       throw error
@@ -177,7 +177,7 @@ export class DBMaintenance {
       if (files.length > 5) {
         files.slice(5).forEach((file) => {
           fs.unlinkSync(path.join(this.backupDir, file.name))
-          logger.info('DBMaintenance', `Deleted old backup ${file.name}`)
+          logger.debug('DBMaintenance', `Deleted old backup ${file.name}`)
         })
       }
     } catch (error) {

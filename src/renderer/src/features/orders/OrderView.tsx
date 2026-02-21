@@ -399,6 +399,7 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
         open={isPaymentOpen}
         onClose={() => setIsPaymentOpen(false)}
         order={order}
+        tableName={selectedTableName}
         onProcessPayment={async (amount, method, options) => {
           await processPayment({ amount, method, options })
           return Promise.resolve()

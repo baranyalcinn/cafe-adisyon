@@ -107,7 +107,10 @@ export function OrderHistoryModal(): React.JSX.Element {
           Sipariş Geçmişi
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[96vw] max-w-[96vw] w-full max-h-[90vh] flex flex-col">
+      <DialogContent
+        className="sm:max-w-[96vw] max-w-[96vw] w-full max-h-[90vh] flex flex-col"
+        aria-describedby={undefined}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <History className="w-5 h-5" />

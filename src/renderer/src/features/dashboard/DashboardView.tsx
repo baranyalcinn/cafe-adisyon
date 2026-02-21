@@ -1,4 +1,4 @@
-import { Moon, RefreshCw } from 'lucide-react'
+import { AlertCircle, Moon, RefreshCw } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 
@@ -28,16 +28,13 @@ function DashboardSkeleton(): React.JSX.Element {
       </div>
 
       {/* KPI Skeletons */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[...Array(4)].map((_, i) => (
-          <div
-            key={i}
-            className="bg-card border border-border/50 rounded-[2rem] p-6 h-[140px] flex flex-col justify-center space-y-4"
-          >
-            <div className="w-8 h-8 rounded-full bg-muted/50 animate-pulse" />
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="bg-card border border-border/50 rounded-2xl px-5 py-4 space-y-3">
+            <div className="w-6 h-6 rounded-lg bg-muted/50 animate-pulse" />
             <div className="space-y-2">
-              <div className="h-4 w-24 bg-muted/30 animate-pulse rounded-md" />
-              <div className="h-8 w-32 bg-muted/60 animate-pulse rounded-lg" />
+              <div className="h-8 w-28 bg-muted/60 animate-pulse rounded-md" />
+              <div className="h-3 w-20 bg-muted/30 animate-pulse rounded-sm" />
             </div>
           </div>
         ))}
@@ -72,7 +69,8 @@ function DashboardSkeleton(): React.JSX.Element {
 }
 
 function DashboardContent(): React.JSX.Element {
-  const { isLoading, refetchAll, showEndOfDayModal, setShowEndOfDayModal } = useDashboardContext()
+  const { isLoading, isError, refetchAll, showEndOfDayModal, setShowEndOfDayModal } =
+    useDashboardContext()
   const [headerTarget, setHeaderTarget] = useState<HTMLElement | null>(null)
 
   useEffect(() => {
@@ -81,6 +79,28 @@ function DashboardContent(): React.JSX.Element {
 
   if (isLoading) {
     return <DashboardSkeleton />
+  }
+
+  if (isError) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center gap-6 px-8">
+        <div className="flex flex-col items-center gap-4 text-center">
+          <div className="w-16 h-16 rounded-3xl bg-destructive/10 flex items-center justify-center">
+            <AlertCircle className="w-8 h-8 text-destructive" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-black text-foreground">Veri Yüklenemedi</h2>
+            <p className="text-muted-foreground font-medium max-w-md">
+              Dashboard verileri alınırken bir sorun oluştu. Lütfen tekrar deneyin.
+            </p>
+          </div>
+          <Button onClick={refetchAll} className="gap-2 mt-2 rounded-xl font-bold">
+            <RefreshCw className="w-4 h-4" />
+            Tekrar Dene
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   return (

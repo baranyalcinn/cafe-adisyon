@@ -5,7 +5,7 @@ interface PremiumAmountProps {
   amount: number
   className?: string
   size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl' | '7xl'
-  color?: 'primary' | 'foreground' | 'muted' | 'success' | 'warning' | 'destructive'
+  color?: 'primary' | 'foreground' | 'muted' | 'success' | 'warning' | 'destructive' | 'info'
   fontWeight?: 'semibold' | 'bold' | 'extrabold' | 'black'
 }
 
@@ -43,7 +43,8 @@ export const PremiumAmount: React.FC<PremiumAmountProps> = ({
     muted: 'text-muted-foreground',
     success: 'text-success',
     warning: 'text-warning',
-    destructive: 'text-destructive'
+    destructive: 'text-destructive',
+    info: 'text-info'
   }
 
   const weightClasses = {

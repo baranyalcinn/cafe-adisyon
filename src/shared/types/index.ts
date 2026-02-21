@@ -94,7 +94,6 @@ export interface ExtendedDashboardStats extends DashboardStats {
   pendingOrders: number
   hourlyActivity: HourlyActivityItem[]
   categoryBreakdown: { categoryName: string; revenue: number; quantity: number; icon?: string }[]
-  bottomProducts: { productId: string; productName: string; quantity: number }[]
   dailyExpenses: number
 }
 

@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback } from 'react'
-import { AlertTriangle, CheckCircle, Loader2, Moon, X, Database, FileText } from 'lucide-react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { cafeApi, type DailySummary } from '@/lib/api'
-import { formatCurrency, cn } from '@/lib/utils'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { cafeApi, type DailySummary } from '@/lib/api'
+import { cn, formatCurrency } from '@/lib/utils'
+import { AlertTriangle, CheckCircle, Database, FileText, Loader2, Moon, X } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
 
 interface EndOfDayModalProps {
   open: boolean
@@ -119,7 +119,7 @@ export function EndOfDayModal({ open, onClose }: EndOfDayModalProps): React.JSX.
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px]" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Moon className="w-5 h-5" />

@@ -1,11 +1,12 @@
 import { PremiumAmount } from '@/components/PremiumAmount'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { QuantitySelector } from '@/components/ui/QuantitySelector'
 import { useSound } from '@/hooks/useSound'
 import { Order } from '@/lib/api'
 import { soundManager } from '@/lib/sound'
 import { cn, formatCurrency } from '@/lib/utils'
+import * as VisuallyHidden from '@radix-ui/react-visually-hidden'
 import {
   Banknote,
   CheckCircle,
@@ -313,61 +314,71 @@ export const CartPanel = React.memo(function CartPanel({
         )}
       </div>
       {/* Footer - Premium Glassmorphic Simplified */}
-      <div className="shrink-0 p-6 bg-background/80 backdrop-blur-xl border-t border-border/10 z-20 rounded-t-[2.5rem] shadow-[0_-20px_50px_-12px_rgba(0,0,0,0.1)] dark:shadow-[0_-20px_50px_-12px_rgba(0,0,0,0.4)]">
-        <div className="space-y-5">
-          <div className="space-y-3 px-1">
-            <div className="flex justify-between items-center text-[13px]">
-              <div className="flex items-center gap-2.5 text-muted-foreground/80 font-bold uppercase tracking-tight">
-                <Receipt className="w-3.5 h-3.5" />
-                Ara Toplam
-              </div>
-              <span className="text-foreground/90 font-black tabular-nums tracking-tight">
-                {formatCurrency(total)}
-              </span>
+      {processedItems.length > 0 && (
+        <div className="shrink-0 p-6 bg-background/80 backdrop-blur-xl border-t border-border/10 z-20 rounded-t-[2.5rem] shadow-[0_-20px_50px_-12px_rgba(0,0,0,0.1)] dark:shadow-[0_-20px_50px_-12px_rgba(0,0,0,0.4)]">
+          <div className="space-y-5">
+            <div className="space-y-3 px-1">
+              {paidAmount > 0 && (
+                <>
+                  <div className="flex justify-between items-center text-[13px]">
+                    <div className="flex items-center gap-2.5 text-muted-foreground/80 font-bold uppercase tracking-tight">
+                      <Receipt className="w-3.5 h-3.5" />
+                      Ara Toplam
+                    </div>
+                    <span className="text-foreground/90 font-black tabular-nums tracking-tight">
+                      {formatCurrency(total)}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-center text-[13px]">
+                    <div className="flex items-center gap-2.5 text-emerald-600/80 dark:text-emerald-400/80 font-bold uppercase tracking-tight">
+                      <Wallet className="w-3.5 h-3.5" />
+                      Ödenen
+                    </div>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-black tabular-nums tracking-tight">
+                      -{formatCurrency(paidAmount)}
+                    </span>
+                  </div>
+
+                  <div className="h-px bg-border/10 w-full" />
+                </>
+              )}
             </div>
 
-            {paidAmount > 0 && (
-              <div className="flex justify-between items-center text-[13px]">
-                <div className="flex items-center gap-2.5 text-emerald-600/80 dark:text-emerald-400/80 font-bold uppercase tracking-tight">
-                  <Wallet className="w-3.5 h-3.5" />
-                  Ödenen
-                </div>
-                <span className="text-emerald-600 dark:text-emerald-400 font-black tabular-nums tracking-tight">
-                  -{formatCurrency(paidAmount)}
+            <div className="flex justify-between items-end gap-4 px-1">
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black text-muted-foreground/90 uppercase tracking-[0.2em] mb-1.5 flex items-center gap-2">
+                  <span className="w-1 h-1 rounded-full bg-primary" />
+                  Ödenecek Tutar
                 </span>
+                <PremiumAmount amount={remainingAmount} size="2xl" fontWeight="black" />
               </div>
-            )}
-          </div>
 
-          <div className="h-px bg-border/10 w-full" />
-
-          <div className="flex justify-between items-end gap-4 px-1">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-black text-muted-foreground/90 uppercase tracking-[0.2em] mb-1.5 flex items-center gap-2">
-                <span className="w-1 h-1 rounded-full bg-primary" />
-                Ödenecek Tutar
-              </span>
-              <PremiumAmount amount={remainingAmount} size="2xl" fontWeight="black" />
+              <Button
+                size="lg"
+                className="h-12 px-7 text-base font-black rounded-2xl shadow-xl shadow-primary/20 bg-primary text-primary-foreground active:scale-95 transition-all shrink-0"
+                onClick={() => {
+                  playClick()
+                  onPaymentClick(remainingAmount)
+                }}
+                disabled={remainingAmount <= 0}
+              >
+                <Banknote className="w-4 h-4 mr-2" />
+                ÖDEME AL
+              </Button>
             </div>
-
-            <Button
-              size="lg"
-              className="h-12 px-7 text-base font-black rounded-2xl shadow-xl shadow-primary/20 bg-primary text-primary-foreground active:scale-95 transition-all shrink-0"
-              onClick={() => {
-                playClick()
-                onPaymentClick(remainingAmount)
-              }}
-              disabled={remainingAmount <= 0}
-            >
-              <Banknote className="w-4 h-4 mr-2" />
-              ÖDEME AL
-            </Button>
           </div>
         </div>
-      </div>
+      )}
 
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent className="sm:max-w-[400px] p-0 overflow-hidden border-none bg-transparent shadow-none">
+        <DialogContent
+          className="sm:max-w-[400px] p-0 overflow-hidden border-none bg-transparent shadow-none"
+          aria-describedby={undefined}
+        >
+          <VisuallyHidden.Root asChild>
+            <DialogTitle>Adisyonu Sil</DialogTitle>
+          </VisuallyHidden.Root>
           <div className="bg-card/95 backdrop-blur-xl border border-border/50 rounded-3xl overflow-hidden shadow-2xl">
             <div className="p-8 text-center space-y-6">
               <div className="w-20 h-20 bg-destructive/10 rounded-3xl flex items-center justify-center mx-auto rotate-12 group-hover:rotate-0 transition-transform duration-500 shadow-inner">
