@@ -20,6 +20,7 @@ import { useCartStore } from '@/store/useCartStore'
 import { toast } from '@/store/useToastStore'
 import { ArrowRightLeft, Coffee, Combine, Lock } from 'lucide-react'
 import { memo, useCallback, useState } from 'react'
+
 import { TableCardSkeleton } from './TableCardSkeleton'
 
 interface TableCardProps {
@@ -32,93 +33,93 @@ interface TableCardProps {
   onMerge: (id: string) => void
 }
 
-const TableCard = memo(
-  ({
-    id,
-    name,
-    hasOpenOrder,
-    isLocked,
-    onClick,
-    onTransfer,
-    onMerge
-  }: TableCardProps): React.JSX.Element => {
+export const TableCard = memo(
+  ({ id, name, hasOpenOrder, isLocked, onClick, onTransfer, onMerge }: TableCardProps) => {
     return (
       <ContextMenu>
         <ContextMenuTrigger asChild>
           <button
             onClick={() => onClick(id, name)}
             className={cn(
-              'group relative flex flex-col items-center justify-center p-0 cursor-pointer transition-all duration-300',
-              'hover:-translate-y-1 active:scale-95 !overflow-visible'
+              'group relative flex flex-col items-center justify-center p-6 rounded-[2.5rem] transition-all duration-300 ease-out cursor-pointer w-full text-center outline-none focus-visible:ring-2 focus-visible:ring-primary/70 active:scale-[0.96] gpu-accelerated select-none',
+
+              // STATE: FULL (Dolu)
+              hasOpenOrder && [
+                'bg-info/10 border-2 border-info shadow-sm',
+                'hover:bg-info/20 hover:shadow-md'
+              ],
+
+              // STATE: EMPTY (Boş)
+              !hasOpenOrder &&
+                !isLocked && [
+                  'bg-emerald-500/5 border-2 border-emerald-500/20 shadow-sm',
+                  'hover:bg-emerald-500/15 hover:border-emerald-500/40 hover:shadow-md'
+                ],
+
+              // STATE: LOCKED (Kilitli)
+              isLocked && [
+                'bg-warning/10 border-2 border-warning shadow-sm',
+                'hover:bg-warning/20 hover:shadow-md opacity-90'
+              ]
             )}
           >
-            <div
-              className={cn(
-                'relative w-full h-full flex flex-col items-center justify-center gap-4 p-8 rounded-[2.5rem] overflow-hidden transition-all duration-500',
-                hasOpenOrder
-                  ? 'bg-info/10 border border-info/20 shadow-[0_8px_32px_-12px_rgba(var(--color-info),0.2)]'
-                  : 'bg-success/10 border border-success/20 shadow-[0_8px_32px_-12px_rgba(var(--color-success),0.2)]',
-                isLocked &&
-                  'bg-warning/10 border border-warning/20 shadow-[0_8px_32px_-12px_rgba(var(--color-warning),0.2)]',
-                'group-hover:border-primary/30 group-hover:bg-primary/[0.04]'
-              )}
-            >
-              {/* Subtle Glow Effect */}
+            {/* Kilit İkonu - Floating badge */}
+            {isLocked && (
+              <div className="absolute -top-1 -left-1 bg-warning p-2 rounded-xl text-white shadow-lg shadow-warning/20 ring-4 ring-background z-20">
+                <Lock className="w-4 h-4" strokeWidth={3} />
+              </div>
+            )}
+
+            {/* Merkez İkon */}
+            <div className="relative mb-6">
               <div
                 className={cn(
-                  'absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-[80px] -z-10',
-                  hasOpenOrder ? 'bg-info/20' : 'bg-success/20',
-                  isLocked && 'bg-warning/20'
-                )}
-              />
-
-              {isLocked && (
-                <div className="absolute top-3 left-3 bg-warning/20 p-2 rounded-xl ring-2 ring-warning/30 animate-in fade-in zoom-in duration-500 z-10">
-                  <Lock className="w-3.5 h-3.5 text-warning" strokeWidth={3} />
-                </div>
-              )}
-
-              <div
-                className={cn(
-                  'p-4.5 rounded-[2rem] transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-inner',
-                  hasOpenOrder ? 'bg-info/25 text-info' : 'bg-success/25 text-success',
-                  isLocked && 'bg-warning/25 text-warning'
+                  'p-5 rounded-[2rem] transition-all duration-300 shadow-sm group-hover:rotate-3 group-hover:scale-110',
+                  hasOpenOrder
+                    ? 'bg-info text-white shadow-info/20'
+                    : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white',
+                  isLocked && 'bg-warning text-white shadow-warning/20'
                 )}
               >
-                <Coffee className="w-12 h-12" />
+                <Coffee className="w-10 h-10" strokeWidth={2.5} />
               </div>
+            </div>
 
-              <div className="text-center space-y-2">
-                <span className="text-lg font-bold text-foreground tracking-tight block">
-                  {name}
-                </span>
-                <div
+            {/* Metin ve Rozet */}
+            <div className="space-y-3 w-full relative z-10">
+              <span className="text-xl font-black text-foreground tracking-tight line-clamp-1 block">
+                {name}
+              </span>
+              <div className="flex justify-center">
+                <span
                   className={cn(
-                    'text-[10px] font-black tracking-[0.2em] px-3 py-1 rounded-full border transition-all duration-300 uppercase shadow-sm',
+                    'text-[10px] font-black tracking-[0.2em] px-4 py-1.5 rounded-full uppercase transition-all duration-300',
                     hasOpenOrder
-                      ? 'bg-white text-info border-info/40 shadow-info/10 dark:bg-info/20 dark:text-info-foreground dark:border-info/50'
-                      : 'bg-white text-emerald-700 border-emerald-300 shadow-emerald-500/10 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800',
-                    isLocked && 'bg-white text-warning border-warning/40 shadow-warning/10'
+                      ? 'bg-info text-white shadow-sm'
+                      : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 group-hover:bg-emerald-500 group-hover:text-white group-hover:border-transparent',
+                    isLocked && 'bg-warning text-white shadow-sm'
                   )}
                 >
                   {isLocked ? 'KİLİTLİ' : hasOpenOrder ? 'DOLU' : 'BOŞ'}
-                </div>
+                </span>
               </div>
             </div>
           </button>
         </ContextMenuTrigger>
+
+        {/* Context Menu */}
         {hasOpenOrder && (
-          <ContextMenuContent className="min-w-[200px] p-2 rounded-xl">
+          <ContextMenuContent className="min-w-[220px] p-1.5 rounded-xl shadow-xl">
             <ContextMenuItem
               onClick={() => onTransfer(id)}
-              className="gap-3 py-2.5 rounded-lg font-medium cursor-pointer"
+              className="gap-3 py-3 px-3 rounded-lg font-medium cursor-pointer hover:bg-info/10 focus:bg-info/10 focus:text-info"
             >
               <ArrowRightLeft className="w-4 h-4 text-info" />
               Başka Masaya Aktar
             </ContextMenuItem>
             <ContextMenuItem
               onClick={() => onMerge(id)}
-              className="gap-3 py-2.5 rounded-lg font-medium cursor-pointer"
+              className="gap-3 py-3 px-3 rounded-lg font-medium cursor-pointer mt-1 hover:bg-primary/10 focus:bg-primary/10 focus:text-primary"
             >
               <Combine className="w-4 h-4 text-primary" />
               Başka Masa ile Birleştir
@@ -137,7 +138,6 @@ interface TablesViewProps {
 }
 
 export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Element {
-  // Use React Query hook instead of store for fetching
   const { data: tables = [], isLoading, refetch } = useTables()
 
   const [transferModal, setTransferModal] = useState<{
@@ -184,8 +184,8 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
       const targetTable = tables.find((t) => t.id === targetTableId)
       const sourceTable = tables.find((t) => t.id === transferModal.sourceTableId)
       setTransferModal({ open: false, sourceTableId: null, sourceOrderId: null })
-      useCartStore.getState().clearCart() // Clear cart state after transfer
-      refetch() // Refresh tables immediately
+      useCartStore.getState().clearCart()
+      refetch()
       toast({
         title: 'Transfer Başarılı',
         description: `${sourceTable?.name || 'Kaynak masa'} siparişi ${targetTable?.name || 'hedef masaya'} aktarıldı!`,
@@ -217,8 +217,8 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
       }
       await cafeApi.orders.merge(mergeModal.sourceOrderId, targetOrder.id)
       setMergeModal({ open: false, sourceTableId: null, sourceOrderId: null })
-      useCartStore.getState().clearCart() // Clear cart state after merge
-      refetch() // Refresh tables
+      useCartStore.getState().clearCart()
+      refetch()
     } catch (error) {
       toast({
         title: 'Birleştirme Hatası',
@@ -240,10 +240,9 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
         <div className="flex items-center justify-between">
           <h2 className="text-3xl font-bold tracking-tight text-foreground">Masalar</h2>
           <div className="flex items-center gap-8">
-            {/* Dolu Masa Stat */}
             <div className="flex items-center gap-3 group cursor-default">
               <div className="relative flex items-center justify-center">
-                <div className="w-2 h-2 rounded-full bg-info shadow-[0_0_12px_rgba(var(--color-info),0.6)]" />
+                <div className="w-2 h-2 rounded-full bg-info" />
               </div>
               <div className="flex items-baseline gap-1.5">
                 <span className="text-xl font-black tabular-nums text-foreground">
@@ -257,10 +256,9 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
 
             <div className="w-[1px] h-4 bg-border" />
 
-            {/* Boş Masa Stat */}
             <div className="flex items-center gap-3 group cursor-default">
               <div className="relative flex items-center justify-center">
-                <div className="w-2 h-2 rounded-full bg-success shadow-[0_0_12px_rgba(var(--color-success),0.6)]" />
+                <div className="w-2 h-2 rounded-full bg-success" />
               </div>
               <div className="flex items-baseline gap-1.5">
                 <span className="text-xl font-black tabular-nums text-foreground">
@@ -316,7 +314,7 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
         )}
       </div>
 
-      {/* Transfer Modal */}
+      {/* Modals */}
       <Dialog
         open={transferModal.open}
         onOpenChange={(open) =>
@@ -346,12 +344,6 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
                     </Button>
                   ))}
               </div>
-              {tables.filter((t) => t.id !== transferModal.sourceTableId && !t.hasOpenOrder)
-                .length === 0 && (
-                <p className="text-muted-foreground text-center">
-                  Transfer için uygun boş masa yok.
-                </p>
-              )}
               <DialogFooter>
                 <Button
                   variant="ghost"
@@ -367,7 +359,6 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
         </DialogContent>
       </Dialog>
 
-      {/* Merge Modal */}
       <Dialog
         open={mergeModal.open}
         onOpenChange={(open) =>
@@ -381,7 +372,7 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
                 <DialogTitle>Masa Birleştirme</DialogTitle>
                 <DialogDescription>
                   {mergeSourceTableName} masasının siparişini hangi masayla birleştirmek
-                  istiyorsunuz? (Kaynak masa silinecek)
+                  istiyorsunuz?
                 </DialogDescription>
               </DialogHeader>
               <div className="grid grid-cols-3 gap-2 py-4">
@@ -398,12 +389,6 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
                     </Button>
                   ))}
               </div>
-              {tables.filter((t) => t.id !== mergeModal.sourceTableId && t.hasOpenOrder).length ===
-                0 && (
-                <p className="text-muted-foreground text-center">
-                  Birleştirme için uygun dolu masa yok.
-                </p>
-              )}
               <DialogFooter>
                 <Button
                   variant="ghost"

@@ -1,6 +1,6 @@
 // src/features/payments/PaymentModal.tsx
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
-import { Banknote, Minus, Plus } from 'lucide-react'
+import { Banknote, Minus, Plus, RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 
 import { PremiumAmount } from '@/components/PremiumAmount'
@@ -717,7 +717,7 @@ export function PaymentModal({
                       title="Sıfırla (Delete)"
                       aria-label="Sıfırla"
                     >
-                      <Plus className="w-4 h-4 rotate-45" />
+                      <RotateCcw className="w-4 h-4" />
                     </button>
                   </div>
 

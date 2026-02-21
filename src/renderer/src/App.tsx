@@ -11,7 +11,7 @@ import { useTableStore } from '@/store/useTableStore'
 import '@/styles/globals.css'
 
 import { LayoutGrid, Loader2, Settings } from 'lucide-react'
-import { Suspense, lazy, useCallback, useEffect, useState } from 'react'
+import { Suspense, lazy, useCallback, useEffect, useState, useTransition } from 'react'
 
 const SettingsView = lazy(() =>
   import('@/features/settings/SettingsView').then((m) => ({ default: m.SettingsView }))
@@ -25,6 +25,7 @@ function App(): React.JSX.Element {
   const selectTable = useTableStore((s) => s.selectTable)
 
   const [isBooting, setIsBooting] = useState(true)
+  const [isPending, startTransition] = useTransition()
   const { prefetchAll } = useInventoryPrefetch()
 
   useEffect(() => {
@@ -32,44 +33,46 @@ function App(): React.JSX.Element {
   }, [prefetchAll])
 
   const handleTableSelect = useCallback(
-    (tableId: string, tableName: string) => {
+    (tableId: string, tableName: string): void => {
       selectTable(tableId, tableName)
-      setCurrentView('order')
+      // Transition ile geçişi yumuşatıyoruz
+      startTransition(() => {
+        setCurrentView('order')
+      })
     },
     [selectTable]
   )
 
-  const handleBackToTables = useCallback(() => {
+  const handleBackToTables = useCallback((): void => {
     selectTable(null, null)
-    setCurrentView('tables')
+    startTransition(() => {
+      setCurrentView('tables')
+    })
   }, [selectTable])
+
+  const changeView = (view: ViewType): void => {
+    startTransition(() => {
+      setCurrentView(view)
+    })
+  }
 
   if (isBooting) {
     return <LoadingFallback />
   }
-
-  // Determine direction for animation based on simple view order assumption or just default
-  // Ideally we would track previous view index, but for now passing 0 or handling it simply is fine.
-  // The variants use a 'direction' param but we aren't passing `custom` prop to motion.div in the suggestion code.
-  // We will pass custom={1} or similar if we want directional, but the suggestion didn't explicitly show the state tracking for direction.
-  // I will skip the 'custom' prop and just let it use default 0 (undefined direction) or modify variants if needed.
-  // Actually, let's look at the suggestion. It defined `direction` in variants but didn't pass `custom` in `motion.div`.
-  // This means `direction` will be undefined. We should fix this or assume 1.
-  // I'll make the variants handle undefined direction or just set a default key.
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-background text-foreground">
       <TitleBar />
 
       <div className="flex-1 flex overflow-hidden">
-        {/* Sidebar - Ayrıştırılmış ve daha temiz */}
+        {/* Sidebar */}
         <aside className="w-20 flex flex-col items-center py-6 bg-card/40 backdrop-blur-2xl border-r border-border/20 z-50 transition-all duration-500">
           <LogoSection />
 
           <nav className="flex-1 flex flex-col gap-4 pt-10">
             <NavButton
               active={currentView === 'tables'}
-              onClick={() => setCurrentView('tables')}
+              onClick={() => changeView('tables')}
               icon={LayoutGrid}
               label="MASALAR"
             />
@@ -78,7 +81,7 @@ function App(): React.JSX.Element {
           <div className="pb-4">
             <NavButton
               active={currentView === 'settings'}
-              onClick={() => setCurrentView('settings')}
+              onClick={() => changeView('settings')}
               icon={Settings}
               label="AYARLAR"
             />
@@ -89,7 +92,10 @@ function App(): React.JSX.Element {
         <main className="flex-1 relative bg-muted/5">
           <div
             key={currentView}
-            className="absolute inset-0 overflow-hidden animate-in fade-in duration-300"
+            className={cn(
+              'absolute inset-0 overflow-hidden animate-in fade-in duration-300',
+              isPending && 'opacity-70 pointer-events-none' // Yüklenirken hafif silikleşir
+            )}
           >
             <Suspense fallback={<LoadingFallback />}>
               {currentView === 'tables' && <TablesView onTableSelect={handleTableSelect} />}
@@ -130,22 +136,17 @@ function NavButton({ active, onClick, icon: Icon, label }: NavButtonProps): Reac
         size="icon"
         onClick={onClick}
         className={cn(
-          'w-12 h-12 rounded-2xl transition-all duration-500 relative group overflow-hidden',
+          'w-12 h-12 rounded-2xl transition-all duration-500 group overflow-hidden',
           active
-            ? 'text-primary-foreground shadow-lg shadow-primary/30'
+            ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30 hover:bg-primary/90 hover:text-primary-foreground'
             : 'text-foreground/80 hover:text-foreground hover:bg-muted/40'
         )}
         title={label}
       >
-        {active && (
-          <div className="absolute inset-0 bg-primary z-0 rounded-2xl transition-all duration-300" />
-        )}
         <Icon
           className={cn(
-            'w-5 h-5 transition-all duration-500 relative z-10',
-            active
-              ? 'scale-110 opacity-100 text-white'
-              : 'scale-100 group-hover:scale-110 opacity-100'
+            'w-5 h-5 transition-all duration-500',
+            active ? 'scale-110' : 'scale-100 group-hover:scale-110'
           )}
         />
       </Button>
@@ -161,7 +162,7 @@ function LogoSection(): React.JSX.Element {
         <div className="absolute inset-x-0 top-0 bottom-0 bg-rose-500/[0.03] dark:bg-rose-500/[0.08] blur-2xl rounded-full scale-150 group-hover:bg-rose-500/10 transition-colors duration-1000" />
 
         <div className="flex flex-col items-center gap-2 relative z-10">
-          {/* Staggered Vertical 7s - Prevents 'M' look */}
+          {/* Staggered Vertical 7s */}
           <div className="flex items-center gap-1">
             {[
               { color: 'text-rose-500', offset: 'translate-y-1', delay: '0s' },
