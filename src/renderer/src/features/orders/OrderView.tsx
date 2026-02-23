@@ -94,16 +94,14 @@ const OrderSidebar = React.memo(function OrderSidebar({
   const handleSearchChange = useCallback(
     (value: string) => {
       setSearchQuery(value)
-      resetVisibleLimit()
     },
-    [setSearchQuery, resetVisibleLimit]
+    [setSearchQuery]
   )
 
   const handleClearSearch = useCallback(() => {
     setSearchQuery('')
-    resetVisibleLimit()
     searchInputRef.current?.focus()
-  }, [setSearchQuery, resetVisibleLimit, searchInputRef])
+  }, [setSearchQuery, searchInputRef])
 
   return (
     <div className="w-60 bg-background border-r border-border flex flex-col h-full min-h-0 animate-in slide-in-from-left duration-300">
@@ -314,11 +312,7 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
 
   // Sayfa yüklenme animasyonu
   useEffect(() => {
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        setIsReady(true)
-      })
-    })
+    setIsReady(true)
   }, [])
 
   // View mode persist
@@ -354,6 +348,11 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
   const resetVisibleLimit = useCallback(() => {
     setVisibleLimit(INITIAL_VISIBLE_LIMIT)
   }, [])
+
+  // Search limit reset on deferred query change (Concurrent Mode friendly)
+  useEffect(() => {
+    resetVisibleLimit()
+  }, [deferredSearchQuery, resetVisibleLimit])
 
   // Ürünleri bir kez sırala (Türkçe locale)
   const sortedProducts = useMemo(() => {

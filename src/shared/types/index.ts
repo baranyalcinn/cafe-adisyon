@@ -59,7 +59,8 @@ export interface Transaction {
 }
 
 // Enums
-export type OrderStatus = 'OPEN' | 'CLOSED'
+export const ORDER_STATUS = { OPEN: 'OPEN', CLOSED: 'CLOSED' } as const
+export type OrderStatus = (typeof ORDER_STATUS)[keyof typeof ORDER_STATUS]
 export type PaymentMethod = 'CASH' | 'CARD'
 
 // Cart types for Zustand store

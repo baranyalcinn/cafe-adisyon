@@ -35,7 +35,15 @@ function DashboardContent(): React.JSX.Element {
   const [headerTarget, setHeaderTarget] = useState<HTMLElement | null>(null)
 
   useEffect(() => {
-    setHeaderTarget(document.getElementById('settings-header-actions'))
+    // Element mount olana kadar denemeye devam et (React routing için güvenli)
+    const interval = setInterval(() => {
+      const el = document.getElementById('settings-header-actions')
+      if (el) {
+        setHeaderTarget(el)
+        clearInterval(interval)
+      }
+    }, 100)
+    return () => clearInterval(interval)
   }, [])
 
   if (isLoading) {
@@ -116,13 +124,46 @@ function DashboardContent(): React.JSX.Element {
           }
         >
           <WeeklyTrendChart />
+        </React.Suspense>
+
+        <React.Suspense
+          fallback={
+            <div className="w-full h-[400px] flex items-center justify-center">
+              <RefreshCw className="w-8 h-8 text-muted-foreground/30 animate-spin" />
+            </div>
+          }
+        >
           <HourlyActivityChart />
+        </React.Suspense>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <React.Suspense
+            fallback={
+              <div className="w-full h-[400px] flex items-center justify-center">
+                <RefreshCw className="w-8 h-8 text-muted-foreground/30 animate-spin" />
+              </div>
+            }
+          >
             <CategoryPieChart />
+          </React.Suspense>
+          <React.Suspense
+            fallback={
+              <div className="w-full h-[400px] flex items-center justify-center">
+                <RefreshCw className="w-8 h-8 text-muted-foreground/30 animate-spin" />
+              </div>
+            }
+          >
             <TopProductsChart />
-          </div>
+          </React.Suspense>
+        </div>
 
+        <React.Suspense
+          fallback={
+            <div className="w-full h-[400px] flex items-center justify-center">
+              <RefreshCw className="w-8 h-8 text-muted-foreground/30 animate-spin" />
+            </div>
+          }
+        >
           <MonthlyPerformanceChart />
         </React.Suspense>
         <RecentZReports />

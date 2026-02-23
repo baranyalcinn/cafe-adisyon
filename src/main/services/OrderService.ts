@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events'
-import { ApiResponse, Order } from '../../shared/types'
+import { ApiResponse, Order, ORDER_STATUS, OrderStatus } from '../../shared/types'
 import { prisma } from '../db/prisma'
 import { logger } from '../lib/logger'
 import { toPlain } from '../lib/toPlain'
@@ -43,8 +43,16 @@ const ORDER_SELECT = {
 }
 
 export class OrderService extends EventEmitter {
+  private dashboardUpdateTimer: NodeJS.Timeout | null = null
+
   private broadcastDashboardUpdate(): void {
-    this.emit('order:updated')
+    if (this.dashboardUpdateTimer) {
+      clearTimeout(this.dashboardUpdateTimer)
+    }
+
+    this.dashboardUpdateTimer = setTimeout(() => {
+      this.emit('order:updated')
+    }, 500)
   }
 
   async getOpenOrderForTable(tableId: string): Promise<ApiResponse<Order | null>> {
@@ -52,7 +60,7 @@ export class OrderService extends EventEmitter {
       const order = await prisma.order.findFirst({
         where: {
           tableId: tableId,
-          status: 'OPEN'
+          status: ORDER_STATUS.OPEN
         },
         select: ORDER_SELECT
       })
@@ -67,14 +75,14 @@ export class OrderService extends EventEmitter {
     try {
       // Check existing
       const existing = await prisma.order.findFirst({
-        where: { tableId, status: 'OPEN' }
+        where: { tableId, status: ORDER_STATUS.OPEN }
       })
       if (existing) return { success: true, data: toPlain<Order>(existing) }
 
       const order = await prisma.order.create({
         data: {
           tableId,
-          status: 'OPEN',
+          status: ORDER_STATUS.OPEN,
           totalAmount: 0
         },
         select: ORDER_SELECT
@@ -183,7 +191,7 @@ export class OrderService extends EventEmitter {
 
           const closedOrder = await tx.order.update({
             where: { id: item.orderId },
-            data: { status: 'CLOSED' },
+            data: { status: ORDER_STATUS.CLOSED },
             select: ORDER_SELECT
           })
 
@@ -232,7 +240,7 @@ export class OrderService extends EventEmitter {
 
           const closedOrder = await tx.order.update({
             where: { id: item.orderId },
-            data: { status: 'CLOSED' },
+            data: { status: ORDER_STATUS.CLOSED },
             select: ORDER_SELECT
           })
 
@@ -319,7 +327,7 @@ export class OrderService extends EventEmitter {
     try {
       const order = await prisma.order.update({
         where: { id: orderId },
-        data: { status: 'CLOSED' }
+        data: { status: ORDER_STATUS.CLOSED }
       })
 
       this.broadcastDashboardUpdate()
@@ -337,7 +345,7 @@ export class OrderService extends EventEmitter {
     try {
       const updatedOrder = await prisma.order.update({
         where: { id: orderId },
-        data: data as { status?: 'OPEN' | 'CLOSED'; totalAmount?: number; isLocked?: boolean },
+        data: data as { status?: OrderStatus; totalAmount?: number; isLocked?: boolean },
         select: ORDER_SELECT
       })
 
@@ -408,7 +416,7 @@ export class OrderService extends EventEmitter {
 
           const closedOrder = await tx.order.update({
             where: { id: orderId },
-            data: { status: 'CLOSED' },
+            data: { status: ORDER_STATUS.CLOSED },
             select: ORDER_SELECT
           })
           return { order: closedOrder as unknown as Order, completed: true }
@@ -589,7 +597,7 @@ export class OrderService extends EventEmitter {
 
       const orders = (await prisma.order.findMany({
         where: {
-          status: 'CLOSED',
+          status: ORDER_STATUS.CLOSED,
           ...dateFilter
         },
         select: {
@@ -617,7 +625,7 @@ export class OrderService extends EventEmitter {
       })) as Order[]
 
       const totalCount = await prisma.order.count({
-        where: { status: 'CLOSED', ...dateFilter }
+        where: { status: ORDER_STATUS.CLOSED, ...dateFilter }
       })
 
       return {
@@ -659,7 +667,7 @@ export class OrderService extends EventEmitter {
       const result = await prisma.$transaction(async (tx) => {
         // 1. Check if target table is empty inside transaction
         const targetOrder = await tx.order.findFirst({
-          where: { tableId: targetTableId, status: 'OPEN' }
+          where: { tableId: targetTableId, status: ORDER_STATUS.OPEN }
         })
 
         if (targetOrder) {
