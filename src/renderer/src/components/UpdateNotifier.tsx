@@ -1,18 +1,13 @@
 import { Button } from '@/components/ui/button'
 import { toast } from '@/store/useToastStore'
+import { type UpdateInfo } from '@shared/types'
 import { AlertTriangle } from 'lucide-react'
 import { useEffect } from 'react'
-
-interface UpdateInfo {
-  version: string
-  releaseNotes?: string | Array<{ version: string; note: string }>
-  safeToUpdate?: boolean
-}
 
 export function UpdateNotifier(): null {
   useEffect(() => {
     // Listen for update available
-    const removeAvailableListener = window.api.on('update-available', (info: any) => {
+    const removeAvailableListener = window.api.on('update-available', (info: unknown) => {
       const updateInfo = info as UpdateInfo
       toast({
         title: `Güncelleme Mevcut: v${updateInfo.version}`,
@@ -22,7 +17,7 @@ export function UpdateNotifier(): null {
     })
 
     // Listen for update downloaded
-    const removeDownloadedListener = window.api.on('update-downloaded', (info: any) => {
+    const removeDownloadedListener = window.api.on('update-downloaded', (info: unknown) => {
       const updateInfo = info as UpdateInfo
       const isSafe = updateInfo.safeToUpdate !== false
 
@@ -56,7 +51,7 @@ export function UpdateNotifier(): null {
     })
 
     // Listen for update error
-    const removeErrorListener = window.api.on('update-error', (error: any) => {
+    const removeErrorListener = window.api.on('update-error', (error: unknown) => {
       console.error('Update Error:', error)
     })
 

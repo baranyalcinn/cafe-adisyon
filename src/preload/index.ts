@@ -312,7 +312,7 @@ const api = {
 
   // Events
   on: (
-    channel: keyof typeof IPC_CHANNELS | 'dashboard:update',
+    channel: (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS] | 'dashboard:update',
     callback: (...args: unknown[]) => void
   ) => {
     const subscription = (_event: Electron.IpcRendererEvent, ...args: unknown[]): void =>

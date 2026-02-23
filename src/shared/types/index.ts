@@ -229,6 +229,7 @@ export interface UpdateInfo {
   releaseName?: string
   releaseNotes?: string | Array<string>
   releaseDate: string
+  safeToUpdate?: boolean
 }
 
 // IPC Channel names
@@ -333,5 +334,13 @@ export const IPC_CHANNELS = {
   // Window Controls
   WINDOW_MINIMIZE: 'window:minimize',
   WINDOW_MAXIMIZE: 'window:maximize',
-  WINDOW_CLOSE: 'window:close'
+  WINDOW_CLOSE: 'window:close',
+
+  // Auto-Update Events (forwarded from main process)
+  UPDATE_CHECKING: 'checking-for-update',
+  UPDATE_AVAILABLE: 'update-available',
+  UPDATE_NOT_AVAILABLE: 'update-not-available',
+  UPDATE_DOWNLOAD_PROGRESS: 'download-progress',
+  UPDATE_DOWNLOADED: 'update-downloaded',
+  UPDATE_ERROR: 'update-error'
 } as const
