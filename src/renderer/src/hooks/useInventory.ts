@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useCallback, useMemo } from 'react'
 import { cafeApi, Category, Product } from '../lib/api'
 
 interface InventoryHookResult {
@@ -17,7 +18,7 @@ interface InventoryHookResult {
 export function useInventoryPrefetch(): { prefetchAll: () => Promise<void> } {
   const queryClient = useQueryClient()
 
-  const prefetchAll = async (): Promise<void> => {
+  const prefetchAll = useCallback(async (): Promise<void> => {
     try {
       const response = await window.api.system.getBootBundle()
       if (response.success && response.data) {
@@ -29,9 +30,9 @@ export function useInventoryPrefetch(): { prefetchAll: () => Promise<void> } {
     } catch (error) {
       console.error('Failed to prefetch boot bundle:', error)
     }
-  }
+  }, [queryClient])
 
-  return { prefetchAll }
+  return useMemo(() => ({ prefetchAll }), [prefetchAll])
 }
 
 export function useInventory(): InventoryHookResult {

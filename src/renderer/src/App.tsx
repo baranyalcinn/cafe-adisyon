@@ -37,10 +37,17 @@ function App(): React.JSX.Element {
   const [isPending, startTransition] = useTransition()
   const { prefetchAll } = useInventoryPrefetch()
 
+  // prefetchAll stabilizes internal ref, but let's ensure it's not the cause of re-renders
   useEffect(() => {
+    let mounted = true
     prefetchAll().finally(() => {
-      setTimeout(() => setIsBooting(false), 400)
+      if (mounted) {
+        setTimeout(() => setIsBooting(false), 400)
+      }
     })
+    return () => {
+      mounted = false
+    }
   }, [prefetchAll])
 
   // --- useCallback ile fonksiyonları sabitledik ---

@@ -134,8 +134,15 @@ export const CartPanel = React.memo(function CartPanel({
 
       if (newQuantity <= 0) {
         const isLastUnpaidItem = unpaidItems.length === 1 && unpaidItems[0]?.id === orderItemId
+
         if (isLastUnpaidItem) {
-          setShowDeleteDialog(true)
+          if (paidAmount > 0) {
+            // Ödeme alınmışsa adisyon SİLİNEMEZ! Sadece ürün silinir.
+            // Sipariş zaten veritabanında olduğu için sadece ürünün silinmesi yeterli.
+            onRemoveItem(orderItemId)
+          } else {
+            setShowDeleteDialog(true)
+          }
         } else {
           onRemoveItem(orderItemId)
         }

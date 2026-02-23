@@ -25,7 +25,6 @@ export class ProductService {
     try {
       const products = await prisma.product.findMany({
         where: {
-          categoryId: { not: null } as any,
           isDeleted: false
         },
         select: PRODUCT_SELECT
@@ -68,7 +67,7 @@ export class ProductService {
       const product = await prisma.product.update({
         where: { id },
         data: { isDeleted: true },
-        include: { category: true }
+        select: PRODUCT_SELECT
       })
       await logService.createLog('DELETE_PRODUCT', undefined, `Ürün silindi: ${product.name}`)
       return { success: true, data: null }

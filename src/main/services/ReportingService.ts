@@ -182,7 +182,16 @@ export class ReportingService {
     const productIds = Array.from(new Set(orderItemGroups.map((g) => g.productId)))
     const products = await prisma.product.findMany({
       where: { id: { in: productIds } },
-      include: { category: true }
+      select: {
+        id: true,
+        name: true,
+        category: {
+          select: {
+            name: true,
+            icon: true
+          }
+        }
+      }
     })
 
     const productCounts = new Map<string, { name: string; quantity: number }>()
@@ -260,11 +269,11 @@ export class ReportingService {
         // Group by hour in SQL instead of Node to avoid memory bloat
         prisma.$queryRaw<{ hour: string; revenue: number | bigint; count: number | bigint }[]>`
           SELECT
-            strftime('%H', "createdAt" / 1000, 'unixepoch', 'localtime') as hour,
+            strftime('%H', "createdAt", 'localtime') as hour,
             SUM("totalAmount") as revenue,
             COUNT(id) as count
           FROM "Order"
-          WHERE "status" = 'CLOSED' AND "createdAt" >= ${today.getTime()}
+          WHERE "status" = 'CLOSED' AND "createdAt" >= ${today.toISOString()}
           GROUP BY hour
         `
       ])
@@ -326,18 +335,18 @@ export class ReportingService {
       const [transactionsArr, ordersArr] = await Promise.all([
         prisma.$queryRaw<{ date: string; revenue: number | bigint }[]>`
           SELECT
-            strftime('%Y-%m-%d', "createdAt" / 1000, 'unixepoch', 'localtime') as date,
+            strftime('%Y-%m-%d', "createdAt", 'localtime') as date,
             SUM(amount) as revenue
           FROM "Transaction"
-          WHERE "createdAt" >= ${startDate.getTime()}
+          WHERE "createdAt" >= ${startDate.toISOString()}
           GROUP BY date
         `,
         prisma.$queryRaw<{ date: string; count: number | bigint }[]>`
           SELECT
-            strftime('%Y-%m-%d', "createdAt" / 1000, 'unixepoch', 'localtime') as date,
+            strftime('%Y-%m-%d', "createdAt", 'localtime') as date,
             COUNT(id) as count
           FROM "Order"
-          WHERE "status" = 'CLOSED' AND "createdAt" >= ${startDate.getTime()}
+          WHERE "status" = 'CLOSED' AND "createdAt" >= ${startDate.toISOString()}
           GROUP BY date
         `
       ])

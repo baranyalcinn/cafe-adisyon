@@ -1,9 +1,10 @@
-import { useToastStore } from '@/store/useToastStore'
-import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useToastStore } from '@/store/useToastStore'
+import { AlertCircle, AlertTriangle, CheckCircle, Info, X } from 'lucide-react'
 
 export function Toaster(): React.JSX.Element | null {
-  const { toasts, dismissToast } = useToastStore()
+  const toasts = useToastStore((state) => state.toasts)
+  const dismissToast = useToastStore((state) => state.dismissToast)
 
   if (toasts.length === 0) return null
 

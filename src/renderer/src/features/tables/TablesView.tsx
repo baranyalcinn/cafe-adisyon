@@ -15,7 +15,6 @@ import {
 import { useTables } from '@/hooks/useTables'
 import { cafeApi } from '@/lib/api'
 import { cn } from '@/lib/utils'
-import { useCartStore } from '@/store/useCartStore'
 import { toast } from '@/store/useToastStore'
 import { ArrowRightLeft, Coffee, Combine, Loader2, Lock, type LucideIcon } from 'lucide-react'
 import { memo, useCallback, useMemo, useState } from 'react'
@@ -541,7 +540,6 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
           : undefined
 
         closeTransferModal()
-        useCartStore.getState().clearCart()
         await refetch()
 
         toast({
@@ -595,7 +593,6 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
         const targetTable = derived.tableMap.get(targetTableId)
 
         closeMergeModal()
-        useCartStore.getState().clearCart()
         await refetch()
 
         toast({

@@ -60,18 +60,13 @@ export function useDashboardStats(
 
   // Real-time updates listener
   useEffect(() => {
-    // Listen for 'dashboard:update' event from main process
-    const removeListener = (
-      window as {
-        electron?: { ipcRenderer: { on: (channel: string, callback: () => void) => () => void } }
-      }
-    ).electron?.ipcRenderer.on('dashboard:update', () => {
-      // Invalidate queries to trigger refetch if data is stale
-      queryClient.invalidateQueries({ queryKey: ['dashboard', 'bundle'] })
+    // Subscribe to IPC event using the safe bridge that returns a cleanup function
+    const cleanup = window.api.on('dashboard:update', () => {
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
     })
 
     return () => {
-      removeListener?.()
+      cleanup()
     }
   }, [queryClient])
 

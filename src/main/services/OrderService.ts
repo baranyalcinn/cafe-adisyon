@@ -5,6 +5,43 @@ import { logger } from '../lib/logger'
 import { toPlain } from '../lib/toPlain'
 import { logService } from './LogService'
 
+const ORDER_ITEM_SELECT = {
+  id: true,
+  orderId: true,
+  productId: true,
+  quantity: true,
+  unitPrice: true,
+  isPaid: true,
+  product: {
+    select: {
+      id: true,
+      name: true,
+      price: true,
+      categoryId: true
+    }
+  }
+}
+
+const ORDER_SELECT = {
+  id: true,
+  tableId: true,
+  status: true,
+  totalAmount: true,
+  isLocked: true,
+  createdAt: true,
+  updatedAt: true,
+  table: {
+    select: {
+      id: true,
+      name: true
+    }
+  },
+  items: {
+    select: ORDER_ITEM_SELECT
+  },
+  payments: true
+}
+
 export class OrderService extends EventEmitter {
   private broadcastDashboardUpdate(): void {
     this.emit('order:updated')
@@ -17,14 +54,9 @@ export class OrderService extends EventEmitter {
           tableId: tableId,
           status: 'OPEN'
         },
-        include: {
-          items: {
-            include: { product: true }
-          },
-          payments: true
-        }
+        select: ORDER_SELECT
       })
-      return { success: true, data: toPlain<Order | null>(order) }
+      return { success: true, data: order as unknown as Order }
     } catch (error) {
       logger.error('OrderService.getOpenOrderForTable', error)
       return { success: false, error: 'Sipariş bulunamadı.' }
@@ -42,13 +74,14 @@ export class OrderService extends EventEmitter {
       const order = await prisma.order.create({
         data: {
           tableId,
-          status: 'OPEN'
+          status: 'OPEN',
+          totalAmount: 0
         },
-        include: { items: true, payments: true }
+        select: ORDER_SELECT
       })
 
       this.broadcastDashboardUpdate()
-      return { success: true, data: toPlain<Order>(order) }
+      return { success: true, data: order as unknown as Order }
     } catch (error) {
       logger.error('OrderService.createOrder', error)
       return { success: false, error: 'Sipariş oluşturulamadı.' }
@@ -85,19 +118,16 @@ export class OrderService extends EventEmitter {
           tx.order.update({
             where: { id: orderId },
             data: { totalAmount: { increment: diff } },
-            include: {
-              items: { include: { product: true } },
-              payments: true,
-              table: true
-            }
+            select: ORDER_SELECT
           }),
           tx.product.findUnique({ where: { id: productId }, select: { name: true } })
         ])
 
+        const orderResult = updatedOrder as unknown as Order
         return {
-          updatedOrder: toPlain<Order>(updatedOrder),
+          updatedOrder: orderResult,
           productName: product?.name || 'Ürün',
-          tableName: updatedOrder.table?.name
+          tableName: orderResult.table?.name
         }
       })
 
@@ -135,12 +165,33 @@ export class OrderService extends EventEmitter {
         const updated = await tx.order.update({
           where: { id: item.orderId },
           data: { totalAmount: { increment: diff } },
-          include: {
-            items: { include: { product: true } },
-            payments: true
-          }
+          select: ORDER_SELECT
         })
-        return toPlain<Order>(updated)
+
+        // Check if fully paid and should be closed
+        const agg = await tx.transaction.aggregate({
+          where: { orderId: item.orderId },
+          _sum: { amount: true }
+        })
+        const totalPaid = agg._sum.amount || 0
+
+        if (totalPaid > 0 && (updated as unknown as Order).totalAmount <= totalPaid) {
+          await tx.orderItem.updateMany({
+            where: { orderId: item.orderId, isPaid: false },
+            data: { isPaid: true }
+          })
+
+          const closedOrder = await tx.order.update({
+            where: { id: item.orderId },
+            data: { status: 'CLOSED' },
+            select: ORDER_SELECT
+          })
+
+          this.broadcastDashboardUpdate()
+          return closedOrder as unknown as Order
+        }
+
+        return updated as unknown as Order
       })
 
       return { success: true, data: txResult }
@@ -163,14 +214,38 @@ export class OrderService extends EventEmitter {
         const updatedOrder = await tx.order.update({
           where: { id: item.orderId },
           data: { totalAmount: { decrement: diff } },
-          include: {
-            items: { include: { product: true } },
-            payments: true
-          }
+          select: ORDER_SELECT
         })
 
+        // Check if fully paid and should be closed
+        const agg = await tx.transaction.aggregate({
+          where: { orderId: item.orderId },
+          _sum: { amount: true }
+        })
+        const totalPaid = agg._sum.amount || 0
+
+        if (totalPaid > 0 && (updatedOrder as unknown as Order).totalAmount <= totalPaid) {
+          await tx.orderItem.updateMany({
+            where: { orderId: item.orderId, isPaid: false },
+            data: { isPaid: true }
+          })
+
+          const closedOrder = await tx.order.update({
+            where: { id: item.orderId },
+            data: { status: 'CLOSED' },
+            select: ORDER_SELECT
+          })
+
+          this.broadcastDashboardUpdate()
+
+          return {
+            updatedOrder: closedOrder as unknown as Order,
+            item
+          }
+        }
+
         return {
-          updatedOrder: toPlain<Order>(updatedOrder),
+          updatedOrder: updatedOrder as unknown as Order,
           item
         }
       })
@@ -193,13 +268,17 @@ export class OrderService extends EventEmitter {
     try {
       const order = await prisma.order.findUnique({
         where: { id: orderId },
-        include: {
-          table: true,
+        select: {
+          id: true,
+          table: { select: { name: true } },
           items: {
-            include: { product: true }
+            select: {
+              quantity: true,
+              product: { select: { name: true } }
+            }
           },
           payments: {
-            take: 1 // Sadece ödeme var mı diye kontrol etmek yeterli
+            take: 1
           }
         }
       })
@@ -259,13 +338,10 @@ export class OrderService extends EventEmitter {
       const updatedOrder = await prisma.order.update({
         where: { id: orderId },
         data: data as { status?: 'OPEN' | 'CLOSED'; totalAmount?: number; isLocked?: boolean },
-        include: {
-          items: { include: { product: true } },
-          payments: true
-        }
+        select: ORDER_SELECT
       })
 
-      return { success: true, data: toPlain<Order>(updatedOrder) }
+      return { success: true, data: updatedOrder as unknown as Order }
     } catch (error) {
       logger.error('OrderService.updateOrder', error)
       return { success: false, error: 'Sipariş güncellenemedi.' }
@@ -277,12 +353,9 @@ export class OrderService extends EventEmitter {
       const updatedOrder = await prisma.order.update({
         where: { id: orderId },
         data: { isLocked },
-        include: {
-          items: { include: { product: true } },
-          payments: true
-        }
+        select: ORDER_SELECT
       })
-      return { success: true, data: toPlain<Order>(updatedOrder) }
+      return { success: true, data: updatedOrder as unknown as Order }
     } catch (error) {
       logger.error('OrderService.toggleLock', error)
       return { success: false, error: 'Kilit durumu değiştirilemedi.' }
@@ -336,27 +409,19 @@ export class OrderService extends EventEmitter {
           const closedOrder = await tx.order.update({
             where: { id: orderId },
             data: { status: 'CLOSED' },
-            include: {
-              items: { include: { product: { select: { name: true } } } },
-              payments: true,
-              table: { select: { name: true } }
-            }
+            select: ORDER_SELECT
           })
-          return { order: toPlain<Order>(closedOrder), completed: true }
+          return { order: closedOrder as unknown as Order, completed: true }
         }
 
         // 5. Partial payment — return updated order
         const updatedOrder = await tx.order.update({
           where: { id: orderId },
           data: {}, // Just to fetch the latest state cleanly if not closed
-          include: {
-            items: { include: { product: { select: { name: true } } } },
-            payments: true,
-            table: { select: { name: true } }
-          }
+          select: ORDER_SELECT
         })
 
-        return { order: toPlain<Order>(updatedOrder), completed: false }
+        return { order: updatedOrder as unknown as Order, completed: false }
       })
 
       // Log outside transaction (non-critical)
@@ -404,7 +469,7 @@ export class OrderService extends EventEmitter {
         const itemIds = items.map((i) => i.id)
         const orderItems = await tx.orderItem.findMany({
           where: { id: { in: itemIds } },
-          include: { product: true }
+          select: ORDER_ITEM_SELECT
         })
 
         const itemMap = new Map(orderItems.map((oi) => [oi.id, oi]))
@@ -478,11 +543,7 @@ export class OrderService extends EventEmitter {
         // We can just fetch the updated order data to return it directly.
         const finalOrder = await prisma.order.findUnique({
           where: { id: result.orderId },
-          include: {
-            items: { include: { product: { select: { name: true } } } },
-            payments: true,
-            table: { select: { name: true } }
-          }
+          select: ORDER_SELECT
         })
 
         if (!finalOrder) return { success: false, error: 'Sipariş bulunamadı' }
@@ -499,7 +560,7 @@ export class OrderService extends EventEmitter {
           await logService.createLog('ITEMS_PAID', finalOrder.table?.name, logDetails)
         }
 
-        return { success: true, data: toPlain<Order>(finalOrder) }
+        return { success: true, data: finalOrder as unknown as Order }
       }
 
       return { success: true, data: null }
@@ -577,20 +638,14 @@ export class OrderService extends EventEmitter {
     try {
       const order = await prisma.order.findUnique({
         where: { id: orderId },
-        include: {
-          table: true,
-          items: {
-            include: { product: true }
-          },
-          payments: true
-        }
+        select: ORDER_SELECT
       })
 
       if (!order) {
         return { success: false, error: 'Sipariş bulunamadı.' }
       }
 
-      return { success: true, data: toPlain<Order>(order) }
+      return { success: true, data: order as unknown as Order }
     } catch (error) {
       logger.error('OrderService.getOrderDetails', error)
       return { success: false, error: 'Sipariş detayları alınamadı.' }
@@ -625,14 +680,10 @@ export class OrderService extends EventEmitter {
         const updatedOrder = await tx.order.update({
           where: { id: orderId },
           data: { tableId: targetTableId },
-          include: {
-            items: { include: { product: true } },
-            payments: true,
-            table: true
-          }
+          select: ORDER_SELECT
         })
 
-        return { sourceOrder, updatedOrder }
+        return { sourceOrder, updatedOrder: updatedOrder as unknown as Order }
       })
 
       // Log activity outside transaction
@@ -642,7 +693,7 @@ export class OrderService extends EventEmitter {
         `${result.sourceOrder.table?.name || 'Masa'} -> ${result.updatedOrder.table?.name || 'Masa'} taşındı`
       )
 
-      return { success: true, data: toPlain<Order>(result.updatedOrder) }
+      return { success: true, data: result.updatedOrder }
     } catch (error) {
       logger.error('OrderService.transferTable', error)
       if (
@@ -750,14 +801,10 @@ export class OrderService extends EventEmitter {
           const updatedOrder = await tx.order.update({
             where: { id: targetOrderId },
             data: { totalAmount: newTotal },
-            include: {
-              items: { include: { product: true } },
-              payments: true,
-              table: true
-            }
+            select: ORDER_SELECT
           })
 
-          return toPlain<Order>(updatedOrder)
+          return updatedOrder as unknown as Order
         },
         {
           timeout: 20000

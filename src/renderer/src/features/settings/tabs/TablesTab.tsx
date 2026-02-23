@@ -16,8 +16,6 @@ import { useState } from 'react'
 
 export function TablesTab(): React.JSX.Element {
   const { data: tables = [], refetch } = useTables()
-  // We can keep useTableStore if needed for other things, but here we just need data.
-  // const { tables, addTable, removeTable } = useTableStore() // Removed
 
   const handleAddTable = async (): Promise<void> => {
     try {
