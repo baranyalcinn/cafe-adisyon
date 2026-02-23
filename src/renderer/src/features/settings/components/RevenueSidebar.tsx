@@ -40,12 +40,12 @@ export const RevenueSidebar = memo(
                   <Banknote className="w-6 h-6" />
                 </div>
                 <span className="px-3 py-1.5 bg-rose-500/10 text-rose-600 text-[9px] font-black rounded-lg tracking-[0.2em] uppercase">
-                  BUGÜN
+                  Bugün
                 </span>
               </div>
               <div className="space-y-1">
-                <p className="text-[10px] font-bold text-muted-foreground  tracking-widest">
-                  GÜNLÜK TOPLAM
+                <p className="text-[11px] font-bold text-muted-foreground tracking-widest">
+                  Günlük Toplam
                 </p>
                 <p className="text-2xl font-black tabular-nums tracking-tighter text-foreground">
                   {formatCurrency(stats.todayTotal)}
@@ -60,12 +60,12 @@ export const RevenueSidebar = memo(
                   <PieChart className="w-6 h-6" />
                 </div>
                 <span className="px-3 py-1.5 bg-primary/10 text-primary text-[9px] font-black rounded-lg tracking-[0.2em] uppercase">
-                  BU AY
+                  Bu Ay
                 </span>
               </div>
               <div className="space-y-1">
-                <p className="text-[10px] font-bold text-muted-foreground  tracking-widest">
-                  AYLIK TOPLAM
+                <p className="text-[11px] font-bold text-muted-foreground tracking-widest">
+                  Aylık Toplam
                 </p>
                 <p className="text-2xl font-black tabular-nums tracking-tighter text-foreground">
                   {formatCurrency(stats.monthTotal)}
@@ -80,8 +80,8 @@ export const RevenueSidebar = memo(
           <div className="space-y-4">
             <div className="flex items-center gap-2 ml-1">
               <Filter className="w-3.5 h-3.5 text-zinc-400" />
-              <span className="text-[10px] font-black tracking-[0.2em] text-zinc-400 uppercase">
-                FİLTRELEME
+              <span className="text-[12px] font-black tracking-widest text-zinc-400">
+                Filtreleme
               </span>
             </div>
 
@@ -89,7 +89,7 @@ export const RevenueSidebar = memo(
               {/* Arama */}
               <div className="space-y-2.5">
                 <label className="text-[10px] font-black tracking-widest text-muted-foreground  ml-1">
-                  DETAYLI ARAMA
+                  Detaylı Arama
                 </label>
                 <div className="relative group">
                   <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 transition-colors group-focus-within:text-primary" />
@@ -105,7 +105,7 @@ export const RevenueSidebar = memo(
               {/* Kategori Seçimi */}
               <div className="space-y-2.5">
                 <label className="text-[10px] font-black tracking-widest text-muted-foreground  ml-1">
-                  KATEGORİ SEÇİMİ
+                  Kategori Seçimi
                 </label>
                 <Select
                   value={filters.category}
@@ -128,7 +128,7 @@ export const RevenueSidebar = memo(
                       <SelectItem
                         key={cat}
                         value={cat}
-                        className="text-xs font-bold py-3 rounded-xl  tracking-wider"
+                        className="text-xs font-bold py-3 rounded-xl tracking-tight"
                       >
                         {cat}
                       </SelectItem>
@@ -140,7 +140,7 @@ export const RevenueSidebar = memo(
               {/* Tarih Aralığı */}
               <div className="space-y-2.5">
                 <label className="text-[10px] font-black tracking-widest text-muted-foreground  ml-1">
-                  ZAMAN ARALIĞI
+                  Zaman Aralığı
                 </label>
                 <Select
                   value={filters.dateRange}

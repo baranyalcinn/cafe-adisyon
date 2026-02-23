@@ -127,7 +127,7 @@ export function ExpensesTable({
     <Button
       variant="ghost"
       onClick={() => handleSort(sortKey)}
-      className="-ml-4 h-8 font-black text-[10px] tracking-[0.2em] text-zinc-500 uppercase hover:text-primary transition-colors "
+      className="-ml-4 h-8 font-black text-[12px] tracking-widest text-zinc-500 hover:text-primary transition-colors "
     >
       {label}
       <ArrowUpDown className="ml-2 h-3.5 w-3.5 opacity-50" />
@@ -175,19 +175,19 @@ export function ExpensesTable({
           <TableHeader className="sticky top-0 bg-zinc-50/80 dark:bg-zinc-950/80 backdrop-blur-sm z-10 border-b-2 border-zinc-200 dark:border-zinc-800">
             <TableRow className="hover:bg-transparent border-0">
               <TableHead className="w-[180px] pl-6">
-                <SortButton label="TARİH" sortKey="createdAt" />
+                <SortButton label="Tarih" sortKey="createdAt" />
               </TableHead>
               <TableHead className="w-[30%]">
-                <SortButton label="AÇIKLAMA" sortKey="description" />
+                <SortButton label="Açıklama" sortKey="description" />
               </TableHead>
               <TableHead>
-                <SortButton label="KATEGORİ" sortKey="category" />
+                <SortButton label="Kategori" sortKey="category" />
               </TableHead>
               <TableHead>
-                <SortButton label="ÖDEME" sortKey="paymentMethod" />
+                <SortButton label="Ödeme" sortKey="paymentMethod" />
               </TableHead>
               <TableHead className="text-right">
-                <SortButton label="TUTAR" sortKey="amount" />
+                <SortButton label="Tutar" sortKey="amount" />
               </TableHead>
               <TableHead className="w-[60px]"></TableHead>
             </TableRow>
@@ -333,18 +333,18 @@ export function ExpensesTable({
                           {expense.category && (
                             <span
                               className={cn(
-                                'text-[11px] font-black tracking-wider',
+                                'text-[13px] font-black tracking-tight',
                                 getCategoryColor(expense.category)
                               )}
                             >
-                              {expense.category.toLocaleUpperCase('tr-TR')}
+                              {expense.category}
                             </span>
                           )}
                         </TableCell>
                         <TableCell className="py-4">
                           <div
                             className={cn(
-                              'flex items-center gap-1.5 text-[11px] font-bold tracking-wider',
+                              'flex items-center gap-1.5 text-[13px] font-bold tracking-tight',
                               expense.paymentMethod === 'CARD'
                                 ? 'text-purple-600'
                                 : 'text-emerald-600'
@@ -355,7 +355,7 @@ export function ExpensesTable({
                             ) : (
                               <Wallet className="w-3.5 h-3.5" />
                             )}
-                            {expense.paymentMethod === 'CARD' ? 'KART' : 'NAKİT'}
+                            {expense.paymentMethod === 'CARD' ? 'Kart' : 'Nakit'}
                           </div>
                         </TableCell>
                         <TableCell className="text-right py-4">

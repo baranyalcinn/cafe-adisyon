@@ -3,43 +3,48 @@
 /* Override dark variant to use .dark class instead of prefers-color-scheme */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* ===== LIGHT MODE THEME (Default) - BEIGE/CREAM TONES ===== */
+/* ===== LIGHT MODE THEME (Default) ===== */
 @theme {
   --font-sans:
-    'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-    'Segoe UI Symbol', 'Noto Color Emoji';
+    'Plus Jakarta Sans', 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+    'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   --font-display:
     'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
     'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 
-  /* Professional UI Theme - Tailwind v4 Standard Variables */
-  --bg-main: #fafafa; /* zinc-50 for app background to reduce eye strain */
-  --text-main: #18181b; /* zinc-900 text color */
-  --panel-card: #ffffff; /* Pure white card background */
-  --emerald-accent: oklch(0.52 0.18 155); /* Re-defined vibrant emerald */
-  --stone-border: #e4e4e7; /* zinc-200 border */
+  /* Base tokens */
+  --bg-main: #fafafa; /* zinc-50 */
+  --text-main: #18181b; /* zinc-900 */
+  --panel-card: #ffffff;
+  --stone-border: #e4e4e7; /* zinc-200 */
 
-  /* Mapping to Tailwind/Shadcn standard variables */
+  /* Accent (OKLCH) */
+  --emerald-accent: oklch(0.52 0.18 155);
+
+  /* Shadcn/Tailwind standard mapping */
   --color-background: var(--bg-main);
   --color-foreground: var(--text-main);
   --color-card: var(--panel-card);
   --color-card-foreground: var(--text-main);
   --color-popover: var(--panel-card);
   --color-popover-foreground: var(--text-main);
+
   --color-primary: var(--emerald-accent);
-  /* RGB variables for advanced transparency effects */
+  --color-primary-foreground: oklch(0.99 0.005 80);
+
+  --color-muted: oklch(0.92 0.02 85);
+  --color-muted-foreground: oklch(0.45 0.02 70);
+
+  --color-border: var(--stone-border);
+  --color-ring: var(--emerald-accent);
+
+  /* RGB variables (ONLY for rgba()) */
   --color-primary-rgb: 16, 185, 129;
   --color-success-rgb: 16, 185, 129;
   --color-warning-rgb: 245, 158, 11;
   --color-destructive-rgb: 239, 68, 68;
 
-  --color-primary-foreground: oklch(0.99 0.005 80);
-  --color-muted: oklch(0.92 0.02 85);
-  --color-muted-foreground: oklch(0.45 0.02 70);
-  --color-border: var(--stone-border);
-  --color-ring: var(--emerald-accent);
-
-  /* Fallback aliases for standard shadcn/tailwind compatibility */
+  /* Fallback aliases */
   --foreground: var(--color-foreground);
   --muted: var(--color-muted);
   --muted-foreground: var(--color-muted-foreground);
@@ -53,7 +58,7 @@
   --color-table-empty: oklch(0.55 0.17 155);
   --color-table-occupied: oklch(0.55 0.18 260);
 
-  /* Semantic Status Colors */
+  /* Semantic */
   --color-success: oklch(0.48 0.17 155);
   --color-warning: oklch(0.58 0.16 60);
   --color-info: oklch(0.48 0.18 260);
@@ -61,7 +66,7 @@
   --color-destructive: oklch(0.6 0.18 25);
   --color-destructive-foreground: oklch(0.99 0.005 80);
 
-  /* Chart Colors */
+  /* Chart */
   --color-chart-1: oklch(0.55 0.2 260);
   --color-chart-2: oklch(0.6 0.17 160);
   --color-chart-3: oklch(0.7 0.18 70);
@@ -69,7 +74,6 @@
   --color-chart-5: oklch(0.6 0.2 20);
 
   --radius: 0.625rem;
-  --font-sans: 'Plus Jakarta Sans', 'Inter', ui-sans-serif, system-ui, sans-serif;
 }
 
 /* ===== DARK MODE OVERRIDES ===== */
@@ -99,7 +103,7 @@
   --color-input: #27272a; /* zinc-800 */
   --color-ring: oklch(0.5 0 0);
 
-  /* Fallback aliases for dark mode */
+  /* Aliases */
   --foreground: var(--color-foreground);
   --muted: var(--color-muted);
   --muted-foreground: var(--color-muted-foreground);
@@ -117,68 +121,78 @@
   --color-table-empty: oklch(0.65 0.18 155);
   --color-table-occupied: oklch(0.6 0.16 260);
 
-  /* Semantic Status Colors - Dark */
   --color-success: oklch(0.65 0.18 155);
   --color-warning: oklch(0.75 0.14 60);
   --color-info: oklch(0.6 0.16 260);
   --color-pending: oklch(0.75 0.14 40);
 
-  /* RGB Variable Overrides for Dark Mode */
+  /* RGB remains same */
   --color-primary-rgb: 16, 185, 129;
   --color-success-rgb: 16, 185, 129;
   --color-warning-rgb: 245, 158, 11;
   --color-destructive-rgb: 239, 68, 68;
 
-  /* Dark Mode Depth & Elevation */
-  /* Stronger shadows with negative expansion for depth + subtle primary glow + subtle white border ring */
+  /* Elevation */
   --shadow-premium:
     0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05),
     0 10px 40px -10px rgba(var(--color-primary-rgb), 0.15);
+
   --shadow-soft: 0 4px 20px -2px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.03);
+
   --shadow-hover:
     0 30px 60px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.1),
     0 15px 50px -10px rgba(var(--color-primary-rgb), 0.25);
 }
 
-/* ===== COLOR SCHEMES ===== */
+/* ===== COLOR SCHEMES (Production-ready, RGB synced) ===== */
 
-/* Sage Emerald - Organic & Trust (Natural Sage Green) */
-[data-scheme='emerald'] {
+/* Sage - Organic & Trust */
+[data-scheme='sage'] {
   --color-primary: oklch(0.55 0.12 165);
+  --color-primary-rgb: 34, 197, 94; /* emerald-500 */
+
   --color-ring: oklch(0.55 0.12 165);
   --color-sidebar-primary: oklch(0.55 0.12 165);
   --color-sidebar-ring: oklch(0.55 0.12 165);
   --color-table-empty: oklch(0.55 0.12 165);
 }
-[data-scheme='emerald'].dark,
-.dark[data-scheme='emerald'] {
+[data-scheme='sage'].dark,
+.dark[data-scheme='sage'] {
   --color-primary: oklch(0.7 0.1 165);
+  --color-primary-rgb: 74, 222, 128; /* emerald-400 */
+
   --color-ring: oklch(0.5 0 0);
   --color-sidebar-primary: oklch(0.7 0.1 165);
   --color-sidebar-ring: oklch(0.5 0 0);
   --color-table-empty: oklch(0.68 0.12 165);
 }
 
-/* Nordic Slate - Professional & Clean (Cool Grey-Blue) */
-[data-scheme='ocean'] {
+/* Nordic - Professional & Clean */
+[data-scheme='nordic'] {
   --color-primary: oklch(0.45 0.05 240);
+  --color-primary-rgb: 59, 130, 246; /* blue-500 */
+
   --color-ring: oklch(0.45 0.05 240);
   --color-sidebar-primary: oklch(0.45 0.05 240);
   --color-sidebar-ring: oklch(0.45 0.05 240);
   --color-table-empty: oklch(0.45 0.05 240);
 }
-[data-scheme='ocean'].dark,
-.dark[data-scheme='ocean'] {
+[data-scheme='nordic'].dark,
+.dark[data-scheme='nordic'] {
   --color-primary: oklch(0.65 0.04 240);
+  --color-primary-rgb: 96, 165, 250; /* blue-400 */
+
   --color-ring: oklch(0.5 0 0);
   --color-sidebar-primary: oklch(0.65 0.04 240);
   --color-sidebar-ring: oklch(0.5 0 0);
   --color-table-empty: oklch(0.65 0.05 240);
 }
 
-/* Midnight Violet - Modern & Premium (Deep Purple) */
+/* Violet - Modern & Premium */
 [data-scheme='violet'] {
   --color-primary: oklch(0.48 0.18 285);
+  --color-primary-rgb: 139, 92, 246; /* violet-500 */
+
   --color-ring: oklch(0.48 0.18 285);
   --color-sidebar-primary: oklch(0.48 0.18 285);
   --color-sidebar-ring: oklch(0.48 0.18 285);
@@ -187,32 +201,40 @@
 [data-scheme='violet'].dark,
 .dark[data-scheme='violet'] {
   --color-primary: oklch(0.68 0.16 285);
+  --color-primary-rgb: 167, 139, 250; /* violet-400 */
+
   --color-ring: oklch(0.5 0 0);
   --color-sidebar-primary: oklch(0.68 0.16 285);
   --color-sidebar-ring: oklch(0.5 0 0);
   --color-table-empty: oklch(0.68 0.18 285);
 }
 
-/* Canyon Amber - Warm & Cozy (Earth-Coffee Tone) */
-[data-scheme='amber'] {
+/* Canyon - Warm & Cozy */
+[data-scheme='canyon'] {
   --color-primary: oklch(0.55 0.15 45);
+  --color-primary-rgb: 245, 158, 11; /* amber-500 */
+
   --color-ring: oklch(0.55 0.15 45);
   --color-sidebar-primary: oklch(0.55 0.15 45);
   --color-sidebar-ring: oklch(0.55 0.15 45);
   --color-table-empty: oklch(0.55 0.15 45);
 }
-[data-scheme='amber'].dark,
-.dark[data-scheme='amber'] {
+[data-scheme='canyon'].dark,
+.dark[data-scheme='canyon'] {
   --color-primary: oklch(0.75 0.12 45);
+  --color-primary-rgb: 251, 191, 36; /* amber-400 */
+
   --color-ring: oklch(0.5 0 0);
   --color-sidebar-primary: oklch(0.75 0.12 45);
   --color-sidebar-ring: oklch(0.5 0 0);
   --color-table-empty: oklch(0.75 0.15 45);
 }
 
-/* Champagne Rose - Elegant & Aesthetic (Champagne/Rose Gold) */
+/* Rose - Elegant & Aesthetic */
 [data-scheme='rose'] {
   --color-primary: oklch(0.58 0.14 15);
+  --color-primary-rgb: 244, 63, 94; /* rose-500 */
+
   --color-ring: oklch(0.58 0.14 15);
   --color-sidebar-primary: oklch(0.58 0.14 15);
   --color-sidebar-ring: oklch(0.58 0.14 15);
@@ -221,6 +243,8 @@
 [data-scheme='rose'].dark,
 .dark[data-scheme='rose'] {
   --color-primary: oklch(0.78 0.1 15);
+  --color-primary-rgb: 251, 113, 133; /* rose-400 */
+
   --color-ring: oklch(0.5 0 0);
   --color-sidebar-primary: oklch(0.78 0.1 15);
   --color-sidebar-ring: oklch(0.5 0 0);
@@ -237,7 +261,7 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  /* Default Light Mode Hover Shadow */
+  /* Default hover shadow (light) */
   --shadow-hover: 0 20px 40px -10px rgba(0, 0, 0, 0.1);
 }
 
@@ -246,20 +270,11 @@ body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
-  overflow: hidden;
-  user-select: none;
-}
 
-@layer base {
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    font-family: var(--font-display);
-    letter-spacing: -0.01em; /* Slight tightening for geometric headings */
-  }
+  /* Electron app'lerde genelde iyi ama taşma bug'ı yaşarsan bunu root layout'a taşı */
+  overflow: hidden;
+
+  user-select: none;
 }
 
 /* Allow selection in inputs */
@@ -280,19 +295,30 @@ textarea,
   box-sizing: border-box;
 }
 
+@layer base {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+}
+
 /* Global Lucide Icon Visibility Boost */
 .lucide {
-  stroke-width: 2.25px !important; /* Slightly thicker for premium feel */
+  stroke-width: 2.25px !important;
   stroke: currentColor;
   transition:
     transform 0.2s ease,
     stroke-width 0.2s ease;
 }
 
-/* Secondary/Small icons in lists can be slightly thinner if needed, but 2.25 is a good baseline */
 .premium-item .lucide,
 .premium-card .lucide {
-  stroke-width: 2.5px !important; /* Even more prominent in cards */
+  stroke-width: 2.5px !important;
 }
 
 /* Title Bar Drag Regions */
@@ -309,15 +335,12 @@ textarea,
   width: 5px;
   height: 5px;
 }
-
 ::-webkit-scrollbar-track {
   background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
   @apply bg-border/40 rounded-full transition-colors;
 }
-
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-primary/40;
 }
@@ -334,23 +357,37 @@ textarea,
     transform: translateX(8px);
   }
 }
-
-@keyframes shimmer {
-  from {
-    transform: translateX(-100%);
-  }
-  to {
-    transform: translateX(100%);
-  }
-}
-
-.animate-shimmer {
-  animation: shimmer 2s infinite;
-}
-
 .animate-shake {
   animation: shake 0.2s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
   animation-iteration-count: 2;
+}
+
+/* ✅ SINGLE shimmer (tek kaynak) */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+.animate-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.animate-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.08),
+    rgba(255, 255, 255, 0.16),
+    rgba(255, 255, 255, 0.08),
+    transparent
+  );
+  animation: shimmer 2.5s infinite;
 }
 
 /* Premium UI Utilities */
@@ -360,7 +397,6 @@ textarea,
     var(--shadow-premium),
     inset 0 1px 0 0 rgba(255, 255, 255, 0.4);
 }
-
 .dark .glass-panel {
   @apply bg-card/80 border-white/5;
   box-shadow:
@@ -368,22 +404,22 @@ textarea,
     inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
 }
 
+/* ✅ section-panel: rgba(var(--color-card)) yerine color-mix */
 .section-panel {
   @apply relative;
   background: linear-gradient(
     180deg,
-    rgba(var(--color-card), 0.5) 0%,
-    rgba(var(--color-background), 0.7) 100%
+    color-mix(in oklch, var(--color-card) 55%, transparent) 0%,
+    color-mix(in oklch, var(--color-background) 70%, transparent) 100%
   );
 }
-
 .section-panel::before {
   content: '';
   position: absolute;
   inset: 0;
   background: radial-gradient(
     ellipse at 50% 0%,
-    rgba(var(--color-primary), 0.03) 0%,
+    color-mix(in oklch, var(--color-primary) 6%, transparent) 0%,
     transparent 70%
   );
   pointer-events: none;
@@ -392,7 +428,6 @@ textarea,
 .section-divider {
   @apply relative;
 }
-
 .section-divider::after {
   content: '';
   position: absolute;
@@ -411,20 +446,17 @@ textarea,
 .premium-card {
   @apply rounded-[1.5rem] md:rounded-[2rem] bg-card border border-border shadow-sm transition-all duration-300 overflow-hidden;
 }
-
 .premium-card:hover {
   @apply translate-y-[-4px] shadow-lg border-primary/20;
 }
-
 .dark .premium-card {
   @apply bg-card/60 border-white/5;
 }
-
 .dark .premium-card:hover {
   @apply border-primary/30;
 }
 
-/* Premium List Item (Compact version of premium-card) */
+/* Premium List Item */
 .premium-item {
   @apply relative rounded-xl bg-card/80 overflow-hidden;
   border: 1px solid transparent;
@@ -442,7 +474,6 @@ textarea,
       )
       border-box;
 }
-
 .dark .premium-item {
   @apply bg-card/60;
   background:
@@ -459,7 +490,6 @@ textarea,
       )
       border-box;
 }
-
 .premium-item:hover {
   @apply bg-card shadow-md;
   background:
@@ -477,18 +507,17 @@ textarea,
 .premium-button {
   @apply relative w-full h-14 flex items-center justify-center gap-3 text-base font-bold rounded-2xl transition-all duration-300 active:scale-[0.96] overflow-hidden cursor-pointer shadow-lg;
 
-  /* Primary Style with Gradient Border */
   border: 1px solid transparent;
   background:
     linear-gradient(var(--color-primary), var(--color-primary)) padding-box,
     linear-gradient(to bottom right, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.1)) border-box;
 
   color: var(--color-primary-foreground);
-  box-shadow: 0 8px 20px -6px rgba(var(--color-primary), 0.5);
-}
 
+  /* ✅ rgba ONLY uses RGB token */
+  box-shadow: 0 8px 20px -6px rgba(var(--color-primary-rgb), 0.5);
+}
 .premium-button::after {
-  /* Glassy Shine */
   content: '';
   position: absolute;
   top: 0;
@@ -498,27 +527,19 @@ textarea,
   background: linear-gradient(to bottom, rgba(255, 255, 255, 0.15), transparent);
   pointer-events: none;
 }
-
 .premium-button:hover {
-  box-shadow: 0 12px 25px -5px rgba(var(--color-primary), 0.6);
+  box-shadow: 0 12px 25px -5px rgba(var(--color-primary-rgb), 0.6);
   transform: translateY(-2px);
 }
-
 .premium-button:active {
   transform: scale(0.98) translateY(0);
-  box-shadow: 0 4px 10px -2px rgba(var(--color-primary), 0.4);
+  box-shadow: 0 4px 10px -2px rgba(var(--color-primary-rgb), 0.4);
 }
-
 .premium-button:disabled {
-  @apply bg-muted text-muted-foreground opacity-50 cursor-not-allowed shadow-none;
-  background: hsl(var(--muted));
+  @apply text-muted-foreground opacity-50 cursor-not-allowed shadow-none;
+  background: var(--color-muted);
   border: 1px solid transparent;
   transform: none;
-}
-
-/* Removed ambient-glow to fix flickering issues */
-.ambient-glow {
-  position: relative;
 }
 
 /* Cart panel accent */
@@ -526,12 +547,11 @@ textarea,
   @apply relative;
   background: linear-gradient(
     135deg,
-    rgba(var(--color-card), 1) 0%,
-    rgba(var(--color-card), 0.95) 50%,
-    rgba(var(--color-primary), 0.02) 100%
+    color-mix(in oklch, var(--color-card) 100%, transparent) 0%,
+    color-mix(in oklch, var(--color-card) 95%, transparent) 50%,
+    color-mix(in oklch, var(--color-primary) 3%, transparent) 100%
   );
 }
-
 .cart-panel-accent::before {
   content: '';
   position: absolute;
@@ -541,46 +561,16 @@ textarea,
   width: 2px;
   background: linear-gradient(
     180deg,
-    rgba(var(--color-primary), 0.5) 0%,
-    rgba(var(--color-primary), 0.2) 50%,
+    rgba(var(--color-primary-rgb), 0.5) 0%,
+    rgba(var(--color-primary-rgb), 0.2) 50%,
     transparent 100%
   );
-} /* GPU Acceleration Utility - Forces layer creation for smooth animations */
+}
+
+/* GPU Acceleration */
 .gpu-accelerated {
   transform: translate3d(0, 0, 0);
   backface-visibility: hidden;
   perspective: 1000px;
   will-change: transform, opacity;
-}
-
-@keyframes shimmer {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(100%);
-  }
-}
-
-.animate-shimmer {
-  position: relative;
-  overflow: hidden;
-}
-
-.animate-shimmer::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.1),
-    rgba(255, 255, 255, 0.2),
-    rgba(255, 255, 255, 0.1),
-    transparent
-  );
-  animation: shimmer 2.5s infinite;
 }

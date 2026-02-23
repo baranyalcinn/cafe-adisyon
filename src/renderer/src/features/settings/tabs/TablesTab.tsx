@@ -86,7 +86,7 @@ export function TablesTab(): React.JSX.Element {
             <div className="w-12 h-12 rounded-xl bg-white dark:bg-zinc-800 border-2 border-transparent group-hover:border-primary/20 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform shadow-sm">
               <Plus className="w-6 h-6 text-zinc-400 group-hover:text-primary" />
             </div>
-            <span className="text-xs font-black tracking-widest text-zinc-500 uppercase group-hover:text-primary">
+            <span className="text-xs font-black tracking-tight text-zinc-500 group-hover:text-primary">
               Masa Ekle
             </span>
           </div>
@@ -115,11 +115,11 @@ export function TablesTab(): React.JSX.Element {
                 <h3 className="font-bold text-lg">{table.name}</h3>
                 <p
                   className={cn(
-                    'text-[10px] font-black tracking-wider',
+                    'text-[10px] font-black tracking-tight',
                     table.hasOpenOrder ? 'text-amber-600' : 'text-emerald-600'
                   )}
                 >
-                  {table.hasOpenOrder ? 'DOLU / ÜRÜN VAR' : 'BOŞ / MÜSAİT'}
+                  {table.hasOpenOrder ? 'Dolu / Ürün Var' : 'Boş / Müsait'}
                 </p>
               </div>
             </div>
@@ -172,7 +172,7 @@ export function TablesTab(): React.JSX.Element {
               <DialogFooter className="flex-row gap-4 sm:gap-0">
                 <Button
                   variant="ghost"
-                  className="flex-1 h-14 rounded-2xl border-2 border-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 font-black uppercase tracking-widest text-xs"
+                  className="flex-1 h-14 rounded-2xl border-2 border-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 font-black tracking-tight text-xs"
                   onClick={() =>
                     setDeleteDialog({ isOpen: false, tableId: null, isWarning: false })
                   }
@@ -182,14 +182,14 @@ export function TablesTab(): React.JSX.Element {
                 <Button
                   variant="destructive"
                   className={cn(
-                    'flex-1 h-14 rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg shadow-destructive/20 border-2 border-transparent',
+                    'flex-1 h-14 rounded-2xl font-black tracking-tight text-xs shadow-lg shadow-destructive/20 border-2 border-transparent',
                     deleteDialog.isWarning ? 'bg-amber-600 hover:bg-amber-700' : ''
                   )}
                   onClick={() =>
                     deleteDialog.tableId && handleDeleteTable(deleteDialog.tableId, true)
                   }
                 >
-                  {deleteDialog.isWarning ? 'EVET, YİNE DE SİL' : 'MASAYI SİL'}
+                  {deleteDialog.isWarning ? 'Evet, Yine de Sil' : 'Masayı Sil'}
                 </Button>
               </DialogFooter>
             </div>

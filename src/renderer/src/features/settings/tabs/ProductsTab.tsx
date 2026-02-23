@@ -183,10 +183,10 @@ export function ProductsTab(): React.JSX.Element {
               </Button>
               <Button
                 variant="destructive"
-                className="rounded-xl font-black h-12 px-8 shadow-sm hover:scale-105 active:scale-95 transition-all bg-red-600 hover:bg-red-700"
+                className="rounded-xl font-black h-12 px-8 shadow-sm hover:scale-105 active:scale-95 transition-all bg-red-600 hover:bg-red-700 tracking-tight"
                 onClick={confirmDeleteCategory}
               >
-                KALICI OLARAK SİL
+                Kalıcı Olarak Sil
               </Button>
             </div>
           </div>
@@ -234,8 +234,8 @@ const QuickAddProductCard = memo(
           <div className="p-3 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-500 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900 group-hover:text-indigo-600 group-hover:scale-110 transition-colors duration-300">
             <Plus size={24} strokeWidth={3} />
           </div>
-          <span className="text-[11px] font-black text-zinc-500 dark:text-zinc-400 group-hover:text-indigo-600 tracking-[0.2em] transition-colors">
-            YENİ ÜRÜN
+          <span className="text-[11px] font-black text-zinc-500 dark:text-zinc-400 group-hover:text-indigo-600 tracking-tight transition-colors">
+            Yeni Ürün
           </span>
         </button>
       )
@@ -262,17 +262,17 @@ const QuickAddProductCard = memo(
           <Button
             size="sm"
             onClick={handleAdd}
-            className="h-9 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-black shadow-sm"
+            className="h-9 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-black shadow-sm tracking-tight"
           >
-            EKLE
+            Ekle
           </Button>
           <Button
             size="sm"
             variant="ghost"
             onClick={() => setIsAdding(false)}
-            className="h-9 text-xs font-bold rounded-lg text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 dark:hover:text-white"
+            className="h-9 text-xs font-bold rounded-lg text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 dark:hover:text-white tracking-tight"
           >
-            İPTAL
+            İptal
           </Button>
         </div>
       </Card>

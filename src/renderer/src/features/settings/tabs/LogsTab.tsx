@@ -79,127 +79,127 @@ const DATE_FILTERS: { id: DateRangeType; label: string }[] = [
 
 const ACTION_CONFIG = {
   GENERATE_ZREPORT: {
-    label: 'Z-RAPORU',
+    label: 'Z-Raporu',
     color: 'text-purple-400',
     bg: 'bg-purple-400/5',
     category: 'system'
   },
   ARCHIVE_DATA: {
-    label: 'ARŞİVLEME',
+    label: 'Arşivleme',
     color: 'text-orange-400',
     bg: 'bg-orange-400/5',
     category: 'system'
   },
   BACKUP_DATABASE: {
-    label: 'YEDEKLEME',
+    label: 'Yedekleme',
     color: 'text-blue-400',
     bg: 'bg-blue-400/5',
     category: 'system'
   },
   END_OF_DAY: {
-    label: 'GÜN SONU',
+    label: 'Gün Sonu',
     color: 'text-indigo-400',
     bg: 'bg-indigo-400/5',
     category: 'system'
   },
   OPEN_TABLE: {
-    label: 'MASA AÇILDI',
+    label: 'Masa Açıldı',
     color: 'text-emerald-400',
     bg: 'bg-emerald-400/5',
     category: 'operation'
   },
   CLOSE_TABLE: {
-    label: 'MASA KAPATILDI',
+    label: 'Masa Kapatıldı',
     color: 'text-slate-400',
     bg: 'bg-slate-400/5',
     category: 'operation'
   },
   MOVE_TABLE: {
-    label: 'TAŞIMA',
+    label: 'Taşıma',
     color: 'text-amber-400',
     bg: 'bg-amber-400/5',
     category: 'operation'
   },
   ADD_ITEM: {
-    label: 'SİPARİŞ',
+    label: 'Sipariş',
     color: 'text-foreground',
     bg: 'bg-foreground/5',
     category: 'operation'
   },
   DELETE_PRODUCT: {
-    label: 'ÜRÜN SİLME',
+    label: 'Ürün Silme',
     color: 'text-red-500',
     bg: 'bg-red-500/5',
     category: 'operation'
   },
   DELETE_ORDER: {
-    label: 'MASA BOŞALTMA',
+    label: 'Masa Boşaltma',
     color: 'text-red-500',
     bg: 'bg-red-500/5',
     category: 'operation'
   },
   REMOVE_ITEM: {
-    label: 'ÜRÜN İPTAL',
+    label: 'Ürün İptal',
     color: 'text-emerald-400',
     bg: 'bg-emerald-400/5',
     category: 'operation'
   },
   CANCEL_ITEM: {
-    label: 'İPTAL',
+    label: 'İptal',
     color: 'text-rose-400',
     bg: 'bg-rose-400/5',
     category: 'operation'
   },
   ITEMS_PAID: {
-    label: 'ÜRÜN ÖDEMESİ',
+    label: 'Ürün Ödemesi',
     color: 'text-emerald-500',
     bg: 'bg-emerald-500/5',
     category: 'operation'
   },
   PAYMENT_CASH: {
-    label: 'NAKİT ÖDEME',
+    label: 'Nakit Ödeme',
     color: 'text-emerald-500',
     bg: 'bg-emerald-500/5',
     category: 'operation'
   },
   PAYMENT_CARD: {
-    label: 'KART ÖDEME',
+    label: 'Kart Ödeme',
     color: 'text-blue-500',
     bg: 'bg-blue-500/5',
     category: 'operation'
   },
   TRANSFER_TABLE: {
-    label: 'MASA TAŞIMA',
+    label: 'Masa Taşıma',
     color: 'text-violet-500',
     bg: 'bg-violet-500/5',
     category: 'operation'
   },
   MERGE_TABLES: {
-    label: 'MASA BİRLEŞTİRME',
+    label: 'Masa Birleştirme',
     color: 'text-indigo-500',
     bg: 'bg-indigo-500/5',
     category: 'operation'
   },
   VACUUM: {
-    label: 'OPTİMİZASYON',
+    label: 'Optimizasyon',
     color: 'text-teal-500',
     bg: 'bg-teal-500/5',
     category: 'system'
   },
   SOFT_RESET: {
-    label: 'SİSTEM SIFIRLAMA',
+    label: 'Sistem Sıfırlama',
     color: 'text-rose-600',
     bg: 'bg-rose-600/5',
     category: 'system'
   },
   SECURITY_RESCUE: {
-    label: 'GÜVENLİK SIFIRLAMA',
+    label: 'Güvenlik Sıfırlama',
     color: 'text-red-600',
     bg: 'bg-red-600/5',
     category: 'system'
   },
   SECURITY_CHANGE_PIN: {
-    label: 'PIN DEĞİŞİMİ',
+    label: 'Pin Değişimi',
     color: 'text-amber-500',
     bg: 'bg-amber-500/5',
     category: 'system'
@@ -357,12 +357,12 @@ const LogsHeader = memo(function LogsHeader({
       <div className="flex items-center gap-8">
         <div className="flex md:flex items-center gap-6">
           {[
-            { label: 'BUGÜN TOPLAM', value: stats.total, color: 'text-primary' },
-            { label: 'OPERASYON', value: stats.ops, color: 'text-emerald-500' },
-            { label: 'SİSTEM', value: stats.sys, color: 'text-blue-500' }
+            { label: 'Bugün Toplam', value: stats.total, color: 'text-primary' },
+            { label: 'Operasyon', value: stats.ops, color: 'text-emerald-500' },
+            { label: 'Sistem', value: stats.sys, color: 'text-blue-500' }
           ].map((s) => (
             <div key={s.label} className="flex flex-col min-w-[100px]">
-              <span className="text-[10px] font-black text-zinc-400 tracking-[0.2em] uppercase mb-1">
+              <span className="text-[11px] font-black text-zinc-400 tracking-widest mb-1">
                 {s.label}
               </span>
               <span className={cn('text-2xl font-black leading-none ', s.color)}>{s.value}</span>
@@ -417,7 +417,7 @@ const ControlBar = memo(function ControlBar({
             onClick={() => onChangeCategory(tab.id)}
             aria-pressed={category === tab.id}
             className={cn(
-              'flex items-center gap-2 px-5 py-2 text-xs font-black tracking-widest uppercase rounded-xl transition-all',
+              'flex items-center gap-2 px-5 py-2 text-xs font-black tracking-tight rounded-xl transition-all',
               category === tab.id
                 ? 'bg-zinc-950 dark:bg-zinc-50 text-white dark:text-black shadow-lg'
                 : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800'
@@ -437,7 +437,7 @@ const ControlBar = memo(function ControlBar({
             onClick={() => onChangeDateRange(f.id)}
             aria-pressed={dateRange === f.id}
             className={cn(
-              'px-4 py-2 text-[10px] font-black tracking-widest uppercase rounded-xl transition-all',
+              'px-4 py-2 text-[11px] font-black tracking-tight rounded-xl transition-all',
               dateRange === f.id
                 ? 'bg-primary text-white shadow-lg'
                 : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800'
@@ -470,8 +470,8 @@ const ExpandedLogContent = memo(function ExpandedLogContent({
             {/* Left Column: Details */}
             <div className="min-w-0">
               <div className="space-y-3">
-                <p className="text-[10px] font-black tracking-[0.2em] text-zinc-400 leading-none uppercase">
-                  SİPARİŞ DETAYI
+                <p className="text-[11px] font-black tracking-widest text-zinc-400 leading-none">
+                  Sipariş Detayı
                 </p>
 
                 {isGroup ? (
@@ -498,7 +498,7 @@ const ExpandedLogContent = memo(function ExpandedLogContent({
 
                     return (
                       <div className="space-y-1.5">
-                        <p className="text-xs font-semibold text-foreground/70 uppercase tracking-widest">
+                        <p className="text-xs font-semibold text-foreground/70 tracking-tight">
                           {parsed.summary}
                         </p>
                         <div className="space-y-1">
@@ -525,8 +525,8 @@ const ExpandedLogContent = memo(function ExpandedLogContent({
 
             {/* Right Column: Metadata */}
             <div className="space-y-3">
-              <p className="text-[10px] font-black tracking-[0.2em] text-zinc-400 leading-none uppercase">
-                İŞLEM BİLGİLERİ
+              <p className="text-[11px] font-black tracking-widest text-zinc-400 leading-none">
+                İşlem Bilgileri
               </p>
               <div className="grid grid-cols-1 gap-2">
                 <div className="flex items-center gap-3 bg-white dark:bg-zinc-900 border-2 border-zinc-100 dark:border-zinc-800 p-2.5 rounded-2xl shadow-sm">
@@ -534,8 +534,8 @@ const ExpandedLogContent = memo(function ExpandedLogContent({
                     <Activity size={16} className={config?.color || 'text-muted-foreground'} />
                   </div>
                   <div>
-                    <span className="block text-[9px] font-black text-muted-foreground/50 tracking-widest uppercase mb-0.5">
-                      TİP
+                    <span className="block text-[9px] font-black text-muted-foreground/50 tracking-tight mb-0.5">
+                      Tip
                     </span>
                     <span className="text-sm font-black text-foreground tracking-tight">
                       {config?.label || log.action}
@@ -548,8 +548,8 @@ const ExpandedLogContent = memo(function ExpandedLogContent({
                     <Clock size={16} />
                   </div>
                   <div>
-                    <span className="block text-[9px] font-black text-muted-foreground/50 tracking-widest uppercase mb-0.5">
-                      ZAMAN
+                    <span className="block text-[9px] font-black text-muted-foreground/50 tracking-tight mb-0.5">
+                      Zaman
                     </span>
                     <span className="text-sm font-bold text-foreground block leading-tight">
                       {format(createdAtDate, 'dd MMMM yyyy', { locale: tr })}
@@ -634,7 +634,7 @@ const LogRow = memo(function LogRow({
                   log.action === 'ADD_ITEM' ? 'text-primary' : 'text-emerald-500'
                 )}
               >
-                {log.groupCount} ÜRÜN {log.action === 'ADD_ITEM' ? 'EKLENDİ' : 'İPTAL EDİLDİ'}
+                {log.groupCount} Ürün {log.action === 'ADD_ITEM' ? 'Eklendi' : 'İptal Edildi'}
               </span>
             ) : (
               log.details

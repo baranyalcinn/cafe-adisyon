@@ -17,10 +17,10 @@ const ExpensesHeaderActions = memo(({ onAdd }: { onAdd: () => void }) => {
     <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-4 duration-500">
       <Button
         onClick={onAdd}
-        className="gap-2 font-black px-5 rounded-xl h-10 bg-zinc-950 dark:bg-zinc-50 text-white dark:text-black hover:bg-zinc-900 dark:hover:bg-white active:scale-95 transition-all text-[10px] tracking-[0.2em] shadow-sm"
+        className="gap-2 font-black px-5 rounded-xl h-10 bg-zinc-950 dark:bg-zinc-50 text-white dark:text-black hover:bg-zinc-900 dark:hover:bg-white active:scale-95 transition-all text-xs tracking-tight shadow-sm"
       >
         <Plus className="w-4 h-4" strokeWidth={3} />
-        GİDER EKLE
+        Gider Ekle
       </Button>
     </div>
   )

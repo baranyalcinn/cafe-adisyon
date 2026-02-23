@@ -173,7 +173,7 @@ export const CartPanel = React.memo(function CartPanel({
       {/* Header */}
       <div className="shrink-0 h-14 px-6 border-b border-border bg-background z-20 flex items-center justify-between">
         <h2 className="text-base font-black tracking-tight flex items-center gap-2 text-foreground min-w-0">
-          {order?.table?.name ? `Masa ${order.table.name}` : 'Adisyon'}
+          Adisyon
         </h2>
 
         <div className="flex items-center gap-1.5 relative z-10">

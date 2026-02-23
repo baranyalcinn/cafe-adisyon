@@ -48,10 +48,10 @@ const CategoriesHeaderActions = memo(
         <Button
           onClick={onAdd}
           size="sm"
-          className="gap-2 font-black px-5 rounded-xl h-10 bg-zinc-950 dark:bg-zinc-50 text-white dark:text-black hover:bg-zinc-900 dark:hover:bg-white active:scale-95 transition-all text-[10px] tracking-[0.2em] shadow-sm"
+          className="gap-2 font-black px-5 rounded-xl h-10 bg-zinc-950 dark:bg-zinc-50 text-white dark:text-black hover:bg-zinc-900 dark:hover:bg-white active:scale-95 transition-all text-xs tracking-tight shadow-sm"
         >
           <Plus className="w-4 h-4" strokeWidth={3} />
-          KATEGORİ EKLE
+          Kategori Ekle
         </Button>
       </div>
     )
@@ -125,8 +125,8 @@ export function CategoriesTab(): React.JSX.Element {
                     {cat.name}
                   </h3>
                   <div className="flex items-center gap-2">
-                    <span className="px-3 py-1 rounded-md bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 text-[11px] font-black tracking-widest border border-zinc-200 dark:border-zinc-600">
-                      {products.filter((p) => p.categoryId === cat.id).length} ÜRÜN
+                    <span className="px-3 py-1 rounded-md bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 text-[11px] font-black tracking-tight border border-zinc-200 dark:border-zinc-600">
+                      {products.filter((p) => p.categoryId === cat.id).length} Ürün
                     </span>
                   </div>
                 </div>
@@ -223,10 +223,10 @@ export function CategoriesTab(): React.JSX.Element {
               </Button>
               <Button
                 variant="destructive"
-                className="rounded-xl font-black h-12 px-8 shadow-sm hover:scale-105 active:scale-95 transition-all bg-red-600 hover:bg-red-700"
+                className="rounded-xl font-black h-12 px-8 shadow-sm hover:scale-105 active:scale-95 transition-all bg-red-600 hover:bg-red-700 tracking-tight"
                 onClick={confirmDeleteCategory}
               >
-                KALICI OLARAK SİL
+                Kalıcı Olarak Sil
               </Button>
             </div>
           </div>

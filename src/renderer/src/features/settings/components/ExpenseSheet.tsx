@@ -125,9 +125,9 @@ export function ExpenseSheet({
             <div className="space-y-2">
               <label
                 htmlFor="amount"
-                className="text-[10px] font-black tracking-widest text-muted-foreground/60 ml-1"
+                className="text-[11px] font-black tracking-widest text-muted-foreground/60 ml-1"
               >
-                TUTAR (₺)
+                Tutar (₺)
               </label>
               <div className="relative group">
                 <div className="absolute left-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-md bg-muted/50 flex items-center justify-center transition-colors group-focus-within:bg-rose-500/10">
@@ -151,9 +151,9 @@ export function ExpenseSheet({
             <div className="space-y-2">
               <label
                 htmlFor="description"
-                className="text-[10px] font-black tracking-widest text-muted-foreground/60 ml-1"
+                className="text-[11px] font-black tracking-widest text-muted-foreground/60 ml-1"
               >
-                AÇIKLAMA
+                Açıklama
               </label>
               <div className="relative group">
                 <div className="absolute left-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-md bg-muted/50 flex items-center justify-center transition-colors group-focus-within:bg-primary/10">
@@ -173,9 +173,9 @@ export function ExpenseSheet({
             <div className="space-y-2">
               <label
                 htmlFor="paymentMethod"
-                className="text-[10px] font-black tracking-widest text-muted-foreground/60 ml-1"
+                className="text-[11px] font-black tracking-widest text-muted-foreground/60 ml-1"
               >
-                ÖDEME TÜRÜ
+                Ödeme Türü
               </label>
               <Select
                 value={paymentMethod}
@@ -202,9 +202,9 @@ export function ExpenseSheet({
             <div className="space-y-2">
               <label
                 htmlFor="category"
-                className="text-[10px] font-black tracking-widest text-muted-foreground/60 ml-1"
+                className="text-[11px] font-black tracking-widest text-muted-foreground/60 ml-1"
               >
-                KATEGORİ
+                Kategori
               </label>
               <Select value={category} onValueChange={setCategory}>
                 <SelectTrigger className="h-12 font-bold bg-muted/20 border-transparent focus:border-amber-500/20 transition-all rounded-lg pl-12 relative group">
@@ -238,8 +238,8 @@ export function ExpenseSheet({
                 <Separator className="opacity-50 my-2" />
                 <div className="bg-muted/30 p-3 rounded-xl border border-border/50 space-y-1">
                   <div className="flex justify-between items-center text-[10px]">
-                    <span className="text-muted-foreground font-bold tracking-wider">
-                      KAYIT TARİHİ
+                    <span className="text-muted-foreground font-bold tracking-widest text-[11px]">
+                      Kayıt Tarihi
                     </span>
                     <div className="flex items-center gap-2">
                       <span className="font-bold px-1.5 py-0.5 bg-background rounded shadow-sm border text-[10px]">

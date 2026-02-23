@@ -44,8 +44,8 @@ export const ProductCard = memo(function ProductCard({
       <div className="relative flex flex-col p-5 bg-white dark:bg-zinc-800 border-2 border-indigo-500 rounded-2xl shadow-xl animate-in zoom-in-95 duration-200 z-20">
         <div className="space-y-3">
           <div>
-            <h3 className="text-[10px] font-bold text-muted-foreground  tracking-[0.15em] mb-1">
-              ÜRÜN ADI
+            <h3 className="text-[11px] font-bold text-muted-foreground tracking-widest mb-1">
+              Ürün Adı
             </h3>
             <Input
               value={editName}
@@ -55,8 +55,8 @@ export const ProductCard = memo(function ProductCard({
             />
           </div>
           <div>
-            <label className="text-[10px] font-bold text-muted-foreground  tracking-[0.15em] mb-1">
-              FİYAT (₺)
+            <label className="text-[11px] font-bold text-muted-foreground tracking-widest mb-1">
+              Fiyat (₺)
             </label>
             <Input
               type="number"

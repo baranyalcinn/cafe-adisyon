@@ -47,7 +47,7 @@ export const ItemRow = memo(function ItemRow({ item, selected, onQtyChange }: It
       onClick={handleRowClick}
       onKeyDown={handleKeyDown}
       className={cn(
-        'group relative flex w-full items-center justify-between gap-3 rounded-2xl border p-2 text-left transition-all duration-200 ease-in-out cursor-pointer',
+        'group relative flex w-full items-center justify-between gap-3 rounded-2xl border py-1.5 px-3.5 text-left transition-all duration-200 ease-in-out cursor-pointer',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1',
         isSelected
           ? 'border-primary/40 bg-primary/[0.03] shadow-sm'
@@ -60,10 +60,10 @@ export const ItemRow = memo(function ItemRow({ item, selected, onQtyChange }: It
         {/* Stok Rozeti - Boyutu küçültüldü (h-8 w-8) */}
         <div
           className={cn(
-            'flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border font-mono text-[13px] font-bold transition-colors',
+            'flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border font-mono text-[15px] font-black transition-colors',
             isSelected
               ? 'border-primary/50 bg-primary text-primary-foreground shadow-sm'
-              : 'border-border/50 bg-muted/60 text-foreground/75 group-hover:bg-muted'
+              : 'border-border/60 bg-muted/80 text-foreground group-hover:bg-muted'
           )}
           aria-label={`Toplam adet: ${item.quantity}`}
         >

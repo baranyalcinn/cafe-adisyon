@@ -9,7 +9,7 @@ interface PinInputProps {
 
 export const PinInput = ({ label, value, onChange }: PinInputProps): React.ReactNode => (
   <div className="flex flex-col gap-1.5">
-    <span className="text-[9px] font-bold text-muted-foreground  tracking-widest">{label}</span>
+    <span className="text-[9px] font-bold text-muted-foreground tracking-tight">{label}</span>
     <InputOTP maxLength={4} value={value} onChange={onChange}>
       <InputOTPGroup className="gap-1.5">
         {[0, 1, 2, 3].map((i) => (

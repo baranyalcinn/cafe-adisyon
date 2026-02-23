@@ -114,7 +114,7 @@ export function MaintenanceTab(): React.JSX.Element {
           {lastResult && (
             <div
               className={cn(
-                'p-4 rounded-2xl border-2 flex items-center gap-4 animate-in fade-in slide-in-from-top-4 duration-500 shadow-lg',
+                'p-4 rounded-2xl border-2 flex items-center gap-4 animate-in fade-in duration-500 shadow-lg',
                 lastResult.success
                   ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800 text-emerald-700'
                   : 'bg-destructive/5 border-destructive/20 text-destructive'
@@ -150,7 +150,7 @@ export function MaintenanceTab(): React.JSX.Element {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Backup & Export Group */}
             <div className="space-y-4">
-              <h3 className="text-[11px] font-black text-zinc-500 tracking-[0.2em] px-1 flex items-center gap-2 uppercase">
+              <h3 className="text-[13px] font-black text-zinc-500 tracking-tight px-1 flex items-center gap-2">
                 <HardDrive className="w-3.5 h-3.5" />
                 Veri Güvenliği
               </h3>
@@ -164,9 +164,9 @@ export function MaintenanceTab(): React.JSX.Element {
                     <Button
                       onClick={handleBackup}
                       disabled={isBacking}
-                      className="h-10 px-6 rounded-xl bg-primary text-primary-foreground font-black uppercase tracking-widest text-[10px] shadow-lg shadow-primary/20"
+                      className="h-10 px-6 rounded-xl bg-primary text-primary-foreground font-black tracking-tight text-xs shadow-lg shadow-primary/20 active:scale-95 transition-all"
                     >
-                      {isBacking ? 'Yedekleniyor...' : 'Yedekle'}
+                      {isBacking ? 'Yedekleniyor...' : 'Şimdi Yedekle'}
                     </Button>
                   </div>
                   <h4 className="font-black text-lg mb-1 tracking-tight">Anlık Manuel Yedek</h4>
@@ -186,7 +186,7 @@ export function MaintenanceTab(): React.JSX.Element {
                         variant="outline"
                         onClick={() => handleExport('json')}
                         disabled={isExporting}
-                        className="h-10 px-4 rounded-xl border-2 font-black uppercase tracking-widest text-[10px] gap-2"
+                        className="h-10 px-4 rounded-xl border-2 font-black tracking-tight text-xs gap-2 hover:bg-amber-500/5 hover:border-amber-500/30 hover:text-amber-600 transition-all active:scale-95"
                       >
                         <FileJson className="w-4 h-4 text-amber-500" /> JSON
                       </Button>
@@ -194,7 +194,7 @@ export function MaintenanceTab(): React.JSX.Element {
                         variant="outline"
                         onClick={() => handleExport('csv')}
                         disabled={isExporting}
-                        className="h-10 px-4 rounded-xl border-2 font-black uppercase tracking-widest text-[10px] gap-2"
+                        className="h-10 px-4 rounded-xl border-2 font-black tracking-tight text-xs gap-2 hover:bg-emerald-500/5 hover:border-emerald-500/30 hover:text-emerald-600 transition-all active:scale-95"
                       >
                         <FileSpreadsheet className="w-4 h-4 text-emerald-500" /> CSV
                       </Button>
@@ -211,7 +211,7 @@ export function MaintenanceTab(): React.JSX.Element {
 
             {/* Performance & Cleanup Group */}
             <div className="space-y-4">
-              <h3 className="text-[11px] font-black text-zinc-500 tracking-[0.2em] px-1 flex items-center gap-2 uppercase">
+              <h3 className="text-[13px] font-black text-zinc-500 tracking-tight px-1 flex items-center gap-2">
                 <Settings2 className="w-3.5 h-3.5" />
                 Performans & Temizlik
               </h3>
@@ -226,9 +226,9 @@ export function MaintenanceTab(): React.JSX.Element {
                       variant="outline"
                       onClick={handleVacuum}
                       disabled={isVacuuming}
-                      className="h-10 px-6 rounded-xl border-2 font-black uppercase tracking-widest text-[10px]"
+                      className="h-10 px-6 rounded-xl border-2 font-black tracking-tight text-xs hover:bg-primary/5 hover:border-primary/30 transition-all active:scale-95"
                     >
-                      {isVacuuming ? 'Çalışıyor...' : 'VACUUM'}
+                      {isVacuuming ? 'Çalışıyor...' : ' Optimize Et'}
                     </Button>
                   </div>
                   <h4 className="font-black text-lg mb-1 tracking-tight">
@@ -249,7 +249,7 @@ export function MaintenanceTab(): React.JSX.Element {
                       variant="destructive"
                       onClick={handleArchive}
                       disabled={isArchiving}
-                      className="h-10 px-6 rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-destructive/20"
+                      className="h-10 px-6 rounded-xl font-black tracking-tight text-xs shadow-lg shadow-destructive/20 active:scale-95 transition-all"
                     >
                       {isArchiving ? 'Temizleniyor...' : 'Verileri Temizle'}
                     </Button>
@@ -270,9 +270,7 @@ export function MaintenanceTab(): React.JSX.Element {
           <div className="p-6 rounded-3xl bg-white dark:bg-zinc-900 border-2 border-dashed border-zinc-300 dark:border-zinc-800 text-center shadow-inner">
             <div className="flex items-center justify-center gap-3 text-zinc-400 mb-2">
               <AlertTriangle className="w-6 h-6" />
-              <span className="text-[11px] font-black tracking-[0.2em] uppercase">
-                Güvenlik Uyarısı
-              </span>
+              <span className="text-xs font-black tracking-tight">Güvenlik Uyarısı</span>
             </div>
             <p className="text-[13px] font-bold text-zinc-500 italic max-w-lg mx-auto leading-relaxed">
               Bakım işlemleri genellikle hızlıdır ancak işlem sırasında veritabanı kısa süreliğine

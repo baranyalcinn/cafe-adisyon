@@ -76,21 +76,21 @@ const ui = {
   vspace: 'space-y-6 pb-12',
   card: 'rounded-2xl border-2 bg-white dark:bg-zinc-900 shadow-sm overflow-hidden',
   header: 'px-6 py-5 border-b-2 bg-zinc-50 dark:bg-zinc-950/50',
-  kicker: 'text-[12px] font-black tracking-[0.15em] uppercase',
+  kicker: 'text-[13px] font-black tracking-tight',
   meta: 'text-[13px] font-bold text-zinc-500 italic',
-  label: 'text-base font-black',
+  label: 'text-base font-black tracking-tight',
   summaryIconBox: 'w-12 h-12 rounded-xl flex items-center justify-center border-2',
   summaryTitle: 'text-base font-black truncate leading-tight',
-  summaryKicker: 'text-[10px] tracking-[0.2em] font-black text-zinc-400 uppercase',
+  summaryKicker: 'text-[11px] tracking-widest font-black text-zinc-400',
   controlHeight: 'h-12',
   controlText: 'text-sm font-bold',
   softCard:
     'rounded-2xl border-2 border-border/60 bg-zinc-50/50 dark:bg-zinc-950/20 overflow-hidden',
   subHeader:
     'px-6 py-4 border-b-2 border-border/40 flex items-center gap-2 bg-white/50 dark:bg-black/20',
-  subKicker: 'text-[11px] font-black tracking-widest text-zinc-500 uppercase',
-  btnPrimary: 'h-12 rounded-xl text-sm font-black tracking-widest uppercase',
-  btnOutline: 'h-12 rounded-xl text-sm font-black tracking-widest uppercase border-2'
+  subKicker: 'text-[11px] font-black tracking-widest text-zinc-500',
+  btnPrimary: 'h-12 rounded-xl text-sm font-black tracking-tight',
+  btnOutline: 'h-12 rounded-xl text-sm font-black tracking-tight border-2'
 } as const
 
 function SummaryCard(props: {
@@ -507,7 +507,7 @@ export function GeneralSettingsTab({
                     disabled={!canSubmitPin}
                     className={cn('w-full', ui.btnPrimary)}
                   >
-                    GÜNCELLEMEYİ ONAYLA
+                    Güncellemeyi Onayla
                   </Button>
                 </div>
               </div>
