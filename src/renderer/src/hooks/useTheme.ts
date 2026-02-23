@@ -65,7 +65,7 @@ export function useTheme(): ThemeContextType {
 
   // (Opsiyonel) başka tab/pencere değiştirirse senkronize et
   useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
+    const onStorage = (e: StorageEvent): void => {
       if (e.key === 'theme' && e.newValue) {
         setIsDark(e.newValue === 'dark')
       }
