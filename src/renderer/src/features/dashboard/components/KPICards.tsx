@@ -22,9 +22,7 @@ export function KPICards(): React.JSX.Element {
       badge: (
         <div className="flex items-center gap-1.5 bg-success/5 border border-success/10 px-2 py-0.5 rounded-full">
           <span className="flex h-1 w-1 rounded-full bg-success" />
-          <span className="text-[8px] font-black text-success  tracking-[0.2em]">
-            CANLI
-          </span>
+          <span className="text-[8px] font-black text-success  tracking-[0.2em]">CANLI</span>
         </div>
       )
     },

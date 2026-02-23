@@ -19,7 +19,10 @@ export function QuantitySelector({
   return (
     <div
       className={cn(
-        'flex items-center gap-0.5 bg-background/40 backdrop-blur-sm rounded-full p-0.5 border border-white/10 shadow-sm transition-all duration-300',
+        'inline-flex items-center gap-0.5 rounded-full p-0.5 border shadow-sm transition-colors',
+        isLocked
+          ? 'border-border/25 bg-background/20 opacity-70'
+          : 'border-white/10 bg-background/40 backdrop-blur-sm',
         className
       )}
     >
@@ -31,21 +34,25 @@ export function QuantitySelector({
           onUpdate(quantity - 1)
         }}
         className={cn(
-          'h-6 w-6 flex items-center justify-center rounded-full transition-all duration-200 active:scale-95',
-          quantity === 1
-            ? 'hover:bg-red-500/20 text-red-600 dark:text-red-400 hover:text-red-500'
-            : 'hover:bg-muted text-foreground/90 hover:text-foreground'
+          'h-6 w-6 flex items-center justify-center rounded-full transition-all duration-150 active:scale-95',
+          isLocked
+            ? 'opacity-60 cursor-not-allowed hover:bg-transparent'
+            : quantity === 1
+              ? 'text-red-600 dark:text-red-400 hover:bg-red-500/15 hover:text-red-500'
+              : 'text-foreground/90 hover:bg-muted/80 hover:text-foreground'
         )}
+        aria-label={quantity === 1 ? 'Ürünü kaldır' : 'Adedi azalt'}
+        title={quantity === 1 ? 'Kaldır' : 'Azalt'}
       >
         {quantity === 1 ? (
-          <Trash2 className="w-3.5 h-3.5" strokeWidth={3} />
+          <Trash2 className="w-3.5 h-3.5" strokeWidth={2.8} />
         ) : (
-          <Minus className="w-3.5 h-3.5" strokeWidth={3.5} />
+          <Minus className="w-3.5 h-3.5" strokeWidth={3.2} />
         )}
       </button>
 
       {showNumber && (
-        <span className="w-5 text-center font-black text-[11px] tabular-nums text-foreground select-none">
+        <span className="min-w-[20px] text-center font-black text-[11px] tabular-nums text-foreground select-none">
           {quantity}
         </span>
       )}
@@ -57,9 +64,16 @@ export function QuantitySelector({
           e.stopPropagation()
           onUpdate(quantity + 1)
         }}
-        className="h-6 w-6 flex items-center justify-center rounded-full hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 transition-all duration-200 active:scale-90"
+        className={cn(
+          'h-6 w-6 flex items-center justify-center rounded-full transition-all duration-150 active:scale-95',
+          isLocked
+            ? 'opacity-60 cursor-not-allowed hover:bg-transparent'
+            : 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/15 hover:text-emerald-500'
+        )}
+        aria-label="Adedi artır"
+        title="Artır"
       >
-        <Plus className="w-3.5 h-3.5" strokeWidth={3.5} />
+        <Plus className="w-3.5 h-3.5" strokeWidth={3.2} />
       </button>
     </div>
   )

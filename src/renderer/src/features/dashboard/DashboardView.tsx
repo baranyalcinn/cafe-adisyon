@@ -75,20 +75,20 @@ function DashboardContent(): React.JSX.Element {
               size="sm"
               onClick={refetchAll}
               disabled={isLoading}
-              className="gap-2 rounded-xl text-muted-foreground hover:bg-muted/50 hover:text-foreground font-bold tracking-[0.1em] text-[10px]  h-9 px-4"
+              className="gap-2 rounded-xl transition-all duration-300 border-2 border-transparent hover:border-zinc-100 dark:hover:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 text-zinc-400 hover:text-foreground font-black tracking-[0.2em] text-[10px] h-10 px-4"
             >
               <RefreshCw className={cn('w-3.5 h-3.5', isLoading && 'animate-spin')} />
-              Yenile
+              YENİLE
             </Button>
 
             <OrderHistoryModal />
 
             <Button
               onClick={() => setShowEndOfDayModal(true)}
-              className="gap-3 h-9 px-5 rounded-xl font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-lg shadow-destructive/20 active:scale-95 transition-all text-xs tracking-widest "
+              className="gap-2 h-10 px-5 rounded-xl font-black bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-500/10 active:scale-95 transition-all text-[10px] tracking-[0.2em]"
             >
-              <Moon className="w-3.5 h-3.5" />
-              Gün Sonu
+              <Moon className="w-4 h-4" />
+              GÜN SONU
             </Button>
           </>,
           headerTarget
@@ -96,12 +96,12 @@ function DashboardContent(): React.JSX.Element {
 
       <div className="flex-1 overflow-y-auto px-8 pb-12 space-y-10 bg-background custom-scrollbar">
         {/* Header Section */}
-        <div className="flex flex-col gap-1 pt-8 animate-in fade-in duration-500 fill-mode-both">
+        <div className="flex flex-col gap-1 pt-8 container-fade-in">
           <div className="flex items-center gap-3">
-            <h1 className="text-4xl font-black tracking-tight text-foreground">Yönetim Paneli</h1>
-            <div className="h-6 w-[1px] bg-border mt-1" />
-            <span className="text-muted-foreground/70 font-black tracking-[0.3em] text-[12px]  mt-2">
-              DASHBOARD
+            <h1 className="text-4xl font-black tracking-tighter text-foreground">Panel</h1>
+            <div className="h-6 w-[2px] bg-zinc-100 dark:bg-zinc-800 mt-1" />
+            <span className="text-primary font-black tracking-[0.3em] text-[12px] mt-2 uppercase">
+              Dashboard
             </span>
           </div>
         </div>

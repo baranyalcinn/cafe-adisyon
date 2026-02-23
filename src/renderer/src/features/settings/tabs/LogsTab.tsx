@@ -466,20 +466,20 @@ const ExpandedLogContent = memo(function ExpandedLogContent({
     <TableRow className="hover:bg-transparent border-0">
       <TableCell colSpan={5} className="p-0">
         <div className="h-full bg-zinc-50 dark:bg-zinc-950/40 border-b border-zinc-200/60 dark:border-zinc-800/60 animate-in slide-in-from-top-2 duration-300 overflow-hidden">
-          <div className="px-10 py-8 grid grid-cols-[1fr_280px] gap-12">
+          <div className="px-6 py-4 grid grid-cols-[1fr_240px] gap-6">
             {/* Left Column: Details */}
             <div className="min-w-0">
-              <div className="space-y-6">
+              <div className="space-y-3">
                 <p className="text-[10px] font-black tracking-[0.2em] text-zinc-400 leading-none uppercase">
                   SİPARİŞ DETAYI
                 </p>
 
                 {isGroup ? (
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     {log.groupItems?.map((item, idx) => (
                       <p
                         key={`${log.id}-group-item-${idx}`}
-                        className="text-base font-bold leading-relaxed text-foreground/90 border-b border-zinc-100 dark:border-zinc-800/20 last:border-0 pb-2 last:pb-0 break-words"
+                        className="text-[15px] font-bold leading-relaxed text-foreground/90 border-b border-zinc-100 dark:border-zinc-800/10 last:border-0 pb-1.5 last:pb-0 break-words"
                       >
                         {item.details}
                       </p>
@@ -497,18 +497,20 @@ const ExpandedLogContent = memo(function ExpandedLogContent({
                     }
 
                     return (
-                      <div className="space-y-4">
-                        <p className="text-sm font-semibold text-foreground/70">{parsed.summary}</p>
-                        <div className="space-y-2">
+                      <div className="space-y-1.5">
+                        <p className="text-xs font-semibold text-foreground/70 uppercase tracking-widest">
+                          {parsed.summary}
+                        </p>
+                        <div className="space-y-1">
                           {parsed.items.map((item, idx) => (
                             <div
                               key={`${log.id}-parsed-${idx}`}
-                              className="flex items-center gap-4 py-2 border-b border-zinc-100 dark:border-zinc-800/20 last:border-0"
+                              className="flex items-center gap-3 py-1.5 border-b border-zinc-100 dark:border-zinc-800/10 last:border-0"
                             >
-                              <span className="inline-flex items-center justify-center min-w-[3rem] h-7 px-2 rounded-xl bg-primary/10 text-primary text-[13px] font-black tabular-nums">
+                              <span className="inline-flex items-center justify-center min-w-[3rem] h-7 px-2 rounded-xl bg-primary/10 text-primary text-[13px] font-black tabular-nums scale-90 -ml-1">
                                 {item.qty}×
                               </span>
-                              <span className="text-base font-bold text-foreground/90">
+                              <span className="text-[15px] font-bold text-foreground/90">
                                 {item.name}
                               </span>
                             </div>
@@ -522,14 +524,14 @@ const ExpandedLogContent = memo(function ExpandedLogContent({
             </div>
 
             {/* Right Column: Metadata */}
-            <div className="space-y-6">
+            <div className="space-y-3">
               <p className="text-[10px] font-black tracking-[0.2em] text-zinc-400 leading-none uppercase">
                 İŞLEM BİLGİLERİ
               </p>
-              <div className="grid grid-cols-1 gap-3">
-                <div className="flex items-center gap-4 bg-white dark:bg-zinc-900 border-2 border-zinc-100 dark:border-zinc-800 p-4 rounded-3xl shadow-sm">
-                  <div className={cn('p-2.5 rounded-2xl', config?.bg || 'bg-muted')}>
-                    <Activity size={18} className={config?.color || 'text-muted-foreground'} />
+              <div className="grid grid-cols-1 gap-2">
+                <div className="flex items-center gap-3 bg-white dark:bg-zinc-900 border-2 border-zinc-100 dark:border-zinc-800 p-2.5 rounded-2xl shadow-sm">
+                  <div className={cn('p-2 rounded-xl', config?.bg || 'bg-muted')}>
+                    <Activity size={16} className={config?.color || 'text-muted-foreground'} />
                   </div>
                   <div>
                     <span className="block text-[9px] font-black text-muted-foreground/50 tracking-widest uppercase mb-0.5">
@@ -541,9 +543,9 @@ const ExpandedLogContent = memo(function ExpandedLogContent({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 bg-white dark:bg-zinc-900 border-2 border-zinc-100 dark:border-zinc-800 p-4 rounded-3xl shadow-sm">
-                  <div className="p-2.5 bg-zinc-50 dark:bg-zinc-800 rounded-2xl text-primary">
-                    <Clock size={18} />
+                <div className="flex items-center gap-3 bg-white dark:bg-zinc-900 border-2 border-zinc-100 dark:border-zinc-800 p-2.5 rounded-2xl shadow-sm">
+                  <div className="p-2 bg-zinc-50 dark:bg-zinc-800 rounded-xl text-primary">
+                    <Clock size={16} />
                   </div>
                   <div>
                     <span className="block text-[9px] font-black text-muted-foreground/50 tracking-widest uppercase mb-0.5">
@@ -595,18 +597,18 @@ const LogRow = memo(function LogRow({
           isExpanded ? 'bg-primary/5' : 'hover:bg-zinc-200/20 dark:hover:bg-zinc-800/20'
         )}
       >
-        <TableCell className="pl-6 py-3 font-bold text-base">
+        <TableCell className="pl-6 py-2.5 font-bold text-base">
           <div className="flex flex-col leading-tight">
             <span>{format(createdAtDate, 'HH:mm')}</span>
             {dateRange !== 'today' && (
-              <span className="text-xs text-muted-foreground/60 font-medium">
+              <span className="text-[11px] text-muted-foreground/60 font-medium">
                 {format(createdAtDate, 'dd MMM', { locale: tr })}
               </span>
             )}
           </div>
         </TableCell>
 
-        <TableCell className="py-3">
+        <TableCell className="py-2.5">
           <div
             className={cn(
               'text-sm font-black tracking-tight',
@@ -617,13 +619,13 @@ const LogRow = memo(function LogRow({
           </div>
         </TableCell>
 
-        <TableCell className="py-3">
+        <TableCell className="py-2.5">
           <span className="text-sm font-bold text-muted-foreground group-hover:text-foreground transition-colors">
             {log.tableName || 'Sistem'}
           </span>
         </TableCell>
 
-        <TableCell className="py-3">
+        <TableCell className="py-2.5">
           <div className="text-sm text-muted-foreground/80 group-hover:text-foreground transition-colors line-clamp-1 font-medium">
             {isGroup ? (
               <span
