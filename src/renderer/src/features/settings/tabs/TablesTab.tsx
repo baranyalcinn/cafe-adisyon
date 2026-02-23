@@ -80,7 +80,7 @@ export function TablesTab(): React.JSX.Element {
           {/* Add Table Quick Card */}
           <div
             role="button"
-            className="group flex flex-col items-center justify-center aspect-[4/3] rounded-2xl border-2 border-dashed border-zinc-300 dark:border-zinc-800 bg-zinc-100 hover:border-primary hover:bg-white dark:hover:bg-zinc-900 transition-all duration-300 cursor-pointer hover:shadow-lg hover:-translate-y-1"
+            className="group flex flex-col items-center justify-center aspect-[4/3] rounded-2xl border-2 border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-100/50 dark:bg-zinc-900/40 hover:border-primary hover:bg-white dark:hover:bg-zinc-900 transition-all duration-300 cursor-pointer hover:shadow-lg hover:-translate-y-1"
             onClick={handleAddTable}
           >
             <div className="w-12 h-12 rounded-xl bg-white dark:bg-zinc-800 border-2 border-transparent group-hover:border-primary/20 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform shadow-sm">
@@ -115,7 +115,7 @@ export function TablesTab(): React.JSX.Element {
                 <h3 className="font-bold text-lg">{table.name}</h3>
                 <p
                   className={cn(
-                    'text-[10px] font-black tracking-tight',
+                    'text-[12px] font-black tracking-tight',
                     table.hasOpenOrder ? 'text-amber-600' : 'text-emerald-600'
                   )}
                 >

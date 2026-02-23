@@ -37,8 +37,6 @@ interface SettingsViewProps {
   onColorSchemeChange: (scheme: ColorScheme) => void
 }
 
-const ACTIVE_VIEW_STORAGE_KEY = 'caffio.settings.activeView'
-
 /* ----------------------------- Lazy loaders ----------------------------- */
 const loadGeneralSettingsTab = (): Promise<typeof import('./tabs/GeneralSettingsTab')> =>
   import('./tabs/GeneralSettingsTab')
@@ -171,7 +169,7 @@ const MENU_ITEMS: MenuItem[] = [
   }
 ]
 
-const BOXED_VIEWS = new Set<SettingsTabId>(['logs', 'maintenance'])
+const BOXED_VIEWS = new Set<SettingsTabId>(['maintenance'])
 
 function SettingsContentSkeleton(): React.JSX.Element {
   return (
@@ -215,11 +213,6 @@ export function SettingsView({
   useEffect(() => {
     const restoreAndCheck = async (): Promise<void> => {
       try {
-        const saved = localStorage.getItem(ACTIVE_VIEW_STORAGE_KEY) as SettingsTabId | null
-        if (saved && MENU_ITEMS.some((i) => i.id === saved)) {
-          setActiveView(saved)
-        }
-
         const { required } = await cafeApi.admin.checkStatus()
         if (!required) {
           setIsUnlocked(true)
@@ -232,16 +225,8 @@ export function SettingsView({
         setIsLoading(false)
       }
     }
-
     void restoreAndCheck()
   }, [])
-
-  // Persist last active view
-  useEffect(() => {
-    if (activeView) {
-      localStorage.setItem(ACTIVE_VIEW_STORAGE_KEY, activeView)
-    }
-  }, [activeView])
 
   const handlePinSuccess = useCallback((): void => {
     setIsUnlocked(true)

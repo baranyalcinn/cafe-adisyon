@@ -160,10 +160,10 @@ export const CartPanel = React.memo(function CartPanel({
   )
 
   const handleConfirmDelete = useCallback((): void => {
-    if (!order) return
+    if (!order || paidAmount > 0) return
     onDeleteOrder(order.id)
     setShowDeleteDialog(false)
-  }, [order, onDeleteOrder])
+  }, [order, onDeleteOrder, paidAmount])
 
   const hasItems = unpaidItems.length > 0 || paidItems.length > 0
   const hasPaidItems = paidItems.length > 0
@@ -202,13 +202,13 @@ export const CartPanel = React.memo(function CartPanel({
             size="icon"
             className={cn(
               'h-9 w-9 rounded-xl transition-all duration-300',
-              !hasItems
+              !hasItems || paidAmount > 0
                 ? 'opacity-0 pointer-events-none'
                 : 'text-foreground/80 hover:text-destructive hover:bg-destructive/15 hover:border-destructive/20'
             )}
             onClick={() => setShowDeleteDialog(true)}
-            disabled={!hasItems}
-            title="Masayı Boşalt"
+            disabled={!hasItems || paidAmount > 0}
+            title={paidAmount > 0 ? 'Ödeme alınmış adisyon silinemez' : 'Masayı Boşalt'}
             aria-label="Masayı Boşalt"
           >
             <Trash2 className="w-4 h-4" strokeWidth={2.5} />

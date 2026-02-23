@@ -1,6 +1,7 @@
 import { Prisma } from '../../generated/prisma/client'
 import { ApiResponse, Expense } from '../../shared/types'
 import { prisma } from '../db/prisma'
+import { getBusinessDayStart } from '../lib/dateUtils'
 import { logger } from '../lib/logger'
 
 export class ExpenseService {
@@ -142,8 +143,7 @@ export class ExpenseService {
         if (endDate) where.createdAt.lte = new Date(endDate)
       }
 
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
+      const today = getBusinessDayStart(new Date())
       const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
 
       // Calculate totals based on the SAME filter context, OR global context?

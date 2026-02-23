@@ -1,7 +1,7 @@
-import { endOfDay, startOfDay } from 'date-fns'
 import { Prisma } from '../../generated/prisma/client'
 import { ActivityLog, ApiResponse } from '../../shared/types'
 import { prisma } from '../db/prisma'
+import { getBusinessDayStart, getBusinessShiftEnd } from '../lib/dateUtils'
 import { logger } from '../lib/logger'
 import { toPlain } from '../lib/toPlain'
 
@@ -107,8 +107,8 @@ export class LogService {
   async getStatsToday(): Promise<ApiResponse<{ total: number; sys: number; ops: number }>> {
     try {
       const now = new Date()
-      const start = startOfDay(now)
-      const end = endOfDay(now)
+      const start = getBusinessDayStart(now)
+      const end = getBusinessShiftEnd(now)
 
       const [total, sys] = await Promise.all([
         prisma.activityLog.count({

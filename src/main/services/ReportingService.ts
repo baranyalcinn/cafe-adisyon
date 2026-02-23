@@ -7,6 +7,7 @@ import {
   RevenueTrendItem
 } from '../../shared/types'
 import { prisma } from '../db/prisma'
+import { getBusinessDayStart } from '../lib/dateUtils'
 import { logger } from '../lib/logger'
 import { logService } from './LogService'
 
@@ -24,10 +25,7 @@ export class ReportingService {
       const now = new Date()
 
       // Smart Dating: If before 05:00 AM, assume it belongs to the previous day (Shift logic)
-      let reportDate = startOfDay(now)
-      if (now.getHours() < 5) {
-        reportDate = subDays(reportDate, 1)
-      }
+      const reportDate = getBusinessDayStart(now)
 
       // Find the Last Z-Report taken BEFORE this report date
       const lastReport = await prisma.dailySummary.findFirst({
@@ -123,6 +121,14 @@ export class ReportingService {
         `Gün sonu Z-Raporu oluşturuldu: ₺${totalRevenue / 100}`
       )
 
+      // WAL Checkpoint: Flush Write-Ahead Log to main DB at end of business day
+      try {
+        await prisma.$executeRawUnsafe('PRAGMA wal_checkpoint(TRUNCATE)')
+        logger.debug('ReportingService', 'WAL checkpoint executed after Z-Report.')
+      } catch (walError) {
+        logger.error('ReportingService.walCheckpoint', walError)
+      }
+
       return { success: true, data: summary }
     } catch (error) {
       logger.error('ReportingService.generateZReport', error)
@@ -143,10 +149,7 @@ export class ReportingService {
     categoryBreakdown: { categoryName: string; revenue: number; quantity: number }[]
   }> {
     const now = new Date()
-    let today = startOfDay(now)
-    if (now.getHours() < 5) {
-      today = subDays(today, 1)
-    }
+    const today = getBusinessDayStart(now)
 
     // Fetch Orders count directly
     const totalOrders = await prisma.order.count({
@@ -377,7 +380,7 @@ export class ReportingService {
       }
 
       // 4. Extract into correctly ordered result list based on `days` window
-      const todayStart = startOfDay(new Date())
+      const todayStart = getBusinessDayStart(new Date())
       for (let i = days - 1; i >= 0; i--) {
         const date = subDays(todayStart, i)
 

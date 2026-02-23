@@ -62,8 +62,8 @@ function ProductCardComponent({
         isLocked && 'opacity-50 cursor-not-allowed',
         // Compact ve Grid stillerini burada dinamik ayarlıyoruz
         compact
-          ? 'flex items-center gap-2.5 py-2.5 px-3.5 rounded-2xl bg-card shadow-sm border border-border/10 overflow-hidden'
-          : 'flex flex-col p-3.5 h-full rounded-[2rem] bg-card border border-border/40 shadow-sm overflow-hidden',
+          ? 'flex items-center gap-2.5 py-2.5 px-3.5 rounded-xl bg-card shadow-sm border border-border/10 overflow-hidden'
+          : 'flex flex-col p-3.5 h-full rounded-2xl bg-card border border-border/40 shadow-sm overflow-hidden',
         !isLocked &&
           compact &&
           'hover:bg-primary/[0.04] hover:shadow-md hover:border-primary/20 active:scale-[0.98]',
@@ -105,7 +105,7 @@ function ProductCardComponent({
           )}
 
           {/* Top Section - Icon Area */}
-          <div className="w-full h-24 rounded-2xl bg-muted/30 flex items-center justify-center group-hover:bg-primary/5 group-hover:shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)] transition-all duration-500 mb-3 overflow-hidden relative border border-transparent group-hover:border-primary/10">
+          <div className="w-full h-24 rounded-xl bg-muted/30 flex items-center justify-center group-hover:bg-primary/5 group-hover:shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)] transition-all duration-500 mb-3 overflow-hidden relative border border-transparent group-hover:border-primary/10">
             <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
             {getCategoryIcon(
               product.category?.icon,

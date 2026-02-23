@@ -2,6 +2,7 @@ import { ipcMain } from 'electron'
 import { z } from 'zod'
 import type { ApiResponse } from '../../../shared/types'
 import { logger } from '../../lib/logger'
+import { toPlain } from '../../lib/toPlain'
 
 // ──────────────────────────────────────────────
 //  Validated Handler — service ALREADY returns ApiResponse<T>
@@ -31,7 +32,11 @@ export const createValidatedHandler = <TInput, TOutput>(
     }
 
     try {
-      return await handler(parsed.data)
+      const result = await handler(parsed.data)
+      if (result.success && result.data !== undefined) {
+        return { ...result, data: toPlain(result.data) }
+      }
+      return result
     } catch (err) {
       logger.error(channel, err instanceof Error ? err : new Error(String(err)))
       return { success: false, error: err instanceof Error ? err.message : errorMessage }
@@ -53,7 +58,11 @@ export const createSimpleHandler = <TOutput>(
 ): void => {
   ipcMain.handle(channel, async (): Promise<ApiResponse<TOutput>> => {
     try {
-      return await handler()
+      const result = await handler()
+      if (result.success && result.data !== undefined) {
+        return { ...result, data: toPlain(result.data) }
+      }
+      return result
     } catch (err) {
       logger.error(channel, err instanceof Error ? err : new Error(String(err)))
       return { success: false, error: err instanceof Error ? err.message : errorMessage }
@@ -87,7 +96,7 @@ export const createRawHandler = <TInput, TOutput>(
 
     try {
       const data = await handler(parsed.data)
-      return { success: true, data }
+      return { success: true, data: data !== undefined ? toPlain(data) : data }
     } catch (err) {
       logger.error(channel, err instanceof Error ? err : new Error(String(err)))
       return { success: false, error: err instanceof Error ? err.message : errorMessage }
@@ -106,7 +115,7 @@ export const createSimpleRawHandler = <TOutput>(
   ipcMain.handle(channel, async (): Promise<ApiResponse<TOutput>> => {
     try {
       const data = await handler()
-      return { success: true, data }
+      return { success: true, data: data !== undefined ? toPlain(data) : data }
     } catch (err) {
       logger.error(channel, err instanceof Error ? err : new Error(String(err)))
       return { success: false, error: err instanceof Error ? err.message : errorMessage }

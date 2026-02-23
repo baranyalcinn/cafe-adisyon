@@ -19,6 +19,9 @@ export function useTables(): UseQueryResult<Table[], Error> {
   useEffect(() => {
     const handleUpdate = (): void => {
       queryClient.invalidateQueries({ queryKey: ['tables'] })
+      queryClient.invalidateQueries({ queryKey: ['order'] })
+      queryClient.invalidateQueries({ queryKey: ['orders'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
     }
 
     // Subscribe to IPC event

@@ -5,5 +5,6 @@
  */
 export function toPlain<T>(data: unknown): T {
   if (data === null || data === undefined) return data as T
-  return data as T
+  // Prisma proxy nesnelerini düzleştirir (Electron Structured Clone darboğazını çözer)
+  return JSON.parse(JSON.stringify(data)) as T
 }

@@ -16,6 +16,7 @@ import { useTables } from '@/hooks/useTables'
 import { cafeApi } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { toast } from '@/store/useToastStore'
+import { useQueryClient } from '@tanstack/react-query'
 import { ArrowRightLeft, Coffee, Combine, Loader2, Lock, type LucideIcon } from 'lucide-react'
 import { memo, useCallback, useMemo, useState } from 'react'
 
@@ -410,6 +411,7 @@ interface TablesViewProps {
 
 export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Element {
   const { data: tables = [], isLoading, refetch } = useTables()
+  const queryClient = useQueryClient()
 
   const [transferModal, setTransferModal] = useState<ActionModalState>({
     open: false,
@@ -541,6 +543,11 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
 
         closeTransferModal()
         await refetch()
+        // Çift taraflı cache invalidation — kaynak ve hedef masanın order'ı + dashboard
+        queryClient.invalidateQueries({ queryKey: ['order'] })
+        queryClient.invalidateQueries({ queryKey: ['orders'] })
+        queryClient.invalidateQueries({ queryKey: ['tables'] })
+        queryClient.invalidateQueries({ queryKey: ['dashboard'] })
 
         toast({
           title: 'Transfer Başarılı',
@@ -563,7 +570,8 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
       derived.tableMap,
       closeTransferModal,
       refetch,
-      resetProcessing
+      resetProcessing,
+      queryClient
     ]
   )
 
@@ -594,6 +602,11 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
 
         closeMergeModal()
         await refetch()
+        // Çift taraflı cache invalidation — kaynak ve hedef masanın order'ı + dashboard
+        queryClient.invalidateQueries({ queryKey: ['order'] })
+        queryClient.invalidateQueries({ queryKey: ['orders'] })
+        queryClient.invalidateQueries({ queryKey: ['tables'] })
+        queryClient.invalidateQueries({ queryKey: ['dashboard'] })
 
         toast({
           title: 'Birleştirme Başarılı',
@@ -616,7 +629,8 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
       derived.tableMap,
       closeMergeModal,
       refetch,
-      resetProcessing
+      resetProcessing,
+      queryClient
     ]
   )
 

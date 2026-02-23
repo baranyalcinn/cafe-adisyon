@@ -99,7 +99,9 @@ export const orderSchemas = {
         quantity: z.number().int().positive()
       })
     ),
-    paymentDetails: z.object({ amount: z.number(), method: z.string() }).optional()
+    paymentDetails: z
+      .object({ amount: z.number().int().positive(), method: z.enum(['CASH', 'CARD']) })
+      .optional()
   }),
   delete: z.object({ orderId: cuidSchema }),
   toggleLock: z.object({
@@ -109,8 +111,8 @@ export const orderSchemas = {
   getHistory: z
     .object({
       date: z.string().optional(),
-      limit: z.number().optional(),
-      offset: z.number().optional()
+      limit: z.number().int().nonnegative().optional(),
+      offset: z.number().int().nonnegative().optional()
     })
     .optional()
 }
@@ -161,7 +163,7 @@ export const adminSchemas = {
 export const reportSchemas = {
   getMonthly: z.object({ limit: z.number().int().optional().default(12) }),
   zReportHistory: z.object({ limit: z.number().int().optional().default(30) }),
-  zReportGenerate: z.object({ actualCash: z.number().optional() })
+  zReportGenerate: z.object({ actualCash: z.number().int().nonnegative().optional() })
 }
 
 // Helper function to validate input

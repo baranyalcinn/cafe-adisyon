@@ -291,6 +291,15 @@ if (!gotTheLock) {
 
     logger.info('App', `Starting Caffio v${app.getVersion()}`)
 
+    // Initialize scheduled background jobs (e.g. 04:00 AM daily maintenance)
+    import('./services/ScheduledJobs')
+      .then(({ scheduledJobs }) => {
+        scheduledJobs.init()
+      })
+      .catch((err) => {
+        logger.error('App', 'Failed to initialize ScheduledJobs: ' + err.message)
+      })
+
     // Check for updates (Production Only)
     // We wait a bit to let the window load
     setTimeout(() => {

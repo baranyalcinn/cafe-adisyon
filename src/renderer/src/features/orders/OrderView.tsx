@@ -34,7 +34,7 @@ const FavoriteProductRow = React.memo(function FavoriteProductRow({
       onClick={() => onAdd(product)}
       disabled={isLocked}
       className={cn(
-        'w-full group flex items-center gap-3 rounded-[14px] border px-3 py-3 text-left transition-all duration-200',
+        'w-full group flex items-center gap-3 rounded-xl border px-3 py-3 text-left transition-all duration-200',
         isLocked
           ? 'border-border/30 bg-muted/10 opacity-60 cursor-not-allowed'
           : 'border-border/40 bg-background/50 hover:bg-muted/40 hover:border-border/70 active:scale-[0.99] shadow-sm'
@@ -502,12 +502,12 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
             {isInventoryLoading || !isReady ? (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {Array.from({ length: 8 }).map((_, i) => (
-                  <div key={i} className="h-48 bg-muted/20 animate-pulse rounded-[2rem]" />
+                  <div key={i} className="h-48 bg-muted/20 animate-pulse rounded-2xl" />
                 ))}
               </div>
             ) : filteredProducts.length === 0 ? (
               <div className="min-h-[340px] flex items-center justify-center">
-                <div className="max-w-sm w-full text-center rounded-3xl border border-border/50 bg-muted/10 p-6">
+                <div className="max-w-sm w-full text-center rounded-2xl border border-border/50 bg-muted/10 p-6">
                   <div className="mx-auto mb-3 w-12 h-12 rounded-2xl bg-muted/40 flex items-center justify-center">
                     <Search className="w-5 h-5 text-muted-foreground" />
                   </div>

@@ -1,11 +1,10 @@
+import { app } from 'electron'
+import { existsSync, promises as fs } from 'fs'
+import * as path from 'path'
+import { ApiResponse } from '../../shared/types'
 import { prisma } from '../db/prisma'
 import { logger } from '../lib/logger'
 import { logService } from './LogService'
-import { app } from 'electron'
-import { promises as fs } from 'fs'
-import { existsSync } from 'fs'
-import * as path from 'path'
-import { ApiResponse } from '../../shared/types'
 
 export class MaintenanceService {
   /**
@@ -192,10 +191,79 @@ export class MaintenanceService {
         `Silinen: ${result.deletedOrders} sipariş, ${result.deletedItems} ürün, ${result.deletedTransactions} işlem, ${result.deletedExpenses} gider, ${result.deletedSummaries} Z-raporu`
       )
 
+      // Also purge orphaned soft-deleted records while we're cleaning up
+      await this.purgeOrphanedRecords()
+
       return { success: true, data: result }
     } catch (error) {
       logger.error('MaintenanceService.archiveOldData', error)
       return { success: false, error: 'Veri arşivleme başarısız.' }
+    }
+  }
+
+  /**
+   * Hard-deletes soft-deleted Products and Categories that are no longer
+   * referenced by any OrderItem. Prevents "ghost record" buildup from
+   * seasonal menu changes (e.g. summer/winter menus, discontinued items).
+   */
+  async purgeOrphanedRecords(): Promise<
+    ApiResponse<{ deletedProducts: number; deletedCategories: number }>
+  > {
+    try {
+      const result = await prisma.$transaction(async (tx) => {
+        // 1. Find soft-deleted products with ZERO order item references
+        const orphanedProducts = await tx.product.findMany({
+          where: {
+            isDeleted: true,
+            orderItems: { none: {} }
+          },
+          select: { id: true }
+        })
+
+        let deletedProducts = 0
+        if (orphanedProducts.length > 0) {
+          const del = await tx.product.deleteMany({
+            where: { id: { in: orphanedProducts.map((p) => p.id) } }
+          })
+          deletedProducts = del.count
+        }
+
+        // 2. Find soft-deleted categories with ZERO remaining products
+        const orphanedCategories = await tx.category.findMany({
+          where: {
+            isDeleted: true,
+            products: { none: {} }
+          },
+          select: { id: true }
+        })
+
+        let deletedCategories = 0
+        if (orphanedCategories.length > 0) {
+          const del = await tx.category.deleteMany({
+            where: { id: { in: orphanedCategories.map((c) => c.id) } }
+          })
+          deletedCategories = del.count
+        }
+
+        return { deletedProducts, deletedCategories }
+      })
+
+      if (result.deletedProducts > 0 || result.deletedCategories > 0) {
+        logger.info(
+          'MaintenanceService.purgeOrphanedRecords',
+          `Temizlendi: ${result.deletedProducts} hayalet ürün, ${result.deletedCategories} hayalet kategori`
+        )
+        await logService.createLog(
+          'PURGE_ORPHANED',
+          undefined,
+          `${result.deletedProducts} kullanılmayan ürün, ${result.deletedCategories} kullanılmayan kategori kalıcı olarak silindi`
+        )
+      }
+
+      return { success: true, data: result }
+    } catch (error) {
+      logger.error('MaintenanceService.purgeOrphanedRecords', error)
+      return { success: false, error: 'Hayalet kayıt temizleme başarısız.' }
     }
   }
 

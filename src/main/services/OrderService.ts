@@ -103,6 +103,13 @@ export class OrderService extends EventEmitter {
     unitPrice: number
   ): Promise<ApiResponse<Order>> {
     try {
+      // Defense-in-depth: reject negative/zero values even if IPC schema is bypassed
+      if (quantity <= 0 || !Number.isInteger(quantity)) {
+        throw new Error('Miktar pozitif tam sayı olmalıdır')
+      }
+      if (unitPrice < 0 || !Number.isInteger(unitPrice)) {
+        throw new Error('Birim fiyat negatif olamaz')
+      }
       const txResult = await prisma.$transaction(async (tx) => {
         const existingItem = await tx.orderItem.findFirst({
           where: { orderId, productId, isPaid: false }
@@ -701,6 +708,7 @@ export class OrderService extends EventEmitter {
         `${result.sourceOrder.table?.name || 'Masa'} -> ${result.updatedOrder.table?.name || 'Masa'} taşındı`
       )
 
+      this.broadcastDashboardUpdate()
       return { success: true, data: result.updatedOrder }
     } catch (error) {
       logger.error('OrderService.transferTable', error)

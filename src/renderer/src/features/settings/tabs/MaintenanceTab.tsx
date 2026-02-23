@@ -43,17 +43,20 @@ function ActionPanel({
   return (
     <div
       className={cn(
-        'rounded-2xl border p-4 transition-all duration-200',
+        'h-full min-h-[168px] rounded-2xl border p-4',
+        'flex flex-col',
+        'transition-all duration-200',
         'shadow-sm hover:shadow-md hover:-translate-y-[1px]',
         isDanger
           ? 'border-rose-200/70 dark:border-rose-900/60 bg-rose-50/70 dark:bg-rose-950/10'
           : 'border-zinc-200/70 dark:border-zinc-800/80 bg-white/85 dark:bg-zinc-900/80 backdrop-blur-sm'
       )}
     >
-      <div className="flex items-start justify-between gap-3 mb-4">
+      {/* Üst satır */}
+      <div className="flex items-start justify-between gap-3 min-h-[44px] mb-4">
         <div
           className={cn(
-            'p-2.5 rounded-xl border',
+            'p-2.5 rounded-xl border shrink-0',
             isDanger
               ? 'bg-white dark:bg-zinc-950 border-rose-200/70 dark:border-rose-900/70 text-rose-600'
               : 'bg-zinc-100/70 dark:bg-zinc-800/60 border-zinc-200/70 dark:border-zinc-700/70'
@@ -65,23 +68,26 @@ function ActionPanel({
         <div className="shrink-0">{children}</div>
       </div>
 
-      <h4
-        className={cn(
-          'text-sm font-semibold tracking-tight',
-          isDanger ? 'text-rose-700 dark:text-rose-400' : 'text-foreground'
-        )}
-      >
-        {title}
-      </h4>
+      {/* Alt içerik */}
+      <div className="flex-1 min-w-0">
+        <h4
+          className={cn(
+            'text-sm font-semibold tracking-tight leading-snug',
+            isDanger ? 'text-rose-700 dark:text-rose-400' : 'text-foreground'
+          )}
+        >
+          {title}
+        </h4>
 
-      <p
-        className={cn(
-          'mt-1.5 text-xs leading-relaxed',
-          isDanger ? 'text-rose-900/70 dark:text-rose-300/70' : 'text-muted-foreground'
-        )}
-      >
-        {description}
-      </p>
+        <p
+          className={cn(
+            'mt-1.5 text-xs leading-5 line-clamp-2',
+            isDanger ? 'text-rose-900/70 dark:text-rose-300/70' : 'text-muted-foreground'
+          )}
+        >
+          {description}
+        </p>
+      </div>
     </div>
   )
 }
@@ -177,7 +183,7 @@ export function MaintenanceTab(): React.JSX.Element {
     <Card className="h-full flex flex-col border-0 shadow-none bg-zinc-50/70 dark:bg-zinc-950/40">
       <ScrollArea className="flex-1">
         <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-4">
-          {/* Result Banner */}
+          {/* Sonuç Banner */}
           {lastResult && (
             <div
               className={cn(
@@ -222,16 +228,16 @@ export function MaintenanceTab(): React.JSX.Element {
                 variant="ghost"
                 size="icon"
                 onClick={() => setLastResult(null)}
-                className="h-8 w-8 rounded-lg shrink-0"
+                className="h-8 w-8 rounded-lg shrink-0 hover:bg-zinc-100 dark:hover:bg-zinc-800"
               >
                 <X className="w-4 h-4" />
               </Button>
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Left Group */}
-            <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
+            {/* Sol kolon */}
+            <div className="grid grid-rows-[auto_1fr_1fr] gap-3">
               <div className="flex items-center gap-2 px-1">
                 <HardDrive className="w-4 h-4 text-zinc-500" />
                 <h3 className="text-xs font-semibold tracking-wide text-zinc-500">
@@ -247,7 +253,10 @@ export function MaintenanceTab(): React.JSX.Element {
                 <Button
                   onClick={() => void handleBackup()}
                   disabled={isBacking}
-                  className="h-9 rounded-xl px-3.5 text-xs font-medium"
+                  className={cn(
+                    'h-9 rounded-xl px-3.5 text-xs font-medium transition-all',
+                    'hover:shadow-sm hover:-translate-y-[1px] active:scale-[0.99]'
+                  )}
                 >
                   {isBacking ? (
                     <>
@@ -270,7 +279,12 @@ export function MaintenanceTab(): React.JSX.Element {
                     variant="outline"
                     onClick={() => void handleExport('json')}
                     disabled={Boolean(exportingFormat)}
-                    className="h-9 rounded-xl px-3 text-xs font-medium gap-1.5"
+                    className={cn(
+                      'w-[84px] h-9 rounded-xl px-3 text-xs font-medium gap-1.5 transition-all',
+                      'border-zinc-200/70 dark:border-zinc-700/70',
+                      'hover:border-amber-300/70 hover:bg-amber-50/70 dark:hover:bg-amber-950/10',
+                      'hover:-translate-y-[1px] active:scale-[0.99]'
+                    )}
                   >
                     {exportingFormat === 'json' ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -284,7 +298,12 @@ export function MaintenanceTab(): React.JSX.Element {
                     variant="outline"
                     onClick={() => void handleExport('csv')}
                     disabled={Boolean(exportingFormat)}
-                    className="h-9 rounded-xl px-3 text-xs font-medium gap-1.5"
+                    className={cn(
+                      'w-[84px] h-9 rounded-xl px-3 text-xs font-medium gap-1.5 transition-all',
+                      'border-zinc-200/70 dark:border-zinc-700/70',
+                      'hover:border-emerald-300/70 hover:bg-emerald-50/70 dark:hover:bg-emerald-950/10',
+                      'hover:-translate-y-[1px] active:scale-[0.99]'
+                    )}
                   >
                     {exportingFormat === 'csv' ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -297,8 +316,8 @@ export function MaintenanceTab(): React.JSX.Element {
               </ActionPanel>
             </div>
 
-            {/* Right Group */}
-            <div className="space-y-3">
+            {/* Sağ kolon */}
+            <div className="grid grid-rows-[auto_1fr_1fr] gap-3">
               <div className="flex items-center gap-2 px-1">
                 <Settings2 className="w-4 h-4 text-zinc-500" />
                 <h3 className="text-xs font-semibold tracking-wide text-zinc-500">
@@ -315,7 +334,13 @@ export function MaintenanceTab(): React.JSX.Element {
                   variant="outline"
                   onClick={() => void handleVacuum()}
                   disabled={isVacuuming}
-                  className="h-9 rounded-xl px-3.5 text-xs font-medium"
+                  className={cn(
+                    'h-9 rounded-xl px-3.5 text-xs font-medium transition-all',
+                    'border-zinc-200/70 dark:border-zinc-700/70',
+                    'hover:bg-zinc-100/80 dark:hover:bg-zinc-800/70',
+                    'hover:border-emerald-300/60 hover:-translate-y-[1px]',
+                    'active:scale-[0.99]'
+                  )}
                 >
                   {isVacuuming ? (
                     <>
@@ -338,7 +363,10 @@ export function MaintenanceTab(): React.JSX.Element {
                   variant="destructive"
                   onClick={() => void handleArchive()}
                   disabled={isArchiving}
-                  className="h-9 rounded-xl px-3.5 text-xs font-medium"
+                  className={cn(
+                    'h-9 rounded-xl px-3.5 text-xs font-medium transition-all shadow-sm',
+                    'hover:shadow-md hover:-translate-y-[1px] active:scale-[0.99]'
+                  )}
                 >
                   {isArchiving ? (
                     <>
@@ -353,7 +381,7 @@ export function MaintenanceTab(): React.JSX.Element {
             </div>
           </div>
 
-          {/* Footer Info */}
+          {/* Alt uyarı */}
           <div
             className={cn(
               'rounded-2xl border border-dashed p-4 text-center',

@@ -1,4 +1,4 @@
-import { Banknote, CreditCard } from 'lucide-react'
+import { Banknote, CreditCard, Loader2 } from 'lucide-react'
 import { memo } from 'react'
 
 import { Button } from '@/components/ui/button'
@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils'
 interface PaymentActionsProps {
   canCashPay: boolean
   canCardPay: boolean
+  isProcessing: boolean
   onPayment: (method: PaymentMethod) => void
   onHoverChange?: (hovering: boolean) => void
   itemsPartialBlocked: boolean
@@ -18,6 +19,7 @@ interface PaymentActionsProps {
 export const PaymentActions = memo(function PaymentActions({
   canCashPay,
   canCardPay,
+  isProcessing,
   onPayment,
   onHoverChange,
   itemsPartialBlocked,
@@ -45,8 +47,17 @@ export const PaymentActions = memo(function PaymentActions({
         disabled={!canCashPay}
         title={cashTitle}
       >
-        <Banknote className="w-5 h-5" />
-        <span>Nakit</span>
+        {isProcessing ? (
+          <>
+            <Loader2 className="w-5 h-5 animate-spin" />
+            <span>İşleniyor...</span>
+          </>
+        ) : (
+          <>
+            <Banknote className="w-5 h-5" />
+            <span>Nakit</span>
+          </>
+        )}
       </Button>
 
       <Button
@@ -61,8 +72,17 @@ export const PaymentActions = memo(function PaymentActions({
         disabled={!canCardPay}
         title={cardTitle}
       >
-        <CreditCard className="w-5 h-5 text-primary" />
-        <span>Kart</span>
+        {isProcessing ? (
+          <>
+            <Loader2 className="w-5 h-5 animate-spin" />
+            <span>İşleniyor...</span>
+          </>
+        ) : (
+          <>
+            <CreditCard className="w-5 h-5 text-primary" />
+            <span>Kart</span>
+          </>
+        )}
       </Button>
     </div>
   )

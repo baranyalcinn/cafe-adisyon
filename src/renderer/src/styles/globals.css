@@ -8,9 +8,14 @@
   --font-sans:
     'Plus Jakarta Sans', 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
     'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  --font-sans--font-feature-settings: 'cv11', 'ss01', 'cv01';
+  --font-sans--font-variation-settings: 'wght' 420;
+
   --font-display:
     'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
     'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  --font-display--font-feature-settings: 'cv11', 'ss01', 'cv01';
+  --font-display--font-variation-settings: 'wght' 580;
 
   /* Base tokens */
   --bg-main: #fafafa; /* zinc-50 */
@@ -254,10 +259,12 @@
 /* ===== BASE STYLES ===== */
 :root {
   font-family: var(--font-sans);
-  line-height: 1.5;
-  font-weight: 400;
+  line-height: 1.6;
+  font-weight: 420;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
+  font-optical-sizing: auto;
+  word-spacing: 0.15em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 

@@ -21,6 +21,7 @@ export class DBMaintenance {
     try {
       logger.info('DBMaintenance', 'Starting maintenance tasks...')
       await this.runMigrations()
+      await this.walCheckpoint()
       await this.runVacuum()
       await this.createBackup()
       this.cleanupOldBackups()
@@ -119,6 +120,20 @@ export class DBMaintenance {
       }
     } catch (error) {
       logger.error(`DBMaintenance AddColumn ${table}.${column}`, error)
+    }
+  }
+
+  /**
+   * Forces WAL (Write-Ahead Log) contents into the main database file and truncates the WAL.
+   * Without this, the -wal file can grow unbounded in always-on Electron apps
+   * where Prisma holds a persistent connection.
+   */
+  private async walCheckpoint(): Promise<void> {
+    try {
+      await prisma.$executeRawUnsafe('PRAGMA wal_checkpoint(TRUNCATE)')
+      logger.debug('DBMaintenance', 'WAL checkpoint executed (TRUNCATE).')
+    } catch (error) {
+      logger.error('DBMaintenance WAL Checkpoint', error)
     }
   }
 

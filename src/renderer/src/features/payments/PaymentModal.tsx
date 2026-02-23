@@ -879,6 +879,7 @@ export function PaymentModal({
             <PaymentActions
               canCashPay={canCashPay}
               canCardPay={canCardPay}
+              isProcessing={state.isProcessing}
               onPayment={handlePayment}
               onHoverChange={(value) => dispatch({ type: 'SET_HOVER_PAYMENT', value })}
               itemsPartialBlocked={itemsPartialBlocked}
