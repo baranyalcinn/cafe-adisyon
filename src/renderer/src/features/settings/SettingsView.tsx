@@ -204,7 +204,7 @@ export function SettingsView({
               className="h-10 border-destructive/20 text-destructive hover:bg-destructive hover:text-destructive-foreground"
               onClick={() => setIsUnlocked(false)}
             >
-              <LogOut className="mr-2.5 w-5 h-5" />
+              <LogOut className="mr-2.5 w-6 h-6" />
               Çıkış Yap
             </Button>
           </div>
@@ -270,7 +270,7 @@ export function SettingsView({
             onClick={() => setActiveView(null)}
             className="group flex items-center gap-2 px-3 h-10 border-2 border-transparent hover:border-zinc-100 dark:hover:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-all duration-300 rounded-xl active:scale-95"
           >
-            <ArrowLeft className="w-5 h-5 text-zinc-400 group-hover:text-primary transition-all group-hover:-translate-x-1" />
+            <ArrowLeft className="w-6 h-6 text-zinc-400 group-hover:text-primary transition-all group-hover:-translate-x-1" />
             <span className="text-xs font-black tracking-widest text-zinc-400 group-hover:text-foreground hidden sm:inline">
               GERİ
             </span>

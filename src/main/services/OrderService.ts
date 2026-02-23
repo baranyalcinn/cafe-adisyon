@@ -199,9 +199,24 @@ export class OrderService {
           table: true,
           items: {
             include: { product: true }
+          },
+          payments: {
+            take: 1 // Sadece ödeme var mı diye kontrol etmek yeterli
           }
         }
       })
+
+      if (!order) {
+        return { success: false, error: 'Sipariş bulunamadı.' }
+      }
+
+      if (order.payments && order.payments.length > 0) {
+        return {
+          success: false,
+          error: 'Ödeme alınmış bir sipariş silinemez. Lütfen iptal/iade işlemi yapın.'
+        }
+      }
+
       await prisma.order.delete({ where: { id: orderId } })
 
       if (order) {
@@ -284,15 +299,7 @@ export class OrderService {
   ): Promise<ApiResponse<{ order: Order; completed: boolean }>> {
     try {
       const result = await prisma.$transaction(async (tx) => {
-        // 1. Read order with payments atomically
-        const order = await tx.order.findUnique({
-          where: { id: orderId },
-          select: { totalAmount: true, payments: { select: { amount: true } } }
-        })
-
-        if (!order) throw new Error('Order not found')
-
-        // 2. Create payment transaction
+        // 1. Create payment transaction
         await tx.transaction.create({
           data: {
             orderId,
@@ -301,8 +308,21 @@ export class OrderService {
           }
         })
 
-        // 3. Check totals (based on existing payments + new amount)
-        const totalPaid = order.payments!.reduce((sum, p) => sum + p.amount, 0) + amount
+        // 2. Fetch the newly updated aggregate directly from DB to prevent race conditions
+        const agg = await tx.transaction.aggregate({
+          where: { orderId },
+          _sum: { amount: true }
+        })
+        const totalPaid = agg._sum.amount || 0
+
+        const order = await tx.order.findUnique({
+          where: { id: orderId },
+          select: { totalAmount: true }
+        })
+
+        if (!order) throw new Error('Order not found')
+
+        // 3. Check totals securely via DB aggregation
         const remaining = order.totalAmount - totalPaid
 
         // 4. Close if fully paid
@@ -420,22 +440,33 @@ export class OrderService {
           })
         }
 
-        for (const split of splitPayments) {
-          await tx.orderItem.update({
-            where: { id: split.id },
-            data: { quantity: split.orderItem.quantity - split.quantity }
+        if (splitPayments.length > 0) {
+          // 2. Create all newly split items in a single query
+          const newItemsToInsert = splitPayments.map((split) => ({
+            orderId: split.orderItem.orderId,
+            productId: split.orderItem.productId,
+            quantity: split.quantity,
+            unitPrice: split.orderItem.unitPrice,
+            isPaid: true
+          }))
+
+          await tx.orderItem.createMany({
+            data: newItemsToInsert
           })
 
-          await tx.orderItem.create({
-            data: {
-              orderId: split.orderItem.orderId,
-              productId: split.orderItem.productId,
-              quantity: split.quantity,
-              unitPrice: split.orderItem.unitPrice,
-              isPaid: true
-            }
+          // 3. Update all old item quantities in parallel
+          await Promise.all(
+            splitPayments.map((split) =>
+              tx.orderItem.update({
+                where: { id: split.id },
+                data: { quantity: split.orderItem.quantity - split.quantity }
+              })
+            )
+          )
+
+          splitPayments.forEach((split) => {
+            paidItemsLog.push(`${split.quantity}x ${split.productName}`)
           })
-          paidItemsLog.push(`${split.quantity}x ${split.productName}`)
         }
 
         return { orderId: resolvedOrderId, logs: paidItemsLog }
@@ -676,19 +707,17 @@ export class OrderService {
             })
           }
 
-          // 5. Update Duplicate Items (Increment Quantity)
-          // Unfortunately, standard Prisma doesn't support "updateMany set quantity = quantity + specific_val"
-          // for different values in one go without raw SQL. So we strictly loop updates for duplicates.
-          // Yet, since we filtered out "Move" items, this loop is smaller.
-          for (const item of itemsToMerge) {
-            // Find current quantity of target item (it might have been updated in this loop if multiple source items match same target)
-            // But usually unique constraint prevents multiple same-product lines.
-            // Safe approach: Increment specific target item.
-            // Optimization: We could use raw query, but let's stick to simple update for safety.
-            await tx.orderItem.update({
-              where: { id: item.targetId },
-              data: { quantity: { increment: item.quantity } }
-            })
+          // 5. Batch Update Duplicate Items (Increment Quantity in parallel)
+          // Parallelize the DB await calls rather than sequential loop
+          if (itemsToMerge.length > 0) {
+            await Promise.all(
+              itemsToMerge.map((item) =>
+                tx.orderItem.update({
+                  where: { id: item.targetId },
+                  data: { quantity: { increment: item.quantity } }
+                })
+              )
+            )
           }
 
           // 6. Batch Delete Source Items (that were merged)

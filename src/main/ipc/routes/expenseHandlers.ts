@@ -2,7 +2,6 @@ import { ipcMain } from 'electron'
 import { expenseSchemas, validateInput } from '../../../shared/ipc-schemas'
 import { IPC_CHANNELS } from '../../../shared/types'
 import { expenseService } from '../../services/ExpenseService'
-import { reportingService } from '../../services/ReportingService'
 
 export function registerExpenseHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.EXPENSES_CREATE, async (_, data) => {
@@ -12,10 +11,6 @@ export function registerExpenseHandlers(): void {
     }
 
     const result = await expenseService.createExpense(validation.data)
-    if (result.success) {
-      // Trigger generic report update?
-      await reportingService.updateMonthlyReport(new Date())
-    }
     return result
   })
 
@@ -34,9 +29,6 @@ export function registerExpenseHandlers(): void {
     }
 
     const result = await expenseService.updateExpense(validation.data.id, validation.data.data)
-    if (result.success) {
-      await reportingService.updateMonthlyReport(new Date())
-    }
     return result
   })
 
@@ -47,9 +39,6 @@ export function registerExpenseHandlers(): void {
       return { success: false, error: validation.error }
     }
     const result = await expenseService.deleteExpense(validation.data.id)
-    if (result.success) {
-      await reportingService.updateMonthlyReport(new Date())
-    }
     return result
   })
 }

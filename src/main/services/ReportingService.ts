@@ -9,6 +9,8 @@ import { prisma } from '../db/prisma'
 import { logger } from '../lib/logger'
 import { logService } from './LogService'
 
+const DEFAULT_VAT_RATE = 0.1
+
 export class ReportingService {
   /**
    * Generates a Z-Report for the current shift.
@@ -77,7 +79,7 @@ export class ReportingService {
       const totalExpenses = expenseAgg._sum.amount || 0
 
       const netProfit = totalRevenue - totalExpenses
-      const totalVat = Math.round(totalRevenue * 0.1)
+      const totalVat = Math.round(totalRevenue * DEFAULT_VAT_RATE)
 
       // Upsert summary
       const summary = await prisma.dailySummary.upsert({
@@ -107,7 +109,13 @@ export class ReportingService {
         }
       })
 
-      await this.updateMonthlyReport(reportDate)
+      await this.incrementMonthlyReport(
+        reportDate,
+        totalRevenue,
+        totalExpenses,
+        netProfit,
+        periodicOrdersCount
+      )
 
       // Log activity
       await logService.createLog(
@@ -134,7 +142,6 @@ export class ReportingService {
     paymentMethodBreakdown: { cash: number; card: number }
     topProducts: { productId: string; productName: string; quantity: number }[]
     categoryBreakdown: { categoryName: string; revenue: number; quantity: number }[]
-    todayOrders: { id: string; totalAmount: number; createdAt: Date }[]
   }> {
     const now = new Date()
     const currentHour = now.getHours()
@@ -148,10 +155,6 @@ export class ReportingService {
     // Fetch Orders count directly
     const totalOrders = await prisma.order.count({
       where: { status: 'CLOSED', createdAt: { gte: today } }
-    })
-    const todayOrders = await prisma.order.findMany({
-      where: { status: 'CLOSED', createdAt: { gte: today } },
-      select: { id: true, totalAmount: true, createdAt: true }
     })
 
     // Parallel fetch: transaction sums and orderItem grouping
@@ -237,8 +240,7 @@ export class ReportingService {
       totalOrders,
       paymentMethodBreakdown,
       topProducts,
-      categoryBreakdown,
-      todayOrders
+      categoryBreakdown
     }
   }
 
@@ -252,36 +254,46 @@ export class ReportingService {
         paymentMethodBreakdown,
         topProducts,
         categoryBreakdown,
-        todayOrders,
         today
       } = await this.getBaseStats(10)
 
-      const [openTables, pendingOrders, expensesAggregate] = await Promise.all([
+      const [openTables, pendingOrders, expensesAggregate, hourlyAgg] = await Promise.all([
         prisma.table.count({ where: { orders: { some: { status: 'OPEN' } } } }),
         prisma.order.count({ where: { status: 'OPEN', items: { some: {} } } }),
-        prisma.expense.aggregate({ where: { createdAt: { gte: today } }, _sum: { amount: true } })
+        prisma.expense.aggregate({ where: { createdAt: { gte: today } }, _sum: { amount: true } }),
+        // Group by hour in SQL instead of Node to avoid memory bloat
+        prisma.$queryRaw<{ hour: string; revenue: number | bigint; count: number | bigint }[]>`
+          SELECT
+            strftime('%H', "createdAt" / 1000, 'unixepoch', 'localtime') as hour,
+            SUM("totalAmount") as revenue,
+            COUNT(id) as count
+          FROM "Order"
+          WHERE "status" = 'CLOSED' AND "createdAt" >= ${today.getTime()}
+          GROUP BY hour
+        `
       ])
 
       const dailyExpenses = expensesAggregate._sum.amount || 0
 
-      // Calculate Hourly Activity from closed orders
-      const hourlyStats = new Map<number, { revenue: number; count: number }>()
+      // Calculate Hourly Activity from closed orders aggregated in DB
+      const hourlyStats = new Map<string, { revenue: number; count: number }>()
       for (let i = 0; i < 24; i++) {
-        hourlyStats.set(i, { revenue: 0, count: 0 })
+        hourlyStats.set(i.toString().padStart(2, '0'), { revenue: 0, count: 0 })
       }
 
-      todayOrders.forEach((order) => {
-        const hour = order.createdAt.getHours()
-        const current = hourlyStats.get(hour) || { revenue: 0, count: 0 }
-        hourlyStats.set(hour, {
-          revenue: current.revenue + order.totalAmount,
-          count: current.count + 1
+      for (const row of hourlyAgg) {
+        if (!row.hour) continue
+        const hourStr = row.hour
+        const current = hourlyStats.get(hourStr) || { revenue: 0, count: 0 }
+        hourlyStats.set(hourStr, {
+          revenue: current.revenue + Number(row.revenue || 0),
+          count: current.count + Number(row.count || 0)
         })
-      })
+      }
 
       const hourlyActivity = Array.from(hourlyStats.entries())
         .map(([hour, stats]) => ({
-          hour: `${hour.toString().padStart(2, '0')}:00`,
+          hour: `${hour}:00`,
           revenue: stats.revenue,
           orderCount: stats.count
         }))
@@ -316,19 +328,43 @@ export class ReportingService {
       startDate.setHours(0, 0, 0, 0)
       startDate.setDate(startDate.getDate() - (days - 1))
 
-      // 2. Fetch everything in 2 queries instead of (days * 2) queries
-      const [transactions, orders] = await Promise.all([
-        prisma.transaction.findMany({
-          where: { createdAt: { gte: startDate } },
-          select: { amount: true, createdAt: true }
-        }),
-        prisma.order.findMany({
-          where: { status: 'CLOSED', createdAt: { gte: startDate } },
-          select: { createdAt: true }
-        })
+      // 2. Fetch aggregated buckets via raw SQL instead of mapping in Node.js
+      const [transactionsArr, ordersArr] = await Promise.all([
+        prisma.$queryRaw<{ date: string; revenue: number | bigint }[]>`
+          SELECT
+            strftime('%Y-%m-%d', "createdAt" / 1000, 'unixepoch', 'localtime') as date,
+            SUM(amount) as revenue
+          FROM "Transaction"
+          WHERE "createdAt" >= ${startDate.getTime()}
+          GROUP BY date
+        `,
+        prisma.$queryRaw<{ date: string; count: number | bigint }[]>`
+          SELECT
+            strftime('%Y-%m-%d', "createdAt" / 1000, 'unixepoch', 'localtime') as date,
+            COUNT(id) as count
+          FROM "Order"
+          WHERE "status" = 'CLOSED' AND "createdAt" >= ${startDate.getTime()}
+          GROUP BY date
+        `
       ])
 
-      // 3. O(N) Map Bucket Grouping structure
+      // 3. O(1) Bucket Map merge
+      const buckets = new Map<string, { revenue: number; orderCount: number }>()
+
+      for (const t of transactionsArr) {
+        if (!t.date) continue
+        const b = buckets.get(t.date) ?? { revenue: 0, orderCount: 0 }
+        b.revenue += Number(t.revenue || 0)
+        buckets.set(t.date, b)
+      }
+
+      for (const o of ordersArr) {
+        if (!o.date) continue
+        const b = buckets.get(o.date) ?? { revenue: 0, orderCount: 0 }
+        b.orderCount += Number(o.count || 0)
+        buckets.set(o.date, b)
+      }
+
       const toDayKey = (d: Date): string => {
         // Enforcing local time breakdown since businesses operate on local dates, not UTC borders.
         const year = d.getFullYear()
@@ -337,23 +373,7 @@ export class ReportingService {
         return `${year}-${month}-${day}`
       }
 
-      const buckets = new Map<string, { revenue: number; orderCount: number }>()
-
-      for (const t of transactions) {
-        const k = toDayKey(t.createdAt)
-        const b = buckets.get(k) ?? { revenue: 0, orderCount: 0 }
-        b.revenue += t.amount
-        buckets.set(k, b)
-      }
-
-      for (const o of orders) {
-        const k = toDayKey(o.createdAt)
-        const b = buckets.get(k) ?? { revenue: 0, orderCount: 0 }
-        b.orderCount += 1
-        buckets.set(k, b)
-      }
-
-      // 4. Extract into correctly ordered result list based on `days` window
+      // 4. Extract into correctly ordered result list based on \`days\` window
       for (let i = days - 1; i >= 0; i--) {
         const date = new Date()
         date.setHours(0, 0, 0, 0)
@@ -376,57 +396,44 @@ export class ReportingService {
     }
   }
 
-  async updateMonthlyReport(date: Date): Promise<void> {
+  /**
+   * Instead of fully recalculating the month on every Z-Report,
+   * cleanly increment using the latest closed numbers to avoid heavy database load.
+   */
+  async incrementMonthlyReport(
+    date: Date,
+    revenue: number,
+    expenses: number,
+    profit: number,
+    ordersCount: number
+  ): Promise<void> {
     try {
       // Normalize to UTC start of the month to prevent timezone-shift-induced separate records
       const startOfMonth = new Date(Date.UTC(date.getFullYear(), date.getMonth(), 1))
-      const endOfMonth = new Date(Date.UTC(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59))
-
-      // Parallel fetch: 3 queries at once instead of sequential
-      const [revenueAgg, orderCount, expenseAgg] = await Promise.all([
-        prisma.transaction.aggregate({
-          where: { createdAt: { gte: startOfMonth, lte: endOfMonth } },
-          _sum: { amount: true }
-        }),
-        prisma.order.count({
-          where: {
-            status: 'CLOSED',
-            createdAt: { gte: startOfMonth, lte: endOfMonth }
-          }
-        }),
-        prisma.expense.aggregate({
-          where: { createdAt: { gte: startOfMonth, lte: endOfMonth } },
-          _sum: { amount: true }
-        })
-      ])
-
-      const totalRevenue = revenueAgg._sum.amount || 0
-      const totalExpenses = expenseAgg._sum.amount || 0
-      const netProfit = totalRevenue - totalExpenses
 
       logger.debug(
-        'ReportingService.updateMonthlyReport',
-        `Updating report for ${startOfMonth.toISOString()}: Revenue=${totalRevenue}, Expenses=${totalExpenses}, Profit=${netProfit}`
+        'ReportingService.incrementMonthlyReport',
+        `Incrementing report for ${startOfMonth.toISOString()}: Revenue=+${revenue}, Expenses=+${expenses}, Profit=+${profit}`
       )
 
       await prisma.monthlyReport.upsert({
         where: { monthDate: startOfMonth },
         update: {
-          totalRevenue,
-          totalExpenses,
-          netProfit,
-          orderCount: orderCount
+          totalRevenue: { increment: revenue },
+          totalExpenses: { increment: expenses },
+          netProfit: { increment: profit },
+          orderCount: { increment: ordersCount }
         },
         create: {
           monthDate: startOfMonth,
-          totalRevenue,
-          totalExpenses,
-          netProfit,
-          orderCount: orderCount
+          totalRevenue: revenue,
+          totalExpenses: expenses,
+          netProfit: profit,
+          orderCount: ordersCount
         }
       })
     } catch (error) {
-      logger.error('ReportingService.updateMonthlyReport', error)
+      logger.error('ReportingService.incrementMonthlyReport', error)
     }
   }
 

@@ -174,7 +174,7 @@ const TableActionModal = memo(function TableActionModal({
                   : 'border-teal-100 dark:border-teal-900'
               )}
             >
-              <Icon className={cn('w-5 h-5', accentStyles.softIcon)} />
+              <Icon className={cn('w-6 h-6', accentStyles.softIcon)} />
             </div>
 
             <div className="min-w-0 flex-1">
@@ -637,7 +637,7 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
       <div className="sticky top-0 flex-none h-16 px-6 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 shadow-sm z-10 w-full flex items-center">
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-3 min-w-0">
-            <Coffee className="w-5 h-5 text-zinc-500 dark:text-zinc-400" />
+            <Coffee className="w-6 h-6 text-zinc-500 dark:text-zinc-400" />
             <h2 className="text-lg font-bold tracking-tight text-foreground truncate">Masalar</h2>
           </div>
 

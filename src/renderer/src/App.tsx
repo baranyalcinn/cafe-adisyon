@@ -139,14 +139,16 @@ const NavButton = memo(({ active, onClick, icon: Icon, label }: NavButtonProps) 
       className={cn(
         'w-12 h-12 rounded-2xl transition-all duration-500 border',
         active
-          ? 'bg-rose-600 text-white border-rose-500 shadow-lg shadow-rose-500/20'
+          ? 'bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20'
           : 'text-muted-foreground border-transparent hover:bg-muted/50 hover:text-foreground'
       )}
     >
       <Icon
         className={cn(
-          'w-5 h-5 transition-all',
-          active ? 'scale-110 stroke-[2.5px]' : 'group-hover:scale-110'
+          'w-6 h-6 transition-all duration-300',
+          active
+            ? 'scale-105 opacity-100'
+            : 'opacity-80 group-hover:opacity-100 group-hover:scale-105'
         )}
       />
     </Button>
@@ -154,7 +156,7 @@ const NavButton = memo(({ active, onClick, icon: Icon, label }: NavButtonProps) 
       className={cn(
         'text-[8px] font-black tracking-widest transition-all uppercase',
         active
-          ? 'text-rose-500'
+          ? 'text-primary'
           : 'text-muted-foreground/60 opacity-0 group-hover:opacity-100 group-hover:text-muted-foreground'
       )}
     >
@@ -167,9 +169,9 @@ const NavButton = memo(({ active, onClick, icon: Icon, label }: NavButtonProps) 
 const LogoSection = memo(() => {
   const configs = useMemo(
     () => [
-      { color: 'text-rose-600', offset: 'translate-y-0.5', delay: '0s' },
-      { color: 'text-rose-500', offset: 'translate-y-0', delay: '0.1s' },
-      { color: 'text-rose-400', offset: '-translate-y-0.5', delay: '0.2s' }
+      { color: 'text-primary', offset: 'translate-y-0.5', delay: '0s' },
+      { color: 'text-primary/90', offset: 'translate-y-0', delay: '0.1s' },
+      { color: 'text-primary/70', offset: '-translate-y-0.5', delay: '0.2s' }
     ],
     []
   )
@@ -177,7 +179,7 @@ const LogoSection = memo(() => {
   return (
     <div className="flex flex-col items-center group select-none animate-in fade-in zoom-in duration-1000">
       <div className="relative p-1 flex flex-col items-center">
-        <div className="absolute inset-x-0 top-0 bottom-0 bg-rose-500/[0.05] blur-2xl rounded-full scale-150 group-hover:bg-rose-500/15 transition-colors duration-1000" />
+        <div className="absolute inset-x-0 top-0 bottom-0 bg-primary/5 blur-2xl rounded-full scale-150 group-hover:bg-primary/15 transition-colors duration-1000" />
         <div className="flex flex-col items-center gap-1.5 relative z-10">
           <div className="flex items-center gap-0.5">
             {configs.map((config, i) => (
@@ -185,7 +187,7 @@ const LogoSection = memo(() => {
                 key={i}
                 style={{ animationDelay: config.delay }}
                 className={cn(
-                  'w-3.5 h-5 rounded-sm border border-rose-500/10 bg-rose-500/5 flex items-center justify-center font-black text-xs transition-all duration-500 group-hover:scale-110 shadow-sm',
+                  'w-3.5 h-5 rounded-sm border border-primary/20 bg-primary/10 flex items-center justify-center font-black text-xs transition-all duration-500 group-hover:scale-110 shadow-sm',
                   config.color,
                   config.offset,
                   'group-hover:translate-y-0'
@@ -195,7 +197,7 @@ const LogoSection = memo(() => {
               </div>
             ))}
           </div>
-          <span className="text-[8px] font-black text-rose-500/80 uppercase tracking-[0.3em] leading-none">
+          <span className="text-[9px] font-black text-primary/80 uppercase tracking-[0.3em] leading-none">
             CAFE
           </span>
         </div>
@@ -212,9 +214,9 @@ const BootLoader = memo(() => (
     </div>
     <div className="flex flex-col items-center gap-3 animate-pulse">
       <div className="h-1 w-24 bg-muted rounded-full overflow-hidden">
-        <div className="h-full bg-rose-500 w-1/2 animate-[loading_1.5s_infinite_ease-in-out]" />
+        <div className="h-full bg-primary w-1/2 animate-[loading_1.5s_infinite_ease-in-out]" />
       </div>
-      <span className="text-[9px] font-black text-rose-500/40 tracking-[0.2em] uppercase">
+      <span className="text-[9px] font-black text-primary/40 tracking-[0.2em] uppercase">
         Sistem Yükleniyor
       </span>
     </div>
@@ -226,9 +228,9 @@ const LoadingFallback = memo(() => (
   <div className="flex items-center justify-center h-full bg-background/20 backdrop-blur-sm">
     <div className="flex flex-col items-center gap-4">
       <div className="relative">
-        <Loader2 className="w-8 h-8 animate-spin text-rose-500 opacity-20" />
+        <Loader2 className="w-8 h-8 animate-spin text-primary opacity-20" />
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-ping" />
+          <div className="w-1.5 h-1.5 bg-primary rounded-full animate-ping" />
         </div>
       </div>
       <span className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.15em]">

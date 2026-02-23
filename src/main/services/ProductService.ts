@@ -30,7 +30,9 @@ export class ProductService {
         },
         select: PRODUCT_SELECT
       })
-      const result = toPlain<Product[]>(products as unknown as Product[])
+      const result = toPlain<Product[]>(
+        products as Prisma.ProductGetPayload<{ select: typeof PRODUCT_SELECT }>[]
+      )
       return { success: true, data: result }
     } catch (error) {
       logger.error('ProductService.getAllProducts', error)
@@ -96,7 +98,12 @@ export class ProductService {
         },
         select: PRODUCT_SELECT
       })
-      return { success: true, data: toPlain<Product[]>(products as unknown as Product[]) }
+      return {
+        success: true,
+        data: toPlain<Product[]>(
+          products as Prisma.ProductGetPayload<{ select: typeof PRODUCT_SELECT }>[]
+        )
+      }
     } catch (error) {
       logger.error('ProductService.getProductsByCategory', error)
       return { success: false, error: 'Kategori ürünleri alınamadı.' }
@@ -112,7 +119,12 @@ export class ProductService {
         },
         select: PRODUCT_SELECT
       })
-      return { success: true, data: toPlain<Product[]>(products as unknown as Product[]) }
+      return {
+        success: true,
+        data: toPlain<Product[]>(
+          products as Prisma.ProductGetPayload<{ select: typeof PRODUCT_SELECT }>[]
+        )
+      }
     } catch (error) {
       logger.error('ProductService.getFavorites', error)
       return { success: false, error: 'Favori ürünler alınamadı.' }
@@ -128,7 +140,12 @@ export class ProductService {
         },
         select: PRODUCT_SELECT
       })
-      return { success: true, data: toPlain<Product[]>(products as unknown as Product[]) }
+      return {
+        success: true,
+        data: toPlain<Product[]>(
+          products as Prisma.ProductGetPayload<{ select: typeof PRODUCT_SELECT }>[]
+        )
+      }
     } catch (error) {
       logger.error('ProductService.searchProducts', error)
       return { success: false, error: 'Ürün araması yapılamadı.' }

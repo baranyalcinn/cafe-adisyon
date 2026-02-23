@@ -1,4 +1,5 @@
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
+import Database from 'better-sqlite3'
 import { app } from 'electron'
 import * as fs from 'fs'
 import path from 'path'
@@ -26,7 +27,8 @@ if (!isDev && !fs.existsSync(dbPath)) {
 
 // Create Prisma client with better-sqlite3 adapter
 // Native C++ driver — no TaskQueue needed, locking handled at driver level
-const adapter = new PrismaBetterSqlite3({ url: `file:${dbPath}` })
+const sqlite = new Database(dbPath)
+const adapter = new PrismaBetterSqlite3(sqlite)
 const prisma = new PrismaClient({ adapter })
 
 // Optimize SQLite performance

@@ -186,11 +186,11 @@ const OrderSidebar = React.memo(function OrderSidebar({
                     className={cn(
                       'w-9 h-9 flex items-center justify-center rounded-xl transition-all duration-300',
                       activeCategory === null
-                        ? 'bg-primary/10 text-primary scale-105'
-                        : 'bg-muted/40 group-hover/cat:bg-muted/60 group-hover/cat:scale-105'
+                        ? 'bg-primary/10 text-primary'
+                        : 'bg-muted/40 group-hover/cat:bg-muted/60'
                     )}
                   >
-                    <LayoutGrid className="w-4 h-4" />
+                    <LayoutGrid className="w-5 h-5" />
                   </div>
                   <span className="truncate flex-1 text-left">Tümü</span>
                 </Button>
@@ -221,11 +221,11 @@ const OrderSidebar = React.memo(function OrderSidebar({
                         className={cn(
                           'w-9 h-9 flex items-center justify-center rounded-xl transition-all duration-300',
                           isActive
-                            ? 'bg-primary/10 text-primary scale-105'
-                            : 'bg-muted/40 group-hover/cat:bg-muted/60 group-hover/cat:scale-105'
+                            ? 'bg-primary/10 text-primary'
+                            : 'bg-muted/40 group-hover/cat:bg-muted/60'
                         )}
                       >
-                        {getCategoryIcon(category.icon, 'w-4 h-4')}
+                        {getCategoryIcon(category.icon, 'w-5 h-5')}
                       </div>
                       <span className="truncate flex-1 text-left">{category.name}</span>
                     </Button>
