@@ -6,6 +6,7 @@ import { disconnectDb, prisma } from './db/prisma'
 import { registerAllHandlers } from './ipc'
 import { dbMaintenance } from './lib/db-maintenance'
 import { electronLog, logger } from './lib/logger'
+import { orderService } from './services/OrderService'
 
 // Chromium memory optimizations for POS
 app.commandLine.appendSwitch('js-flags', '--max-old-space-size=350')
@@ -280,6 +281,11 @@ if (!gotTheLock) {
 
     // Register IPC handlers for database operations
     registerAllHandlers()
+
+    // Listen for backend service events
+    orderService.on('order:updated', () => {
+      sendToAllWindows('dashboard:update')
+    })
 
     createWindow()
 

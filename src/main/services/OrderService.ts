@@ -1,15 +1,13 @@
-import { BrowserWindow } from 'electron'
+import { EventEmitter } from 'events'
 import { ApiResponse, Order } from '../../shared/types'
 import { prisma } from '../db/prisma'
 import { logger } from '../lib/logger'
 import { toPlain } from '../lib/toPlain'
 import { logService } from './LogService'
 
-export class OrderService {
+export class OrderService extends EventEmitter {
   private broadcastDashboardUpdate(): void {
-    BrowserWindow.getAllWindows().forEach((win) => {
-      win.webContents.send('dashboard:update')
-    })
+    this.emit('order:updated')
   }
 
   async getOpenOrderForTable(tableId: string): Promise<ApiResponse<Order | null>> {
@@ -298,6 +296,9 @@ export class OrderService {
     options?: { skipLog?: boolean }
   ): Promise<ApiResponse<{ order: Order; completed: boolean }>> {
     try {
+      if (amount <= 0) {
+        throw new Error('Ödeme tutarı sıfırdan büyük olmalıdır')
+      }
       const result = await prisma.$transaction(async (tx) => {
         // 1. Create payment transaction
         await tx.transaction.create({
@@ -600,49 +601,56 @@ export class OrderService {
 
   async transferTable(orderId: string, targetTableId: string): Promise<ApiResponse<Order>> {
     try {
-      // 1. Check if target table is empty
-      const targetOrder = await prisma.order.findFirst({
-        where: { tableId: targetTableId, status: 'OPEN' }
-      })
+      const result = await prisma.$transaction(async (tx) => {
+        // 1. Check if target table is empty inside transaction
+        const targetOrder = await tx.order.findFirst({
+          where: { tableId: targetTableId, status: 'OPEN' }
+        })
 
-      if (targetOrder) {
-        return {
-          success: false,
-          error: 'Hedef masada açık adisyon var. Lütfen birleştirme işlemini kullanın.'
+        if (targetOrder) {
+          throw new Error('Hedef masada açık adisyon var. Lütfen birleştirme işlemini kullanın.')
         }
-      }
 
-      // 2. Get source order (for logging)
-      const sourceOrder = await prisma.order.findUnique({
-        where: { id: orderId },
-        include: { table: true }
-      })
+        // 2. Get source order (for logging)
+        const sourceOrder = await tx.order.findUnique({
+          where: { id: orderId },
+          include: { table: true }
+        })
 
-      if (!sourceOrder) {
-        return { success: false, error: 'Taşınacak adisyon bulunamadı.' }
-      }
-
-      // 3. Update order tableId
-      const updatedOrder = await prisma.order.update({
-        where: { id: orderId },
-        data: { tableId: targetTableId },
-        include: {
-          items: { include: { product: true } },
-          payments: true,
-          table: true
+        if (!sourceOrder) {
+          throw new Error('Taşınacak adisyon bulunamadı.')
         }
+
+        // 3. Update order tableId
+        const updatedOrder = await tx.order.update({
+          where: { id: orderId },
+          data: { tableId: targetTableId },
+          include: {
+            items: { include: { product: true } },
+            payments: true,
+            table: true
+          }
+        })
+
+        return { sourceOrder, updatedOrder }
       })
 
-      // Log activity — use updatedOrder.table (already fetched via include)
+      // Log activity outside transaction
       await logService.createLog(
         'TRANSFER_TABLE',
         undefined,
-        `${sourceOrder.table?.name || 'Masa'} -> ${updatedOrder.table?.name || 'Masa'} taşındı`
+        `${result.sourceOrder.table?.name || 'Masa'} -> ${result.updatedOrder.table?.name || 'Masa'} taşındı`
       )
 
-      return { success: true, data: toPlain<Order>(updatedOrder) }
+      return { success: true, data: toPlain<Order>(result.updatedOrder) }
     } catch (error) {
       logger.error('OrderService.transferTable', error)
+      if (
+        error instanceof Error &&
+        (error.message.includes('Hedef masada') || error.message.includes('Taşınacak adisyon'))
+      ) {
+        return { success: false, error: error.message }
+      }
       return { success: false, error: 'Masa taşıma işlemi başarısız.' }
     }
   }

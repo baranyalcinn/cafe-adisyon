@@ -1,3 +1,4 @@
+import { startOfDay, startOfMonth, subDays } from 'date-fns'
 import {
   ApiResponse,
   DailySummary,
@@ -21,14 +22,12 @@ export class ReportingService {
   async generateZReport(actualCash?: number): Promise<ApiResponse<DailySummary>> {
     try {
       const now = new Date()
-      const currentHour = now.getHours()
 
       // Smart Dating: If before 05:00 AM, assume it belongs to the previous day (Shift logic)
-      const reportDate = new Date(now)
-      if (currentHour < 5) {
-        reportDate.setDate(reportDate.getDate() - 1)
+      let reportDate = startOfDay(now)
+      if (now.getHours() < 5) {
+        reportDate = subDays(reportDate, 1)
       }
-      reportDate.setHours(0, 0, 0, 0)
 
       // Find the Last Z-Report taken BEFORE this report date
       const lastReport = await prisma.dailySummary.findFirst({
@@ -144,13 +143,10 @@ export class ReportingService {
     categoryBreakdown: { categoryName: string; revenue: number; quantity: number }[]
   }> {
     const now = new Date()
-    const currentHour = now.getHours()
-
-    const today = new Date(now)
-    if (currentHour < 5) {
-      today.setDate(today.getDate() - 1)
+    let today = startOfDay(now)
+    if (now.getHours() < 5) {
+      today = subDays(today, 1)
     }
-    today.setHours(0, 0, 0, 0)
 
     // Fetch Orders count directly
     const totalOrders = await prisma.order.count({
@@ -324,9 +320,7 @@ export class ReportingService {
       const result: RevenueTrendItem[] = []
 
       // 1. Calculate the start boundary
-      const startDate = new Date()
-      startDate.setHours(0, 0, 0, 0)
-      startDate.setDate(startDate.getDate() - (days - 1))
+      const startDate = subDays(startOfDay(new Date()), days - 1)
 
       // 2. Fetch aggregated buckets via raw SQL instead of mapping in Node.js
       const [transactionsArr, ordersArr] = await Promise.all([
@@ -373,11 +367,10 @@ export class ReportingService {
         return `${year}-${month}-${day}`
       }
 
-      // 4. Extract into correctly ordered result list based on \`days\` window
+      // 4. Extract into correctly ordered result list based on `days` window
+      const todayStart = startOfDay(new Date())
       for (let i = days - 1; i >= 0; i--) {
-        const date = new Date()
-        date.setHours(0, 0, 0, 0)
-        date.setDate(date.getDate() - i)
+        const date = subDays(todayStart, i)
 
         const k = toDayKey(date)
         const bucket = buckets.get(k) || { revenue: 0, orderCount: 0 }
@@ -408,16 +401,16 @@ export class ReportingService {
     ordersCount: number
   ): Promise<void> {
     try {
-      // Normalize to UTC start of the month to prevent timezone-shift-induced separate records
-      const startOfMonth = new Date(Date.UTC(date.getFullYear(), date.getMonth(), 1))
+      // Use local timezone start of month to maintain timezone consistency with Z-Reports
+      const startOfMonthRecord = startOfMonth(date)
 
       logger.debug(
         'ReportingService.incrementMonthlyReport',
-        `Incrementing report for ${startOfMonth.toISOString()}: Revenue=+${revenue}, Expenses=+${expenses}, Profit=+${profit}`
+        `Incrementing report for ${startOfMonthRecord.toISOString()}: Revenue=+${revenue}, Expenses=+${expenses}, Profit=+${profit}`
       )
 
       await prisma.monthlyReport.upsert({
-        where: { monthDate: startOfMonth },
+        where: { monthDate: startOfMonthRecord },
         update: {
           totalRevenue: { increment: revenue },
           totalExpenses: { increment: expenses },
@@ -425,7 +418,7 @@ export class ReportingService {
           orderCount: { increment: ordersCount }
         },
         create: {
-          monthDate: startOfMonth,
+          monthDate: startOfMonthRecord,
           totalRevenue: revenue,
           totalExpenses: expenses,
           netProfit: profit,

@@ -25,7 +25,7 @@ export class ProductService {
     try {
       const products = await prisma.product.findMany({
         where: {
-          categoryId: { not: undefined },
+          categoryId: { not: null } as any,
           isDeleted: false
         },
         select: PRODUCT_SELECT
