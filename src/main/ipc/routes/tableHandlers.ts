@@ -1,24 +1,26 @@
-import { ipcMain } from 'electron'
-import { tableSchemas, validateInput } from '../../../shared/ipc-schemas'
+import { tableSchemas } from '../../../shared/ipc-schemas'
 import { IPC_CHANNELS } from '../../../shared/types'
 import { prisma } from '../../db/prisma'
-import { logger } from '../../lib/logger'
+import { createRawHandler, createSimpleRawHandler } from '../utils/ipcWrapper'
 
 export function registerTableHandlers(): void {
-  ipcMain.handle(IPC_CHANNELS.TABLES_GET_ALL, async () => {
-    try {
+  // GET ALL
+  createSimpleRawHandler(
+    IPC_CHANNELS.TABLES_GET_ALL,
+    async () => {
       const tables = await prisma.table.findMany()
       tables.sort((a, b) =>
         a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
       )
-      return { success: true, data: tables }
-    } catch (error) {
-      return { success: false, error: String(error) }
-    }
-  })
+      return tables
+    },
+    'Masalar getirilirken hata oluştu'
+  )
 
-  ipcMain.handle(IPC_CHANNELS.TABLES_GET_WITH_STATUS, async () => {
-    try {
+  // GET WITH STATUS
+  createSimpleRawHandler(
+    IPC_CHANNELS.TABLES_GET_WITH_STATUS,
+    async () => {
       const [tables, openOrders] = await Promise.all([
         prisma.table.findMany(),
         prisma.order.findMany({
@@ -29,92 +31,69 @@ export function registerTableHandlers(): void {
 
       const openOrderMap = new Map<string, boolean>()
       for (const order of openOrders) {
-        // Assume tableId is always populated
         if (order.tableId) {
           openOrderMap.set(order.tableId, order.isLocked)
         }
       }
 
-      // Natural sort by name (Masa 1, Masa 2, Masa 10...)
       tables.sort((a, b) =>
         a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
       )
 
-      const tablesWithStatus = tables.map((table) => {
+      return tables.map((table) => {
         const hasOpen = openOrderMap.has(table.id)
         return {
           ...table,
           hasOpenOrder: hasOpen,
           isLocked: hasOpen ? openOrderMap.get(table.id) || false : false,
-          orders: undefined // Keep interface compatibility
+          orders: undefined
         }
       })
+    },
+    'Masa durumları getirilirken hata oluştu'
+  )
 
-      return { success: true, data: tablesWithStatus }
-    } catch (error) {
-      return { success: false, error: String(error) }
-    }
-  })
-
-  ipcMain.handle(IPC_CHANNELS.TABLES_CREATE, async (_event, name: string) => {
-    // Validate input
-    const validation = validateInput(tableSchemas.create, { name })
-    if (!validation.success) {
-      return { success: false, error: validation.error }
-    }
-
-    try {
-      const table = await prisma.table.create({
-        data: { name: validation.data.name }
+  // CREATE
+  createRawHandler(
+    IPC_CHANNELS.TABLES_CREATE,
+    tableSchemas.create,
+    async (data) => {
+      return await prisma.table.create({
+        data: { name: data.name }
       })
-      return { success: true, data: table }
-    } catch (error) {
-      logger.error('Tables Create', error)
-      return { success: false, error: 'Masa oluşturulamadı. Bu isimde masa zaten var olabilir.' }
-    }
-  })
+    },
+    'Masa oluşturulamadı. Bu isimde masa zaten var olabilir.'
+  )
 
-  ipcMain.handle(IPC_CHANNELS.TABLES_DELETE, async (_event, id: string) => {
-    const validation = validateInput(tableSchemas.delete, { id })
-    if (!validation.success) {
-      return { success: false, error: validation.error }
-    }
-
-    try {
+  // DELETE
+  createRawHandler(
+    IPC_CHANNELS.TABLES_DELETE,
+    tableSchemas.delete,
+    async (data) => {
       await prisma.$transaction(async (tx) => {
-        // 1. Get all orders for this table to find their IDs
         const orders = await tx.order.findMany({
-          where: { tableId: validation.data.id },
+          where: { tableId: data.id },
           select: { id: true }
         })
 
         const orderIds = orders.map((o) => o.id)
 
         if (orderIds.length > 0) {
-          // 2. Batch delete transactions for these orders
           await tx.transaction.deleteMany({
             where: { orderId: { in: orderIds } }
           })
-
-          // 3. Batch delete order items for these orders
           await tx.orderItem.deleteMany({
             where: { orderId: { in: orderIds } }
           })
-
-          // 4. Batch delete the orders themselves
           await tx.order.deleteMany({
             where: { id: { in: orderIds } }
           })
         }
 
-        // 5. Finally, delete the table
-        await tx.table.delete({ where: { id: validation.data.id } })
+        await tx.table.delete({ where: { id: data.id } })
       })
-
-      return { success: true, data: null }
-    } catch (error) {
-      logger.error('Tables Delete', error)
-      return { success: false, error: 'Masa silinemedi.' }
-    }
-  })
+      return null
+    },
+    'Masa silinemedi.'
+  )
 }

@@ -1,8 +1,7 @@
-import { ipcMain } from 'electron'
-import { prisma } from '../../db/prisma'
-import { logger } from '../../lib/logger'
+import { categorySchemas } from '../../../shared/ipc-schemas'
 import { IPC_CHANNELS } from '../../../shared/types'
-import { categorySchemas, validateInput } from '../../../shared/ipc-schemas'
+import { prisma } from '../../db/prisma'
+import { createRawHandler, createSimpleRawHandler } from '../utils/ipcWrapper'
 
 // Simple in-memory cache for categories
 interface CacheEntry<T> {
@@ -34,13 +33,12 @@ function invalidateCache(key: 'categories'): void {
 }
 
 export function registerCategoryHandlers(): void {
-  ipcMain.handle(IPC_CHANNELS.CATEGORIES_GET_ALL, async () => {
-    try {
-      // Check cache first
+  // GET ALL
+  createSimpleRawHandler(
+    IPC_CHANNELS.CATEGORIES_GET_ALL,
+    async () => {
       const cached = getCached<{ id: string; name: string; icon: string }>('categories')
-      if (cached) {
-        return { success: true, data: cached }
-      }
+      if (cached) return cached
 
       const categories = await prisma.category.findMany({
         where: { isDeleted: false }
@@ -49,83 +47,62 @@ export function registerCategoryHandlers(): void {
         a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
       )
       setCache('categories', categories)
-      return { success: true, data: categories }
-    } catch (error) {
-      return { success: false, error: String(error) }
-    }
-  })
-
-  ipcMain.handle(IPC_CHANNELS.CATEGORIES_CREATE, async (_event, name: string) => {
-    const validation = validateInput(categorySchemas.create, { name })
-    if (!validation.success) {
-      return { success: false, error: validation.error }
-    }
-
-    try {
-      const category = await prisma.category.create({
-        data: { name: validation.data.name }
-      })
-      invalidateCache('categories')
-      return { success: true, data: category }
-    } catch (error) {
-      logger.error('Categories Create', error)
-      return { success: false, error: 'Kategori oluşturulamadı.' }
-    }
-  })
-
-  ipcMain.handle(
-    IPC_CHANNELS.CATEGORIES_UPDATE,
-    async (_event, id: string, data: { name?: string; icon?: string }) => {
-      const validation = validateInput(categorySchemas.update, { id, data })
-      if (!validation.success) {
-        return { success: false, error: validation.error }
-      }
-
-      try {
-        const validatedData = validation.data.data
-        const category = await prisma.category.update({
-          where: { id: validation.data.id },
-          data: {
-            ...(validatedData.name && { name: validatedData.name }),
-            ...(validatedData.icon && { icon: validatedData.icon })
-          }
-        })
-        invalidateCache('categories')
-        return { success: true, data: category }
-      } catch (error) {
-        logger.error('Categories Update', error)
-        return { success: false, error: 'Kategori güncellenemedi.' }
-      }
-    }
+      return categories
+    },
+    'Kategoriler getirilirken hata oluştu'
   )
 
-  ipcMain.handle(IPC_CHANNELS.CATEGORIES_DELETE, async (_event, id: string) => {
-    const validation = validateInput(categorySchemas.delete, { id })
-    if (!validation.success) {
-      return { success: false, error: validation.error }
-    }
+  // CREATE
+  createRawHandler(
+    IPC_CHANNELS.CATEGORIES_CREATE,
+    categorySchemas.create,
+    async (data) => {
+      const category = await prisma.category.create({
+        data: { name: data.name }
+      })
+      invalidateCache('categories')
+      return category
+    },
+    'Kategori oluşturulamadı.'
+  )
 
-    try {
-      // Use transaction to soft delete related products and category
+  // UPDATE
+  createRawHandler(
+    IPC_CHANNELS.CATEGORIES_UPDATE,
+    categorySchemas.update,
+    async (data) => {
+      const { name, icon } = data.data
+      const category = await prisma.category.update({
+        where: { id: data.id },
+        data: {
+          ...(name && { name }),
+          ...(icon && { icon })
+        }
+      })
+      invalidateCache('categories')
+      return category
+    },
+    'Kategori güncellenemedi.'
+  )
+
+  // DELETE
+  createRawHandler(
+    IPC_CHANNELS.CATEGORIES_DELETE,
+    categorySchemas.delete,
+    async (data) => {
       await prisma.$transaction(async (tx) => {
-        // Soft delete all products in this category
         await tx.product.updateMany({
-          where: { categoryId: id },
+          where: { categoryId: data.id },
           data: { isDeleted: true }
         })
-
-        // Soft delete the category
         await tx.category.update({
-          where: { id },
+          where: { id: data.id },
           data: { isDeleted: true }
         })
       })
       invalidateCache('categories')
-      // Note: Products referencing this category are now soft deleted.
-      return { success: true, data: null }
-    } catch (error) {
-      logger.error('Categories Delete', error)
-      return { success: false, error: 'Kategori silinemedi.' }
-    }
-  })
+      return null
+    },
+    'Kategori silinemedi.'
+  )
 }

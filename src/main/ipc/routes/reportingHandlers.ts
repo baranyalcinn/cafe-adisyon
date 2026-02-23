@@ -1,13 +1,17 @@
 import { ipcMain } from 'electron'
 import { IPC_CHANNELS } from '../../../shared/types'
 import { reportingService } from '../../services/ReportingService'
+import { createSimpleHandler } from '../utils/ipcWrapper'
 
 export function registerReportingHandlers(): void {
-  // getDashboardStats removed — only getExtendedDashboardStats is used
-  ipcMain.handle(IPC_CHANNELS.DASHBOARD_GET_EXTENDED_STATS, () =>
-    reportingService.getExtendedDashboardStats()
+  createSimpleHandler(
+    IPC_CHANNELS.DASHBOARD_GET_EXTENDED_STATS,
+    () => reportingService.getExtendedDashboardStats(),
+    'Dashboard verileri alınamadı.'
   )
 
+  // DASHBOARD_GET_BUNDLE is a complex orchestration of 3 service calls
+  // Keep it inline since it returns a custom object shape
   ipcMain.handle(IPC_CHANNELS.DASHBOARD_GET_BUNDLE, async () => {
     const [statsResult, trendResult, monthlyResult] = await Promise.all([
       reportingService.getExtendedDashboardStats(),
@@ -29,6 +33,7 @@ export function registerReportingHandlers(): void {
     }
   })
 
+  // THESE NEED PRELOAD UPDATES (args -> objects or pass-through)
   ipcMain.handle(IPC_CHANNELS.DASHBOARD_GET_REVENUE_TREND, (_, days) =>
     reportingService.getRevenueTrend(days)
   )

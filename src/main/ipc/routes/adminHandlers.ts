@@ -1,42 +1,52 @@
-import { ipcMain } from 'electron'
+import { adminSchemas } from '../../../shared/ipc-schemas'
 import { IPC_CHANNELS } from '../../../shared/types'
 import { adminService } from '../../services/AdminService'
-import { adminSchemas, validateInput } from '../../../shared/ipc-schemas'
+import { createSimpleHandler, createValidatedHandler } from '../utils/ipcWrapper'
 
 export function registerAdminHandlers(): void {
-  ipcMain.handle(IPC_CHANNELS.ADMIN_VERIFY_PIN, (_, pin) => {
-    const validation = validateInput(adminSchemas.verifyPin, { pin })
-    if (!validation.success) return { success: false, error: validation.error }
-    return adminService.verifyPin(validation.data.pin)
-  })
+  // VERIFY PIN
+  createValidatedHandler(
+    IPC_CHANNELS.ADMIN_VERIFY_PIN,
+    adminSchemas.verifyPin,
+    (data) => adminService.verifyPin(data.pin),
+    'PIN doğrulanırken hata oluştu'
+  )
 
-  ipcMain.handle(IPC_CHANNELS.ADMIN_CHECK_STATUS, () => adminService.checkStatus())
+  // CHECK STATUS
+  createSimpleHandler(
+    IPC_CHANNELS.ADMIN_CHECK_STATUS,
+    () => adminService.checkStatus(),
+    'Admin durumu kontrol edilirken hata oluştu'
+  )
 
-  ipcMain.handle(IPC_CHANNELS.ADMIN_CHANGE_PIN, (_, current, newPin) => {
-    const validation = validateInput(adminSchemas.changePin, { currentPin: current, newPin })
-    if (!validation.success) return { success: false, error: validation.error }
-    return adminService.changePin(validation.data.currentPin, validation.data.newPin)
-  })
+  // CHANGE PIN
+  createValidatedHandler(
+    IPC_CHANNELS.ADMIN_CHANGE_PIN,
+    adminSchemas.changePin,
+    (data) => adminService.changePin(data.currentPin, data.newPin),
+    'PIN değiştirilirken hata oluştu'
+  )
 
-  ipcMain.handle(IPC_CHANNELS.ADMIN_SET_RECOVERY, (_, current, q, a) => {
-    const validation = validateInput(adminSchemas.setRecovery, {
-      currentPin: current,
-      question: q,
-      answer: a
-    })
-    if (!validation.success) return { success: false, error: validation.error }
-    return adminService.setRecovery(
-      validation.data.currentPin,
-      validation.data.question,
-      validation.data.answer
-    )
-  })
+  // SET RECOVERY
+  createValidatedHandler(
+    IPC_CHANNELS.ADMIN_SET_RECOVERY,
+    adminSchemas.setRecovery,
+    (data) => adminService.setRecovery(data.currentPin, data.question, data.answer),
+    'Kurtarma bilgileri ayarlanırken hata oluştu'
+  )
 
-  ipcMain.handle(IPC_CHANNELS.ADMIN_GET_RECOVERY_QUESTION, () => adminService.getRecoveryQuestion())
+  // GET RECOVERY QUESTION
+  createSimpleHandler(
+    IPC_CHANNELS.ADMIN_GET_RECOVERY_QUESTION,
+    () => adminService.getRecoveryQuestion(),
+    'Kurtarma sorusu getirilirken hata oluştu'
+  )
 
-  ipcMain.handle(IPC_CHANNELS.ADMIN_RESET_PIN, (_, answer) => {
-    const validation = validateInput(adminSchemas.resetPin, { answer })
-    if (!validation.success) return { success: false, error: validation.error }
-    return adminService.resetPin(validation.data.answer)
-  })
+  // RESET PIN
+  createValidatedHandler(
+    IPC_CHANNELS.ADMIN_RESET_PIN,
+    adminSchemas.resetPin,
+    (data) => adminService.resetPin(data.answer),
+    'PIN sıfırlanırken hata oluştu'
+  )
 }

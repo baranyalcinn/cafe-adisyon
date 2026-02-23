@@ -35,11 +35,17 @@ const prisma = new PrismaClient({ adapter })
 // Optimize SQLite performance
 ;(async () => {
   try {
+    // 1. En kritik: WAL Mode (Write-Ahead Logging) - Sağlamlık ve concurrency için
     await prisma.$executeRawUnsafe('PRAGMA journal_mode = WAL')
+    // 2. Senkronizasyon türü (WAL ile NORMAL kullanımı %99 güvenlidir ve çok hızlıdır)
     await prisma.$executeRawUnsafe('PRAGMA synchronous = NORMAL')
-    await prisma.$executeRawUnsafe('PRAGMA cache_size = -64000')
+    // 3. Cache boyutu (~64MB RAM kullanır, performansı çok artırır)
+    await prisma.$executeRawUnsafe('PRAGMA cache_size = -32000')
+    // 4. Geçici tabloları bellekte tut (RAM üzerinde işlem yapar)
     await prisma.$executeRawUnsafe('PRAGMA temp_store = MEMORY')
+    // 5. Veritabanı kilidini bekleme süresi (Database Is Locked hatasını önler)
     await prisma.$executeRawUnsafe('PRAGMA busy_timeout = 5000')
+    // 6. Memory-Mapped I/O (~16MB mmap ile okumaları hızlandırır)
     await prisma.$executeRawUnsafe('PRAGMA mmap_size = 16777216')
   } catch (error) {
     console.error('Failed to set SQLite pragmas:', error)

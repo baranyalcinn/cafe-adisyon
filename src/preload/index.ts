@@ -26,9 +26,9 @@ const api = {
     getWithStatus: (): Promise<ApiResponse<(Table & { hasOpenOrder: boolean })[]>> =>
       ipcRenderer.invoke(IPC_CHANNELS.TABLES_GET_WITH_STATUS),
     create: (name: string): Promise<ApiResponse<Table>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.TABLES_CREATE, name),
+      ipcRenderer.invoke(IPC_CHANNELS.TABLES_CREATE, { name }),
     delete: (id: string): Promise<ApiResponse<null>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.TABLES_DELETE, id)
+      ipcRenderer.invoke(IPC_CHANNELS.TABLES_DELETE, { id })
   },
 
   // Categories
@@ -36,11 +36,11 @@ const api = {
     getAll: (): Promise<ApiResponse<Category[]>> =>
       ipcRenderer.invoke(IPC_CHANNELS.CATEGORIES_GET_ALL),
     create: (name: string): Promise<ApiResponse<Category>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.CATEGORIES_CREATE, name),
+      ipcRenderer.invoke(IPC_CHANNELS.CATEGORIES_CREATE, { name }),
     update: (id: string, data: { name?: string; icon?: string }): Promise<ApiResponse<Category>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.CATEGORIES_UPDATE, id, data),
+      ipcRenderer.invoke(IPC_CHANNELS.CATEGORIES_UPDATE, { id, data }),
     delete: (id: string): Promise<ApiResponse<null>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.CATEGORIES_DELETE, id)
+      ipcRenderer.invoke(IPC_CHANNELS.CATEGORIES_DELETE, { id })
   },
 
   // Products
@@ -48,11 +48,11 @@ const api = {
     getAll: (): Promise<ApiResponse<Product[]>> =>
       ipcRenderer.invoke(IPC_CHANNELS.PRODUCTS_GET_ALL),
     getByCategory: (categoryId: string): Promise<ApiResponse<Product[]>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.PRODUCTS_GET_BY_CATEGORY, categoryId),
+      ipcRenderer.invoke(IPC_CHANNELS.PRODUCTS_GET_BY_CATEGORY, { categoryId }),
     getFavorites: (): Promise<ApiResponse<Product[]>> =>
       ipcRenderer.invoke(IPC_CHANNELS.PRODUCTS_GET_FAVORITES),
     search: (query: string): Promise<ApiResponse<Product[]>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.PRODUCTS_SEARCH, query),
+      ipcRenderer.invoke(IPC_CHANNELS.PRODUCTS_SEARCH, { query }),
     create: (data: {
       name: string
       price: number
@@ -62,38 +62,40 @@ const api = {
     update: (
       id: string,
       data: { name?: string; price?: number; isFavorite?: boolean }
-    ): Promise<ApiResponse<Product>> => ipcRenderer.invoke(IPC_CHANNELS.PRODUCTS_UPDATE, id, data),
+    ): Promise<ApiResponse<Product>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.PRODUCTS_UPDATE, { id, data }),
     delete: (id: string): Promise<ApiResponse<null>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.PRODUCTS_DELETE, id)
+      ipcRenderer.invoke(IPC_CHANNELS.PRODUCTS_DELETE, { id })
   },
 
   // Orders
   orders: {
     getOpenByTable: (tableId: string): Promise<ApiResponse<Order | null>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.ORDERS_GET_OPEN_BY_TABLE, tableId),
+      ipcRenderer.invoke(IPC_CHANNELS.ORDERS_GET_OPEN_BY_TABLE, { tableId }),
     create: (tableId: string): Promise<ApiResponse<Order>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.ORDERS_CREATE, tableId),
+      ipcRenderer.invoke(IPC_CHANNELS.ORDERS_CREATE, { tableId }),
     update: (
       orderId: string,
       data: { status?: OrderStatus; totalAmount?: number; isLocked?: boolean }
-    ): Promise<ApiResponse<Order>> => ipcRenderer.invoke(IPC_CHANNELS.ORDERS_UPDATE, orderId, data),
+    ): Promise<ApiResponse<Order>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.ORDERS_UPDATE, { orderId, data }),
     addItem: (
       orderId: string,
       productId: string,
       quantity: number,
       unitPrice: number
     ): Promise<ApiResponse<Order>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.ORDERS_ADD_ITEM, orderId, productId, quantity, unitPrice),
+      ipcRenderer.invoke(IPC_CHANNELS.ORDERS_ADD_ITEM, { orderId, productId, quantity, unitPrice }),
     updateItem: (orderItemId: string, quantity: number): Promise<ApiResponse<Order>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.ORDERS_UPDATE_ITEM, orderItemId, quantity),
+      ipcRenderer.invoke(IPC_CHANNELS.ORDERS_UPDATE_ITEM, { orderItemId, quantity }),
     removeItem: (orderItemId: string): Promise<ApiResponse<Order>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.ORDERS_REMOVE_ITEM, orderItemId),
+      ipcRenderer.invoke(IPC_CHANNELS.ORDERS_REMOVE_ITEM, { orderItemId }),
     delete: (orderId: string): Promise<ApiResponse<null>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.ORDERS_DELETE, orderId),
+      ipcRenderer.invoke(IPC_CHANNELS.ORDERS_DELETE, { orderId }),
     transfer: (orderId: string, targetTableId: string): Promise<ApiResponse<Order>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.ORDERS_TRANSFER, orderId, targetTableId),
+      ipcRenderer.invoke(IPC_CHANNELS.ORDERS_TRANSFER, { orderId, targetTableId }),
     merge: (sourceOrderId: string, targetOrderId: string): Promise<ApiResponse<Order>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.ORDERS_MERGE, sourceOrderId, targetOrderId),
+      ipcRenderer.invoke(IPC_CHANNELS.ORDERS_MERGE, { sourceOrderId, targetOrderId }),
     markItemsPaid: (
       items: { id: string; quantity: number }[],
       paymentDetails?: { amount: number; method: string }
@@ -106,7 +108,7 @@ const api = {
     }): Promise<ApiResponse<{ orders: Order[]; totalCount: number; hasMore: boolean }>> =>
       ipcRenderer.invoke(IPC_CHANNELS.ORDERS_GET_HISTORY, options),
     getDetails: (orderId: string): Promise<ApiResponse<Order>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.ORDERS_GET_DETAILS, orderId)
+      ipcRenderer.invoke(IPC_CHANNELS.ORDERS_GET_DETAILS, { orderId })
   },
 
   // Payments
@@ -117,7 +119,7 @@ const api = {
       paymentMethod: PaymentMethod,
       options?: { skipLog?: boolean }
     ): Promise<ApiResponse<{ order: Order; completed: boolean }>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.PAYMENTS_CREATE, orderId, amount, paymentMethod, options),
+      ipcRenderer.invoke(IPC_CHANNELS.PAYMENTS_CREATE, { orderId, amount, paymentMethod, options }),
     getByOrder: (orderId: string): Promise<ApiResponse<Transaction[]>> =>
       ipcRenderer.invoke(IPC_CHANNELS.PAYMENTS_GET_BY_ORDER, orderId)
   },
@@ -135,21 +137,21 @@ const api = {
   // Admin
   admin: {
     verifyPin: (pin: string): Promise<ApiResponse<{ valid: boolean; required: boolean }>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.ADMIN_VERIFY_PIN, pin),
+      ipcRenderer.invoke(IPC_CHANNELS.ADMIN_VERIFY_PIN, { pin }),
     checkStatus: (): Promise<ApiResponse<{ required: boolean }>> =>
       ipcRenderer.invoke(IPC_CHANNELS.ADMIN_CHECK_STATUS),
     changePin: (currentPin: string, newPin: string): Promise<ApiResponse<null>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.ADMIN_CHANGE_PIN, currentPin, newPin),
+      ipcRenderer.invoke(IPC_CHANNELS.ADMIN_CHANGE_PIN, { currentPin, newPin }),
     setRecovery: (
       currentPin: string,
       question: string,
       answer: string
     ): Promise<ApiResponse<null>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.ADMIN_SET_RECOVERY, currentPin, question, answer),
+      ipcRenderer.invoke(IPC_CHANNELS.ADMIN_SET_RECOVERY, { currentPin, question, answer }),
     getRecoveryQuestion: (): Promise<ApiResponse<string | null>> =>
       ipcRenderer.invoke(IPC_CHANNELS.ADMIN_GET_RECOVERY_QUESTION),
     resetPin: (answer: string): Promise<ApiResponse<null>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.ADMIN_RESET_PIN, answer)
+      ipcRenderer.invoke(IPC_CHANNELS.ADMIN_RESET_PIN, { answer })
   },
 
   // Z-Report
@@ -174,22 +176,21 @@ const api = {
       search?: string,
       category?: string
     ): Promise<ApiResponse<ActivityLog[]>> =>
-      ipcRenderer.invoke(
-        IPC_CHANNELS.LOGS_GET_RECENT,
+      ipcRenderer.invoke(IPC_CHANNELS.LOGS_GET_RECENT, {
         limit,
         startDate,
         endDate,
         offset,
         search,
         category
-      ),
+      }),
     create: (
       action: string,
       tableName?: string,
       userName?: string,
       details?: string
     ): Promise<ApiResponse<ActivityLog>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.LOGS_CREATE, action, tableName, userName, details),
+      ipcRenderer.invoke(IPC_CHANNELS.LOGS_CREATE, { action, tableName, userName, details }),
     getStatsToday: (): Promise<ApiResponse<{ total: number; sys: number; ops: number }>> =>
       ipcRenderer.invoke(IPC_CHANNELS.LOGS_GET_STATS_TODAY)
   },
@@ -245,9 +246,10 @@ const api = {
     update: (
       id: string,
       data: { description?: string; amount?: number; category?: string; paymentMethod?: string }
-    ): Promise<ApiResponse<Expense>> => ipcRenderer.invoke(IPC_CHANNELS.EXPENSES_UPDATE, id, data),
+    ): Promise<ApiResponse<Expense>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.EXPENSES_UPDATE, { id, data }),
     delete: (id: string): Promise<ApiResponse<null>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.EXPENSES_DELETE, id)
+      ipcRenderer.invoke(IPC_CHANNELS.EXPENSES_DELETE, { id })
   },
 
   // End of Day

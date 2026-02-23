@@ -5,45 +5,54 @@ import { toPlain } from '../../lib/toPlain'
 import { maintenanceService } from '../../services/MaintenanceService'
 import { productService } from '../../services/ProductService'
 import { reportingService } from '../../services/ReportingService'
+import { createSimpleHandler } from '../utils/ipcWrapper'
 
 export function registerMaintenanceHandlers(): void {
-  ipcMain.handle(IPC_CHANNELS.MAINTENANCE_ARCHIVE_OLD_DATA, () =>
-    maintenanceService.archiveOldData()
+  createSimpleHandler(
+    IPC_CHANNELS.MAINTENANCE_ARCHIVE_OLD_DATA,
+    () => maintenanceService.archiveOldData(),
+    'Eski veriler arşivlenirken hata oluştu'
   )
 
   ipcMain.handle(IPC_CHANNELS.MAINTENANCE_EXPORT_DATA, (_, format) =>
     maintenanceService.exportData(format)
   )
 
-  ipcMain.handle(IPC_CHANNELS.MAINTENANCE_VACUUM, () => maintenanceService.vacuumDatabase())
+  createSimpleHandler(
+    IPC_CHANNELS.MAINTENANCE_VACUUM,
+    () => maintenanceService.vacuumDatabase(),
+    'Veritabanı temizlenirken hata oluştu'
+  )
 
-  ipcMain.handle(IPC_CHANNELS.MAINTENANCE_BACKUP, () => maintenanceService.backupDatabase())
+  createSimpleHandler(
+    IPC_CHANNELS.MAINTENANCE_BACKUP,
+    () => maintenanceService.backupDatabase(),
+    'Yedekleme yapılırken hata oluştu'
+  )
 
   ipcMain.handle(IPC_CHANNELS.MAINTENANCE_BACKUP_WITH_ROTATION, (_, max) =>
     maintenanceService.backupWithRotation(max)
   )
 
-  ipcMain.handle(IPC_CHANNELS.END_OF_DAY_CHECK, () => maintenanceService.endOfDayCheck())
+  createSimpleHandler(
+    IPC_CHANNELS.END_OF_DAY_CHECK,
+    () => maintenanceService.endOfDayCheck(),
+    'Gün sonu kontrolü yapılırken hata oluştu'
+  )
 
+  // END_OF_DAY_EXECUTE is a complex orchestration - keep inline
   ipcMain.handle(IPC_CHANNELS.END_OF_DAY_EXECUTE, async (_, actualCash) => {
-    // 1. Check open tables (MaintenanceService)
     const checkResult = await maintenanceService.endOfDayCheck()
     if (!checkResult.success || !checkResult.data?.canProceed) {
       return { success: false, error: 'Açık masalar var.' }
     }
 
-    // 2. Generate Z-Report (ReportingService)
     const zReportResult = await reportingService.generateZReport(actualCash)
     if (!zReportResult.success) return zReportResult
 
-    // 3. Backup with rotation
     const backupResult = await maintenanceService.backupWithRotation(30)
     await maintenanceService.vacuumDatabase()
-
-    // 4. Cleanup old logs (90 days)
     const logCleanupResult = await maintenanceService.cleanupOldLogs(90)
-
-    // 5. Integrity check
     const integrityResult = await maintenanceService.integrityCheck()
 
     return {
@@ -59,6 +68,7 @@ export function registerMaintenanceHandlers(): void {
     }
   })
 
+  // SYSTEM_CHECK returns raw data, no complex logic, keep as-is or wrap
   ipcMain.handle(IPC_CHANNELS.SYSTEM_CHECK, async () => {
     try {
       const tableCount = await prisma.table.count()
@@ -68,6 +78,7 @@ export function registerMaintenanceHandlers(): void {
     }
   })
 
+  // SYSTEM_GET_BOOT_BUNDLE returns custom wrapper format - keep inline
   ipcMain.handle(IPC_CHANNELS.SYSTEM_GET_BOOT_BUNDLE, async () => {
     try {
       const [productsRes, categoriesRes, tables, openOrders] = await Promise.all([
@@ -114,5 +125,9 @@ export function registerMaintenanceHandlers(): void {
     }
   })
 
-  ipcMain.handle(IPC_CHANNELS.SEED_DATABASE, () => maintenanceService.seedDatabase())
+  createSimpleHandler(
+    IPC_CHANNELS.SEED_DATABASE,
+    () => maintenanceService.seedDatabase(),
+    'Veritabanı dondurulurken hata oluştu'
+  )
 }
