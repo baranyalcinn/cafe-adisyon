@@ -141,6 +141,17 @@ export function SettingsView({
     setShowPinModal(false)
   }
 
+  // ESC key to go back
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape' && activeView) {
+        setActiveView(null)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [activeView])
+
   // Loading State
   if (isLoading) {
     return (
@@ -153,13 +164,13 @@ export function SettingsView({
   // Lock Screen
   if (!isUnlocked) {
     return (
-      <div className="h-full flex flex-col items-center justify-center bg-background">
-        <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
-            <Lock className="w-10 h-10 text-muted-foreground" />
+      <div className="h-full flex flex-col items-center justify-center bg-zinc-50 dark:bg-zinc-950">
+        <div className="text-center mb-8 animate-in fade-in zoom-in duration-500">
+          <div className="w-24 h-24 bg-white dark:bg-zinc-900 border-2 border-border/20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-black/5">
+            <Lock className="w-10 h-10 text-primary" />
           </div>
-          <h1 className="text-3xl font-bold mb-2">Ayarlar Kilitli</h1>
-          <p className="text-muted-foreground">Devam etmek için yönetici PIN kodunu girin</p>
+          <h1 className="text-4xl font-black tracking-tighter mb-2">Ayarlar Kilitli</h1>
+          <p className="text-zinc-500 font-medium">Devam etmek için yönetici PIN kodunu girin</p>
         </div>
 
         <AdminPinModal
@@ -184,7 +195,7 @@ export function SettingsView({
   // --- Main Menu View ---
   if (!activeView) {
     return (
-      <div className="h-full flex flex-col bg-background overflow-auto p-4 md:p-6 animate-in fade-in zoom-in-95 duration-200">
+      <div className="h-full flex flex-col bg-zinc-50 dark:bg-zinc-950 overflow-auto p-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col">
           <div className="mb-8 flex items-center justify-between">
             <h1 className="text-3xl font-extrabold tracking-tight">Ayarlar</h1>
@@ -203,26 +214,29 @@ export function SettingsView({
               <button
                 key={item.id}
                 onClick={() => setActiveView(item.id)}
-                className="group relative flex flex-col h-full min-h-[200px] items-start rounded-2xl border bg-card p-6 text-left shadow-sm transition-all hover:bg-muted/50 hover:shadow-md hover:-translate-y-1"
+                className="group relative flex flex-col h-full min-h-[200px] items-start rounded-2xl border-2 bg-white dark:bg-zinc-900 p-6 text-left shadow-sm transition-all duration-300 hover:bg-white dark:hover:bg-zinc-900 hover:shadow-xl hover:-translate-y-2 hover:border-primary active:scale-[0.98]"
               >
                 <div
                   className={cn(
-                    'mb-5 rounded-xl bg-muted/50 p-4 transition-all duration-300 group-hover:bg-background shadow-sm',
+                    'mb-5 rounded-xl border-2 border-transparent p-4 transition-all duration-300 group-hover:scale-110 shadow-sm',
+                    'bg-zinc-50 dark:bg-zinc-800/50 group-hover:border-primary/20',
                     item.color
                   )}
                 >
                   <item.icon className="h-8 w-8" />
                 </div>
                 <div className="flex-1 flex flex-col mt-2">
-                  <h3 className="mb-1.5 text-xl font-bold tracking-tight text-foreground/90">
+                  <h3 className="mb-1.5 text-xl font-black tracking-tight text-foreground/90">
                     {item.label}
                   </h3>
-                  <p className="line-clamp-3 text-[13px] font-medium leading-relaxed text-muted-foreground/70">
+                  <p className="line-clamp-3 text-[13px] font-bold leading-relaxed text-zinc-500/70 group-hover:text-zinc-500 transition-colors">
                     {item.description}
                   </p>
                 </div>
-                <div className="mt-4 flex w-full justify-end opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-1">
-                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                <div className="mt-4 flex w-full justify-end opacity-0 -translate-x-2 transition-all group-hover:opacity-100 group-hover:translate-x-0">
+                  <div className="p-1 rounded-full bg-primary/5">
+                    <ChevronRight className="h-5 w-5 text-primary" />
+                  </div>
                 </div>
               </button>
             ))}
@@ -246,30 +260,39 @@ export function SettingsView({
   ].includes(activeView || '')
 
   return (
-    <div className="h-full flex flex-col bg-background animate-in slide-in-from-right-8 duration-300">
+    <div className="h-full flex flex-col bg-zinc-50 dark:bg-zinc-950 animate-in slide-in-from-right-8 duration-500">
       {/* Detail Header */}
-      <div className="flex-none flex items-center gap-4 px-6 py-4 border-b bg-background/95 backdrop-blur z-10 sticky top-0">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setActiveView(null)}
-          className="rounded-full h-10 w-10 hover:bg-primary/10 hover:text-primary transition-all duration-300"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <div className="h-8 w-px bg-border/60 mx-1" />
-        <div className="flex items-center gap-3">
-          <div className={cn('p-2 rounded-lg bg-muted/60', activeItem?.color)}>
-            {activeItem?.icon && <activeItem.icon className="w-5 h-5" />}
-          </div>
-          <div>
-            <h2 className="font-bold text-lg tracking-tight leading-none">{activeItem?.label}</h2>
-            <p className="text-xs text-muted-foreground mt-1">{activeItem?.description}</p>
+      <header className="flex-none flex items-center h-16 px-6 border-b-2 bg-white dark:bg-zinc-900 border-zinc-100 dark:border-zinc-800 transition-colors z-10 sticky top-0 shadow-sm shadow-black/[0.02]">
+        <div className="flex items-center gap-6">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setActiveView(null)}
+            className="group flex items-center gap-2 px-3 h-10 border-2 border-transparent hover:border-zinc-100 dark:hover:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-all duration-300 rounded-xl active:scale-95"
+          >
+            <ArrowLeft className="w-5 h-5 text-zinc-400 group-hover:text-primary transition-all group-hover:-translate-x-1" />
+            <span className="text-xs font-black tracking-widest text-zinc-400 group-hover:text-foreground hidden sm:inline">
+              GERİ
+            </span>
+          </Button>
+
+          <div className="h-6 w-[2px] bg-zinc-100 dark:bg-zinc-800" />
+
+          <div className="flex items-center gap-4">
+            <div className={cn('transition-all duration-500', activeItem?.color)}>
+              {activeItem?.icon && <activeItem.icon className="w-6 h-6 stroke-[2.5]" />}
+            </div>
+            <div className="flex flex-col">
+              <h2 className="text-xl font-black tracking-tighter text-foreground leading-tight">
+                {activeItem?.label}
+              </h2>
+            </div>
           </div>
         </div>
+
         <div className="flex-1" />
         <div id="settings-header-actions" className="flex items-center gap-2" />
-      </div>
+      </header>
 
       {/* Detail Content */}
       <div

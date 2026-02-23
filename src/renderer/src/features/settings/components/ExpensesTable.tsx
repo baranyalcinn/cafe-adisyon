@@ -127,10 +127,10 @@ export function ExpensesTable({
     <Button
       variant="ghost"
       onClick={() => handleSort(sortKey)}
-      className="-ml-4 h-8 font-black text-[10px] tracking-[0.2em] text-muted-foreground/40 hover:text-primary transition-colors "
+      className="-ml-4 h-8 font-black text-[10px] tracking-[0.2em] text-zinc-500 uppercase hover:text-primary transition-colors "
     >
       {label}
-      <ArrowUpDown className="ml-2 h-3 w-3 opacity-50" />
+      <ArrowUpDown className="ml-2 h-3.5 w-3.5 opacity-50" />
     </Button>
   )
 
@@ -169,10 +169,10 @@ export function ExpensesTable({
   }
 
   return (
-    <div className="flex-1 overflow-hidden h-full">
-      <div className="h-full overflow-auto custom-scrollbar">
+    <div className="flex-1 h-full min-h-0">
+      <div className="h-full overflow-y-auto custom-scrollbar">
         <Table className="table-fixed w-full">
-          <TableHeader className="sticky top-0 bg-background/60 backdrop-blur-3xl z-10 border-b border-border/40">
+          <TableHeader className="sticky top-0 bg-zinc-50/80 dark:bg-zinc-950/80 backdrop-blur-sm z-10 border-b-2 border-zinc-200 dark:border-zinc-800">
             <TableRow className="hover:bg-transparent border-0">
               <TableHead className="w-[180px] pl-6">
                 <SortButton label="TARİH" sortKey="createdAt" />
@@ -217,8 +217,10 @@ export function ExpensesTable({
                   <tr
                     key={expense.id}
                     className={cn(
-                      'group transition-colors border-b border-border/10 animate-in fade-in duration-200',
-                      editingId === expense.id ? 'bg-primary/5' : 'hover:bg-muted/30'
+                      'group transition-colors border-b border-zinc-200/50 dark:border-zinc-800/50 animate-in fade-in duration-200',
+                      editingId === expense.id
+                        ? 'bg-primary/5'
+                        : 'hover:bg-zinc-200/20 dark:hover:bg-zinc-800/20'
                     )}
                   >
                     {editingId === expense.id ? (
@@ -374,7 +376,7 @@ export function ExpensesTable({
                             </DropdownMenuTrigger>
                             <DropdownMenuContent
                               align="end"
-                              className="rounded-xl border-white/10 bg-background/95 backdrop-blur-md p-1"
+                              className="rounded-2xl border-2 bg-white dark:bg-zinc-950 p-1.5 shadow-2xl"
                             >
                               <DropdownMenuItem
                                 onClick={() => (onEdit ? onEdit(expense) : startEdit(expense))}

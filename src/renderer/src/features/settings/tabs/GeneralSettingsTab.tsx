@@ -73,22 +73,24 @@ type UpdateStatus =
 
 const ui = {
   container: 'w-full h-full overflow-y-auto px-4 xl:px-8 pt-6 pb-10',
-  vspace: 'space-y-5 pb-8',
-  card: 'rounded-2xl border-border/40 bg-card shadow-sm overflow-hidden',
-  header: 'px-5 py-4 border-b border-border/30',
-  kicker: 'text-[13px] font-black tracking-widest',
-  meta: 'text-sm text-muted-foreground',
-  label: 'text-base font-semibold',
-  summaryIconBox: 'w-11 h-11 rounded-xl flex items-center justify-center',
-  summaryTitle: 'text-base font-extrabold truncate',
-  summaryKicker: 'text-xs tracking-widest font-bold text-muted-foreground',
-  controlHeight: 'h-11',
-  controlText: 'text-sm',
-  softCard: 'rounded-2xl border border-border/30 bg-muted/10 overflow-hidden',
-  subHeader: 'px-5 py-3 border-b border-border/20 flex items-center gap-2',
-  subKicker: 'text-xs font-black tracking-widest text-muted-foreground',
-  btnPrimary: 'h-11 rounded-xl text-sm font-black tracking-wide',
-  btnOutline: 'h-11 rounded-xl text-sm font-black tracking-wide'
+  vspace: 'space-y-6 pb-12',
+  card: 'rounded-2xl border-2 bg-white dark:bg-zinc-900 shadow-sm overflow-hidden',
+  header: 'px-6 py-5 border-b-2 bg-zinc-50 dark:bg-zinc-950/50',
+  kicker: 'text-[12px] font-black tracking-[0.15em] uppercase',
+  meta: 'text-[13px] font-bold text-zinc-500 italic',
+  label: 'text-base font-black',
+  summaryIconBox: 'w-12 h-12 rounded-xl flex items-center justify-center border-2',
+  summaryTitle: 'text-base font-black truncate leading-tight',
+  summaryKicker: 'text-[10px] tracking-[0.2em] font-black text-zinc-400 uppercase',
+  controlHeight: 'h-12',
+  controlText: 'text-sm font-bold',
+  softCard:
+    'rounded-2xl border-2 border-border/60 bg-zinc-50/50 dark:bg-zinc-950/20 overflow-hidden',
+  subHeader:
+    'px-6 py-4 border-b-2 border-border/40 flex items-center gap-2 bg-white/50 dark:bg-black/20',
+  subKicker: 'text-[11px] font-black tracking-widest text-zinc-500 uppercase',
+  btnPrimary: 'h-12 rounded-xl text-sm font-black tracking-widest uppercase',
+  btnOutline: 'h-12 rounded-xl text-sm font-black tracking-widest uppercase border-2'
 } as const
 
 function SummaryCard(props: {
@@ -99,9 +101,11 @@ function SummaryCard(props: {
   titleClassName?: string
 }): React.JSX.Element {
   return (
-    <Card className="rounded-2xl border-border/40 bg-card/80 backdrop-blur-sm shadow-sm">
-      <div className="p-5 flex items-center gap-4">
-        <div className={cn(ui.summaryIconBox, props.iconClassName)}>{props.icon}</div>
+    <Card className="rounded-2xl border-2 bg-white dark:bg-zinc-900 shadow-sm transition-all hover:shadow-md">
+      <div className="p-5 flex items-center gap-5">
+        <div className={cn(ui.summaryIconBox, 'border-current', props.iconClassName)}>
+          {props.icon}
+        </div>
         <div className="min-w-0">
           <p className={ui.summaryKicker}>{props.kicker}</p>
           <p className={cn(ui.summaryTitle, props.titleClassName)}>{props.title}</p>
@@ -288,7 +292,7 @@ export function GeneralSettingsTab({
         <div className="space-y-5 h-full">
           {/* GÖRÜNÜM KARTI */}
           <Card className={cn(ui.card, 'h-fit')}>
-            <div className={cn(ui.header, 'bg-gradient-to-r from-primary/5 to-transparent')}>
+            <div className={ui.header}>
               <div className="flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-primary" />
                 <span className={cn(ui.kicker, 'text-foreground')}>Görünüm</span>
@@ -379,12 +383,7 @@ export function GeneralSettingsTab({
 
           {/* GÜNCELLEME KARTI */}
           <Card className={cn(ui.card, 'h-fit')}>
-            <div
-              className={cn(
-                ui.header,
-                'bg-gradient-to-r from-blue-500/5 to-transparent flex items-center justify-between'
-              )}
-            >
+            <div className={cn(ui.header, 'flex items-center justify-between')}>
               <div className="flex items-center gap-2">
                 <ArrowUpCircle className="w-4 h-4 text-blue-500" />
                 <span className={cn(ui.kicker, 'text-foreground')}>Yazılım Güncelleme</span>
@@ -406,7 +405,7 @@ export function GeneralSettingsTab({
 
           {/* SİSTEM DURUMU */}
           <Card className={cn(ui.card, 'h-fit')}>
-            <div className={cn(ui.header, 'bg-gradient-to-r from-amber-500/5 to-transparent')}>
+            <div className={ui.header}>
               <div className="flex items-center gap-2">
                 <Activity className="w-4 h-4 text-amber-500" />
                 <span className={cn(ui.kicker, 'text-foreground')}>Sistem Durumu</span>
@@ -460,12 +459,7 @@ export function GeneralSettingsTab({
         {/* SAĞ KOLON */}
         <div className="space-y-5 h-full">
           <Card className={cn(ui.card, 'h-full')}>
-            <div
-              className={cn(
-                ui.header,
-                'bg-gradient-to-r from-emerald-500/5 to-transparent flex items-center justify-between'
-              )}
-            >
+            <div className={cn(ui.header, 'flex items-center justify-between')}>
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-emerald-500" />
                 <span className={cn(ui.kicker, 'text-foreground')}>Güvenlik</span>

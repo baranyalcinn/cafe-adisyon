@@ -357,17 +357,15 @@ const LogsHeader = memo(function LogsHeader({
       <div className="flex items-center gap-8">
         <div className="flex md:flex items-center gap-6">
           {[
-            { label: 'Bugün Toplam', value: stats.total, color: 'text-primary' },
-            { label: 'Operasyon', value: stats.ops, color: 'text-emerald-500' },
-            { label: 'Sistem', value: stats.sys, color: 'text-blue-500' }
+            { label: 'BUGÜN TOPLAM', value: stats.total, color: 'text-primary' },
+            { label: 'OPERASYON', value: stats.ops, color: 'text-emerald-500' },
+            { label: 'SİSTEM', value: stats.sys, color: 'text-blue-500' }
           ].map((s) => (
-            <div key={s.label} className="flex flex-col">
-              <span className="text-[9px] font-black text-muted-foreground/50 tracking-widest ">
+            <div key={s.label} className="flex flex-col min-w-[100px]">
+              <span className="text-[10px] font-black text-zinc-400 tracking-[0.2em] uppercase mb-1">
                 {s.label}
               </span>
-              <span className={cn('text-lg font-black leading-none ', s.color)}>
-                {s.value}
-              </span>
+              <span className={cn('text-2xl font-black leading-none ', s.color)}>{s.value}</span>
             </div>
           ))}
         </div>
@@ -377,10 +375,10 @@ const LogsHeader = memo(function LogsHeader({
         <div className="relative group">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/40 group-focus-within:text-primary transition-colors" />
           <Input
-            placeholder="Filtrele..."
+            placeholder="Kayıtlarda ara..."
             value={searchTerm}
             onChange={(e) => onChangeSearch(e.target.value)}
-            className="w-48 h-9 pl-9 pr-9 bg-muted/30 border-none rounded-lg text-sm transition-all focus:w-64 focus:bg-muted/50"
+            className="w-48 h-9 pl-9 pr-9 bg-white dark:bg-zinc-900 border-2 rounded-xl text-xs font-bold transition-all focus:w-64 focus:ring-0"
           />
           {searchTerm && (
             <button
@@ -410,7 +408,7 @@ const ControlBar = memo(function ControlBar({
   onChangeDateRange: (v: DateRangeType) => void
 }) {
   return (
-    <div className="flex flex-col sm:flex-row items-center gap-4 bg-card/30 p-1.5 rounded-xl border border-border/40">
+    <div className="flex flex-col sm:flex-row items-center gap-4">
       <div className="flex flex-1 gap-1">
         {CATEGORY_TABS.map((tab) => (
           <button
@@ -419,10 +417,10 @@ const ControlBar = memo(function ControlBar({
             onClick={() => onChangeCategory(tab.id)}
             aria-pressed={category === tab.id}
             className={cn(
-              'flex items-center gap-2 px-4 py-1.5 text-xs font-bold rounded-lg transition-all',
+              'flex items-center gap-2 px-5 py-2 text-xs font-black tracking-widest uppercase rounded-xl transition-all',
               category === tab.id
-                ? 'bg-foreground text-background shadow-lg'
-                : 'text-muted-foreground hover:bg-muted/50'
+                ? 'bg-zinc-950 dark:bg-zinc-50 text-white dark:text-black shadow-lg'
+                : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800'
             )}
           >
             <tab.icon size={13} />
@@ -439,10 +437,10 @@ const ControlBar = memo(function ControlBar({
             onClick={() => onChangeDateRange(f.id)}
             aria-pressed={dateRange === f.id}
             className={cn(
-              'px-3 py-1.5 text-xs font-bold rounded-lg transition-all',
+              'px-4 py-2 text-[10px] font-black tracking-widest uppercase rounded-xl transition-all',
               dateRange === f.id
-                ? 'bg-primary text-primary-foreground shadow-lg'
-                : 'text-muted-foreground hover:bg-muted/50'
+                ? 'bg-primary text-white shadow-lg'
+                : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800'
             )}
           >
             {f.label}
@@ -467,20 +465,21 @@ const ExpandedLogContent = memo(function ExpandedLogContent({
   return (
     <TableRow className="hover:bg-transparent border-0">
       <TableCell colSpan={5} className="p-0">
-        <div className="overflow-hidden bg-muted/10 animate-in fade-in slide-in-from-top-2 duration-200">
-          <div className="p-6 grid grid-cols-[1fr_auto] gap-6">
-            <div className="min-w-0 space-y-4">
-              <div className="bg-background/50 p-6 rounded-2xl border border-border/30 shadow-sm">
-                <p className="text-[10px] font-black tracking-widest text-muted-foreground/40 leading-none mb-4">
+        <div className="h-full bg-zinc-50 dark:bg-zinc-950/40 border-b border-zinc-200/60 dark:border-zinc-800/60 animate-in slide-in-from-top-2 duration-300 overflow-hidden">
+          <div className="px-10 py-8 grid grid-cols-[1fr_280px] gap-12">
+            {/* Left Column: Details */}
+            <div className="min-w-0">
+              <div className="space-y-6">
+                <p className="text-[10px] font-black tracking-[0.2em] text-zinc-400 leading-none uppercase">
                   SİPARİŞ DETAYI
                 </p>
 
                 {isGroup ? (
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {log.groupItems?.map((item, idx) => (
                       <p
                         key={`${log.id}-group-item-${idx}`}
-                        className="text-base font-bold leading-relaxed text-foreground/90 border-b border-border/5 last:border-0 pb-2 last:pb-0 break-words"
+                        className="text-base font-bold leading-relaxed text-foreground/90 border-b border-zinc-100 dark:border-zinc-800/20 last:border-0 pb-2 last:pb-0 break-words"
                       >
                         {item.details}
                       </p>
@@ -498,19 +497,18 @@ const ExpandedLogContent = memo(function ExpandedLogContent({
                     }
 
                     return (
-                      <div className="space-y-3">
+                      <div className="space-y-4">
                         <p className="text-sm font-semibold text-foreground/70">{parsed.summary}</p>
-
-                        <div className="space-y-1.5">
+                        <div className="space-y-2">
                           {parsed.items.map((item, idx) => (
                             <div
                               key={`${log.id}-parsed-${idx}`}
-                              className="flex items-center gap-3 py-1.5 border-b border-border/5 last:border-0"
+                              className="flex items-center gap-4 py-2 border-b border-zinc-100 dark:border-zinc-800/20 last:border-0"
                             >
-                              <span className="inline-flex items-center justify-center min-w-[2.5rem] h-6 px-2 rounded-lg bg-primary/10 text-primary text-xs font-black tabular-nums">
+                              <span className="inline-flex items-center justify-center min-w-[3rem] h-7 px-2 rounded-xl bg-primary/10 text-primary text-[13px] font-black tabular-nums">
                                 {item.qty}×
                               </span>
-                              <span className="text-sm font-bold text-foreground/90">
+                              <span className="text-base font-bold text-foreground/90">
                                 {item.name}
                               </span>
                             </div>
@@ -523,35 +521,41 @@ const ExpandedLogContent = memo(function ExpandedLogContent({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-6 border-l border-border/30 pl-6 h-fit w-48 flex-shrink-0">
-              <div className="flex gap-4 items-start">
-                <div className={cn('p-2.5 rounded-xl shadow-sm', config?.bg || 'bg-muted')}>
-                  <Activity size={18} className={config?.color || 'text-muted-foreground'} />
+            {/* Right Column: Metadata */}
+            <div className="space-y-6">
+              <p className="text-[10px] font-black tracking-[0.2em] text-zinc-400 leading-none uppercase">
+                İŞLEM BİLGİLERİ
+              </p>
+              <div className="grid grid-cols-1 gap-3">
+                <div className="flex items-center gap-4 bg-white dark:bg-zinc-900 border-2 border-zinc-100 dark:border-zinc-800 p-4 rounded-3xl shadow-sm">
+                  <div className={cn('p-2.5 rounded-2xl', config?.bg || 'bg-muted')}>
+                    <Activity size={18} className={config?.color || 'text-muted-foreground'} />
+                  </div>
+                  <div>
+                    <span className="block text-[9px] font-black text-muted-foreground/50 tracking-widest uppercase mb-0.5">
+                      TİP
+                    </span>
+                    <span className="text-sm font-black text-foreground tracking-tight">
+                      {config?.label || log.action}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-black text-muted-foreground/50 leading-none mb-1.5 tracking-widest">
-                    İŞLEM TİPİ
-                  </span>
-                  <span className="text-sm font-black text-foreground tracking-tight">
-                    {config?.label || log.action}
-                  </span>
-                </div>
-              </div>
 
-              <div className="flex gap-4 items-start">
-                <div className="p-2.5 bg-background rounded-xl border border-border/20 shadow-sm">
-                  <Clock size={18} className="text-primary/70" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-black text-muted-foreground/50 leading-none mb-1.5 tracking-widest">
-                    TARİH / SAAT
-                  </span>
-                  <span className="text-sm font-bold text-foreground">
-                    {format(createdAtDate, 'dd MMMM yyyy', { locale: tr })}
-                  </span>
-                  <span className="text-xs font-medium text-muted-foreground">
-                    {format(createdAtDate, 'HH:mm:ss')}
-                  </span>
+                <div className="flex items-center gap-4 bg-white dark:bg-zinc-900 border-2 border-zinc-100 dark:border-zinc-800 p-4 rounded-3xl shadow-sm">
+                  <div className="p-2.5 bg-zinc-50 dark:bg-zinc-800 rounded-2xl text-primary">
+                    <Clock size={18} />
+                  </div>
+                  <div>
+                    <span className="block text-[9px] font-black text-muted-foreground/50 tracking-widest uppercase mb-0.5">
+                      ZAMAN
+                    </span>
+                    <span className="text-sm font-bold text-foreground block leading-tight">
+                      {format(createdAtDate, 'dd MMMM yyyy', { locale: tr })}
+                    </span>
+                    <span className="text-xs font-medium text-zinc-400">
+                      Saat: {format(createdAtDate, 'HH:mm')}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -587,8 +591,8 @@ const LogRow = memo(function LogRow({
         onClick={() => onToggle(log.id)}
         style={{ animationDelay: `${animationDelay}ms` }}
         className={cn(
-          'group cursor-pointer transition-colors border-b border-border/10 opacity-0 animate-fade-in-row',
-          isExpanded ? 'bg-primary/5' : 'odd:bg-background even:bg-muted/10 hover:bg-muted/30'
+          'group cursor-pointer transition-colors border-b border-zinc-200/50 dark:border-zinc-800/50 opacity-0 animate-fade-in-row',
+          isExpanded ? 'bg-primary/5' : 'hover:bg-zinc-200/20 dark:hover:bg-zinc-800/20'
         )}
       >
         <TableCell className="pl-6 py-3 font-bold text-base">
@@ -844,10 +848,10 @@ export function LogsTab(): React.JSX.Element {
         onChangeDateRange={setDateRange}
       />
 
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 bg-transparent">
         <ScrollArea className="h-full">
           <Table className="table-fixed w-full">
-            <TableHeader className="sticky top-0 bg-background/60 backdrop-blur-3xl z-10 border-b border-border/40">
+            <TableHeader className="sticky top-0 bg-zinc-50/80 dark:bg-zinc-950/80 backdrop-blur-sm z-10 border-b-2">
               <TableRow className="hover:bg-transparent border-0">
                 <TableHead className="w-[140px] pl-6 text-[10px] font-black tracking-[0.2em] text-muted-foreground/40">
                   SAAT

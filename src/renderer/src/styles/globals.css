@@ -13,11 +13,11 @@
     'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 
   /* Professional UI Theme - Tailwind v4 Standard Variables */
-  --bg-main: oklch(0.97 0.01 80); /* Off-white background */
-  --text-main: oklch(0.2 0.02 70); /* Deep coffee text color */
-  --panel-card: oklch(0.99 0.005 80); /* Card background */
+  --bg-main: #fafafa; /* zinc-50 for app background to reduce eye strain */
+  --text-main: #18181b; /* zinc-900 text color */
+  --panel-card: #ffffff; /* Pure white card background */
   --emerald-accent: oklch(0.52 0.18 155); /* Re-defined vibrant emerald */
-  --stone-border: oklch(0.85 0.02 85); /* Distinct but soft border */
+  --stone-border: #e4e4e7; /* zinc-200 border */
 
   /* Mapping to Tailwind/Shadcn standard variables */
   --color-background: var(--bg-main);
@@ -74,29 +74,29 @@
 
 /* ===== DARK MODE OVERRIDES ===== */
 .dark {
-  --color-background: oklch(0.12 0.01 250);
-  --color-foreground: oklch(0.95 0.005 250);
-  --color-card: oklch(0.16 0.01 250);
-  --color-card-foreground: oklch(0.95 0.005 250);
-  --color-popover: oklch(0.16 0.01 250);
-  --color-popover-foreground: oklch(0.95 0.005 250);
+  --color-background: #09090b; /* zinc-950 */
+  --color-foreground: #fafafa; /* zinc-50 */
+  --color-card: #18181b; /* zinc-900 */
+  --color-card-foreground: #fafafa;
+  --color-popover: #18181b;
+  --color-popover-foreground: #fafafa;
 
   --color-primary: oklch(0.65 0.15 155);
   --color-primary-foreground: oklch(0.1 0 0);
 
-  --color-secondary: oklch(0.2 0.01 250);
-  --color-secondary-foreground: oklch(0.95 0.005 250);
-  --color-muted: oklch(0.2 0.01 250);
-  --color-muted-foreground: oklch(0.62 0.01 250);
+  --color-secondary: #27272a; /* zinc-800 */
+  --color-secondary-foreground: #fafafa;
+  --color-muted: #27272a; /* zinc-800 */
+  --color-muted-foreground: #a1a1aa; /* zinc-400 */
 
-  --color-accent: oklch(0.2 0.01 250);
-  --color-accent-foreground: oklch(0.95 0.005 250);
+  --color-accent: #27272a; /* zinc-800 */
+  --color-accent-foreground: #fafafa;
 
   --color-destructive: oklch(0.5 0.18 25);
   --color-destructive-foreground: oklch(0.98 0 0);
 
-  --color-border: oklch(0.24 0.01 250);
-  --color-input: oklch(0.24 0.01 250);
+  --color-border: #27272a; /* zinc-800 */
+  --color-input: #27272a; /* zinc-800 */
   --color-ring: oklch(0.5 0 0);
 
   /* Fallback aliases for dark mode */

@@ -1,16 +1,16 @@
-import { useState, memo } from 'react'
-import { Plus, MoreVertical, Pencil, Trash2, Check, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { type Category } from '@/lib/api'
+import { cn } from '@/lib/utils'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger
 } from '@renderer/components/ui/dropdown-menu'
-import { cn } from '@/lib/utils'
-import { type Category } from '@/lib/api'
+import { Check, MoreVertical, Pencil, Plus, Trash2, X } from 'lucide-react'
+import { memo, useState } from 'react'
 
 interface CategorySidebarProps {
   categories: Category[]
@@ -56,9 +56,9 @@ export const CategorySidebar = memo(
 
     return (
       <div className="flex flex-col h-full w-full max-w-[280px]">
-        <div className="p-4 border-b bg-background/50 backdrop-blur">
+        <div className="p-4 border-b-2 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="font-bold text-[10px] tracking-[0.15em] text-muted-foreground/70 ">
+            <h3 className="font-bold text-[11px] tracking-[0.2em] text-zinc-500 dark:text-zinc-400">
               KATEGORİLER
             </h3>
             <Button
@@ -106,10 +106,10 @@ export const CategorySidebar = memo(
                 key={category.id}
                 onClick={() => onSelectCategory(category.id)}
                 className={cn(
-                  'group flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-all duration-200 border border-transparent',
+                  'group flex items-center justify-between px-3 py-3 rounded-xl cursor-pointer transition-all duration-200 border-2 border-transparent',
                   selectedCategoryId === category.id
-                    ? 'bg-primary text-primary-foreground shadow-sm font-medium'
-                    : 'hover:bg-muted/50 text-muted-foreground hover:text-foreground hover:border-border/50'
+                    ? 'bg-indigo-600 border-indigo-600 text-white shadow-md font-bold'
+                    : 'hover:bg-zinc-100 dark:hover:bg-zinc-800/50 hover:border-zinc-200 dark:hover:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white font-semibold'
                 )}
               >
                 {editingId === category.id ? (
@@ -146,10 +146,10 @@ export const CategorySidebar = memo(
                           variant="ghost"
                           size="icon"
                           className={cn(
-                            'h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity',
+                            'h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg',
                             selectedCategoryId === category.id
-                              ? 'text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10'
-                              : 'text-muted-foreground hover:text-foreground'
+                              ? 'text-white/70 hover:text-white hover:bg-white/20'
+                              : 'text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700'
                           )}
                         >
                           <MoreVertical className="w-3 h-3" />

@@ -29,17 +29,17 @@ interface RevenueSidebarProps {
 export const RevenueSidebar = memo(
   ({ stats, filters, categories, onFilterChange }: RevenueSidebarProps): React.JSX.Element => {
     return (
-      <div className="w-[340px] border-r bg-card/40 backdrop-blur-md h-full flex flex-col overflow-hidden">
-        <div className="flex-1 p-4 space-y-5 overflow-y-auto custom-scrollbar">
+      <div className="w-[320px] border-r-2 bg-zinc-50 dark:bg-zinc-950 h-full flex flex-col overflow-hidden">
+        <div className="flex-1 p-3.5 space-y-4 overflow-y-auto custom-scrollbar">
           {/* --- FİNANSAL ÖZET (STAT CARDS) --- */}
           <div className="space-y-3">
             {/* Günlük Toplam */}
-            <div className="p-4 rounded-2xl border border-border/40 bg-card shadow-sm group transition-all hover:border-rose-500/30">
+            <div className="p-4 rounded-2xl border-2 bg-white dark:bg-zinc-900 shadow-sm group transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-rose-500/20">
               <div className="flex items-center justify-between mb-3">
-                <div className="p-2.5 bg-rose-500/10 rounded-xl text-rose-600">
-                  <Banknote className="w-5 h-5" />
+                <div className="p-3 bg-zinc-50 dark:bg-zinc-950 border-2 border-transparent group-hover:border-rose-500/10 rounded-xl text-rose-600 shadow-sm transition-all group-hover:scale-110">
+                  <Banknote className="w-6 h-6" />
                 </div>
-                <span className="px-2.5 py-1 bg-rose-500/10 text-rose-600 text-[9px] font-black rounded-lg  tracking-wider">
+                <span className="px-3 py-1.5 bg-rose-500/10 text-rose-600 text-[9px] font-black rounded-lg tracking-[0.2em] uppercase">
                   BUGÜN
                 </span>
               </div>
@@ -54,12 +54,12 @@ export const RevenueSidebar = memo(
             </div>
 
             {/* Aylık Toplam */}
-            <div className="p-4 rounded-2xl border border-border/40 bg-card shadow-sm group transition-all hover:border-primary/30">
+            <div className="p-4 rounded-2xl border-2 bg-white dark:bg-zinc-900 shadow-sm group transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-primary/20">
               <div className="flex items-center justify-between mb-3">
-                <div className="p-2.5 bg-primary/10 rounded-xl text-primary">
-                  <PieChart className="w-5 h-5" />
+                <div className="p-3 bg-zinc-50 dark:bg-zinc-950 border-2 border-transparent group-hover:border-primary/10 rounded-xl text-primary shadow-sm transition-all group-hover:scale-110">
+                  <PieChart className="w-6 h-6" />
                 </div>
-                <span className="px-2.5 py-1 bg-primary/10 text-primary text-[9px] font-black rounded-lg  tracking-wider">
+                <span className="px-3 py-1.5 bg-primary/10 text-primary text-[9px] font-black rounded-lg tracking-[0.2em] uppercase">
                   BU AY
                 </span>
               </div>
@@ -79,8 +79,8 @@ export const RevenueSidebar = memo(
           {/* --- FİLTRELER --- */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 ml-1">
-              <Filter className="w-3.5 h-3.5 text-muted-foreground/60" />
-              <span className="text-[10px] font-black tracking-[0.2em] text-muted-foreground/60 ">
+              <Filter className="w-3.5 h-3.5 text-zinc-400" />
+              <span className="text-[10px] font-black tracking-[0.2em] text-zinc-400 uppercase">
                 FİLTRELEME
               </span>
             </div>
@@ -92,12 +92,12 @@ export const RevenueSidebar = memo(
                   DETAYLI ARAMA
                 </label>
                 <div className="relative group">
-                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/40 transition-colors group-focus-within:text-primary" />
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 transition-colors group-focus-within:text-primary" />
                   <Input
                     placeholder="Gider adı, açıklama..."
                     value={filters.search}
                     onChange={(e) => onFilterChange('search', e.target.value)}
-                    className="pl-10 h-10 bg-muted/20 border-none focus:ring-2 focus:ring-primary/20 text-xs font-bold rounded-xl transition-all"
+                    className="pl-10 h-9 bg-white dark:bg-zinc-900 border-2 focus:ring-0 text-xs font-bold rounded-xl transition-all"
                   />
                 </div>
               </div>
@@ -111,7 +111,7 @@ export const RevenueSidebar = memo(
                   value={filters.category}
                   onValueChange={(val) => onFilterChange('category', val)}
                 >
-                  <SelectTrigger className="w-full h-10 bg-muted/20 border-none rounded-xl text-xs font-bold transition-all hover:bg-muted/40 px-4 focus:ring-0">
+                  <SelectTrigger className="w-full h-9 bg-white dark:bg-zinc-900 border-2 rounded-xl text-xs font-bold transition-all hover:bg-zinc-50 dark:hover:bg-zinc-800 px-4 focus:ring-0">
                     <div className="flex items-center gap-3">
                       <Tag className="w-4 h-4 text-primary/60" />
                       <SelectValue placeholder="Tüm Kategoriler" />
@@ -146,7 +146,7 @@ export const RevenueSidebar = memo(
                   value={filters.dateRange}
                   onValueChange={(val) => onFilterChange('dateRange', val)}
                 >
-                  <SelectTrigger className="w-full h-10 bg-muted/20 border-none rounded-xl text-xs font-bold transition-all hover:bg-muted/40 px-4 focus:ring-0">
+                  <SelectTrigger className="w-full h-9 bg-white dark:bg-zinc-900 border-2 rounded-xl text-xs font-bold transition-all hover:bg-zinc-50 dark:hover:bg-zinc-800 px-4 focus:ring-0">
                     <div className="flex items-center gap-3">
                       <Calendar className="w-4 h-4 text-primary/60" />
                       <SelectValue placeholder="Tüm Zamanlar" />

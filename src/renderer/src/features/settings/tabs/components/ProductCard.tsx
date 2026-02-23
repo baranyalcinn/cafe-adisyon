@@ -1,17 +1,16 @@
-import { useState, memo } from 'react'
-import { Pencil, Trash2, Star, MoreHorizontal, Check, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { type Product } from '@/lib/api'
+import { cn, formatCurrency } from '@/lib/utils'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
 } from '@renderer/components/ui/dropdown-menu'
-import { formatCurrency } from '@/lib/utils'
-import { type Product } from '@/lib/api'
-import { cn } from '@/lib/utils'
+import { Check, MoreHorizontal, Pencil, Star, Trash2, X } from 'lucide-react'
+import { memo, useState } from 'react'
 
 interface ProductCardProps {
   product: Product
@@ -28,20 +27,21 @@ export const ProductCard = memo(function ProductCard({
 }: ProductCardProps): React.JSX.Element {
   const [isEditing, setIsEditing] = useState(false)
   const [editName, setEditName] = useState(product.name)
-  const [editPrice, setEditPrice] = useState((product.price / 100).toFixed(2))
+  const [editPrice, setEditPrice] = useState((product.price / 100).toString())
 
   const handleSave = async (): Promise<void> => {
     if (!editName.trim() || !editPrice) return
+    const sanitizedPrice = editPrice.replace(',', '.') // Virgül desteği
     await onUpdate(product.id, {
       name: editName,
-      price: Math.round(parseFloat(editPrice) * 100)
+      price: Math.round(parseFloat(sanitizedPrice) * 100)
     })
     setIsEditing(false)
   }
 
   if (isEditing) {
     return (
-      <div className="relative flex flex-col p-4 bg-background border-2 border-primary/20 rounded-2xl shadow-lg animate-in zoom-in-95 duration-200">
+      <div className="relative flex flex-col p-5 bg-white dark:bg-zinc-800 border-2 border-indigo-500 rounded-2xl shadow-xl animate-in zoom-in-95 duration-200 z-20">
         <div className="space-y-3">
           <div>
             <h3 className="text-[10px] font-bold text-muted-foreground  tracking-[0.15em] mb-1">
@@ -90,19 +90,20 @@ export const ProductCard = memo(function ProductCard({
   return (
     <div
       className={cn(
-        'group relative flex flex-col p-5 bg-card border rounded-2xl transition-all duration-300',
-        'hover:shadow-lg hover:-translate-y-1 hover:border-primary/20',
-        product.isFavorite && 'border-warning/20 bg-warning/5 dark:bg-warning/10'
+        'group relative flex flex-col p-5 bg-white dark:bg-zinc-800 border-2 border-zinc-200 dark:border-zinc-700 rounded-2xl transition-all duration-300 text-left',
+        'hover:shadow-xl hover:-translate-y-1 hover:border-indigo-500',
+        product.isFavorite &&
+          'border-orange-400 dark:border-orange-700 bg-orange-50 dark:bg-orange-950/30'
       )}
     >
       {/* Favorite Badge */}
       <button
         onClick={() => onToggleFavorite(product.id, product.isFavorite)}
         className={cn(
-          'absolute top-3 right-3 p-1.5 rounded-full transition-all duration-200 z-10',
+          'absolute top-3 right-3 p-2 rounded-xl transition-all duration-200 z-10',
           product.isFavorite
-            ? 'text-warning bg-warning/10 dark:bg-warning/30 opacity-100 scale-100'
-            : 'text-muted-foreground/30 hover:text-warning hover:bg-warning/5 opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100'
+            ? 'text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/50 opacity-100 scale-100 border border-orange-200 dark:border-orange-800'
+            : 'text-zinc-400 hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-950/50 opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100'
         )}
       >
         <Star className={cn('w-4 h-4', product.isFavorite && 'fill-current')} />
@@ -116,14 +117,14 @@ export const ProductCard = memo(function ProductCard({
       {/* Footer */}
       <div className="mt-auto flex items-end justify-between">
         <div
-          className="cursor-pointer group/price"
+          className="cursor-pointer group/price flex items-baseline"
           onClick={() => setIsEditing(true)}
           title="Fiyatı düzenlemek için tıkla"
         >
-          <span className="text-2xl font-black text-primary tabular-nums tracking-tighter group-hover/price:underline decoration-dashed decoration-primary/30 underline-offset-4">
+          <span className="text-2xl font-black text-zinc-900 dark:text-white tabular-nums tracking-tight group-hover/price:underline decoration-dashed decoration-zinc-400 dark:decoration-zinc-600 underline-offset-4 transition-colors">
             {formatCurrency(product.price).replace('₺', '')}
           </span>
-          <span className="text-xs font-bold text-muted-foreground ml-0.5">₺</span>
+          <span className="text-sm font-bold text-zinc-500 dark:text-zinc-400 ml-1">₺</span>
         </div>
 
         <DropdownMenu>

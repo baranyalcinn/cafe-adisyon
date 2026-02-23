@@ -14,10 +14,10 @@ const api = window.api
 // ==========================================
 const ExpensesHeaderActions = memo(({ onAdd }: { onAdd: () => void }) => {
   return (
-    <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-4 duration-500">
+    <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-4 duration-500">
       <Button
         onClick={onAdd}
-        className="gap-2 font-black px-6 rounded-xl h-9 bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-500/20 active:scale-95 transition-all text-[10px] tracking-widest "
+        className="gap-2 font-black px-5 rounded-xl h-10 bg-zinc-950 dark:bg-zinc-50 text-white dark:text-black hover:bg-zinc-900 dark:hover:bg-white active:scale-95 transition-all text-[10px] tracking-[0.2em] shadow-sm"
       >
         <Plus className="w-4 h-4" strokeWidth={3} />
         GİDER EKLE
@@ -189,7 +189,7 @@ export function ExpensesTab(): React.JSX.Element {
 
       {/* Ana İçerik Alanı */}
       <div className="flex-1 flex flex-col min-w-0">
-        <div className="flex-1 overflow-hidden p-6 lg:p-8">
+        <div className="flex-1 overflow-hidden px-6 py-6 lg:px-10 lg:py-8">
           <div className="h-full max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
             <ExpensesTable
               data={filteredExpenses}

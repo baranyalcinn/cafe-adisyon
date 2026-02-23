@@ -107,35 +107,39 @@ export function MaintenanceTab(): React.JSX.Element {
   }
 
   return (
-    <Card className="h-full flex flex-col border-0 shadow-none bg-transparent">
+    <Card className="h-full flex flex-col border-0 shadow-none bg-zinc-50 dark:bg-zinc-950">
       <ScrollArea className="flex-1">
-        <div className="p-8 max-w-5xl mx-auto space-y-8">
+        <div className="p-5 max-w-5xl mx-auto space-y-5">
           {/* Result Banner */}
           {lastResult && (
             <div
               className={cn(
-                'p-4 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300',
+                'p-4 rounded-2xl border-2 flex items-center gap-4 animate-in fade-in slide-in-from-top-4 duration-500 shadow-lg',
                 lastResult.success
-                  ? 'bg-success/10 border border-success/20 text-success'
-                  : 'bg-destructive/10 border border-destructive/20 text-destructive'
+                  ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800 text-emerald-700'
+                  : 'bg-destructive/5 border-destructive/20 text-destructive'
               )}
             >
               {lastResult.success ? (
-                <CheckCircle className="w-5 h-5 flex-shrink-0" />
+                <div className="p-2 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
+                  <CheckCircle className="w-6 h-6" />
+                </div>
               ) : (
-                <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+                <div className="p-2 bg-destructive/10 rounded-lg border border-destructive/20">
+                  <AlertTriangle className="w-6 h-6" />
+                </div>
               )}
               <div className="flex-1">
-                <p className="text-sm font-bold">
+                <p className="text-base font-black tracking-tight leading-none mb-1">
                   {lastResult.success ? 'İşlem Başarılı' : 'Hata Oluştu'}
                 </p>
-                <p className="text-xs opacity-90">{lastResult.message}</p>
+                <p className="text-xs font-bold opacity-80">{lastResult.message}</p>
               </div>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setLastResult(null)}
-                className="h-8 w-8 p-0"
+                className="h-9 w-9 p-0 rounded-full hover:bg-black/5"
               >
                 <span className="sr-only">Kapat</span>
                 &times;
@@ -143,64 +147,61 @@ export function MaintenanceTab(): React.JSX.Element {
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Backup & Export Group */}
             <div className="space-y-4">
-              <h3 className="text-xs font-bold text-muted-foreground tracking-widest px-1 flex items-center gap-2">
-                <HardDrive className="w-3 h-3" />
-                VERİ GÜVENLİĞİ
+              <h3 className="text-[11px] font-black text-zinc-500 tracking-[0.2em] px-1 flex items-center gap-2 uppercase">
+                <HardDrive className="w-3.5 h-3.5" />
+                Veri Güvenliği
               </h3>
 
               <div className="grid gap-4">
-                <div className="p-5 rounded-2xl border bg-card/40 hover:bg-card transition-colors group">
+                <div className="p-4 rounded-2xl border-2 bg-white dark:bg-zinc-900 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
                   <div className="flex items-start justify-between mb-4">
-                    <div className="p-2.5 bg-primary/10 rounded-xl text-primary border border-primary/20">
+                    <div className="p-2.5 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-primary border-2 border-transparent group-hover:border-primary/20 shadow-sm transition-all group-hover:scale-110">
                       <HardDrive className="w-5 h-5" />
                     </div>
                     <Button
                       onClick={handleBackup}
                       disabled={isBacking}
-                      size="sm"
-                      className="bg-primary hover:bg-primary/90"
+                      className="h-10 px-6 rounded-xl bg-primary text-primary-foreground font-black uppercase tracking-widest text-[10px] shadow-lg shadow-primary/20"
                     >
                       {isBacking ? 'Yedekleniyor...' : 'Yedekle'}
                     </Button>
                   </div>
-                  <h4 className="font-bold text-base mb-1">Anlık Manuel Yedek</h4>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
+                  <h4 className="font-black text-lg mb-1 tracking-tight">Anlık Manuel Yedek</h4>
+                  <p className="text-[13px] font-bold text-zinc-500 leading-relaxed italic">
                     Veritabanının tam kopyasını `backups` klasörüne tarih koduyla birlikte şimdi
                     kaydedin.
                   </p>
                 </div>
 
-                <div className="p-5 rounded-2xl border bg-card/40 hover:bg-card transition-colors group">
+                <div className="p-4 rounded-2xl border-2 bg-white dark:bg-zinc-900 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
                   <div className="flex items-start justify-between mb-4">
-                    <div className="p-2.5 bg-info/10 rounded-xl text-info border border-info/20">
+                    <div className="p-2.5 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-sky-500 border-2 border-transparent group-hover:border-sky-500/20 shadow-sm transition-all group-hover:scale-110">
                       <Download className="w-5 h-5" />
                     </div>
                     <div className="flex gap-2">
                       <Button
                         variant="outline"
-                        size="sm"
                         onClick={() => handleExport('json')}
                         disabled={isExporting}
-                        className="gap-2"
+                        className="h-10 px-4 rounded-xl border-2 font-black uppercase tracking-widest text-[10px] gap-2"
                       >
-                        <FileJson className="w-4 h-4 text-warning" /> JSON
+                        <FileJson className="w-4 h-4 text-amber-500" /> JSON
                       </Button>
                       <Button
                         variant="outline"
-                        size="sm"
                         onClick={() => handleExport('csv')}
                         disabled={isExporting}
-                        className="gap-2"
+                        className="h-10 px-4 rounded-xl border-2 font-black uppercase tracking-widest text-[10px] gap-2"
                       >
-                        <FileSpreadsheet className="w-4 h-4 text-success" /> CSV
+                        <FileSpreadsheet className="w-4 h-4 text-emerald-500" /> CSV
                       </Button>
                     </div>
                   </div>
-                  <h4 className="font-bold text-base mb-1">Dışa Aktarma</h4>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
+                  <h4 className="font-black text-lg mb-1 tracking-tight">Dışa Aktarma</h4>
+                  <p className="text-[13px] font-bold text-zinc-500 leading-relaxed italic">
                     Sistem verilerini başka uygulamalarda açmak veya arşivlemek için farklı
                     formatlarda indirin.
                   </p>
@@ -210,52 +211,53 @@ export function MaintenanceTab(): React.JSX.Element {
 
             {/* Performance & Cleanup Group */}
             <div className="space-y-4">
-              <h3 className="text-xs font-bold text-muted-foreground tracking-widest px-1 flex items-center gap-2">
-                <Settings2 className="w-3 h-3" />
-                PERFORMANS & TEMİZLİK
+              <h3 className="text-[11px] font-black text-zinc-500 tracking-[0.2em] px-1 flex items-center gap-2 uppercase">
+                <Settings2 className="w-3.5 h-3.5" />
+                Performans & Temizlik
               </h3>
 
               <div className="grid gap-4">
-                <div className="p-5 rounded-2xl border bg-card/40 hover:bg-card transition-colors group">
+                <div className="p-4 rounded-2xl border-2 bg-white dark:bg-zinc-900 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
                   <div className="flex items-start justify-between mb-4">
-                    <div className="p-2.5 bg-success/10 rounded-xl text-success border border-success/20">
+                    <div className="p-2.5 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-emerald-500 border-2 border-transparent group-hover:border-emerald-500/20 shadow-sm transition-all group-hover:scale-110">
                       <DatabaseZap className="w-5 h-5" />
                     </div>
                     <Button
                       variant="outline"
                       onClick={handleVacuum}
                       disabled={isVacuuming}
-                      size="sm"
+                      className="h-10 px-6 rounded-xl border-2 font-black uppercase tracking-widest text-[10px]"
                     >
                       {isVacuuming ? 'Çalışıyor...' : 'VACUUM'}
                     </Button>
                   </div>
-                  <h4 className="font-bold text-base mb-1">Veritabanı Optimizasyonu</h4>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
+                  <h4 className="font-black text-lg mb-1 tracking-tight">
+                    Veritabanı Optimizasyonu
+                  </h4>
+                  <p className="text-[13px] font-bold text-zinc-500 leading-relaxed italic">
                     Kullanılmayan alanı temizler, indeksleri yeniler ve dosya boyutunu küçülterek
                     hızı artırır.
                   </p>
                 </div>
 
-                <div className="p-5 rounded-2xl border bg-destructive/5 hover:bg-destructive/10 transition-colors group border-destructive/10">
+                <div className="p-4 rounded-2xl border-2 bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
                   <div className="flex items-start justify-between mb-4">
-                    <div className="p-2.5 bg-destructive/10 rounded-xl text-destructive border border-destructive/20">
+                    <div className="p-2.5 bg-white dark:bg-zinc-950 rounded-xl text-rose-600 border-2 border-rose-100 dark:border-rose-900 shadow-sm transition-all group-hover:scale-110">
                       <Archive className="w-5 h-5" />
                     </div>
                     <Button
                       variant="destructive"
                       onClick={handleArchive}
                       disabled={isArchiving}
-                      size="sm"
-                      className="bg-destructive hover:bg-destructive/90"
+                      className="h-10 px-6 rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-destructive/20"
                     >
                       {isArchiving ? 'Temizleniyor...' : 'Verileri Temizle'}
                     </Button>
                   </div>
-                  <h4 className="font-bold text-base mb-1 text-destructive">
+                  <h4 className="font-black text-lg mb-1 text-rose-700 dark:text-rose-500 tracking-tight">
                     Eski Verileri Arşivle
                   </h4>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
+                  <p className="text-[13px] font-bold text-rose-900/60 dark:text-rose-400/60 leading-relaxed italic">
                     **1 yıldan eski** sipariş, gider ve Z-Raporu verilerini kalıcı olarak siler.
                     Alanı boşaltır ve performansı artırır.
                   </p>
@@ -265,12 +267,14 @@ export function MaintenanceTab(): React.JSX.Element {
           </div>
 
           {/* Footer Info */}
-          <div className="p-6 rounded-2xl bg-muted/30 border border-dashed text-center">
-            <div className="flex items-center justify-center gap-2 text-muted-foreground mb-1">
-              <AlertTriangle className="w-4 h-4" />
-              <span className="text-sm font-semibold">Dikkat</span>
+          <div className="p-6 rounded-3xl bg-white dark:bg-zinc-900 border-2 border-dashed border-zinc-300 dark:border-zinc-800 text-center shadow-inner">
+            <div className="flex items-center justify-center gap-3 text-zinc-400 mb-2">
+              <AlertTriangle className="w-6 h-6" />
+              <span className="text-[11px] font-black tracking-[0.2em] uppercase">
+                Güvenlik Uyarısı
+              </span>
             </div>
-            <p className="text-xs text-muted-foreground max-w-lg mx-auto">
+            <p className="text-[13px] font-bold text-zinc-500 italic max-w-lg mx-auto leading-relaxed">
               Bakım işlemleri genellikle hızlıdır ancak işlem sırasında veritabanı kısa süreliğine
               kilitlenebilir. Özellikle &quot;Verileri Temizleme&quot; işlemi öncesinde mutlaka
               yedek almanız önerilir.

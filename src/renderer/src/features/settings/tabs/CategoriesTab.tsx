@@ -3,7 +3,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog'
@@ -36,21 +35,23 @@ const CategoriesHeaderActions = memo(
     onAdd: () => void
   }) => {
     return (
-      <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-4 duration-500">
-        <Input
-          placeholder="Yeni kategori adı..."
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="w-48 h-9 bg-background/50 rounded-xl border-border/40 focus:ring-primary/20"
-          onKeyDown={(e) => e.key === 'Enter' && onAdd()}
-        />
+      <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-4 duration-500">
+        <div className="relative group">
+          <Input
+            placeholder="Yeni kategori adı..."
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-56 h-10 bg-white dark:bg-zinc-800 border-2 border-zinc-200 dark:border-zinc-700 rounded-xl focus:border-indigo-500 focus:ring-0 font-bold transition-all text-sm"
+            onKeyDown={(e) => e.key === 'Enter' && onAdd()}
+          />
+        </div>
         <Button
           onClick={onAdd}
           size="sm"
-          className="gap-2 font-black px-4 rounded-xl h-9 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/20 active:scale-95 transition-all text-[10px] tracking-widest "
+          className="gap-2 font-black px-5 rounded-xl h-10 bg-zinc-950 dark:bg-zinc-50 text-white dark:text-black hover:bg-zinc-900 dark:hover:bg-white active:scale-95 transition-all text-[10px] tracking-[0.2em] shadow-sm"
         >
           <Plus className="w-4 h-4" strokeWidth={3} />
-          EKLE
+          KATEGORİ EKLE
         </Button>
       </div>
     )
@@ -93,7 +94,7 @@ export function CategoriesTab(): React.JSX.Element {
   }
 
   return (
-    <div className="h-full flex flex-col bg-muted/10 overflow-hidden">
+    <div className="h-full flex flex-col bg-zinc-50 dark:bg-zinc-900/40 overflow-hidden">
       {/* Header Actions via Portal */}
       {headerTarget &&
         createPortal(
@@ -111,20 +112,20 @@ export function CategoriesTab(): React.JSX.Element {
           {categories.map((cat) => (
             <div
               key={cat.id}
-              className="group flex items-center justify-between p-5 rounded-[2rem] border border-border/40 bg-card shadow-sm hover:shadow-md hover:border-primary/20 transition-all duration-300"
+              className="group flex items-center justify-between p-5 rounded-2xl border-2 border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 shadow-sm hover:border-indigo-500 hover:-translate-y-1 hover:shadow-lg transition-all duration-300"
             >
-              <div className="flex items-center gap-5">
+              <div className="flex items-center gap-5 pt-1">
                 {/* Kategori İkonu (Emoji) */}
-                <div className="w-16 h-16 rounded-[1.5rem] bg-muted/30 flex items-center justify-center text-3xl shadow-inner border border-border/10 group-hover:scale-105 transition-transform">
+                <div className="w-16 h-16 rounded-xl bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center text-3xl shadow-inner border-2 border-zinc-200 dark:border-zinc-800 transition-colors group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/20 group-hover:border-indigo-200 dark:group-hover:border-indigo-800">
                   {getCategoryEmoji(cat.icon ?? null)}
                 </div>
 
-                <div className="space-y-1">
-                  <h3 className="font-black text-lg tracking-tight text-foreground/90">
+                <div className="space-y-1.5">
+                  <h3 className="font-black text-xl tracking-tight text-zinc-900 dark:text-zinc-100 group-hover:text-indigo-600 transition-colors">
                     {cat.name}
                   </h3>
                   <div className="flex items-center gap-2">
-                    <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-black  tracking-widest border border-primary/10">
+                    <span className="px-3 py-1 rounded-md bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 text-[11px] font-black tracking-widest border border-zinc-200 dark:border-zinc-600">
                       {products.filter((p) => p.categoryId === cat.id).length} ÜRÜN
                     </span>
                   </div>
@@ -140,18 +141,18 @@ export function CategoriesTab(): React.JSX.Element {
                     refetchCategories()
                   }}
                 >
-                  <SelectTrigger className="w-12 h-10 bg-muted/20 border-none rounded-xl focus:ring-0">
+                  <SelectTrigger className="w-14 h-12 bg-white dark:bg-zinc-800 border-2 border-zinc-200 dark:border-zinc-700 rounded-xl hover:border-indigo-500 hover:text-indigo-600 transition-colors focus:ring-0 [&>svg]:hidden flex items-center justify-center font-bold text-center">
                     <SelectValue placeholder="İkon" />
                   </SelectTrigger>
-                  <SelectContent className="rounded-2xl border-border/40 shadow-2xl">
+                  <SelectContent className="rounded-2xl border-2 border-zinc-200 dark:border-zinc-700 shadow-2xl p-2 min-w-[140px]">
                     {ICON_OPTIONS.map((opt) => (
                       <SelectItem
                         key={opt.value}
                         value={opt.value}
-                        className="rounded-xl cursor-pointer py-2.5"
+                        className="rounded-xl cursor-pointer py-3 hover:bg-zinc-100 dark:hover:bg-zinc-800 focus:bg-zinc-100 dark:focus:bg-zinc-800 font-bold"
                       >
-                        <span className="flex items-center gap-3 font-bold text-xs">
-                          <span className="text-lg">{opt.emoji}</span> {opt.label}
+                        <span className="flex items-center gap-3 text-sm">
+                          <span className="text-xl">{opt.emoji}</span> {opt.label}
                         </span>
                       </SelectItem>
                     ))}
@@ -161,10 +162,10 @@ export function CategoriesTab(): React.JSX.Element {
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="h-10 w-10 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                  className="h-12 w-12 rounded-xl text-zinc-400 dark:text-zinc-500 hover:text-white hover:bg-red-500 hover:border-red-500 transition-colors ml-2"
                   onClick={() => setDeleteCategoryId(cat.id)}
                 >
-                  <Trash2 className="w-4.5 h-4.5" />
+                  <Trash2 className="w-5 h-5" />
                 </Button>
               </div>
             </div>
@@ -172,15 +173,15 @@ export function CategoriesTab(): React.JSX.Element {
 
           {/* Boş Durum (Empty State) */}
           {categories.length === 0 && (
-            <div className="col-span-full flex flex-col items-center justify-center h-80 text-center border-2 border-dashed border-border/40 rounded-[3rem] bg-card/30">
-              <div className="w-20 h-20 rounded-full bg-muted/40 flex items-center justify-center mb-6">
-                <Tag className="w-10 h-10 text-muted-foreground/30" />
+            <div className="col-span-full flex flex-col items-center justify-center h-80 text-center border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-3xl bg-white dark:bg-zinc-800/50">
+              <div className="w-20 h-20 rounded-2xl bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center mb-6 border-2 border-zinc-200 dark:border-zinc-800">
+                <Tag className="w-10 h-10 text-zinc-400" />
               </div>
-              <h3 className="text-xl font-black text-foreground/80 tracking-tight">
+              <h3 className="text-xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight">
                 Kategori Bulunmuyor
               </h3>
-              <p className="text-sm text-muted-foreground max-w-xs mt-2 font-medium">
-                Sistemi yapılandırmak için üst panelden ilk kategorinizi oluşturun.
+              <p className="text-base text-zinc-500 dark:text-zinc-400 max-w-sm mt-2 font-medium">
+                Sistemi yapılandırmak için sağ üstteki alandan ilk kategorinizi ekleyin.
               </p>
             </div>
           )}
@@ -189,35 +190,46 @@ export function CategoriesTab(): React.JSX.Element {
 
       {/* Kategori Silme Diyaloğu */}
       <Dialog open={!!deleteCategoryId} onOpenChange={(open) => !open && setDeleteCategoryId(null)}>
-        <DialogContent className="rounded-[2.5rem] border-none shadow-2xl">
-          <DialogHeader className="space-y-3">
-            <div className="w-14 h-14 rounded-2xl bg-destructive/10 flex items-center justify-center text-destructive mb-2">
-              <Trash2 size={28} />
+        <DialogContent className="sm:max-w-md p-0 overflow-hidden border-0 shadow-2xl bg-white dark:bg-zinc-950 rounded-2xl [&>button:last-child]:hidden">
+          <div className="bg-red-600 p-8 text-white">
+            <div className="flex items-center gap-6">
+              <div className="flex-none w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center ring-4 ring-white/10 shadow-inner">
+                <Trash2 className="w-8 h-8 text-white" />
+              </div>
+              <DialogHeader className="space-y-1.5 text-left">
+                <DialogTitle className="text-2xl font-black tracking-tight text-white">
+                  Kategoriyi Silinsin mi?
+                </DialogTitle>
+                <DialogDescription className="text-base text-white/80 font-medium">
+                  Bu işlem geri alınamaz
+                </DialogDescription>
+              </DialogHeader>
             </div>
-            <DialogTitle className="text-2xl font-black tracking-tight">
-              Kategori Silinsin Mi?
-            </DialogTitle>
-            <DialogDescription className="text-base font-medium">
-              Bu kategoriyi sildiğinizde içindeki <b>tüm ürünler</b> de kalıcı olarak silinecektir.
-              Bu işlem geri alınamaz.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-3 mt-4">
-            <Button
-              variant="ghost"
-              className="rounded-xl font-bold"
-              onClick={() => setDeleteCategoryId(null)}
-            >
-              İPTAL
-            </Button>
-            <Button
-              variant="destructive"
-              className="rounded-xl font-black px-8 shadow-lg shadow-destructive/20"
-              onClick={confirmDeleteCategory}
-            >
-              KATEGORİYİ SİL
-            </Button>
-          </DialogFooter>
+          </div>
+
+          <div className="p-8 bg-zinc-50 dark:bg-zinc-900/40">
+            <p className="text-base text-zinc-600 dark:text-zinc-300 font-medium mb-6">
+              Bu kategoriyi sildiğinizde içindeki{' '}
+              <b className="text-zinc-900 dark:text-white">tüm ürünler</b> de kalıcı olarak
+              silinecektir. Silmek istediğinize emin misiniz?
+            </p>
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+              <Button
+                variant="ghost"
+                className="rounded-xl font-bold h-12 px-6 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-zinc-800"
+                onClick={() => setDeleteCategoryId(null)}
+              >
+                İptal
+              </Button>
+              <Button
+                variant="destructive"
+                className="rounded-xl font-black h-12 px-8 shadow-sm hover:scale-105 active:scale-95 transition-all bg-red-600 hover:bg-red-700"
+                onClick={confirmDeleteCategory}
+              >
+                KALICI OLARAK SİL
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

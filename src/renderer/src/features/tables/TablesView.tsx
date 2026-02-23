@@ -9,7 +9,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog'
@@ -46,35 +45,39 @@ export const TableCard = memo(
             onMouseUp={() => setIsPressed(false)}
             onMouseLeave={() => setIsPressed(false)}
             className={cn(
-              'group relative flex flex-col items-center justify-center p-6 rounded-2xl transition-all duration-200 ease-out cursor-pointer w-full text-center outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
+              'group relative flex flex-col items-center justify-center p-6 rounded-2xl transition-all duration-300 ease-out cursor-pointer w-full text-center outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
+              'hover:-translate-y-1.5 hover:shadow-2xl',
               isPressed && 'scale-[0.97]',
 
               // STATE: FULL (Dolu)
               hasOpenOrder &&
                 !isLocked && [
-                  'bg-gradient-to-br from-info/35 to-info/15 border-2 border-info/40',
-                  'hover:from-info/40 hover:to-info/20 hover:border-info/50 hover:shadow-lg hover:shadow-info/10'
+                  'bg-indigo-600 border-2 border-indigo-400/30',
+                  'hover:bg-indigo-700 hover:border-indigo-400/50 hover:shadow-2xl hover:shadow-indigo-600/30'
                 ],
 
               // STATE: EMPTY (Boş)
               !hasOpenOrder &&
                 !isLocked && [
-                  'bg-gradient-to-br from-emerald-500/25 to-emerald-500/10 border-2 border-emerald-500/30',
-                  'hover:from-emerald-500/30 hover:to-emerald-500/15 hover:border-emerald-500/40 hover:shadow-lg hover:shadow-emerald-500/10'
+                  'bg-teal-600 border-2 border-teal-400/30',
+                  'hover:bg-teal-700 hover:border-teal-400/50 hover:shadow-2xl hover:shadow-teal-600/30'
                 ],
 
               // STATE: LOCKED (Kilitli)
               isLocked && [
-                'bg-gradient-to-br from-amber-500/35 to-amber-500/15 border-2 border-amber-500/40',
-                'hover:from-amber-500/40 hover:to-amber-500/20'
+                'bg-orange-600 border-2 border-orange-400/30',
+                'hover:bg-orange-700 hover:border-orange-400/50'
               ]
             )}
           >
             {/* Kilit Badge */}
             {isLocked && (
-              <div className="absolute -top-2 -left-2 bg-amber-500 p-2 rounded-xl text-white shadow-lg shadow-amber-500/20 z-20 animate-in zoom-in duration-200">
-                <Lock className="w-4 h-4" strokeWidth={2.5} />
-              </div>
+              <>
+                <div className="absolute inset-0 opacity-[0.03] pointer-events-none rounded-2xl bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,currentColor_10px,currentColor_20px)]" />
+                <div className="absolute -top-2 -left-2 bg-orange-600 p-2 rounded-xl text-white shadow-lg shadow-orange-600/20 z-20 animate-in zoom-in duration-200">
+                  <Lock className="w-4 h-4" strokeWidth={2.5} />
+                </div>
+              </>
             )}
 
             {/* Merkez İkon - Daha Büyük */}
@@ -82,11 +85,9 @@ export const TableCard = memo(
               className={cn(
                 'p-5 rounded-2xl transition-all duration-300 mb-5',
                 'group-hover:scale-110 group-hover:rotate-3',
-                hasOpenOrder && !isLocked && 'bg-info text-white shadow-lg shadow-info/25',
-                !hasOpenOrder &&
-                  !isLocked &&
-                  'bg-emerald-500/15 text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white',
-                isLocked && 'bg-amber-500/20 text-amber-600'
+                hasOpenOrder && !isLocked && 'bg-white/20 text-white shadow-lg shadow-black/10',
+                !hasOpenOrder && !isLocked && 'bg-black/10 text-white group-hover:bg-black/20',
+                isLocked && 'bg-white/20 text-white shadow-lg shadow-black/10'
               )}
             >
               <Coffee className="w-9 h-9" strokeWidth={2} />
@@ -95,54 +96,55 @@ export const TableCard = memo(
             {/* İçerik - DAHA BÜYÜK VE OKUNUR YAZILAR */}
             <div className="space-y-3 w-full px-2">
               {/* Masa Adı - Daha Büyük, Kalın, Gölge */}
-              <span className="text-xl font-bold text-foreground tracking-tight truncate block">
+              <span className="text-xl font-bold text-white tracking-tight truncate block">
                 {name}
               </span>
 
               {/* Durum Rozeti - Daha Büyük, Daha Belirgin */}
               <span
                 className={cn(
-                  'inline-flex items-center px-4 py-1.5 rounded-full text-xs font-black tracking-widest  shadow-sm',
-                  hasOpenOrder && !isLocked && 'bg-info text-white shadow-info/20',
-                  !hasOpenOrder &&
-                    !isLocked &&
-                    'bg-emerald-500 text-white shadow-emerald-500/20 group-hover:bg-emerald-600 transition-colors',
-                  isLocked && 'bg-amber-500 text-white shadow-amber-500/20'
+                  'inline-flex items-center px-4 py-1.5 rounded-lg text-[11px] font-black tracking-[0.2em] shadow-sm transition-all duration-300',
+                  hasOpenOrder && !isLocked && 'bg-white text-indigo-700',
+                  !hasOpenOrder && !isLocked && 'bg-white text-teal-700 group-hover:bg-teal-50',
+                  isLocked && 'bg-white text-orange-700'
                 )}
               >
                 {isLocked ? 'KİLİTLİ' : hasOpenOrder ? 'DOLU' : 'BOŞ'}
               </span>
             </div>
 
-            {/* Hover glow efekti */}
-            <div
-              className={cn(
-                'absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none',
-                hasOpenOrder && 'bg-info/5',
-                !hasOpenOrder && 'bg-emerald-500/5',
-                isLocked && 'bg-amber-500/5'
-              )}
-            />
+            {/* Hover shimmer & glow effects */}
+            <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
+              <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-[-20deg]" />
+              <div
+                className={cn(
+                  'absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300',
+                  hasOpenOrder && 'bg-white/10',
+                  !hasOpenOrder && 'bg-white/10',
+                  isLocked && 'bg-white/10'
+                )}
+              />
+            </div>
           </button>
         </ContextMenuTrigger>
 
         {/* Context Menu */}
         {hasOpenOrder && !isLocked && (
-          <ContextMenuContent className="w-56 p-1 rounded-xl shadow-xl border border-border/50 bg-popover/95 backdrop-blur">
+          <ContextMenuContent className="w-56 p-2 rounded-xl shadow-2xl border bg-popover text-popover-foreground">
             <ContextMenuItem
               onClick={() => onTransfer(id)}
-              className="gap-3 py-2.5 px-3 rounded-lg text-sm font-medium cursor-pointer hover:bg-info/10 focus:bg-info/10"
+              className="gap-3 py-3 px-3 rounded-lg text-sm font-semibold cursor-pointer hover:bg-indigo-600/10 focus:bg-indigo-600/10"
             >
-              <div className="p-1.5 bg-info/10 rounded-md">
-                <ArrowRightLeft className="w-4 h-4 text-info" />
+              <div className="p-2 bg-indigo-600/10 rounded-lg">
+                <ArrowRightLeft className="w-4 h-4 text-indigo-600" />
               </div>
               Masaya Aktar
             </ContextMenuItem>
             <ContextMenuItem
               onClick={() => onMerge(id)}
-              className="gap-3 py-2.5 px-3 rounded-lg text-sm font-medium cursor-pointer mt-0.5 hover:bg-primary/10 focus:bg-primary/10"
+              className="gap-3 py-3 px-3 rounded-lg text-sm font-semibold cursor-pointer mt-1 hover:bg-primary/10 focus:bg-primary/10"
             >
-              <div className="p-1.5 bg-primary/10 rounded-md">
+              <div className="p-2 bg-primary/10 rounded-lg">
                 <Combine className="w-4 h-4 text-primary" />
               </div>
               Masa Birleştir
@@ -259,7 +261,7 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
   return (
     <div className="h-full flex flex-col overflow-hidden bg-background">
       {/* Header Section */}
-      <div className="flex-none h-14 px-6 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-10 w-full flex items-center">
+      <div className="flex-none h-16 px-6 border-b bg-background shadow-sm z-10 w-full flex items-center">
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-3">
             <Coffee className="w-5 h-5 text-muted-foreground" />
@@ -268,23 +270,21 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
 
           <div className="flex items-center gap-2">
             {/* Dolu Masa Badge */}
-            <div className="flex items-center gap-2 bg-info/10 px-3 py-1.5 rounded-lg border border-info/20">
-              <span className="text-lg font-bold tabular-nums text-info">
+            <div className="flex items-center gap-2 bg-indigo-600 px-3 py-1.5 rounded-lg shadow-sm border border-indigo-400/20 text-white">
+              <span className="text-lg font-bold tabular-nums">
                 {tables.filter((t) => t.hasOpenOrder).length}
               </span>
-              <span className="text-[10px] font-semibold text-info/80  tracking-wider">Dolu</span>
+              <span className="text-[10px] font-black tracking-widest uppercase">Dolu</span>
             </div>
 
             <div className="w-px h-6 bg-border mx-1" />
 
             {/* Boş Masa Badge */}
-            <div className="flex items-center gap-2 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20">
-              <span className="text-lg font-bold tabular-nums text-emerald-600">
+            <div className="flex items-center gap-2 bg-teal-600 px-3 py-1.5 rounded-lg shadow-sm border border-teal-400/20 text-white">
+              <span className="text-lg font-bold tabular-nums">
                 {tables.filter((t) => !t.hasOpenOrder).length}
               </span>
-              <span className="text-[10px] font-semibold text-emerald-600/80  tracking-wider">
-                Boş
-              </span>
+              <span className="text-[10px] font-black tracking-widest uppercase">Boş</span>
             </div>
           </div>
         </div>
@@ -333,47 +333,66 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
           !open && setTransferModal({ open: false, sourceTableId: null, sourceOrderId: null })
         }
       >
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader className="space-y-3">
-            <div className="w-12 h-12 bg-info/10 rounded-xl flex items-center justify-center mx-auto sm:mx-0">
-              <ArrowRightLeft className="w-6 h-6 text-info" />
+        <DialogContent className="sm:max-w-lg p-0 overflow-hidden border-0 shadow-2xl bg-white dark:bg-zinc-950 rounded-2xl [&>button:last-child]:hidden">
+          <div className="bg-indigo-600 p-8 text-white">
+            <div className="flex items-center gap-6">
+              <div className="flex-none w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center ring-4 ring-white/10 shadow-inner">
+                <ArrowRightLeft className="w-8 h-8 text-white" />
+              </div>
+              <DialogHeader className="space-y-1.5 text-left">
+                <DialogTitle className="text-2xl font-black tracking-tight text-white">
+                  Masa Transferi
+                </DialogTitle>
+                <DialogDescription className="text-base text-white/80 font-medium">
+                  {sourceTableName} siparişini aktar
+                </DialogDescription>
+              </DialogHeader>
             </div>
-            <div className="text-center sm:text-left">
-              <DialogTitle className="text-lg">Masa Transferi</DialogTitle>
-              <DialogDescription className="text-sm mt-1.5">
-                <span className="font-semibold text-foreground">{sourceTableName}</span> masasının
-                siparişini aktarın
-              </DialogDescription>
-            </div>
-          </DialogHeader>
-
-          <div className="grid grid-cols-4 gap-2 py-4">
-            {tables
-              .filter((t) => t.id !== transferModal.sourceTableId && !t.hasOpenOrder)
-              .map((table) => (
-                <button
-                  key={table.id}
-                  onClick={() => handleTransferToTable(table.id)}
-                  disabled={isProcessing}
-                  className="p-3 rounded-xl border border-border bg-background hover:bg-accent hover:border-accent transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group"
-                >
-                  <span className="text-sm font-medium text-foreground group-hover:text-accent-foreground">
-                    {table.name}
-                  </span>
-                </button>
-              ))}
           </div>
 
-          <DialogFooter className="sm:justify-start">
+          <div className="p-8 bg-zinc-50 dark:bg-zinc-900/40">
+            <div className="flex items-center justify-between mb-5">
+              <h4 className="text-xs font-black text-zinc-500 px-1">Hedef Masa Seçin</h4>
+              <div className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800 ml-4" />
+            </div>
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+              {tables
+                .filter((t) => t.id !== transferModal.sourceTableId && !t.hasOpenOrder)
+                .map((table) => (
+                  <button
+                    key={table.id}
+                    onClick={() => handleTransferToTable(table.id)}
+                    disabled={isProcessing}
+                    className="group relative px-2 py-4 h-16 rounded-xl bg-white dark:bg-zinc-800 border-2 border-zinc-200 dark:border-zinc-700 shadow-sm transition-all duration-300 hover:border-indigo-500 hover:-translate-y-1 hover:shadow-lg active:scale-95 disabled:opacity-50 flex items-center justify-center overflow-hidden"
+                  >
+                    <span className="relative z-10 text-base font-black text-zinc-900 dark:text-zinc-100 group-hover:text-indigo-600 transition-colors whitespace-nowrap overflow-hidden text-ellipsis px-1">
+                      {table.name}
+                    </span>
+                    <div className="absolute inset-x-0 bottom-0 h-1 bg-indigo-500 scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300" />
+                  </button>
+                ))}
+            </div>
+
+            {tables.filter((t) => t.id !== transferModal.sourceTableId && !t.hasOpenOrder)
+              .length === 0 && (
+              <div className="text-center py-8 text-zinc-500 dark:text-zinc-400">
+                <p className="font-medium">Boş masa bulunmuyor</p>
+                <p className="text-sm mt-1">Tüm masalar dolu görünüyor</p>
+              </div>
+            )}
+          </div>
+
+          <div className="p-4 border-t bg-white dark:bg-zinc-950 flex justify-end">
             <Button
-              variant="outline"
+              variant="ghost"
               onClick={() =>
                 setTransferModal({ open: false, sourceTableId: null, sourceOrderId: null })
               }
+              className="text-zinc-600 dark:text-zinc-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 px-6"
             >
               İptal
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -384,47 +403,68 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
           !open && setMergeModal({ open: false, sourceTableId: null, sourceOrderId: null })
         }
       >
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader className="space-y-3">
-            <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mx-auto sm:mx-0">
-              <Combine className="w-6 h-6 text-primary" />
+        <DialogContent className="sm:max-w-lg p-0 overflow-hidden border-0 shadow-2xl bg-white dark:bg-zinc-950 rounded-2xl [&>button:last-child]:hidden">
+          <div className="bg-teal-600 p-8 text-white">
+            <div className="flex items-center gap-6">
+              <div className="flex-none w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center ring-4 ring-white/10 shadow-inner">
+                <Combine className="w-8 h-8 text-white" />
+              </div>
+              <DialogHeader className="space-y-1.5 text-left">
+                <DialogTitle className="text-2xl font-black tracking-tight text-white">
+                  Masa Birleştirme
+                </DialogTitle>
+                <DialogDescription className="text-base text-white/80 font-medium">
+                  {mergeSourceTableName} siparişini birleştir
+                </DialogDescription>
+              </DialogHeader>
             </div>
-            <div className="text-center sm:text-left">
-              <DialogTitle className="text-lg">Masa Birleştirme</DialogTitle>
-              <DialogDescription className="text-sm mt-1.5">
-                <span className="font-semibold text-foreground">{mergeSourceTableName}</span>{' '}
-                masasını birleştirin
-              </DialogDescription>
-            </div>
-          </DialogHeader>
-
-          <div className="grid grid-cols-4 gap-2 py-4">
-            {tables
-              .filter((t) => t.id !== mergeModal.sourceTableId && t.hasOpenOrder)
-              .map((table) => (
-                <button
-                  key={table.id}
-                  onClick={() => handleMergeWithTable(table.id)}
-                  disabled={isProcessing}
-                  className="p-3 rounded-xl border border-border bg-background hover:bg-accent hover:border-accent transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group"
-                >
-                  <span className="text-sm font-medium text-foreground group-hover:text-accent-foreground">
-                    {table.name}
-                  </span>
-                </button>
-              ))}
           </div>
 
-          <DialogFooter className="sm:justify-start">
+          <div className="p-8 bg-zinc-50 dark:bg-zinc-900/40">
+            <div className="flex items-center justify-between mb-5">
+              <h4 className="text-xs font-black text-zinc-500 tracking-[0.2em] px-1">
+                Birleştirilecek Masayı Seçin
+              </h4>
+              <div className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800 ml-4" />
+            </div>
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+              {tables
+                .filter((t) => t.id !== mergeModal.sourceTableId && t.hasOpenOrder)
+                .map((table) => (
+                  <button
+                    key={table.id}
+                    onClick={() => handleMergeWithTable(table.id)}
+                    disabled={isProcessing}
+                    className="group relative px-2 py-4 h-16 rounded-xl bg-white dark:bg-zinc-800 border-2 border-zinc-200 dark:border-zinc-700 shadow-sm transition-all duration-300 hover:border-teal-500 hover:-translate-y-1 hover:shadow-lg active:scale-95 disabled:opacity-50 flex items-center justify-center overflow-hidden"
+                  >
+                    <span className="relative z-10 text-base font-black text-zinc-900 dark:text-zinc-100 group-hover:text-teal-600 transition-colors whitespace-nowrap overflow-hidden text-ellipsis px-1">
+                      {table.name}
+                    </span>
+                    <div className="absolute inset-x-0 bottom-0 h-1 bg-teal-500 scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300" />
+                  </button>
+                ))}
+            </div>
+
+            {tables.filter((t) => t.id !== mergeModal.sourceTableId && t.hasOpenOrder).length ===
+              0 && (
+              <div className="text-center py-8 text-zinc-500 dark:text-zinc-400">
+                <p className="font-medium">Birleştirilecek masa bulunmuyor</p>
+                <p className="text-sm mt-1">Diğer masaların siparişi bulunmuyor</p>
+              </div>
+            )}
+          </div>
+
+          <div className="p-4 border-t bg-white dark:bg-zinc-950 flex justify-end">
             <Button
-              variant="outline"
+              variant="ghost"
               onClick={() =>
                 setMergeModal({ open: false, sourceTableId: null, sourceOrderId: null })
               }
+              className="text-zinc-600 dark:text-zinc-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 px-6"
             >
               İptal
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
