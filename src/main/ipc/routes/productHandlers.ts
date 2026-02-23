@@ -1,3 +1,4 @@
+import { Prisma } from '../../../generated/prisma/client'
 import { productSchemas } from '../../../shared/ipc-schemas'
 import { IPC_CHANNELS } from '../../../shared/types'
 import { productService } from '../../services/ProductService'
@@ -31,7 +32,7 @@ export function registerProductHandlers(): void {
     productSchemas.update,
     (data) => {
       const { categoryId, ...rest } = data.data
-      const updateData: Record<string, unknown> = { ...rest }
+      const updateData: Prisma.ProductUpdateInput = { ...rest }
       if (categoryId) {
         updateData.category = { connect: { id: categoryId } }
       }
