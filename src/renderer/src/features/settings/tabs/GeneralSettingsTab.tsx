@@ -1,5 +1,15 @@
 // src/renderer/pages/settings/GeneralSettingsTab.tsx
 import { AdminPinModal } from '@/components/ui/AdminPinModal'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -22,6 +32,7 @@ import {
   ArrowUpCircle,
   CheckCircle2,
   KeyRound,
+  Loader2,
   Moon,
   Palette,
   RefreshCw,
@@ -33,6 +44,7 @@ import {
   Wrench
 } from 'lucide-react'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 
 import { PinInput } from '../components/PinInput'
 import { SettingRow } from '../components/SettingRow'
@@ -121,7 +133,7 @@ function SummaryCard(props: {
       className={cn(
         'rounded-2xl border border-zinc-200/70 dark:border-zinc-800/80',
         'bg-white/85 dark:bg-zinc-900/80 backdrop-blur-xl shadow-sm',
-        'transition-all duration-200 hover:shadow-md'
+        'transition-all duration-200 hover:shadow-md motion-safe:hover:-translate-y-[1px]'
       )}
     >
       <div className="p-3.5 flex items-center gap-3">
@@ -160,11 +172,18 @@ export function GeneralSettingsTab({
   const [showRecoveryPinModal, setShowRecoveryPinModal] = useState(false)
 
   const [showDemoPinModal, setShowDemoPinModal] = useState(false)
+  const [showSeedConfirmDialog, setShowSeedConfirmDialog] = useState(false)
 
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus>('idle')
   const [appVersion, setAppVersion] = useState<string>('...')
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null)
   const [downloadProgress, setDownloadProgress] = useState(0)
+
+  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false)
+  const [isCheckingSystem, setIsCheckingSystem] = useState(false)
+  const [isChangingPin, setIsChangingPin] = useState(false)
+  const [isSavingRecovery, setIsSavingRecovery] = useState(false)
+  const [isSeeding, setIsSeeding] = useState(false)
 
   const selectedSchemeName = useMemo(
     () => COLOR_SCHEMES.find((c) => c.id === colorScheme)?.name ?? '',
@@ -174,6 +193,11 @@ export function GeneralSettingsTab({
   const canSubmitPin = useMemo(
     () => newPin.length === 4 && confirmPin.length === 4,
     [newPin, confirmPin]
+  )
+
+  const canSaveRecovery = useMemo(
+    () => securityQuestion.trim().length > 0 && securityAnswer.trim().length > 0,
+    [securityAnswer, securityQuestion]
   )
 
   useEffect(() => {
@@ -198,13 +222,22 @@ export function GeneralSettingsTab({
       switch (event) {
         case 'checking':
           setUpdateStatus('checking')
+          toast.loading('Güncellemeler kontrol ediliyor...', { id: 'update-check' })
           break
         case 'available':
           setUpdateStatus('available')
           setUpdateInfo(data as UpdateInfo)
+          toast.success('Yeni sürüm bulundu', {
+            id: 'update-check',
+            description: `v${(data as UpdateInfo)?.version ?? ''} indirilmeye hazır`
+          })
           break
         case 'not-available':
           setUpdateStatus('not-available')
+          toast.success('Sistem güncel', {
+            id: 'update-check',
+            description: 'Yeni sürüm bulunamadı'
+          })
           break
         case 'progress':
           setUpdateStatus('downloading')
@@ -213,9 +246,14 @@ export function GeneralSettingsTab({
         case 'downloaded':
           setUpdateStatus('downloaded')
           setUpdateInfo(data as UpdateInfo)
+          toast.success('Güncelleme indirildi', {
+            id: 'update-check',
+            description: 'Yeniden başlatıp yükleyebilirsiniz'
+          })
           break
         case 'error':
           setUpdateStatus('error')
+          toast.error('Güncelleme hatası', { id: 'update-check' })
           break
       }
     })
@@ -228,11 +266,20 @@ export function GeneralSettingsTab({
 
   const handleManualUpdateCheck = useCallback(async (): Promise<void> => {
     setUpdateStatus('checking')
+    setIsCheckingUpdate(true)
     try {
       const result = await cafeApi.system.checkUpdate()
-      if (!result.available) setUpdateStatus('not-available')
+      if (!result.available) {
+        setUpdateStatus('not-available')
+        toast.success('Güncelleme kontrolü tamamlandı', {
+          description: 'Yeni sürüm bulunamadı.'
+        })
+      }
     } catch {
       setUpdateStatus('error')
+      toast.error('Güncelleme kontrolü başarısız')
+    } finally {
+      setIsCheckingUpdate(false)
     }
   }, [])
 
@@ -253,17 +300,35 @@ export function GeneralSettingsTab({
   }, [confirmPin, newPin])
 
   const handleSystemCheck = useCallback(async () => {
+    setIsCheckingSystem(true)
+    const loadingId = toast.loading('Sistem kontrolü başlatıldı...')
     try {
       await Promise.all([refetchTables(), refetchProducts(), refetchCategories()])
-      alert('Sistem kontrolü tamamlandı.')
+      toast.success('Sistem kontrolü tamamlandı', { id: loadingId })
     } catch {
-      alert('Sistem kontrolü sırasında hata oluştu.')
+      toast.error('Sistem kontrolü sırasında hata oluştu', { id: loadingId })
+    } finally {
+      setIsCheckingSystem(false)
     }
   }, [refetchCategories, refetchProducts, refetchTables])
 
   const handleDemoLoad = useCallback(() => {
     setShowDemoPinModal(true)
   }, [])
+
+  const handleSeedDatabase = useCallback(async () => {
+    setIsSeeding(true)
+    try {
+      await cafeApi.seed.database()
+      await Promise.all([refetchTables(), refetchProducts(), refetchCategories()])
+      setShowSeedConfirmDialog(false)
+      toast.success('Demo verisi yüklendi')
+    } catch {
+      toast.error('Demo yükleme başarısız')
+    } finally {
+      setIsSeeding(false)
+    }
+  }, [refetchCategories, refetchProducts, refetchTables])
 
   return (
     <div className={cn(ui.container, ui.vspace)}>
@@ -325,6 +390,7 @@ export function GeneralSettingsTab({
                     onClick={handleThemeLight}
                     className={cn(
                       'h-9 px-3 rounded-lg text-sm font-medium inline-flex items-center gap-2 transition-all',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
                       !isDark
                         ? 'bg-white dark:bg-zinc-900 shadow-sm ring-1 ring-zinc-200/70 dark:ring-zinc-700/70 text-foreground'
                         : 'text-muted-foreground hover:text-foreground hover:bg-white/70 dark:hover:bg-zinc-900/60'
@@ -339,6 +405,7 @@ export function GeneralSettingsTab({
                     onClick={handleThemeDark}
                     className={cn(
                       'h-9 px-3 rounded-lg text-sm font-medium inline-flex items-center gap-2 transition-all',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
                       isDark
                         ? 'bg-white dark:bg-zinc-900 shadow-sm ring-1 ring-zinc-200/70 dark:ring-zinc-700/70 text-foreground'
                         : 'text-muted-foreground hover:text-foreground hover:bg-white/70 dark:hover:bg-zinc-900/60'
@@ -364,6 +431,7 @@ export function GeneralSettingsTab({
                             title={scheme.name}
                             className={cn(
                               'relative w-9 h-9 rounded-lg flex items-center justify-center transition-all',
+                              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
                               selected
                                 ? 'bg-white dark:bg-zinc-900 ring-1 ring-zinc-300/70 dark:ring-zinc-700 shadow-sm'
                                 : 'hover:bg-white/70 dark:hover:bg-zinc-900/50'
@@ -396,6 +464,7 @@ export function GeneralSettingsTab({
                   onClick={toggleSound}
                   className={cn(
                     'h-10 px-3 rounded-xl border text-sm font-medium inline-flex items-center gap-2 transition-all',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
                     soundEnabled
                       ? 'bg-primary text-primary-foreground border-primary shadow-sm'
                       : 'bg-zinc-100/70 dark:bg-zinc-800/50 text-muted-foreground border-zinc-200/70 dark:border-zinc-700/70 hover:text-foreground'
@@ -419,18 +488,31 @@ export function GeneralSettingsTab({
                 <p className={ui.meta}>Uygulama sürümünü kontrol edin</p>
               </div>
 
-              <span className="shrink-0 text-xs font-medium font-mono rounded-lg border border-zinc-200/70 dark:border-zinc-700/70 bg-zinc-100/70 dark:bg-zinc-800/50 px-2 py-1">
+              <span
+                className={cn(
+                  'shrink-0 text-xs font-medium font-mono rounded-lg border px-2 py-1',
+                  'border-zinc-200/70 dark:border-zinc-700/70 bg-zinc-100/70 dark:bg-zinc-800/50',
+                  appVersion === '...' && 'animate-pulse'
+                )}
+              >
                 {appVersion}
               </span>
             </div>
 
-            <div className="p-4">
+            <div className="p-4 space-y-3">
               <UpdateStatusArea
                 status={updateStatus}
                 progress={downloadProgress}
                 info={updateInfo}
                 onCheck={handleManualUpdateCheck}
               />
+
+              {isCheckingUpdate && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Güncelleme kontrol ediliyor…
+                </div>
+              )}
             </div>
           </Card>
 
@@ -469,18 +551,36 @@ export function GeneralSettingsTab({
                 <button
                   type="button"
                   onClick={handleDemoLoad}
-                  className="h-10 rounded-xl border border-blue-200/70 dark:border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-sm font-medium transition-all inline-flex items-center justify-center gap-2"
+                  disabled={isSeeding}
+                  className={cn(
+                    'h-10 rounded-xl border text-sm font-medium transition-all inline-flex items-center justify-center gap-2',
+                    'border-blue-200/70 dark:border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/10 text-blue-600 dark:text-blue-400',
+                    'disabled:opacity-60 disabled:pointer-events-none'
+                  )}
                 >
-                  <RefreshCw className="w-4 h-4" />
+                  {isSeeding ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4" />
+                  )}
                   Demo Yükle
                 </button>
 
                 <button
                   type="button"
                   onClick={handleSystemCheck}
-                  className="h-10 rounded-xl border border-amber-200/80 dark:border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 text-amber-600 dark:text-amber-400 text-sm font-medium transition-all inline-flex items-center justify-center gap-2"
+                  disabled={isCheckingSystem}
+                  className={cn(
+                    'h-10 rounded-xl border text-sm font-medium transition-all inline-flex items-center justify-center gap-2',
+                    'border-amber-200/80 dark:border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 text-amber-600 dark:text-amber-400',
+                    'disabled:opacity-60 disabled:pointer-events-none'
+                  )}
                 >
-                  <Wrench className="w-4 h-4" />
+                  {isCheckingSystem ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Wrench className="w-4 h-4" />
+                  )}
                   Kontrol Et
                 </button>
               </div>
@@ -489,7 +589,7 @@ export function GeneralSettingsTab({
         </div>
 
         {/* SAĞ */}
-        <div className="space-y-4">
+        <div className="space-y-4 xl:sticky xl:top-4 self-start">
           <Card className={ui.card}>
             <div className={cn(ui.header, 'flex items-center justify-between gap-2')}>
               <div>
@@ -540,9 +640,10 @@ export function GeneralSettingsTab({
 
                   <Button
                     onClick={handleChangePin}
-                    disabled={!canSubmitPin}
+                    disabled={!canSubmitPin || isChangingPin}
                     className={cn('w-full', ui.btnPrimary)}
                   >
+                    {isChangingPin && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
                     PIN Güncelle
                   </Button>
                 </div>
@@ -614,10 +715,11 @@ export function GeneralSettingsTab({
 
                   <Button
                     onClick={() => setShowRecoveryPinModal(true)}
-                    disabled={!securityQuestion || !securityAnswer}
+                    disabled={!canSaveRecovery || isSavingRecovery}
                     variant="outline"
                     className={cn('w-full', ui.btnOutline)}
                   >
+                    {isSavingRecovery && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
                     Yöntemi Kaydet
                   </Button>
                 </div>
@@ -635,13 +737,16 @@ export function GeneralSettingsTab({
         description="Mevcut yönetici şifresini girin"
         onSuccess={async () => {
           try {
+            setIsChangingPin(true)
             await cafeApi.admin.changePin('', newPin)
             setNewPin('')
             setConfirmPin('')
             setShowChangePinModal(false)
-            alert('PIN güncellendi')
+            toast.success('PIN güncellendi')
           } catch {
-            alert('PIN güncellenemedi')
+            toast.error('PIN güncellenemedi')
+          } finally {
+            setIsChangingPin(false)
           }
         }}
       />
@@ -653,14 +758,17 @@ export function GeneralSettingsTab({
         description="İşlemi onaylamak için PIN girin"
         onSuccess={async () => {
           try {
+            setIsSavingRecovery(true)
             await cafeApi.admin.setRecovery('', securityQuestion.trim(), securityAnswer.trim())
             setSecurityAnswer('')
             setSecurityQuestion('')
             setSelectedQuestionVal('')
             setShowRecoveryPinModal(false)
-            alert('Yöntem kaydedildi')
+            toast.success('Kurtarma yöntemi kaydedildi')
           } catch {
-            alert('Yöntem kaydedilemedi')
+            toast.error('Yöntem kaydedilemedi')
+          } finally {
+            setIsSavingRecovery(false)
           }
         }}
       />
@@ -672,17 +780,40 @@ export function GeneralSettingsTab({
         description="Demo yüklemek için PIN girin"
         onSuccess={async () => {
           setShowDemoPinModal(false)
-          if (!confirm('DİKKAT: Mevcut tüm veriler silinecektir!')) return
-
-          try {
-            await cafeApi.seed.database()
-            await Promise.all([refetchTables(), refetchProducts(), refetchCategories()])
-            alert('Demo verisi yüklendi')
-          } catch {
-            alert('Demo yükleme başarısız')
-          }
+          setShowSeedConfirmDialog(true)
         }}
       />
+
+      {/* Demo confirm yerine native confirm yok */}
+      <AlertDialog open={showSeedConfirmDialog} onOpenChange={setShowSeedConfirmDialog}>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Demo verisi yüklensin mi?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bu işlem mevcut tüm verileri siler ve demo verisini yükler. İşlem geri alınamaz.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl">Vazgeç</AlertDialogCancel>
+
+            <AlertDialogAction asChild>
+              <Button
+                onClick={(e) => {
+                  e.preventDefault()
+                  void handleSeedDatabase()
+                }}
+                disabled={isSeeding}
+                variant="destructive"
+                className="rounded-xl"
+              >
+                {isSeeding && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
+                Evet, Yükle
+              </Button>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

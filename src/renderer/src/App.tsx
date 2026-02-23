@@ -1,6 +1,5 @@
 import { TitleBar } from '@/components/TitleBar'
 import { Button } from '@/components/ui/button'
-import { Toaster } from '@/components/ui/toaster'
 import { UpdateNotifier } from '@/components/UpdateNotifier'
 import { OrderView } from '@/features/orders/OrderView'
 import { TablesView } from '@/features/tables/TablesView'
@@ -9,6 +8,7 @@ import { useTheme } from '@/hooks/useTheme'
 import { cn } from '@/lib/utils'
 import { useTableStore } from '@/store/useTableStore'
 import '@/styles/globals.css'
+import { Toaster } from 'sonner'
 
 import { LayoutGrid, Loader2, Settings } from 'lucide-react'
 import {
@@ -120,7 +120,7 @@ function App(): React.JSX.Element {
         </main>
       </div>
 
-      <Toaster />
+      <Toaster position="top-right" richColors closeButton theme={isDark ? 'dark' : 'light'} />
       <UpdateNotifier />
     </div>
   )

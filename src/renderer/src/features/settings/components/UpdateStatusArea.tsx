@@ -1,8 +1,9 @@
 import { Button } from '@/components/ui/button'
 import { cafeApi } from '@/lib/api'
 import { type UpdateInfo } from '@shared/types'
-import { AlertCircle, CheckCircle2, Download, RefreshCw } from 'lucide-react'
-import React from 'react'
+import { AlertCircle, CheckCircle2, Download, Loader2, RefreshCw } from 'lucide-react'
+import React, { useMemo, useState } from 'react'
+import { toast } from 'sonner'
 
 type UpdateStatus =
   | 'idle'
@@ -17,7 +18,7 @@ interface UpdateStatusAreaProps {
   status: UpdateStatus
   progress: number
   info: UpdateInfo | null
-  onCheck: () => void
+  onCheck: () => void | Promise<void>
 }
 
 export const UpdateStatusArea = ({
@@ -25,13 +26,51 @@ export const UpdateStatusArea = ({
   progress,
   info,
   onCheck
-}: UpdateStatusAreaProps): React.ReactNode => {
+}: UpdateStatusAreaProps): React.JSX.Element => {
+  const [isDownloading, setIsDownloading] = useState(false)
+  const [isRestarting, setIsRestarting] = useState(false)
+  const [isRetrying, setIsRetrying] = useState(false)
+
+  const versionText = useMemo(() => (info?.version ? `v${info.version}` : 'Yeni sürüm'), [info])
+
+  const pct = Math.max(0, Math.min(100, Math.round(progress || 0)))
+
+  const handleDownload = async (): Promise<void> => {
+    try {
+      setIsDownloading(true)
+      await Promise.resolve(cafeApi.system.downloadUpdate?.())
+    } catch {
+      toast.error('İndirme başlatılamadı')
+    } finally {
+      setIsDownloading(false)
+    }
+  }
+
+  const handleRestart = async (): Promise<void> => {
+    try {
+      setIsRestarting(true)
+      await Promise.resolve(cafeApi.system.restart())
+    } catch {
+      toast.error('Yeniden başlatma başarısız')
+      setIsRestarting(false)
+    }
+  }
+
+  const handleRetry = async (): Promise<void> => {
+    try {
+      setIsRetrying(true)
+      await Promise.resolve(onCheck())
+    } finally {
+      setIsRetrying(false)
+    }
+  }
+
   if (status === 'checking') {
     return (
       <div className="flex items-center gap-2.5 py-1">
         <RefreshCw className="w-4 h-4 text-primary animate-spin" />
-        <p className="text-[13px] font-semibold text-muted-foreground">
-          Güncellemeler kontrol ediliyor...
+        <p className="text-[13px] font-medium text-muted-foreground">
+          Güncellemeler kontrol ediliyor…
         </p>
       </div>
     )
@@ -40,52 +79,60 @@ export const UpdateStatusArea = ({
   if (status === 'available') {
     return (
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="p-2 bg-primary/10 rounded-lg">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="p-2 rounded-lg bg-primary/10 border border-primary/10 shrink-0">
             <Download className="w-4 h-4 text-primary" />
           </div>
+
           <div className="min-w-0">
-            <p className="text-[13px] font-bold">Yeni sürüm hazır</p>
+            <p className="text-[13px] font-semibold text-foreground">Yeni sürüm hazır</p>
             <p className="text-xs text-muted-foreground truncate">
-              v{info?.version} indirilmeye hazır
+              {versionText} indirilmeye hazır
             </p>
           </div>
         </div>
 
         <Button
           size="sm"
-          onClick={() => cafeApi.system.downloadUpdate?.()}
-          className="h-8 px-4 rounded-lg text-xs font-bold"
+          onClick={() => void handleDownload()}
+          disabled={isDownloading}
+          className="h-8 px-3.5 rounded-lg text-xs font-medium shrink-0"
         >
-          İndir
+          {isDownloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'İndir'}
         </Button>
       </div>
     )
   }
 
   if (status === 'downloading') {
-    const pct = Math.round(progress)
-
     return (
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <div className="p-2 bg-primary/10 rounded-lg">
+      <div className="space-y-2.5">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 rounded-lg bg-primary/10 border border-primary/10 shrink-0">
             <Download className="w-4 h-4 text-primary" />
           </div>
-          <div>
-            <p className="text-[13px] font-bold">İndiriliyor</p>
-            <p className="text-xs text-primary/70">v{info?.version ?? '-'} indiriliyor...</p>
+
+          <div className="min-w-0">
+            <p className="text-[13px] font-semibold text-foreground">İndiriliyor</p>
+            <p className="text-xs text-primary/70 truncate">{versionText} indiriliyor…</p>
           </div>
         </div>
 
-        <div className="h-1.5 w-full bg-primary/10 rounded-full overflow-hidden">
+        <div
+          className="h-1.5 w-full bg-primary/10 rounded-full overflow-hidden"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={pct}
+          aria-label="Güncelleme indirme ilerlemesi"
+        >
           <div
             className="h-full bg-primary transition-all duration-500"
             style={{ width: `${pct}%` }}
           />
         </div>
 
-        <p className="text-xs text-right text-primary font-bold">%{pct}</p>
+        <p className="text-xs text-right text-primary font-semibold">%{pct}</p>
       </div>
     )
   }
@@ -93,11 +140,16 @@ export const UpdateStatusArea = ({
   if (status === 'downloaded') {
     return (
       <Button
-        onClick={() => cafeApi.system.restart()}
+        onClick={() => void handleRestart()}
         size="sm"
-        className="w-full h-10 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-[13px] flex items-center gap-2"
+        disabled={isRestarting}
+        className="w-full h-10 rounded-xl font-medium text-[13px] flex items-center gap-2"
       >
-        <CheckCircle2 className="w-4 h-4" />
+        {isRestarting ? (
+          <Loader2 className="w-4 h-4 animate-spin" />
+        ) : (
+          <CheckCircle2 className="w-4 h-4" />
+        )}
         Yeniden Başlat ve Yükle
       </Button>
     )
@@ -106,23 +158,27 @@ export const UpdateStatusArea = ({
   if (status === 'error') {
     return (
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <div className="p-2 bg-rose-500/10 rounded-lg">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="p-2 rounded-lg bg-rose-500/10 border border-rose-500/10 shrink-0">
             <AlertCircle className="w-4 h-4 text-rose-500" />
           </div>
-          <div>
-            <p className="text-[13px] font-bold text-rose-600">Güncelleme hatası</p>
-            <p className="text-xs text-muted-foreground">Tekrar deneyebilirsiniz</p>
+
+          <div className="min-w-0">
+            <p className="text-[13px] font-semibold text-rose-600 dark:text-rose-400">
+              Güncelleme hatası
+            </p>
+            <p className="text-xs text-muted-foreground truncate">Tekrar deneyebilirsiniz</p>
           </div>
         </div>
 
         <Button
           variant="ghost"
-          onClick={onCheck}
+          onClick={() => void handleRetry()}
           size="sm"
-          className="h-8 px-4 text-xs font-bold rounded-lg hover:bg-rose-500/10"
+          disabled={isRetrying}
+          className="h-8 px-3 text-xs font-medium rounded-lg hover:bg-rose-500/10 shrink-0"
         >
-          Tekrar Dene
+          {isRetrying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Tekrar Dene'}
         </Button>
       </div>
     )
@@ -131,23 +187,26 @@ export const UpdateStatusArea = ({
   // idle + not-available
   return (
     <div className="flex items-center justify-between gap-3">
-      <div className="flex items-center gap-2 min-w-0">
-        <div className="p-2 bg-emerald-500/10 rounded-lg">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+      <div className="flex items-center gap-2.5 min-w-0">
+        <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/10 shrink-0">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
         </div>
+
         <div className="min-w-0">
-          <p className="text-[13px] font-bold">Sistem Güncel</p>
+          <p className="text-[13px] font-semibold text-foreground">
+            {status === 'not-available' ? 'Sistem Güncel' : 'Güncelleme denetlenmedi'}
+          </p>
           <p className="text-xs text-muted-foreground">
-            {status === 'not-available' ? 'Yeni sürüm bulunamadı' : 'En son sürümdesiniz'}
+            {status === 'not-available' ? 'Yeni sürüm bulunamadı' : 'Manuel olarak kontrol edin'}
           </p>
         </div>
       </div>
 
       <Button
         variant="ghost"
-        onClick={onCheck}
+        onClick={() => void onCheck()}
         size="sm"
-        className="h-8 px-4 text-xs font-bold rounded-lg hover:bg-emerald-500/10"
+        className="h-8 px-3 text-xs font-medium rounded-lg hover:bg-emerald-500/10 shrink-0"
       >
         Denetle
       </Button>
