@@ -52,21 +52,21 @@ export const TableCard = memo(
               // STATE: FULL (Dolu)
               hasOpenOrder &&
                 !isLocked && [
-                  'bg-gradient-to-br from-info/15 to-info/5 border-2 border-info/40',
-                  'hover:from-info/20 hover:to-info/10 hover:border-info/50 hover:shadow-lg hover:shadow-info/10'
+                  'bg-gradient-to-br from-info/35 to-info/15 border-2 border-info/40',
+                  'hover:from-info/40 hover:to-info/20 hover:border-info/50 hover:shadow-lg hover:shadow-info/10'
                 ],
 
               // STATE: EMPTY (Boş)
               !hasOpenOrder &&
                 !isLocked && [
-                  'bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border-2 border-emerald-500/30',
-                  'hover:from-emerald-500/15 hover:to-emerald-500/10 hover:border-emerald-500/40 hover:shadow-lg hover:shadow-emerald-500/10'
+                  'bg-gradient-to-br from-emerald-500/25 to-emerald-500/10 border-2 border-emerald-500/30',
+                  'hover:from-emerald-500/30 hover:to-emerald-500/15 hover:border-emerald-500/40 hover:shadow-lg hover:shadow-emerald-500/10'
                 ],
 
               // STATE: LOCKED (Kilitli)
               isLocked && [
-                'bg-gradient-to-br from-amber-500/15 to-amber-500/5 border-2 border-amber-500/40',
-                'hover:from-amber-500/20 hover:to-amber-500/10'
+                'bg-gradient-to-br from-amber-500/35 to-amber-500/15 border-2 border-amber-500/40',
+                'hover:from-amber-500/40 hover:to-amber-500/20'
               ]
             )}
           >
@@ -262,9 +262,7 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
       <div className="flex-none h-14 px-6 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-10 w-full flex items-center">
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <Coffee className="w-5 h-5 text-primary" />
-            </div>
+            <Coffee className="w-5 h-5 text-muted-foreground" />
             <h2 className="text-lg font-bold tracking-tight text-foreground">Masalar</h2>
           </div>
 
