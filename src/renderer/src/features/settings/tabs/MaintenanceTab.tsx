@@ -6,13 +6,15 @@ import { cn } from '@/lib/utils'
 import {
   AlertTriangle,
   Archive,
-  CheckCircle,
+  CheckCircle2,
   DatabaseZap,
   Download,
   FileJson,
   FileSpreadsheet,
   HardDrive,
-  Settings2
+  Loader2,
+  Settings2,
+  X
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -21,9 +23,72 @@ interface ActionResult {
   message: string
 }
 
+interface ActionPanelProps {
+  icon: React.ReactNode
+  title: string
+  description: string
+  children: React.ReactNode
+  tone?: 'default' | 'danger'
+}
+
+function ActionPanel({
+  icon,
+  title,
+  description,
+  children,
+  tone = 'default'
+}: ActionPanelProps): React.JSX.Element {
+  const isDanger = tone === 'danger'
+
+  return (
+    <div
+      className={cn(
+        'rounded-2xl border p-4 transition-all duration-200',
+        'shadow-sm hover:shadow-md hover:-translate-y-[1px]',
+        isDanger
+          ? 'border-rose-200/70 dark:border-rose-900/60 bg-rose-50/70 dark:bg-rose-950/10'
+          : 'border-zinc-200/70 dark:border-zinc-800/80 bg-white/85 dark:bg-zinc-900/80 backdrop-blur-sm'
+      )}
+    >
+      <div className="flex items-start justify-between gap-3 mb-4">
+        <div
+          className={cn(
+            'p-2.5 rounded-xl border',
+            isDanger
+              ? 'bg-white dark:bg-zinc-950 border-rose-200/70 dark:border-rose-900/70 text-rose-600'
+              : 'bg-zinc-100/70 dark:bg-zinc-800/60 border-zinc-200/70 dark:border-zinc-700/70'
+          )}
+        >
+          {icon}
+        </div>
+
+        <div className="shrink-0">{children}</div>
+      </div>
+
+      <h4
+        className={cn(
+          'text-sm font-semibold tracking-tight',
+          isDanger ? 'text-rose-700 dark:text-rose-400' : 'text-foreground'
+        )}
+      >
+        {title}
+      </h4>
+
+      <p
+        className={cn(
+          'mt-1.5 text-xs leading-relaxed',
+          isDanger ? 'text-rose-900/70 dark:text-rose-300/70' : 'text-muted-foreground'
+        )}
+      >
+        {description}
+      </p>
+    </div>
+  )
+}
+
 export function MaintenanceTab(): React.JSX.Element {
   const [isArchiving, setIsArchiving] = useState(false)
-  const [isExporting, setIsExporting] = useState(false)
+  const [exportingFormat, setExportingFormat] = useState<'json' | 'csv' | null>(null)
   const [isVacuuming, setIsVacuuming] = useState(false)
   const [isBacking, setIsBacking] = useState(false)
   const [lastResult, setLastResult] = useState<ActionResult | null>(null)
@@ -33,8 +98,10 @@ export function MaintenanceTab(): React.JSX.Element {
       !confirm(
         '1 yıldan eski tüm siparişler, giderler ve Z-Raporları silinecek.\n\nBu işlem geri alınamaz.\n\nDevam etmek istiyor musunuz?'
       )
-    )
+    ) {
       return
+    }
+
     setIsArchiving(true)
     try {
       const result = await cafeApi.maintenance.archiveOldData()
@@ -53,7 +120,7 @@ export function MaintenanceTab(): React.JSX.Element {
   }
 
   const handleExport = async (format: 'json' | 'csv'): Promise<void> => {
-    setIsExporting(true)
+    setExportingFormat(format)
     try {
       const result = await cafeApi.maintenance.exportData(format)
       setLastResult({
@@ -66,7 +133,7 @@ export function MaintenanceTab(): React.JSX.Element {
         message: error instanceof Error ? error.message : 'Dışa aktarma başarısız'
       })
     } finally {
-      setIsExporting(false)
+      setExportingFormat(null)
     }
   }
 
@@ -107,175 +174,200 @@ export function MaintenanceTab(): React.JSX.Element {
   }
 
   return (
-    <Card className="h-full flex flex-col border-0 shadow-none bg-zinc-50 dark:bg-zinc-950">
+    <Card className="h-full flex flex-col border-0 shadow-none bg-zinc-50/70 dark:bg-zinc-950/40">
       <ScrollArea className="flex-1">
-        <div className="p-5 max-w-5xl mx-auto space-y-5">
+        <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-4">
           {/* Result Banner */}
           {lastResult && (
             <div
               className={cn(
-                'p-4 rounded-2xl border-2 flex items-center gap-4 animate-in fade-in duration-500 shadow-lg',
+                'rounded-2xl border p-3.5 flex items-start gap-3 animate-in fade-in duration-300',
                 lastResult.success
-                  ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800 text-emerald-700'
-                  : 'bg-destructive/5 border-destructive/20 text-destructive'
+                  ? 'bg-emerald-50/80 dark:bg-emerald-950/10 border-emerald-200/70 dark:border-emerald-900/60'
+                  : 'bg-rose-50/80 dark:bg-rose-950/10 border-rose-200/70 dark:border-rose-900/60'
               )}
             >
-              {lastResult.success ? (
-                <div className="p-2 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
-                  <CheckCircle className="w-6 h-6" />
-                </div>
-              ) : (
-                <div className="p-2 bg-destructive/10 rounded-lg border border-destructive/20">
-                  <AlertTriangle className="w-6 h-6" />
-                </div>
-              )}
-              <div className="flex-1">
-                <p className="text-base font-black tracking-tight leading-none mb-1">
-                  {lastResult.success ? 'İşlem Başarılı' : 'Hata Oluştu'}
-                </p>
-                <p className="text-xs font-bold opacity-80">{lastResult.message}</p>
+              <div
+                className={cn(
+                  'mt-0.5 p-2 rounded-lg border shrink-0',
+                  lastResult.success
+                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600'
+                    : 'bg-rose-500/10 border-rose-500/20 text-rose-600'
+                )}
+              >
+                {lastResult.success ? (
+                  <CheckCircle2 className="w-4 h-4" />
+                ) : (
+                  <AlertTriangle className="w-4 h-4" />
+                )}
               </div>
+
+              <div className="flex-1 min-w-0">
+                <p
+                  className={cn(
+                    'text-sm font-semibold tracking-tight',
+                    lastResult.success
+                      ? 'text-emerald-700 dark:text-emerald-400'
+                      : 'text-rose-700 dark:text-rose-400'
+                  )}
+                >
+                  {lastResult.success ? 'İşlem başarılı' : 'Hata oluştu'}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground break-words leading-relaxed">
+                  {lastResult.message}
+                </p>
+              </div>
+
               <Button
                 variant="ghost"
-                size="sm"
+                size="icon"
                 onClick={() => setLastResult(null)}
-                className="h-9 w-9 p-0 rounded-full hover:bg-black/5"
+                className="h-8 w-8 rounded-lg shrink-0"
               >
-                <span className="sr-only">Kapat</span>
-                &times;
+                <X className="w-4 h-4" />
               </Button>
             </div>
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Backup & Export Group */}
-            <div className="space-y-4">
-              <h3 className="text-[13px] font-black text-zinc-500 tracking-tight px-1 flex items-center gap-2">
-                <HardDrive className="w-3.5 h-3.5" />
-                Veri Güvenliği
-              </h3>
-
-              <div className="grid gap-4">
-                <div className="p-4 rounded-2xl border-2 bg-white dark:bg-zinc-900 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="p-2.5 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-primary border-2 border-transparent group-hover:border-primary/20 shadow-sm transition-all group-hover:scale-110">
-                      <HardDrive className="w-5 h-5" />
-                    </div>
-                    <Button
-                      onClick={handleBackup}
-                      disabled={isBacking}
-                      className="h-10 px-6 rounded-xl bg-primary text-primary-foreground font-black tracking-tight text-xs shadow-lg shadow-primary/20 active:scale-95 transition-all"
-                    >
-                      {isBacking ? 'Yedekleniyor...' : 'Şimdi Yedekle'}
-                    </Button>
-                  </div>
-                  <h4 className="font-black text-lg mb-1 tracking-tight">Anlık Manuel Yedek</h4>
-                  <p className="text-[13px] font-bold text-zinc-500 leading-relaxed italic">
-                    Veritabanının tam kopyasını `backups` klasörüne tarih koduyla birlikte şimdi
-                    kaydedin.
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-2xl border-2 bg-white dark:bg-zinc-900 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="p-2.5 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-sky-500 border-2 border-transparent group-hover:border-sky-500/20 shadow-sm transition-all group-hover:scale-110">
-                      <Download className="w-5 h-5" />
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => handleExport('json')}
-                        disabled={isExporting}
-                        className="h-10 px-4 rounded-xl border-2 font-black tracking-tight text-xs gap-2 hover:bg-amber-500/5 hover:border-amber-500/30 hover:text-amber-600 transition-all active:scale-95"
-                      >
-                        <FileJson className="w-4 h-4 text-amber-500" /> JSON
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => handleExport('csv')}
-                        disabled={isExporting}
-                        className="h-10 px-4 rounded-xl border-2 font-black tracking-tight text-xs gap-2 hover:bg-emerald-500/5 hover:border-emerald-500/30 hover:text-emerald-600 transition-all active:scale-95"
-                      >
-                        <FileSpreadsheet className="w-4 h-4 text-emerald-500" /> CSV
-                      </Button>
-                    </div>
-                  </div>
-                  <h4 className="font-black text-lg mb-1 tracking-tight">Dışa Aktarma</h4>
-                  <p className="text-[13px] font-bold text-zinc-500 leading-relaxed italic">
-                    Sistem verilerini başka uygulamalarda açmak veya arşivlemek için farklı
-                    formatlarda indirin.
-                  </p>
-                </div>
+            {/* Left Group */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 px-1">
+                <HardDrive className="w-4 h-4 text-zinc-500" />
+                <h3 className="text-xs font-semibold tracking-wide text-zinc-500">
+                  Veri Güvenliği
+                </h3>
               </div>
+
+              <ActionPanel
+                icon={<HardDrive className="w-4 h-4 text-primary" />}
+                title="Anlık manuel yedek"
+                description="Veritabanının tam kopyasını backups klasörüne tarih bilgisiyle kaydeder."
+              >
+                <Button
+                  onClick={() => void handleBackup()}
+                  disabled={isBacking}
+                  className="h-9 rounded-xl px-3.5 text-xs font-medium"
+                >
+                  {isBacking ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                      Yedekleniyor
+                    </>
+                  ) : (
+                    'Şimdi Yedekle'
+                  )}
+                </Button>
+              </ActionPanel>
+
+              <ActionPanel
+                icon={<Download className="w-4 h-4 text-sky-500" />}
+                title="Dışa aktarma"
+                description="Sistem verilerini arşivlemek veya başka araçlarda açmak için dışa aktarır."
+              >
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => void handleExport('json')}
+                    disabled={Boolean(exportingFormat)}
+                    className="h-9 rounded-xl px-3 text-xs font-medium gap-1.5"
+                  >
+                    {exportingFormat === 'json' ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <FileJson className="w-3.5 h-3.5 text-amber-500" />
+                    )}
+                    JSON
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    onClick={() => void handleExport('csv')}
+                    disabled={Boolean(exportingFormat)}
+                    className="h-9 rounded-xl px-3 text-xs font-medium gap-1.5"
+                  >
+                    {exportingFormat === 'csv' ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-500" />
+                    )}
+                    CSV
+                  </Button>
+                </div>
+              </ActionPanel>
             </div>
 
-            {/* Performance & Cleanup Group */}
-            <div className="space-y-4">
-              <h3 className="text-[13px] font-black text-zinc-500 tracking-tight px-1 flex items-center gap-2">
-                <Settings2 className="w-3.5 h-3.5" />
-                Performans & Temizlik
-              </h3>
-
-              <div className="grid gap-4">
-                <div className="p-4 rounded-2xl border-2 bg-white dark:bg-zinc-900 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="p-2.5 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-emerald-500 border-2 border-transparent group-hover:border-emerald-500/20 shadow-sm transition-all group-hover:scale-110">
-                      <DatabaseZap className="w-5 h-5" />
-                    </div>
-                    <Button
-                      variant="outline"
-                      onClick={handleVacuum}
-                      disabled={isVacuuming}
-                      className="h-10 px-6 rounded-xl border-2 font-black tracking-tight text-xs hover:bg-primary/5 hover:border-primary/30 transition-all active:scale-95"
-                    >
-                      {isVacuuming ? 'Çalışıyor...' : ' Optimize Et'}
-                    </Button>
-                  </div>
-                  <h4 className="font-black text-lg mb-1 tracking-tight">
-                    Veritabanı Optimizasyonu
-                  </h4>
-                  <p className="text-[13px] font-bold text-zinc-500 leading-relaxed italic">
-                    Kullanılmayan alanı temizler, indeksleri yeniler ve dosya boyutunu küçülterek
-                    hızı artırır.
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-2xl border-2 bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="p-2.5 bg-white dark:bg-zinc-950 rounded-xl text-rose-600 border-2 border-rose-100 dark:border-rose-900 shadow-sm transition-all group-hover:scale-110">
-                      <Archive className="w-5 h-5" />
-                    </div>
-                    <Button
-                      variant="destructive"
-                      onClick={handleArchive}
-                      disabled={isArchiving}
-                      className="h-10 px-6 rounded-xl font-black tracking-tight text-xs shadow-lg shadow-destructive/20 active:scale-95 transition-all"
-                    >
-                      {isArchiving ? 'Temizleniyor...' : 'Verileri Temizle'}
-                    </Button>
-                  </div>
-                  <h4 className="font-black text-lg mb-1 text-rose-700 dark:text-rose-500 tracking-tight">
-                    Eski Verileri Arşivle
-                  </h4>
-                  <p className="text-[13px] font-bold text-rose-900/60 dark:text-rose-400/60 leading-relaxed italic">
-                    **1 yıldan eski** sipariş, gider ve Z-Raporu verilerini kalıcı olarak siler.
-                    Alanı boşaltır ve performansı artırır.
-                  </p>
-                </div>
+            {/* Right Group */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 px-1">
+                <Settings2 className="w-4 h-4 text-zinc-500" />
+                <h3 className="text-xs font-semibold tracking-wide text-zinc-500">
+                  Performans ve Temizlik
+                </h3>
               </div>
+
+              <ActionPanel
+                icon={<DatabaseZap className="w-4 h-4 text-emerald-500" />}
+                title="Veritabanı optimizasyonu"
+                description="Kullanılmayan alanı temizler, dosya boyutunu düşürür ve veritabanını optimize eder."
+              >
+                <Button
+                  variant="outline"
+                  onClick={() => void handleVacuum()}
+                  disabled={isVacuuming}
+                  className="h-9 rounded-xl px-3.5 text-xs font-medium"
+                >
+                  {isVacuuming ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                      Çalışıyor
+                    </>
+                  ) : (
+                    'Optimize Et'
+                  )}
+                </Button>
+              </ActionPanel>
+
+              <ActionPanel
+                tone="danger"
+                icon={<Archive className="w-4 h-4" />}
+                title="Eski verileri arşivle"
+                description="1 yıldan eski sipariş, gider ve Z-Raporu kayıtlarını kalıcı olarak siler. İşlem öncesi yedek almanız önerilir."
+              >
+                <Button
+                  variant="destructive"
+                  onClick={() => void handleArchive()}
+                  disabled={isArchiving}
+                  className="h-9 rounded-xl px-3.5 text-xs font-medium"
+                >
+                  {isArchiving ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                      Temizleniyor
+                    </>
+                  ) : (
+                    'Verileri Temizle'
+                  )}
+                </Button>
+              </ActionPanel>
             </div>
           </div>
 
           {/* Footer Info */}
-          <div className="p-6 rounded-3xl bg-white dark:bg-zinc-900 border-2 border-dashed border-zinc-300 dark:border-zinc-800 text-center shadow-inner">
-            <div className="flex items-center justify-center gap-3 text-zinc-400 mb-2">
-              <AlertTriangle className="w-6 h-6" />
-              <span className="text-xs font-black tracking-tight">Güvenlik Uyarısı</span>
+          <div
+            className={cn(
+              'rounded-2xl border border-dashed p-4 text-center',
+              'bg-white/70 dark:bg-zinc-900/60 border-zinc-300/70 dark:border-zinc-700/70'
+            )}
+          >
+            <div className="flex items-center justify-center gap-2 text-zinc-500 mb-1.5">
+              <AlertTriangle className="w-4 h-4" />
+              <span className="text-xs font-semibold tracking-wide">Güvenlik Uyarısı</span>
             </div>
-            <p className="text-[13px] font-bold text-zinc-500 italic max-w-lg mx-auto leading-relaxed">
-              Bakım işlemleri genellikle hızlıdır ancak işlem sırasında veritabanı kısa süreliğine
-              kilitlenebilir. Özellikle &quot;Verileri Temizleme&quot; işlemi öncesinde mutlaka
-              yedek almanız önerilir.
+
+            <p className="text-xs text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              Bakım işlemleri sırasında veritabanı kısa süreliğine kilitlenebilir. Özellikle
+              “Verileri Temizle” işleminden önce manuel yedek almanız önerilir.
             </p>
           </div>
         </div>
