@@ -75,7 +75,7 @@ function DashboardContent(): React.JSX.Element {
               size="sm"
               onClick={refetchAll}
               disabled={isLoading}
-              className="gap-2 rounded-xl text-muted-foreground hover:bg-muted/50 hover:text-foreground font-bold tracking-[0.1em] text-[10px] uppercase h-9 px-4"
+              className="gap-2 rounded-xl text-muted-foreground hover:bg-muted/50 hover:text-foreground font-bold tracking-[0.1em] text-[10px]  h-9 px-4"
             >
               <RefreshCw className={cn('w-3.5 h-3.5', isLoading && 'animate-spin')} />
               Yenile
@@ -85,7 +85,7 @@ function DashboardContent(): React.JSX.Element {
 
             <Button
               onClick={() => setShowEndOfDayModal(true)}
-              className="gap-3 h-9 px-5 rounded-xl font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-lg shadow-destructive/20 active:scale-95 transition-all text-xs tracking-widest uppercase"
+              className="gap-3 h-9 px-5 rounded-xl font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-lg shadow-destructive/20 active:scale-95 transition-all text-xs tracking-widest "
             >
               <Moon className="w-3.5 h-3.5" />
               Gün Sonu
@@ -100,7 +100,7 @@ function DashboardContent(): React.JSX.Element {
           <div className="flex items-center gap-3">
             <h1 className="text-4xl font-black tracking-tight text-foreground">Yönetim Paneli</h1>
             <div className="h-6 w-[1px] bg-border mt-1" />
-            <span className="text-muted-foreground/70 font-black tracking-[0.3em] text-[12px] uppercase mt-2">
+            <span className="text-muted-foreground/70 font-black tracking-[0.3em] text-[12px]  mt-2">
               DASHBOARD
             </span>
           </div>

@@ -127,7 +127,7 @@ export function ExpensesTable({
     <Button
       variant="ghost"
       onClick={() => handleSort(sortKey)}
-      className="-ml-4 h-8 font-black text-[10px] tracking-[0.2em] text-muted-foreground/40 hover:text-primary transition-colors uppercase"
+      className="-ml-4 h-8 font-black text-[10px] tracking-[0.2em] text-muted-foreground/40 hover:text-primary transition-colors "
     >
       {label}
       <ArrowUpDown className="ml-2 h-3 w-3 opacity-50" />

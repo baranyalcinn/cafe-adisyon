@@ -163,7 +163,7 @@ export const CartPanel = React.memo(function CartPanel({
           <h2 className="text-base font-black tracking-tight flex items-center gap-2 text-foreground">
             {order?.table?.name ? `Masa ${order.table.name}` : 'Adisyon'}
             <span className="h-4 w-[1px] bg-border mx-1" />
-            <span className="text-[11px] font-black text-primary/80 uppercase tracking-wider">
+            <span className="text-[11px] font-black text-primary/80  tracking-wider">
               {totalQuantity} ÜRÜN
             </span>
           </h2>
@@ -230,7 +230,7 @@ export const CartPanel = React.memo(function CartPanel({
                 <div className="mt-8 pt-6 border-t border-dashed border-border/40">
                   <div className="flex items-center gap-2 mb-4 px-1 text-muted-foreground/70">
                     <HistoryIcon className="w-3.5 h-3.5" />
-                    <span className="text-[10px] font-black tracking-[0.2em] uppercase">
+                    <span className="text-[10px] font-black tracking-[0.2em] ">
                       ÖDENMİŞ KALEMLER
                     </span>
                   </div>
@@ -267,7 +267,7 @@ export const CartPanel = React.memo(function CartPanel({
               {paidAmount > 0 && (
                 <>
                   <div className="flex justify-between items-center text-[13px]">
-                    <div className="flex items-center gap-2.5 text-muted-foreground/80 font-bold uppercase tracking-tight">
+                    <div className="flex items-center gap-2.5 text-muted-foreground/80 font-bold  tracking-tight">
                       <Receipt className="w-3.5 h-3.5" />
                       Ara Toplam
                     </div>
@@ -277,7 +277,7 @@ export const CartPanel = React.memo(function CartPanel({
                   </div>
 
                   <div className="flex justify-between items-center text-[13px]">
-                    <div className="flex items-center gap-2.5 text-emerald-600/80 dark:text-emerald-400/80 font-bold uppercase tracking-tight">
+                    <div className="flex items-center gap-2.5 text-emerald-600/80 dark:text-emerald-400/80 font-bold  tracking-tight">
                       <Wallet className="w-3.5 h-3.5" />
                       Ödenen
                     </div>
@@ -293,7 +293,7 @@ export const CartPanel = React.memo(function CartPanel({
 
             <div className="flex justify-between items-end gap-4 px-1">
               <div className="flex flex-col">
-                <span className="text-[10px] font-black text-muted-foreground/90 uppercase tracking-[0.2em] mb-1.5 flex items-center gap-2">
+                <span className="text-[10px] font-black text-muted-foreground/90  tracking-[0.2em] mb-1.5 flex items-center gap-2">
                   <span className="w-1 h-1 rounded-full bg-primary" />
                   Ödenecek Tutar
                 </span>

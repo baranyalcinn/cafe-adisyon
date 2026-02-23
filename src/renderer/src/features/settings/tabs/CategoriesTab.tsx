@@ -47,7 +47,7 @@ const CategoriesHeaderActions = memo(
         <Button
           onClick={onAdd}
           size="sm"
-          className="gap-2 font-black px-4 rounded-xl h-9 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/20 active:scale-95 transition-all text-[10px] tracking-widest uppercase"
+          className="gap-2 font-black px-4 rounded-xl h-9 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/20 active:scale-95 transition-all text-[10px] tracking-widest "
         >
           <Plus className="w-4 h-4" strokeWidth={3} />
           EKLE
@@ -124,7 +124,7 @@ export function CategoriesTab(): React.JSX.Element {
                     {cat.name}
                   </h3>
                   <div className="flex items-center gap-2">
-                    <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest border border-primary/10">
+                    <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-black  tracking-widest border border-primary/10">
                       {products.filter((p) => p.categoryId === cat.id).length} ÜRÜN
                     </span>
                   </div>

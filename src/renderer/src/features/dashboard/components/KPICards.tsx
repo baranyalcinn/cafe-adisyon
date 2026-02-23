@@ -22,7 +22,7 @@ export function KPICards(): React.JSX.Element {
       badge: (
         <div className="flex items-center gap-1.5 bg-success/5 border border-success/10 px-2 py-0.5 rounded-full">
           <span className="flex h-1 w-1 rounded-full bg-success" />
-          <span className="text-[8px] font-black text-success uppercase tracking-[0.2em]">
+          <span className="text-[8px] font-black text-success  tracking-[0.2em]">
             CANLI
           </span>
         </div>
@@ -39,7 +39,7 @@ export function KPICards(): React.JSX.Element {
         (stats?.pendingOrders || 0) > 0 ? (
           <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
             <span className="flex h-1 w-1 rounded-full bg-amber-500 animate-pulse" />
-            <span className="text-[8px] font-black text-amber-600 uppercase tracking-[0.15em]">
+            <span className="text-[8px] font-black text-amber-600  tracking-[0.15em]">
               {stats?.pendingOrders} AÇIK
             </span>
           </div>
@@ -102,7 +102,7 @@ export function KPICards(): React.JSX.Element {
             >
               {kpi.value}
             </div>
-            <span className="text-[11px] font-black text-muted-foreground/50 tracking-[0.2em] uppercase">
+            <span className="text-[11px] font-black text-muted-foreground/50 tracking-[0.2em] ">
               {kpi.label}
             </span>
           </div>

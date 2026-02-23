@@ -1,3 +1,4 @@
+// src/renderer/pages/settings/GeneralSettingsTab.tsx
 import { AdminPinModal } from '@/components/ui/AdminPinModal'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -31,7 +32,7 @@ import {
   VolumeX,
   Wrench
 } from 'lucide-react'
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { PinInput } from '../components/PinInput'
 import { SettingRow } from '../components/SettingRow'
@@ -61,6 +62,55 @@ interface GeneralSettingsTabProps {
   activeView: string | null
 }
 
+type UpdateStatus =
+  | 'idle'
+  | 'checking'
+  | 'available'
+  | 'not-available'
+  | 'downloading'
+  | 'downloaded'
+  | 'error'
+
+const ui = {
+  container: 'w-full h-full overflow-y-auto px-4 xl:px-8 pt-6 pb-10',
+  vspace: 'space-y-5 pb-8',
+  card: 'rounded-2xl border-border/40 bg-card shadow-sm overflow-hidden',
+  header: 'px-5 py-4 border-b border-border/30',
+  kicker: 'text-[13px] font-black tracking-widest',
+  meta: 'text-sm text-muted-foreground',
+  label: 'text-base font-semibold',
+  summaryIconBox: 'w-11 h-11 rounded-xl flex items-center justify-center',
+  summaryTitle: 'text-base font-extrabold truncate',
+  summaryKicker: 'text-xs tracking-widest font-bold text-muted-foreground',
+  controlHeight: 'h-11',
+  controlText: 'text-sm',
+  softCard: 'rounded-2xl border border-border/30 bg-muted/10 overflow-hidden',
+  subHeader: 'px-5 py-3 border-b border-border/20 flex items-center gap-2',
+  subKicker: 'text-xs font-black tracking-widest text-muted-foreground',
+  btnPrimary: 'h-11 rounded-xl text-sm font-black tracking-wide',
+  btnOutline: 'h-11 rounded-xl text-sm font-black tracking-wide'
+} as const
+
+function SummaryCard(props: {
+  icon: React.ReactNode
+  kicker: string
+  title: string
+  iconClassName?: string
+  titleClassName?: string
+}): React.JSX.Element {
+  return (
+    <Card className="rounded-2xl border-border/40 bg-card/80 backdrop-blur-sm shadow-sm">
+      <div className="p-5 flex items-center gap-4">
+        <div className={cn(ui.summaryIconBox, props.iconClassName)}>{props.icon}</div>
+        <div className="min-w-0">
+          <p className={ui.summaryKicker}>{props.kicker}</p>
+          <p className={cn(ui.summaryTitle, props.titleClassName)}>{props.title}</p>
+        </div>
+      </div>
+    </Card>
+  )
+}
+
 export function GeneralSettingsTab({
   isDark,
   onThemeToggle,
@@ -86,9 +136,7 @@ export function GeneralSettingsTab({
 
   const [showDemoPinModal, setShowDemoPinModal] = useState(false)
 
-  const [updateStatus, setUpdateStatus] = useState<
-    'idle' | 'checking' | 'available' | 'not-available' | 'downloading' | 'downloaded' | 'error'
-  >('idle')
+  const [updateStatus, setUpdateStatus] = useState<UpdateStatus>('idle')
   const [appVersion, setAppVersion] = useState<string>('...')
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null)
   const [downloadProgress, setDownloadProgress] = useState(0)
@@ -96,6 +144,11 @@ export function GeneralSettingsTab({
   const selectedSchemeName = useMemo(
     () => COLOR_SCHEMES.find((c) => c.id === colorScheme)?.name ?? '',
     [colorScheme]
+  )
+
+  const canSubmitPin = useMemo(
+    () => newPin.length === 4 && confirmPin.length === 4,
+    [newPin, confirmPin]
   )
 
   useEffect(() => {
@@ -148,7 +201,7 @@ export function GeneralSettingsTab({
     }
   }, [activeView])
 
-  const handleManualUpdateCheck = async (): Promise<void> => {
+  const handleManualUpdateCheck = useCallback(async (): Promise<void> => {
     setUpdateStatus('checking')
     try {
       const result = await cafeApi.system.checkUpdate()
@@ -156,138 +209,129 @@ export function GeneralSettingsTab({
     } catch {
       setUpdateStatus('error')
     }
-  }
+  }, [])
 
-  const handleChangePin = (): void => {
+  const handleThemeLight = useCallback(() => {
+    if (isDark) onThemeToggle()
+  }, [isDark, onThemeToggle])
+
+  const handleThemeDark = useCallback(() => {
+    if (!isDark) onThemeToggle()
+  }, [isDark, onThemeToggle])
+
+  const handleChangePin = useCallback((): void => {
     if (newPin !== '' && (newPin.length !== 4 || newPin !== confirmPin)) {
       setPinChangeError(newPin !== confirmPin ? 'PIN kodları eşleşmiyor' : 'PIN 4 haneli olmalıdır')
       return
     }
     setShowChangePinModal(true)
-  }
+  }, [confirmPin, newPin])
+
+  const handleSystemCheck = useCallback(async () => {
+    try {
+      await Promise.all([refetchTables(), refetchProducts(), refetchCategories()])
+      alert('Sistem kontrolü tamamlandı.')
+    } catch {
+      alert('Sistem kontrolü sırasında hata oluştu.')
+    }
+  }, [refetchCategories, refetchProducts, refetchTables])
+
+  const handleDemoLoad = useCallback(() => {
+    setShowDemoPinModal(true)
+  }, [])
 
   return (
-    <div className="space-y-4 pb-6">
+    <div className={cn(ui.container, ui.vspace)}>
       {/* ===== ÜST ÖZET STRIP ===== */}
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-        <Card className="rounded-2xl border-border/40 bg-card/80 backdrop-blur-sm shadow-sm">
-          <div className="p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-              <Palette className="w-4 h-4" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">
-                Tema
-              </p>
-              <p className="text-sm font-extrabold truncate">
-                {isDark ? 'Karanlık' : 'Aydınlık'} · {selectedSchemeName}
-              </p>
-            </div>
-          </div>
-        </Card>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <SummaryCard
+          icon={<Palette className="w-[18px] h-[18px]" />}
+          kicker="Tema"
+          title={`${isDark ? 'Karanlık' : 'Aydınlık'} · ${selectedSchemeName}`}
+          iconClassName="bg-primary/10 text-primary"
+        />
 
-        <Card className="rounded-2xl border-border/40 bg-card/80 backdrop-blur-sm shadow-sm">
-          <div className="p-4 flex items-center gap-3">
-            <div
-              className={cn(
-                'w-10 h-10 rounded-xl flex items-center justify-center',
-                soundEnabled
-                  ? 'bg-emerald-500/10 text-emerald-600'
-                  : 'bg-muted text-muted-foreground'
-              )}
-            >
-              {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-            </div>
-            <div>
-              <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">
-                Ses
-              </p>
-              <p className="text-sm font-extrabold">{soundEnabled ? 'Açık' : 'Kapalı'}</p>
-            </div>
-          </div>
-        </Card>
+        <SummaryCard
+          icon={
+            soundEnabled ? (
+              <Volume2 className="w-[18px] h-[18px]" />
+            ) : (
+              <VolumeX className="w-[18px] h-[18px]" />
+            )
+          }
+          kicker="Ses"
+          title={soundEnabled ? 'Açık' : 'Kapalı'}
+          iconClassName={
+            soundEnabled ? 'bg-emerald-500/10 text-emerald-600' : 'bg-muted text-muted-foreground'
+          }
+        />
 
-        <Card className="rounded-2xl border-border/40 bg-card/80 backdrop-blur-sm shadow-sm">
-          <div className="p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center">
-              <ArrowUpCircle className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">
-                Sürüm
-              </p>
-              <p className="text-sm font-extrabold">{appVersion}</p>
-            </div>
-          </div>
-        </Card>
+        <SummaryCard
+          icon={<ArrowUpCircle className="w-[18px] h-[18px]" />}
+          kicker="Sürüm"
+          title={appVersion}
+          iconClassName="bg-blue-500/10 text-blue-600"
+        />
 
-        <Card className="rounded-2xl border-border/40 bg-card/80 backdrop-blur-sm shadow-sm">
-          <div className="p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
-              <ShieldCheck className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">
-                Güvenlik
-              </p>
-              <p className="text-sm font-extrabold text-emerald-600">Aktif</p>
-            </div>
-          </div>
-        </Card>
+        <SummaryCard
+          icon={<ShieldCheck className="w-[18px] h-[18px]" />}
+          kicker="Güvenlik"
+          title="Aktif"
+          titleClassName="text-emerald-600"
+          iconClassName="bg-emerald-500/10 text-emerald-600"
+        />
       </div>
 
       {/* ===== ANA GRID ===== */}
-      <div className="grid grid-cols-1 xl:grid-cols-[1.05fr_1fr] gap-4">
+      <div className="grid grid-cols-1 xl:grid-cols-[1.1fr_0.9fr] gap-5 xl:min-h-[calc(100vh-220px)] items-stretch">
         {/* SOL KOLON */}
-        <div className="space-y-4">
+        <div className="space-y-5 h-full">
           {/* GÖRÜNÜM KARTI */}
-          <Card className="rounded-2xl border-border/40 bg-card shadow-sm overflow-hidden">
-            <div className="px-4 py-3 border-b border-border/30 bg-gradient-to-r from-primary/5 to-transparent">
+          <Card className={cn(ui.card, 'h-fit')}>
+            <div className={cn(ui.header, 'bg-gradient-to-r from-primary/5 to-transparent')}>
               <div className="flex items-center gap-2">
-                <Sparkles className="w-3.5 h-3.5 text-primary" />
-                <span className="text-[11px] font-black tracking-widest uppercase">Görünüm</span>
+                <Sparkles className="w-4 h-4 text-primary" />
+                <span className={cn(ui.kicker, 'text-foreground')}>Görünüm</span>
               </div>
-              <p className="text-[11px] text-muted-foreground mt-1">
-                Tema, renk ve ses ayarlarını özelleştir
-              </p>
+              <p className={cn(ui.meta, 'mt-1')}>Tema, renk ve ses ayarlarını özelleştir</p>
             </div>
 
-            <div className="p-2">
+            <div className="p-4">
               <SettingRow label="Tema Modu">
-                <div className="flex bg-muted/70 rounded-xl p-1 gap-1 border border-border/20">
+                <div className="flex bg-muted/60 rounded-xl p-1.5 gap-1.5 border border-border/20">
                   <button
                     type="button"
-                    onClick={() => isDark && onThemeToggle()}
+                    onClick={handleThemeLight}
                     className={cn(
-                      'flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-bold transition-all',
+                      'flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all',
                       !isDark
                         ? 'bg-background shadow-sm text-foreground'
                         : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
                     )}
                   >
-                    <Sun className="w-3 h-3" />
+                    <Sun className="w-4 h-4" />
                     Aydınlık
                   </button>
                   <button
                     type="button"
-                    onClick={() => !isDark && onThemeToggle()}
+                    onClick={handleThemeDark}
                     className={cn(
-                      'flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-bold transition-all',
+                      'flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all',
                       isDark
                         ? 'bg-background shadow-sm text-foreground'
                         : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
                     )}
                   >
-                    <Moon className="w-3 h-3" />
+                    <Moon className="w-4 h-4" />
                     Karanlık
                   </button>
                 </div>
               </SettingRow>
 
               <SettingRow label="Renk Teması">
-                <div className="w-full rounded-xl border border-border/20 bg-muted/40 p-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5">
+                <div className="w-full rounded-xl border border-border/20 bg-muted/35 p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
                       {COLOR_SCHEMES.map((scheme) => (
                         <button
                           key={scheme.id}
@@ -295,20 +339,20 @@ export function GeneralSettingsTab({
                           onClick={() => onColorSchemeChange(scheme.id)}
                           title={scheme.name}
                           className={cn(
-                            'relative w-8 h-8 rounded-lg flex items-center justify-center transition-all',
+                            'relative w-10 h-10 rounded-xl flex items-center justify-center transition-all',
                             colorScheme === scheme.id
-                              ? 'bg-background shadow-sm ring-2 ring-primary/30 scale-105'
+                              ? 'bg-background shadow-sm ring-2 ring-primary/30 scale-[1.03]'
                               : 'hover:bg-background/60'
                           )}
                         >
                           <div
-                            className="w-4.5 h-4.5 rounded-full"
+                            className="w-5 h-5 rounded-full"
                             style={{ backgroundColor: isDark ? scheme.darkColor : scheme.color }}
                           />
                         </button>
                       ))}
                     </div>
-                    <span className="text-[11px] font-bold text-primary bg-primary/10 px-2 py-1 rounded-md">
+                    <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-lg">
                       {selectedSchemeName}
                     </span>
                   </div>
@@ -320,17 +364,13 @@ export function GeneralSettingsTab({
                   type="button"
                   onClick={toggleSound}
                   className={cn(
-                    'flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-bold border transition-all',
+                    'flex items-center gap-2.5 px-4 h-11 rounded-xl text-sm font-bold border transition-all',
                     soundEnabled
                       ? 'bg-primary text-primary-foreground border-primary shadow-sm'
                       : 'bg-muted text-muted-foreground border-border/30 hover:bg-muted/80'
                   )}
                 >
-                  {soundEnabled ? (
-                    <Volume2 className="w-3.5 h-3.5" />
-                  ) : (
-                    <VolumeX className="w-3.5 h-3.5" />
-                  )}
+                  {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
                   {soundEnabled ? 'Ses Açık' : 'Ses Kapalı'}
                 </button>
               </SettingRow>
@@ -338,20 +378,23 @@ export function GeneralSettingsTab({
           </Card>
 
           {/* GÜNCELLEME KARTI */}
-          <Card className="rounded-2xl border-border/40 bg-card shadow-sm overflow-hidden">
-            <div className="px-4 py-3 border-b border-border/30 bg-gradient-to-r from-blue-500/5 to-transparent flex items-center justify-between">
+          <Card className={cn(ui.card, 'h-fit')}>
+            <div
+              className={cn(
+                ui.header,
+                'bg-gradient-to-r from-blue-500/5 to-transparent flex items-center justify-between'
+              )}
+            >
               <div className="flex items-center gap-2">
-                <ArrowUpCircle className="w-3.5 h-3.5 text-blue-500" />
-                <span className="text-[11px] font-black tracking-widest uppercase">
-                  Yazılım Güncelleme
-                </span>
+                <ArrowUpCircle className="w-4 h-4 text-blue-500" />
+                <span className={cn(ui.kicker, 'text-foreground')}>Yazılım Güncelleme</span>
               </div>
-              <span className="text-[10px] font-bold font-mono rounded-lg border border-border/30 bg-muted/40 px-2 py-1">
+              <span className="text-sm font-bold font-mono rounded-lg border border-border/30 bg-muted/40 px-2.5 py-1.5">
                 {appVersion}
               </span>
             </div>
 
-            <div className="p-4">
+            <div className="p-5">
               <UpdateStatusArea
                 status={updateStatus}
                 progress={downloadProgress}
@@ -362,66 +405,51 @@ export function GeneralSettingsTab({
           </Card>
 
           {/* SİSTEM DURUMU */}
-          <Card className="rounded-2xl border-border/40 bg-card shadow-sm overflow-hidden">
-            <div className="px-4 py-3 border-b border-border/30 bg-gradient-to-r from-amber-500/5 to-transparent">
+          <Card className={cn(ui.card, 'h-fit')}>
+            <div className={cn(ui.header, 'bg-gradient-to-r from-amber-500/5 to-transparent')}>
               <div className="flex items-center gap-2">
-                <Activity className="w-3.5 h-3.5 text-amber-500" />
-                <span className="text-[11px] font-black tracking-widest uppercase">
-                  Sistem Durumu
-                </span>
+                <Activity className="w-4 h-4 text-amber-500" />
+                <span className={cn(ui.kicker, 'text-foreground')}>Sistem Durumu</span>
               </div>
             </div>
 
-            <div className="p-4 space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-xl border border-border/30 bg-muted/20 p-3">
+            <div className="p-5 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="rounded-xl border border-border/30 bg-muted/20 p-4">
                   <div className="flex items-center justify-between">
-                    <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">
-                      Veritabanı
-                    </p>
-                    <span className="inline-flex items-center gap-1 text-emerald-600 text-[10px] font-bold">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <p className={ui.summaryKicker}>Veritabanı</p>
+                    <span className="inline-flex items-center gap-2 text-emerald-600 text-xs font-bold">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                       Sağlıklı
                     </span>
                   </div>
-                  <p className="text-xl font-black mt-2">{tables.length}</p>
-                  <p className="text-[10px] text-muted-foreground">Masa</p>
+                  <p className="text-2xl font-black mt-2">{tables.length}</p>
+                  <p className="text-[13px] font-semibold text-muted-foreground">Masa</p>
                 </div>
 
-                <div className="rounded-xl border border-border/30 bg-muted/20 p-3">
-                  <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">
-                    Envanter
-                  </p>
-                  <p className="text-xl font-black mt-2">{products.length}</p>
-                  <p className="text-[10px] text-muted-foreground">Ürün</p>
+                <div className="rounded-xl border border-border/30 bg-muted/20 p-4">
+                  <p className={ui.summaryKicker}>Envanter</p>
+                  <p className="text-2xl font-black mt-2">{products.length}</p>
+                  <p className="text-[13px] font-semibold text-muted-foreground">Ürün</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
-                  onClick={() => setShowDemoPinModal(true)}
-                  className="flex items-center justify-center gap-2 h-10 rounded-xl bg-blue-500/5 hover:bg-blue-500/10 border border-blue-500/20 text-[11px] font-bold text-blue-600 transition-all active:scale-[0.99]"
+                  onClick={handleDemoLoad}
+                  className="flex items-center justify-center gap-2.5 h-11 rounded-xl bg-blue-500/5 hover:bg-blue-500/10 border border-blue-500/20 text-sm font-bold text-blue-600 transition-all active:scale-[0.99]"
                 >
-                  <RefreshCw className="w-3.5 h-3.5" />
+                  <RefreshCw className="w-4 h-4" />
                   Demo Yükle
                 </button>
 
                 <button
                   type="button"
-                  onClick={async () => {
-                    try {
-                      await Promise.all([refetchTables(), refetchProducts(), refetchCategories()])
-                      // TODO: toast.success('Sistem kontrolü tamamlandı')
-                      alert('Sistem kontrolü tamamlandı.')
-                    } catch {
-                      // TODO: toast.error('Sistem kontrolü sırasında hata oluştu')
-                      alert('Sistem kontrolü sırasında hata oluştu.')
-                    }
-                  }}
-                  className="flex items-center justify-center gap-2 h-10 rounded-xl bg-amber-500/5 hover:bg-amber-500/10 border border-amber-500/20 text-[11px] font-bold text-amber-600 transition-all active:scale-[0.99]"
+                  onClick={handleSystemCheck}
+                  className="flex items-center justify-center gap-2.5 h-11 rounded-xl bg-amber-500/5 hover:bg-amber-500/10 border border-amber-500/20 text-sm font-bold text-amber-600 transition-all active:scale-[0.99]"
                 >
-                  <Wrench className="w-3.5 h-3.5" />
+                  <Wrench className="w-4 h-4" />
                   Kontrol Et
                 </button>
               </div>
@@ -430,32 +458,34 @@ export function GeneralSettingsTab({
         </div>
 
         {/* SAĞ KOLON */}
-        <div className="space-y-4">
-          {/* GÜVENLİK KARTI */}
-          <Card className="rounded-2xl border-border/40 bg-card shadow-sm overflow-hidden">
-            <div className="px-4 py-3 border-b border-border/30 bg-gradient-to-r from-emerald-500/5 to-transparent flex items-center justify-between">
+        <div className="space-y-5 h-full">
+          <Card className={cn(ui.card, 'h-full')}>
+            <div
+              className={cn(
+                ui.header,
+                'bg-gradient-to-r from-emerald-500/5 to-transparent flex items-center justify-between'
+              )}
+            >
               <div className="flex items-center gap-2">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-                <span className="text-[11px] font-black tracking-widest uppercase">Güvenlik</span>
+                <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                <span className={cn(ui.kicker, 'text-foreground')}>Güvenlik</span>
               </div>
-              <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold border border-emerald-500/20 bg-emerald-500/10 text-emerald-600">
-                <CheckCircle2 className="w-3 h-3" />
+              <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold border border-emerald-500/20 bg-emerald-500/10 text-emerald-700">
+                <CheckCircle2 className="w-4 h-4" />
                 Güvenli
               </span>
             </div>
 
-            <div className="p-4 space-y-4">
+            <div className="p-5 space-y-5">
               {/* PIN BLOK */}
-              <div className="rounded-2xl border border-border/30 bg-muted/10 overflow-hidden">
-                <div className="px-4 py-2.5 border-b border-border/20 flex items-center gap-2">
-                  <KeyRound className="w-3.5 h-3.5 text-primary" />
-                  <span className="text-[10px] font-black tracking-widest uppercase text-muted-foreground">
-                    Erişim Şifreleme (PIN)
-                  </span>
+              <div className={ui.softCard}>
+                <div className={ui.subHeader}>
+                  <KeyRound className="w-4 h-4 text-primary" />
+                  <span className={ui.subKicker}>Erişim Şifreleme (PIN)</span>
                 </div>
 
-                <div className="p-4 space-y-3">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="p-5 space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <PinInput
                       label="YENİ PIN"
                       value={newPin}
@@ -475,13 +505,13 @@ export function GeneralSettingsTab({
                   </div>
 
                   {pinChangeError && (
-                    <p className="text-[10px] font-semibold text-rose-500 px-1">{pinChangeError}</p>
+                    <p className="text-sm font-semibold text-rose-500">{pinChangeError}</p>
                   )}
 
                   <Button
                     onClick={handleChangePin}
-                    disabled={newPin.length !== 4 || confirmPin.length !== 4}
-                    className="w-full h-10 rounded-xl text-[11px] font-black tracking-wide"
+                    disabled={!canSubmitPin}
+                    className={cn('w-full', ui.btnPrimary)}
                   >
                     GÜNCELLEMEYİ ONAYLA
                   </Button>
@@ -489,15 +519,13 @@ export function GeneralSettingsTab({
               </div>
 
               {/* KURTARMA BLOK */}
-              <div className="rounded-2xl border border-border/30 bg-muted/10 overflow-hidden">
-                <div className="px-4 py-2.5 border-b border-border/20 flex items-center gap-2">
-                  <ShieldCheck className="w-3.5 h-3.5 text-primary" />
-                  <span className="text-[10px] font-black tracking-widest uppercase text-muted-foreground">
-                    Hesap Kurtarma
-                  </span>
+              <div className={ui.softCard}>
+                <div className={ui.subHeader}>
+                  <ShieldCheck className="w-4 h-4 text-primary" />
+                  <span className={ui.subKicker}>Hesap Kurtarma</span>
                 </div>
 
-                <div className="p-4 space-y-3">
+                <div className="p-5 space-y-4">
                   <Select
                     value={selectedQuestionVal}
                     onValueChange={(val) => {
@@ -505,16 +533,22 @@ export function GeneralSettingsTab({
                       setSecurityQuestion(val !== 'custom' ? val : '')
                     }}
                   >
-                    <SelectTrigger className="w-full text-[11px] h-10 bg-background rounded-xl border-border/30 font-medium px-3">
+                    <SelectTrigger
+                      className={cn(
+                        'w-full rounded-xl border-border/30 bg-background px-4',
+                        ui.controlHeight,
+                        ui.controlText
+                      )}
+                    >
                       <SelectValue placeholder="Güvenlik sorusu seçin..." />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl shadow-xl">
                       {PREDEFINED_QUESTIONS.map((q) => (
-                        <SelectItem key={q} value={q} className="text-xs py-2.5">
+                        <SelectItem key={q} value={q} className="text-sm py-3">
                           {q}
                         </SelectItem>
                       ))}
-                      <SelectItem value="custom" className="text-xs py-2.5 text-primary border-t">
+                      <SelectItem value="custom" className="text-sm py-3 text-primary border-t">
                         Kendi sorumu yazacağım...
                       </SelectItem>
                     </SelectContent>
@@ -525,7 +559,11 @@ export function GeneralSettingsTab({
                       value={securityQuestion}
                       onChange={(e) => setSecurityQuestion(e.target.value)}
                       placeholder="Sorunuzu yazın..."
-                      className="h-10 rounded-xl bg-background border-border/30 text-[11px]"
+                      className={cn(
+                        'rounded-xl bg-background border-border/30 px-4',
+                        ui.controlHeight,
+                        ui.controlText
+                      )}
                     />
                   )}
 
@@ -533,14 +571,18 @@ export function GeneralSettingsTab({
                     value={securityAnswer}
                     onChange={(e) => setSecurityAnswer(e.target.value)}
                     placeholder="Cevabınızı yazın..."
-                    className="h-10 rounded-xl bg-background border-border/30 text-[11px]"
+                    className={cn(
+                      'rounded-xl bg-background border-border/30 px-4',
+                      ui.controlHeight,
+                      ui.controlText
+                    )}
                   />
 
                   <Button
                     onClick={() => setShowRecoveryPinModal(true)}
                     disabled={!securityQuestion || !securityAnswer}
                     variant="outline"
-                    className="w-full h-10 rounded-xl text-[11px] font-black tracking-wide"
+                    className={cn('w-full', ui.btnOutline)}
                   >
                     YÖNTEMİ KAYDET
                   </Button>
@@ -563,10 +605,8 @@ export function GeneralSettingsTab({
             setNewPin('')
             setConfirmPin('')
             setShowChangePinModal(false)
-            // TODO: toast.success('PIN güncellendi')
             alert('PIN güncellendi')
           } catch {
-            // TODO: toast.error('PIN güncellenemedi')
             alert('PIN güncellenemedi')
           }
         }}
@@ -584,10 +624,8 @@ export function GeneralSettingsTab({
             setSecurityQuestion('')
             setSelectedQuestionVal('')
             setShowRecoveryPinModal(false)
-            // TODO: toast.success('Kurtarma yöntemi kaydedildi')
             alert('Yöntem kaydedildi')
           } catch {
-            // TODO: toast.error('Kurtarma yöntemi kaydedilemedi')
             alert('Yöntem kaydedilemedi')
           }
         }}
@@ -600,16 +638,13 @@ export function GeneralSettingsTab({
         description="Demo yüklemek için PIN girin"
         onSuccess={async () => {
           setShowDemoPinModal(false)
-          // Şimdilik confirm bırakıyorum; istersen sonraki mesajda custom confirm modal yapısını da veririm
           if (!confirm('DİKKAT: Mevcut tüm veriler silinecektir!')) return
 
           try {
             await cafeApi.seed.database()
             await Promise.all([refetchTables(), refetchProducts(), refetchCategories()])
-            // TODO: toast.success('Demo verisi yüklendi')
             alert('Demo verisi yüklendi')
           } catch {
-            // TODO: toast.error('Demo yükleme başarısız')
             alert('Demo yükleme başarısız')
           }
         }}

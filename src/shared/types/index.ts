@@ -324,6 +324,7 @@ export const IPC_CHANNELS = {
   // System
   SYSTEM_CHECK: 'system:check',
   SYSTEM_CHECK_UPDATE: 'system:checkUpdate',
+  SYSTEM_DOWNLOAD_UPDATE: 'system:downloadUpdate',
   SYSTEM_GET_VERSION: 'system:getVersion',
   SYSTEM_RESTART: 'system:restart',
   SYSTEM_GET_BOOT_BUNDLE: 'system:getBootBundle',

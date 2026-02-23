@@ -288,6 +288,7 @@ const api = {
     checkUpdate: (): Promise<
       ApiResponse<{ available: boolean; version?: string; currentVersion?: string }>
     > => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM_CHECK_UPDATE),
+    downloadUpdate: (): void => ipcRenderer.send(IPC_CHANNELS.SYSTEM_DOWNLOAD_UPDATE),
     getVersion: (): Promise<string> => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM_GET_VERSION),
     restart: (): void => ipcRenderer.send(IPC_CHANNELS.SYSTEM_RESTART),
     getBootBundle: (): Promise<ApiResponse<import('../shared/types').BootBundle>> =>

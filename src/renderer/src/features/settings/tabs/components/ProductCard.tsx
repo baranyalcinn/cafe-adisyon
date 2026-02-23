@@ -44,7 +44,7 @@ export const ProductCard = memo(function ProductCard({
       <div className="relative flex flex-col p-4 bg-background border-2 border-primary/20 rounded-2xl shadow-lg animate-in zoom-in-95 duration-200">
         <div className="space-y-3">
           <div>
-            <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.15em] mb-1">
+            <h3 className="text-[10px] font-bold text-muted-foreground  tracking-[0.15em] mb-1">
               ÜRÜN ADI
             </h3>
             <Input
@@ -55,7 +55,7 @@ export const ProductCard = memo(function ProductCard({
             />
           </div>
           <div>
-            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.15em] mb-1">
+            <label className="text-[10px] font-bold text-muted-foreground  tracking-[0.15em] mb-1">
               FİYAT (₺)
             </label>
             <Input

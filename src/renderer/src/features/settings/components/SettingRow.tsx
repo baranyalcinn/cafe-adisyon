@@ -21,8 +21,8 @@ export const SettingRow = ({
     )}
   >
     <div>
-      <p className="text-[12px] font-semibold text-foreground/90">{label}</p>
-      {description && <p className="text-[10px] text-muted-foreground mt-0.5">{description}</p>}
+      <p className="text-[14px] font-semibold text-foreground/90">{label}</p>
+      {description && <p className="text-[12px] text-muted-foreground mt-0.5">{description}</p>}
     </div>
     {children}
   </div>

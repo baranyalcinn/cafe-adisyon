@@ -192,7 +192,7 @@ const QuickAddProductCard = memo(
           <div className="p-3 rounded-full bg-emerald-500/10 text-emerald-600 group-hover:scale-110 transition-transform">
             <Plus size={24} strokeWidth={3} />
           </div>
-          <span className="text-[10px] font-black text-emerald-600/60 uppercase tracking-[0.2em]">
+          <span className="text-[10px] font-black text-emerald-600/60  tracking-[0.2em]">
             YENİ ÜRÜN
           </span>
         </button>

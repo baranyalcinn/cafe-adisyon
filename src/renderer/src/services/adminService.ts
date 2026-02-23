@@ -88,14 +88,18 @@ export const adminService = {
       if (!result.success) throw new Error(result.error)
       return result.data
     },
-    async checkUpdate(): Promise<{
+    checkUpdate(): Promise<{
       available: boolean
       version?: string
       currentVersion?: string
     }> {
-      const result = await api.system.checkUpdate()
-      if (!result.success) throw new Error(result.error)
-      return result.data
+      return api.system.checkUpdate().then((result) => {
+        if (!result.success) throw new Error(result.error)
+        return result.data
+      })
+    },
+    downloadUpdate(): void {
+      api.system.downloadUpdate()
     },
     restart(): void {
       api.system.restart()

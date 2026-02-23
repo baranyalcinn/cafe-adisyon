@@ -1,36 +1,25 @@
-import { cn } from '@/lib/utils'
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
 import React from 'react'
 
-interface SettingRowProps {
+interface PinInputProps {
   label: string
-  description?: string
-  last?: boolean
-  children: React.ReactNode
-  className?: string
+  value: string
+  onChange: (v: string) => void
 }
 
-export const SettingRow = ({
-  label,
-  description,
-  last,
-  children,
-  className
-}: SettingRowProps): React.ReactNode => (
-  <div
-    className={cn(
-      'flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3',
-      'px-4 py-3',
-      !last && 'border-b border-border/20',
-      className
-    )}
-  >
-    <div className="min-w-0">
-      <p className="text-[12px] font-bold text-foreground/90 leading-none">{label}</p>
-      {description && (
-        <p className="text-[10px] text-muted-foreground mt-1 leading-tight">{description}</p>
-      )}
-    </div>
-
-    <div className="shrink-0">{children}</div>
+export const PinInput = ({ label, value, onChange }: PinInputProps): React.ReactNode => (
+  <div className="flex flex-col gap-1.5">
+    <span className="text-[9px] font-bold text-muted-foreground  tracking-widest">{label}</span>
+    <InputOTP maxLength={4} value={value} onChange={onChange}>
+      <InputOTPGroup className="gap-1.5">
+        {[0, 1, 2, 3].map((i) => (
+          <InputOTPSlot
+            key={i}
+            index={i}
+            className="rounded-lg border-[1.5px] h-10 w-10 text-sm font-bold bg-muted/20"
+          />
+        ))}
+      </InputOTPGroup>
+    </InputOTP>
   </div>
 )

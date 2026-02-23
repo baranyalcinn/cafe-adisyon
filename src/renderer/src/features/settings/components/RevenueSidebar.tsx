@@ -39,12 +39,12 @@ export const RevenueSidebar = memo(
                 <div className="p-2.5 bg-rose-500/10 rounded-xl text-rose-600">
                   <Banknote className="w-5 h-5" />
                 </div>
-                <span className="px-2.5 py-1 bg-rose-500/10 text-rose-600 text-[9px] font-black rounded-lg uppercase tracking-wider">
+                <span className="px-2.5 py-1 bg-rose-500/10 text-rose-600 text-[9px] font-black rounded-lg  tracking-wider">
                   BUGÜN
                 </span>
               </div>
               <div className="space-y-1">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                <p className="text-[10px] font-bold text-muted-foreground  tracking-widest">
                   GÜNLÜK TOPLAM
                 </p>
                 <p className="text-2xl font-black tabular-nums tracking-tighter text-foreground">
@@ -59,12 +59,12 @@ export const RevenueSidebar = memo(
                 <div className="p-2.5 bg-primary/10 rounded-xl text-primary">
                   <PieChart className="w-5 h-5" />
                 </div>
-                <span className="px-2.5 py-1 bg-primary/10 text-primary text-[9px] font-black rounded-lg uppercase tracking-wider">
+                <span className="px-2.5 py-1 bg-primary/10 text-primary text-[9px] font-black rounded-lg  tracking-wider">
                   BU AY
                 </span>
               </div>
               <div className="space-y-1">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                <p className="text-[10px] font-bold text-muted-foreground  tracking-widest">
                   AYLIK TOPLAM
                 </p>
                 <p className="text-2xl font-black tabular-nums tracking-tighter text-foreground">
@@ -80,7 +80,7 @@ export const RevenueSidebar = memo(
           <div className="space-y-4">
             <div className="flex items-center gap-2 ml-1">
               <Filter className="w-3.5 h-3.5 text-muted-foreground/60" />
-              <span className="text-[10px] font-black tracking-[0.2em] text-muted-foreground/60 uppercase">
+              <span className="text-[10px] font-black tracking-[0.2em] text-muted-foreground/60 ">
                 FİLTRELEME
               </span>
             </div>
@@ -88,7 +88,7 @@ export const RevenueSidebar = memo(
             <div className="space-y-3">
               {/* Arama */}
               <div className="space-y-2.5">
-                <label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase ml-1">
+                <label className="text-[10px] font-black tracking-widest text-muted-foreground  ml-1">
                   DETAYLI ARAMA
                 </label>
                 <div className="relative group">
@@ -104,7 +104,7 @@ export const RevenueSidebar = memo(
 
               {/* Kategori Seçimi */}
               <div className="space-y-2.5">
-                <label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase ml-1">
+                <label className="text-[10px] font-black tracking-widest text-muted-foreground  ml-1">
                   KATEGORİ SEÇİMİ
                 </label>
                 <Select
@@ -120,7 +120,7 @@ export const RevenueSidebar = memo(
                   <SelectContent className="rounded-2xl border-none shadow-2xl">
                     <SelectItem
                       value="all"
-                      className="text-xs font-bold py-3 rounded-xl uppercase tracking-wider"
+                      className="text-xs font-bold py-3 rounded-xl  tracking-wider"
                     >
                       Tüm Kategoriler
                     </SelectItem>
@@ -128,7 +128,7 @@ export const RevenueSidebar = memo(
                       <SelectItem
                         key={cat}
                         value={cat}
-                        className="text-xs font-bold py-3 rounded-xl uppercase tracking-wider"
+                        className="text-xs font-bold py-3 rounded-xl  tracking-wider"
                       >
                         {cat}
                       </SelectItem>
@@ -139,7 +139,7 @@ export const RevenueSidebar = memo(
 
               {/* Tarih Aralığı */}
               <div className="space-y-2.5">
-                <label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase ml-1">
+                <label className="text-[10px] font-black tracking-widest text-muted-foreground  ml-1">
                   ZAMAN ARALIĞI
                 </label>
                 <Select
@@ -155,25 +155,25 @@ export const RevenueSidebar = memo(
                   <SelectContent className="rounded-2xl border-none shadow-2xl">
                     <SelectItem
                       value="all"
-                      className="text-xs font-bold py-3 rounded-xl uppercase tracking-wider text-muted-foreground"
+                      className="text-xs font-bold py-3 rounded-xl  tracking-wider text-muted-foreground"
                     >
                       Tüm Zamanlar
                     </SelectItem>
                     <SelectItem
                       value="today"
-                      className="text-xs font-bold py-3 rounded-xl uppercase tracking-wider"
+                      className="text-xs font-bold py-3 rounded-xl  tracking-wider"
                     >
                       Bugün
                     </SelectItem>
                     <SelectItem
                       value="week"
-                      className="text-xs font-bold py-3 rounded-xl uppercase tracking-wider"
+                      className="text-xs font-bold py-3 rounded-xl  tracking-wider"
                     >
                       Bu Hafta
                     </SelectItem>
                     <SelectItem
                       value="month"
-                      className="text-xs font-bold py-3 rounded-xl uppercase tracking-wider"
+                      className="text-xs font-bold py-3 rounded-xl  tracking-wider"
                     >
                       Bu Ay
                     </SelectItem>

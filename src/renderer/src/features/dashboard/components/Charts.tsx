@@ -60,7 +60,7 @@ function RevenueTooltip({
   if (active && payload && payload.length) {
     return (
       <div className="bg-card border border-border/80 p-4 rounded-2xl shadow-xl min-w-[160px]">
-        <p className="text-[10px] font-black text-muted-foreground/60 tracking-[0.25em] uppercase mb-2">
+        <p className="text-[10px] font-black text-muted-foreground/60 tracking-[0.25em]  mb-2">
           {label && !isNaN(parseISO(label).getTime())
             ? parseISO(label).toLocaleDateString('tr-TR', {
                 weekday: 'long',
@@ -75,7 +75,7 @@ function RevenueTooltip({
           </p>
           <div className="flex items-center gap-2 mt-1">
             <span className="flex h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(0,122,255,0.4)]" />
-            <span className="text-[9px] font-black text-primary tracking-[0.2em] uppercase">
+            <span className="text-[9px] font-black text-primary tracking-[0.2em] ">
               GÜNLÜK GELİR
             </span>
           </div>
@@ -100,7 +100,7 @@ function ProductTooltip({
     const data = payload[0].payload as { name: string; quantity: number; fullName?: string }
     return (
       <div className="bg-card border border-border/80 rounded-xl px-4 py-3 shadow-xl">
-        <p className="text-[10px] font-black text-muted-foreground/60 tracking-[0.2em] uppercase mb-1">
+        <p className="text-[10px] font-black text-muted-foreground/60 tracking-[0.2em]  mb-1">
           {data.fullName || data.name}
         </p>
         <p className="text-lg font-black text-foreground tabular-nums tracking-tight">
@@ -161,7 +161,7 @@ export function WeeklyTrendChart(): React.JSX.Element {
             <h3 className="text-xl font-black text-foreground tracking-tight">
               Haftalık Performans
             </h3>
-            <p className="text-[10px] text-muted-foreground/70 font-black tracking-[0.2em] uppercase">
+            <p className="text-[10px] text-muted-foreground/70 font-black tracking-[0.2em] ">
               SON 7 GÜNLÜK CİRO ANALİZİ
             </p>
           </div>
@@ -305,7 +305,7 @@ export function HourlyActivityChart(): React.JSX.Element {
                               <p className="text-lg font-black text-foreground">
                                 {formatCurrency(data.revenue)}
                               </p>
-                              <p className="text-[10px] font-bold text-primary mt-1 uppercase tracking-widest">
+                              <p className="text-[10px] font-bold text-primary mt-1  tracking-widest">
                                 {data.orderCount} SİPARİŞ
                               </p>
                             </div>
@@ -343,7 +343,7 @@ export function HourlyActivityChart(): React.JSX.Element {
               <Banknote className="w-10 h-10 text-success drop-shadow-sm" />
             </div>
             <div className="flex flex-col items-start gap-1">
-              <span className="text-[10px] font-black text-muted-foreground/40 tracking-[0.25em] uppercase leading-none">
+              <span className="text-[10px] font-black text-muted-foreground/40 tracking-[0.25em]  leading-none">
                 NAKİT TAHSİLAT
               </span>
               <p className="text-4xl font-black text-foreground tabular-nums tracking-tighter leading-tight">
@@ -357,7 +357,7 @@ export function HourlyActivityChart(): React.JSX.Element {
               <CreditCard className="w-10 h-10 text-info drop-shadow-sm" />
             </div>
             <div className="flex flex-col items-start gap-1">
-              <span className="text-[10px] font-black text-muted-foreground/40 tracking-[0.25em] uppercase leading-none">
+              <span className="text-[10px] font-black text-muted-foreground/40 tracking-[0.25em]  leading-none">
                 KART TAHSİLAT
               </span>
               <p className="text-4xl font-black text-foreground tabular-nums tracking-tighter leading-tight">
@@ -438,7 +438,7 @@ export function CategoryPieChart(): React.JSX.Element {
                   {hoveredCategory ? (
                     <div className="flex flex-col items-center animate-in fade-in zoom-in duration-200">
                       <span
-                        className="text-[10px] font-black tracking-[0.25em] uppercase mb-1"
+                        className="text-[10px] font-black tracking-[0.25em]  mb-1"
                         style={{ color: hoveredCategory.color }}
                       >
                         {hoveredCategory.name}
@@ -446,14 +446,14 @@ export function CategoryPieChart(): React.JSX.Element {
                       <span className="text-3xl font-black tabular-nums tracking-tighter text-foreground">
                         {formatCurrency(hoveredCategory.value)}
                       </span>
-                      <span className="text-[10px] font-black text-muted-foreground/30 mt-1 uppercase tracking-widest">
+                      <span className="text-[10px] font-black text-muted-foreground/30 mt-1  tracking-widest">
                         {hoveredCategory.quantity} ADET SATIŞ
                       </span>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center opacity-20">
                       <PieChartIcon className="w-10 h-10 text-muted-foreground" />
-                      <span className="text-[10px] font-black tracking-widest uppercase mt-2">
+                      <span className="text-[10px] font-black tracking-widest  mt-2">
                         GENEL DAĞILIM
                       </span>
                     </div>
@@ -469,7 +469,7 @@ export function CategoryPieChart(): React.JSX.Element {
                         className="w-3 h-3 rounded-full shrink-0 group-hover:scale-125 transition-transform"
                         style={{ backgroundColor: c.color }}
                       />
-                      <span className="text-[11px] font-black text-foreground/80 group-hover:text-foreground transition-colors uppercase tracking-wider whitespace-nowrap">
+                      <span className="text-[11px] font-black text-foreground/80 group-hover:text-foreground transition-colors  tracking-wider whitespace-nowrap">
                         {c.name}
                       </span>
                     </div>

@@ -235,6 +235,7 @@ export function SettingsView({
   // --- Detail View Wrapper ---
   const activeItem = MENU_ITEMS.find((i) => i.id === activeView)
   const isFullWidthView = [
+    'general',
     'products',
     'dashboard',
     'tables',

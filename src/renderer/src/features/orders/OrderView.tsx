@@ -341,7 +341,7 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
               {selectedTableName || 'Masa'}
             </h2>
             <div className="h-4 w-[1px] bg-border" />
-            <span className="text-muted-foreground/80 font-bold tracking-[0.2em] text-[10px] uppercase">
+            <span className="text-muted-foreground/80 font-bold tracking-[0.2em] text-[10px] ">
               SİPARİŞ
             </span>
           </div>

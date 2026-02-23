@@ -127,7 +127,7 @@ export const ItemRow = memo(function ItemRow({ item, selected, onQtyChange }: It
           >
             {formatCurrency(totalLine)}
           </span>
-          <span className="text-[9px] font-bold uppercase tracking-wider text-foreground/80 mt-0.5">
+          <span className="text-[9px] font-bold  tracking-wider text-foreground/80 mt-0.5">
             Toplam
           </span>
         </div>

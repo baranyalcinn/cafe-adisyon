@@ -50,7 +50,7 @@ function MonthlyTooltip({
 
     return (
       <div className="bg-card border border-border shadow-2xl rounded-2xl p-5 min-w-[200px] space-y-4">
-        <p className="text-[10px] font-black text-muted-foreground/60 tracking-[0.25em] uppercase border-b border-border pb-2 mb-2">
+        <p className="text-[10px] font-black text-muted-foreground/60 tracking-[0.25em]  border-b border-border pb-2 mb-2">
           {(label || '').toLocaleUpperCase('tr-TR')} PERFORMANSI
         </p>
         <div className="space-y-3">
@@ -63,7 +63,7 @@ function MonthlyTooltip({
                     backgroundColor: entry.color || entry.fill
                   }}
                 />
-                <span className="text-[11px] font-black text-muted-foreground tracking-widest uppercase">
+                <span className="text-[11px] font-black text-muted-foreground tracking-widest ">
                   {entry.name}
                 </span>
               </div>
@@ -85,7 +85,7 @@ function MonthlyTooltip({
 
         {revenue > 0 && (
           <div className="pt-3 border-t border-border flex items-center justify-between">
-            <span className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest">
+            <span className="text-[10px] font-black text-muted-foreground/40  tracking-widest">
               KÂR MARJI
             </span>
             <span

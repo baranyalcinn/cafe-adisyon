@@ -35,94 +35,117 @@ interface TableCardProps {
 
 export const TableCard = memo(
   ({ id, name, hasOpenOrder, isLocked, onClick, onTransfer, onMerge }: TableCardProps) => {
+    const [isPressed, setIsPressed] = useState(false)
+
     return (
       <ContextMenu>
         <ContextMenuTrigger asChild>
           <button
             onClick={() => onClick(id, name)}
+            onMouseDown={() => setIsPressed(true)}
+            onMouseUp={() => setIsPressed(false)}
+            onMouseLeave={() => setIsPressed(false)}
             className={cn(
-              'group relative flex flex-col items-center justify-center p-6 rounded-[2.5rem] transition-all duration-300 ease-out cursor-pointer w-full text-center outline-none focus-visible:ring-2 focus-visible:ring-primary/70 active:scale-[0.96] gpu-accelerated select-none',
+              'group relative flex flex-col items-center justify-center p-6 rounded-2xl transition-all duration-200 ease-out cursor-pointer w-full text-center outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
+              isPressed && 'scale-[0.97]',
 
               // STATE: FULL (Dolu)
-              hasOpenOrder && [
-                'bg-info/10 border-2 border-info shadow-sm',
-                'hover:bg-info/20 hover:shadow-md'
-              ],
+              hasOpenOrder &&
+                !isLocked && [
+                  'bg-gradient-to-br from-info/15 to-info/5 border-2 border-info/40',
+                  'hover:from-info/20 hover:to-info/10 hover:border-info/50 hover:shadow-lg hover:shadow-info/10'
+                ],
 
               // STATE: EMPTY (Boş)
               !hasOpenOrder &&
                 !isLocked && [
-                  'bg-emerald-500/5 border-2 border-emerald-500/20 shadow-sm',
-                  'hover:bg-emerald-500/15 hover:border-emerald-500/40 hover:shadow-md'
+                  'bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border-2 border-emerald-500/30',
+                  'hover:from-emerald-500/15 hover:to-emerald-500/10 hover:border-emerald-500/40 hover:shadow-lg hover:shadow-emerald-500/10'
                 ],
 
               // STATE: LOCKED (Kilitli)
               isLocked && [
-                'bg-warning/10 border-2 border-warning shadow-sm',
-                'hover:bg-warning/20 hover:shadow-md opacity-90'
+                'bg-gradient-to-br from-amber-500/15 to-amber-500/5 border-2 border-amber-500/40',
+                'hover:from-amber-500/20 hover:to-amber-500/10'
               ]
             )}
           >
-            {/* Kilit İkonu - Floating badge */}
+            {/* Kilit Badge */}
             {isLocked && (
-              <div className="absolute -top-1 -left-1 bg-warning p-2 rounded-xl text-white shadow-lg shadow-warning/20 ring-4 ring-background z-20">
-                <Lock className="w-4 h-4" strokeWidth={3} />
+              <div className="absolute -top-2 -left-2 bg-amber-500 p-2 rounded-xl text-white shadow-lg shadow-amber-500/20 z-20 animate-in zoom-in duration-200">
+                <Lock className="w-4 h-4" strokeWidth={2.5} />
               </div>
             )}
 
-            {/* Merkez İkon */}
-            <div className="relative mb-6">
-              <div
-                className={cn(
-                  'p-5 rounded-[2rem] transition-all duration-300 shadow-sm group-hover:rotate-3 group-hover:scale-110',
-                  hasOpenOrder
-                    ? 'bg-info text-white shadow-info/20'
-                    : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white',
-                  isLocked && 'bg-warning text-white shadow-warning/20'
-                )}
-              >
-                <Coffee className="w-10 h-10" strokeWidth={2.5} />
-              </div>
+            {/* Merkez İkon - Daha Büyük */}
+            <div
+              className={cn(
+                'p-5 rounded-2xl transition-all duration-300 mb-5',
+                'group-hover:scale-110 group-hover:rotate-3',
+                hasOpenOrder && !isLocked && 'bg-info text-white shadow-lg shadow-info/25',
+                !hasOpenOrder &&
+                  !isLocked &&
+                  'bg-emerald-500/15 text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white',
+                isLocked && 'bg-amber-500/20 text-amber-600'
+              )}
+            >
+              <Coffee className="w-9 h-9" strokeWidth={2} />
             </div>
 
-            {/* Metin ve Rozet */}
-            <div className="space-y-3 w-full relative z-10">
-              <span className="text-xl font-black text-foreground tracking-tight line-clamp-1 block">
+            {/* İçerik - DAHA BÜYÜK VE OKUNUR YAZILAR */}
+            <div className="space-y-3 w-full px-2">
+              {/* Masa Adı - Daha Büyük, Kalın, Gölge */}
+              <span className="text-xl font-bold text-foreground tracking-tight truncate block">
                 {name}
               </span>
-              <div className="flex justify-center">
-                <span
-                  className={cn(
-                    'text-[10px] font-black tracking-[0.2em] px-4 py-1.5 rounded-full uppercase transition-all duration-300',
-                    hasOpenOrder
-                      ? 'bg-info text-white shadow-sm'
-                      : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 group-hover:bg-emerald-500 group-hover:text-white group-hover:border-transparent',
-                    isLocked && 'bg-warning text-white shadow-sm'
-                  )}
-                >
-                  {isLocked ? 'KİLİTLİ' : hasOpenOrder ? 'DOLU' : 'BOŞ'}
-                </span>
-              </div>
+
+              {/* Durum Rozeti - Daha Büyük, Daha Belirgin */}
+              <span
+                className={cn(
+                  'inline-flex items-center px-4 py-1.5 rounded-full text-xs font-black tracking-widest  shadow-sm',
+                  hasOpenOrder && !isLocked && 'bg-info text-white shadow-info/20',
+                  !hasOpenOrder &&
+                    !isLocked &&
+                    'bg-emerald-500 text-white shadow-emerald-500/20 group-hover:bg-emerald-600 transition-colors',
+                  isLocked && 'bg-amber-500 text-white shadow-amber-500/20'
+                )}
+              >
+                {isLocked ? 'KİLİTLİ' : hasOpenOrder ? 'DOLU' : 'BOŞ'}
+              </span>
             </div>
+
+            {/* Hover glow efekti */}
+            <div
+              className={cn(
+                'absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none',
+                hasOpenOrder && 'bg-info/5',
+                !hasOpenOrder && 'bg-emerald-500/5',
+                isLocked && 'bg-amber-500/5'
+              )}
+            />
           </button>
         </ContextMenuTrigger>
 
         {/* Context Menu */}
-        {hasOpenOrder && (
-          <ContextMenuContent className="min-w-[220px] p-1.5 rounded-xl shadow-xl">
+        {hasOpenOrder && !isLocked && (
+          <ContextMenuContent className="w-56 p-1 rounded-xl shadow-xl border border-border/50 bg-popover/95 backdrop-blur">
             <ContextMenuItem
               onClick={() => onTransfer(id)}
-              className="gap-3 py-3 px-3 rounded-lg font-medium cursor-pointer hover:bg-info/10 focus:bg-info/10 focus:text-info"
+              className="gap-3 py-2.5 px-3 rounded-lg text-sm font-medium cursor-pointer hover:bg-info/10 focus:bg-info/10"
             >
-              <ArrowRightLeft className="w-4 h-4 text-info" />
-              Başka Masaya Aktar
+              <div className="p-1.5 bg-info/10 rounded-md">
+                <ArrowRightLeft className="w-4 h-4 text-info" />
+              </div>
+              Masaya Aktar
             </ContextMenuItem>
             <ContextMenuItem
               onClick={() => onMerge(id)}
-              className="gap-3 py-3 px-3 rounded-lg font-medium cursor-pointer mt-1 hover:bg-primary/10 focus:bg-primary/10 focus:text-primary"
+              className="gap-3 py-2.5 px-3 rounded-lg text-sm font-medium cursor-pointer mt-0.5 hover:bg-primary/10 focus:bg-primary/10"
             >
-              <Combine className="w-4 h-4 text-primary" />
-              Başka Masa ile Birleştir
+              <div className="p-1.5 bg-primary/10 rounded-md">
+                <Combine className="w-4 h-4 text-primary" />
+              </div>
+              Masa Birleştir
             </ContextMenuItem>
           </ContextMenuContent>
         )}
@@ -236,51 +259,49 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
   return (
     <div className="h-full flex flex-col overflow-hidden bg-background">
       {/* Header Section */}
-      <div className="flex-none py-2 px-6 border-b bg-background z-10 w-full">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-black tracking-tight text-foreground">Masalar</h2>
+      <div className="flex-none h-14 px-6 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-10 w-full flex items-center">
+        <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-3">
-            {/* DOLU MASA BADGE */}
-            <div className="flex items-center gap-2.5 bg-info/10 border border-info/20 px-4 py-1.5 rounded-xl shadow-sm cursor-default group">
-              <div className="flex items-baseline gap-2">
-                <span className="text-xl font-black tabular-nums text-foreground leading-none">
-                  {tables.filter((t) => t.hasOpenOrder).length}
-                </span>
-                <span className="text-[10px] font-black text-info/80 tracking-widest uppercase">
-                  DOLU
-                </span>
-              </div>
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Coffee className="w-5 h-5 text-primary" />
+            </div>
+            <h2 className="text-lg font-bold tracking-tight text-foreground">Masalar</h2>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* Dolu Masa Badge */}
+            <div className="flex items-center gap-2 bg-info/10 px-3 py-1.5 rounded-lg border border-info/20">
+              <span className="text-lg font-bold tabular-nums text-info">
+                {tables.filter((t) => t.hasOpenOrder).length}
+              </span>
+              <span className="text-[10px] font-semibold text-info/80  tracking-wider">Dolu</span>
             </div>
 
-            {/* BOŞ MASA BADGE */}
-            <div className="flex items-center gap-2.5 bg-emerald-500/10 border border-emerald-500/20 px-4 py-1.5 rounded-xl shadow-sm cursor-default group">
-              <div className="flex items-baseline gap-2">
-                <span className="text-xl font-black tabular-nums text-foreground leading-none">
-                  {tables.filter((t) => !t.hasOpenOrder).length}
-                </span>
-                <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 tracking-widest uppercase">
-                  BOŞ
-                </span>
-              </div>
+            <div className="w-px h-6 bg-border mx-1" />
+
+            {/* Boş Masa Badge */}
+            <div className="flex items-center gap-2 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20">
+              <span className="text-lg font-bold tabular-nums text-emerald-600">
+                {tables.filter((t) => !t.hasOpenOrder).length}
+              </span>
+              <span className="text-[10px] font-semibold text-emerald-600/80  tracking-wider">
+                Boş
+              </span>
             </div>
           </div>
         </div>
       </div>
 
-      <div
-        className="flex-1 overflow-y-auto p-8 pb-12 outline-none"
-        role="grid"
-        tabIndex={0}
-        autoFocus
-      >
+      {/* Grid Content */}
+      <div className="flex-1 overflow-y-auto p-6 pb-20">
         {isLoading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-6">
-            {Array.from({ length: 12 }).map((_, i) => (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4">
+            {Array.from({ length: 16 }).map((_, i) => (
               <TableCardSkeleton key={i} />
             ))}
           </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-6">
+        ) : tables.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4">
             {tables.map((table) => (
               <TableCard
                 key={table.id}
@@ -293,108 +314,119 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
                 onMerge={handleMergeClick}
               />
             ))}
-            {tables.length === 0 && (
-              <div className="col-span-full flex flex-col items-center justify-center h-64 text-center">
-                <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-                  <Coffee className="w-8 h-8 text-muted-foreground/80" />
-                </div>
-                <h3 className="text-lg font-semibold">Henüz masa yok</h3>
-                <p className="text-muted-foreground max-w-sm mt-2">
-                  İşletmenizi yapılandırmak için ayarlar sayfasından masalar oluşturun.
-                </p>
-              </div>
-            )}
+          </div>
+        ) : (
+          <div className="h-full flex flex-col items-center justify-center min-h-[400px]">
+            <div className="w-20 h-20 bg-muted/50 rounded-2xl flex items-center justify-center mb-6 ring-4 ring-muted/30">
+              <Coffee className="w-10 h-10 text-muted-foreground/60" />
+            </div>
+            <h3 className="text-lg font-semibold text-foreground">Henüz masa bulunmuyor</h3>
+            <p className="text-sm text-muted-foreground mt-2 max-w-xs text-center">
+              Ayarlar sayfasından masa ekleyerek başlayabilirsiniz.
+            </p>
           </div>
         )}
       </div>
 
-      {/* Modals */}
+      {/* Transfer Modal */}
       <Dialog
         open={transferModal.open}
         onOpenChange={(open) =>
           !open && setTransferModal({ open: false, sourceTableId: null, sourceOrderId: null })
         }
       >
-        <DialogContent>
-          {transferModal.open && (
-            <>
-              <DialogHeader>
-                <DialogTitle>Masa Transferi</DialogTitle>
-                <DialogDescription>
-                  {sourceTableName} masasının siparişini hangi masaya aktarmak istiyorsunuz?
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid grid-cols-3 gap-2 py-4">
-                {tables
-                  .filter((t) => t.id !== transferModal.sourceTableId && !t.hasOpenOrder)
-                  .map((table) => (
-                    <Button
-                      key={table.id}
-                      variant="outline"
-                      onClick={() => handleTransferToTable(table.id)}
-                      disabled={isProcessing}
-                    >
-                      {table.name}
-                    </Button>
-                  ))}
-              </div>
-              <DialogFooter>
-                <Button
-                  variant="ghost"
-                  onClick={() =>
-                    setTransferModal({ open: false, sourceTableId: null, sourceOrderId: null })
-                  }
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader className="space-y-3">
+            <div className="w-12 h-12 bg-info/10 rounded-xl flex items-center justify-center mx-auto sm:mx-0">
+              <ArrowRightLeft className="w-6 h-6 text-info" />
+            </div>
+            <div className="text-center sm:text-left">
+              <DialogTitle className="text-lg">Masa Transferi</DialogTitle>
+              <DialogDescription className="text-sm mt-1.5">
+                <span className="font-semibold text-foreground">{sourceTableName}</span> masasının
+                siparişini aktarın
+              </DialogDescription>
+            </div>
+          </DialogHeader>
+
+          <div className="grid grid-cols-4 gap-2 py-4">
+            {tables
+              .filter((t) => t.id !== transferModal.sourceTableId && !t.hasOpenOrder)
+              .map((table) => (
+                <button
+                  key={table.id}
+                  onClick={() => handleTransferToTable(table.id)}
+                  disabled={isProcessing}
+                  className="p-3 rounded-xl border border-border bg-background hover:bg-accent hover:border-accent transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group"
                 >
-                  İptal
-                </Button>
-              </DialogFooter>
-            </>
-          )}
+                  <span className="text-sm font-medium text-foreground group-hover:text-accent-foreground">
+                    {table.name}
+                  </span>
+                </button>
+              ))}
+          </div>
+
+          <DialogFooter className="sm:justify-start">
+            <Button
+              variant="outline"
+              onClick={() =>
+                setTransferModal({ open: false, sourceTableId: null, sourceOrderId: null })
+              }
+            >
+              İptal
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
+      {/* Merge Modal */}
       <Dialog
         open={mergeModal.open}
         onOpenChange={(open) =>
           !open && setMergeModal({ open: false, sourceTableId: null, sourceOrderId: null })
         }
       >
-        <DialogContent>
-          {mergeModal.open && (
-            <>
-              <DialogHeader>
-                <DialogTitle>Masa Birleştirme</DialogTitle>
-                <DialogDescription>
-                  {mergeSourceTableName} masasının siparişini hangi masayla birleştirmek
-                  istiyorsunuz?
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid grid-cols-3 gap-2 py-4">
-                {tables
-                  .filter((t) => t.id !== mergeModal.sourceTableId && t.hasOpenOrder)
-                  .map((table) => (
-                    <Button
-                      key={table.id}
-                      variant="outline"
-                      onClick={() => handleMergeWithTable(table.id)}
-                      disabled={isProcessing}
-                    >
-                      {table.name}
-                    </Button>
-                  ))}
-              </div>
-              <DialogFooter>
-                <Button
-                  variant="ghost"
-                  onClick={() =>
-                    setMergeModal({ open: false, sourceTableId: null, sourceOrderId: null })
-                  }
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader className="space-y-3">
+            <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mx-auto sm:mx-0">
+              <Combine className="w-6 h-6 text-primary" />
+            </div>
+            <div className="text-center sm:text-left">
+              <DialogTitle className="text-lg">Masa Birleştirme</DialogTitle>
+              <DialogDescription className="text-sm mt-1.5">
+                <span className="font-semibold text-foreground">{mergeSourceTableName}</span>{' '}
+                masasını birleştirin
+              </DialogDescription>
+            </div>
+          </DialogHeader>
+
+          <div className="grid grid-cols-4 gap-2 py-4">
+            {tables
+              .filter((t) => t.id !== mergeModal.sourceTableId && t.hasOpenOrder)
+              .map((table) => (
+                <button
+                  key={table.id}
+                  onClick={() => handleMergeWithTable(table.id)}
+                  disabled={isProcessing}
+                  className="p-3 rounded-xl border border-border bg-background hover:bg-accent hover:border-accent transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group"
                 >
-                  İptal
-                </Button>
-              </DialogFooter>
-            </>
-          )}
+                  <span className="text-sm font-medium text-foreground group-hover:text-accent-foreground">
+                    {table.name}
+                  </span>
+                </button>
+              ))}
+          </div>
+
+          <DialogFooter className="sm:justify-start">
+            <Button
+              variant="outline"
+              onClick={() =>
+                setMergeModal({ open: false, sourceTableId: null, sourceOrderId: null })
+              }
+            >
+              İptal
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

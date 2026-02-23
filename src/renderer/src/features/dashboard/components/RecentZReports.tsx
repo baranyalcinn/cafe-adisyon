@@ -43,7 +43,7 @@ export function RecentZReports(): React.JSX.Element {
             </div>
             <div className="flex items-center gap-3">
               <Select value={filterYear} onValueChange={setFilterYear}>
-                <SelectTrigger className="h-9 w-24 bg-background border-border/50 text-[10px] font-black uppercase tracking-widest rounded-xl">
+                <SelectTrigger className="h-9 w-24 bg-background border-border/50 text-[10px] font-black  tracking-widest rounded-xl">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -59,7 +59,7 @@ export function RecentZReports(): React.JSX.Element {
                 </SelectContent>
               </Select>
               <Select value={filterMonth} onValueChange={setFilterMonth}>
-                <SelectTrigger className="h-9 w-32 bg-background border-border/50 text-[10px] font-black uppercase tracking-widest rounded-xl">
+                <SelectTrigger className="h-9 w-32 bg-background border-border/50 text-[10px] font-black  tracking-widest rounded-xl">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -189,7 +189,7 @@ export function RecentZReports(): React.JSX.Element {
               <div className="p-8 space-y-8">
                 <div className="grid grid-cols-2 gap-6">
                   <div className="p-6 rounded-3xl border border-border bg-background shadow-sm space-y-1">
-                    <span className="text-[10px] font-black text-muted-foreground/40 tracking-widest uppercase">
+                    <span className="text-[10px] font-black text-muted-foreground/40 tracking-widest ">
                       GÜNLÜK HASILAT
                     </span>
                     <div className="text-2xl font-black tabular-nums">
@@ -197,7 +197,7 @@ export function RecentZReports(): React.JSX.Element {
                     </div>
                   </div>
                   <div className="p-6 rounded-3xl border border-border bg-background shadow-sm space-y-1">
-                    <span className="text-[10px] font-black text-muted-foreground/40 tracking-widest uppercase">
+                    <span className="text-[10px] font-black text-muted-foreground/40 tracking-widest ">
                       TOPLAM SİPARİŞ
                     </span>
                     <div className="text-2xl font-black tabular-nums">
@@ -207,7 +207,7 @@ export function RecentZReports(): React.JSX.Element {
                 </div>
 
                 <div className="space-y-4">
-                  <h4 className="text-[11px] font-black text-muted-foreground/40 tracking-[0.2em] uppercase px-1">
+                  <h4 className="text-[11px] font-black text-muted-foreground/40 tracking-[0.2em]  px-1">
                     Ödeme Kanalları
                   </h4>
                   <div className="border border-border rounded-3xl overflow-hidden divide-y divide-border">
@@ -239,7 +239,7 @@ export function RecentZReports(): React.JSX.Element {
                 <div className="pt-4">
                   <Button
                     onClick={() => setSelectedReport(null)}
-                    className="w-full h-14 rounded-2xl font-black text-xs tracking-widest uppercase bg-muted text-foreground hover:bg-muted/80"
+                    className="w-full h-14 rounded-2xl font-black text-xs tracking-widest  bg-muted text-foreground hover:bg-muted/80"
                   >
                     KAPAT
                   </Button>

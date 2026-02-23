@@ -115,7 +115,7 @@ export const ResultBanner = memo(function ResultBanner({
           </div>
         ) : (
           <div className="shrink-0 flex items-center gap-2">
-            <span className="text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-[0.18em]">
+            <span className="text-[10px] font-semibold text-muted-foreground/70  tracking-[0.18em]">
               Hazır
             </span>
             <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />

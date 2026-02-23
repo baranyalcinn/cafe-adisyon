@@ -131,7 +131,7 @@ export const SuccessView = memo(function SuccessView({
 
             {/* footer + progress */}
             <div className="mt-5 space-y-2">
-              <p className="text-[11px] font-medium text-muted-foreground/60 uppercase tracking-wider">
+              <p className="text-[11px] font-medium text-muted-foreground/60  tracking-wider">
                 Otomatik kapanıyor
               </p>
 

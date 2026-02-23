@@ -362,10 +362,10 @@ const LogsHeader = memo(function LogsHeader({
             { label: 'Sistem', value: stats.sys, color: 'text-blue-500' }
           ].map((s) => (
             <div key={s.label} className="flex flex-col">
-              <span className="text-[9px] font-black text-muted-foreground/50 tracking-widest uppercase">
+              <span className="text-[9px] font-black text-muted-foreground/50 tracking-widest ">
                 {s.label}
               </span>
-              <span className={cn('text-lg font-black leading-none uppercase', s.color)}>
+              <span className={cn('text-lg font-black leading-none ', s.color)}>
                 {s.value}
               </span>
             </div>
