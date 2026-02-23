@@ -68,7 +68,7 @@ function App(): React.JSX.Element {
       <TitleBar />
 
       <div className="flex-1 flex overflow-hidden">
-        <aside className="w-20 flex flex-col items-center py-6 bg-zinc-100 dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 z-50 transition-all duration-500">
+        <aside className="w-20 flex flex-col items-center py-6 bg-background border-r border-border z-50 transition-all duration-500">
           <LogoSection />
 
           <nav className="flex-1 flex flex-col gap-4 pt-10">
@@ -140,7 +140,7 @@ const NavButton = memo(({ active, onClick, icon: Icon, label }: NavButtonProps) 
         'w-12 h-12 rounded-2xl transition-all duration-500 border',
         active
           ? 'bg-rose-600 text-white border-rose-500 shadow-lg shadow-rose-500/20'
-          : 'text-zinc-500 border-transparent hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100'
+          : 'text-muted-foreground border-transparent hover:bg-muted/50 hover:text-foreground'
       )}
     >
       <Icon
@@ -155,7 +155,7 @@ const NavButton = memo(({ active, onClick, icon: Icon, label }: NavButtonProps) 
         'text-[8px] font-black tracking-widest transition-all uppercase',
         active
           ? 'text-rose-500'
-          : 'text-zinc-400 opacity-0 group-hover:opacity-100 group-hover:text-zinc-600 dark:group-hover:text-zinc-400'
+          : 'text-muted-foreground/60 opacity-0 group-hover:opacity-100 group-hover:text-muted-foreground'
       )}
     >
       {label}
