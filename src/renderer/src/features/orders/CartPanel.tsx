@@ -175,30 +175,34 @@ export const CartPanel = React.memo(function CartPanel({
             size="icon"
             onClick={onToggleLock}
             className={cn(
-              'h-8 w-8 rounded-lg transition-all duration-300',
+              'h-9 w-9 rounded-xl transition-all duration-300',
               isLocked
                 ? 'text-amber-500 bg-amber-500/15 border border-amber-500/20 shadow-sm'
-                : 'text-muted-foreground/70 hover:text-foreground hover:bg-muted/60'
+                : 'text-foreground/80 hover:text-foreground hover:bg-muted/80'
             )}
             title={isLocked ? 'Masayı Aç' : 'Masayı Kilitle'}
           >
-            {isLocked ? <Lock className="w-3.5 h-3.5" /> : <LockOpen className="w-3.5 h-3.5" />}
+            {isLocked ? (
+              <Lock className="w-4 h-4" strokeWidth={2.5} />
+            ) : (
+              <LockOpen className="w-4 h-4" strokeWidth={2.5} />
+            )}
           </Button>
 
           <Button
             variant="ghost"
             size="icon"
             className={cn(
-              'h-8 w-8 rounded-lg transition-all duration-300',
+              'h-9 w-9 rounded-xl transition-all duration-300',
               !order?.items?.length
                 ? 'opacity-0 pointer-events-none'
-                : 'text-muted-foreground/70 hover:text-destructive hover:bg-destructive/15 hover:border-destructive/20'
+                : 'text-foreground/80 hover:text-destructive hover:bg-destructive/15 hover:border-destructive/20'
             )}
             onClick={() => setShowDeleteDialog(true)}
             disabled={!order?.items || order.items.length === 0}
             title="Masayı Boşalt"
           >
-            <Trash2 className="w-3.5 h-3.5" />
+            <Trash2 className="w-4 h-4" strokeWidth={2.5} />
           </Button>
         </div>
       </div>

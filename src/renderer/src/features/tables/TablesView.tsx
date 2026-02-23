@@ -236,35 +236,29 @@ export function TablesView({ onTableSelect }: TablesViewProps): React.JSX.Elemen
   return (
     <div className="h-full flex flex-col overflow-hidden bg-background">
       {/* Header Section */}
-      <div className="flex-none py-6 px-8 border-b bg-background z-10 w-full mb-2">
+      <div className="flex-none py-2 px-6 border-b bg-background z-10 w-full">
         <div className="flex items-center justify-between">
-          <h2 className="text-3xl font-bold tracking-tight text-foreground">Masalar</h2>
-          <div className="flex items-center gap-8">
-            <div className="flex items-center gap-3 group cursor-default">
-              <div className="relative flex items-center justify-center">
-                <div className="w-2 h-2 rounded-full bg-info" />
-              </div>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-xl font-black tabular-nums text-foreground">
+          <h2 className="text-xl font-black tracking-tight text-foreground">Masalar</h2>
+          <div className="flex items-center gap-3">
+            {/* DOLU MASA BADGE */}
+            <div className="flex items-center gap-2.5 bg-info/10 border border-info/20 px-4 py-1.5 rounded-xl shadow-sm cursor-default group">
+              <div className="flex items-baseline gap-2">
+                <span className="text-xl font-black tabular-nums text-foreground leading-none">
                   {tables.filter((t) => t.hasOpenOrder).length}
                 </span>
-                <span className="text-[10px] font-bold text-muted-foreground/80 tracking-[0.2em] uppercase">
+                <span className="text-[10px] font-black text-info/80 tracking-widest uppercase">
                   DOLU
                 </span>
               </div>
             </div>
 
-            <div className="w-[1px] h-4 bg-border" />
-
-            <div className="flex items-center gap-3 group cursor-default">
-              <div className="relative flex items-center justify-center">
-                <div className="w-2 h-2 rounded-full bg-success" />
-              </div>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-xl font-black tabular-nums text-foreground">
+            {/* BOŞ MASA BADGE */}
+            <div className="flex items-center gap-2.5 bg-emerald-500/10 border border-emerald-500/20 px-4 py-1.5 rounded-xl shadow-sm cursor-default group">
+              <div className="flex items-baseline gap-2">
+                <span className="text-xl font-black tabular-nums text-foreground leading-none">
                   {tables.filter((t) => !t.hasOpenOrder).length}
                 </span>
-                <span className="text-[10px] font-bold text-muted-foreground/80 tracking-[0.2em] uppercase">
+                <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 tracking-widest uppercase">
                   BOŞ
                 </span>
               </div>

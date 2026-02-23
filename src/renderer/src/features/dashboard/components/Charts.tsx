@@ -380,6 +380,18 @@ export function CategoryPieChart(): React.JSX.Element {
     color: string
   } | null>(null)
 
+  const pieData = React.useMemo(() => {
+    if (!stats?.categoryBreakdown) return []
+    const totalRev = stats.categoryBreakdown.reduce((s, z) => s + z.revenue, 0)
+    return stats.categoryBreakdown.map((c, index) => ({
+      name: c.categoryName,
+      value: totalRev > 0 ? c.revenue : Math.max(c.quantity, 0.1),
+      quantity: c.quantity,
+      color: getSystemColor(c.categoryName, c.icon, index),
+      icon: c.icon
+    }))
+  }, [stats?.categoryBreakdown])
+
   return (
     <ChartContainer delayUrl="delay-[700ms]">
       <div className="bg-card border border-border/50 rounded-[2rem] p-8 shadow-sm text-foreground h-full flex flex-col">
@@ -388,21 +400,13 @@ export function CategoryPieChart(): React.JSX.Element {
           <h3 className="text-xl font-black text-foreground">Kategori Dağılımı</h3>
         </div>
         <div className="flex-1 w-full flex flex-col items-center justify-center relative min-h-[320px]">
-          {stats?.categoryBreakdown && stats.categoryBreakdown.length > 0 ? (
+          {pieData.length > 0 ? (
             <>
               <div className="w-full h-full min-h-[240px] relative">
                 <ResponsiveContainer width="100%" height="100%" debounce={50} minWidth={0}>
                   <PieChart>
                     <Pie
-                      data={stats.categoryBreakdown.map((c, index) => {
-                        const totalRev = stats.categoryBreakdown.reduce((s, z) => s + z.revenue, 0)
-                        return {
-                          name: c.categoryName,
-                          value: totalRev > 0 ? c.revenue : Math.max(c.quantity, 0.1),
-                          quantity: c.quantity,
-                          color: getSystemColor(c.categoryName, c.icon, index)
-                        }
-                      })}
+                      data={pieData}
                       innerRadius="70%"
                       outerRadius="100%"
                       paddingAngle={4}
@@ -410,24 +414,20 @@ export function CategoryPieChart(): React.JSX.Element {
                       stroke="none"
                       isAnimationActive={false}
                       onMouseEnter={(_, index) => {
-                        const c = stats.categoryBreakdown[index]
+                        const c = pieData[index]
                         if (c) {
                           setHoveredCategory({
-                            name: c.categoryName,
-                            value: c.revenue,
+                            name: c.name,
+                            value: stats!.categoryBreakdown[index].revenue,
                             quantity: c.quantity,
-                            color: getSystemColor(c.categoryName, c.icon, index)
+                            color: c.color
                           })
                         }
                       }}
                       onMouseLeave={() => setHoveredCategory(null)}
                     >
-                      {stats.categoryBreakdown.map((c, index) => (
-                        <Cell
-                          key={index}
-                          fill={getSystemColor(c.categoryName, c.icon, index)}
-                          className="focus:outline-none"
-                        />
+                      {pieData.map((c, index) => (
+                        <Cell key={index} fill={c.color} className="focus:outline-none" />
                       ))}
                     </Pie>
                     <Tooltip content={<div className="hidden" />} isAnimationActive={false} />
@@ -462,16 +462,15 @@ export function CategoryPieChart(): React.JSX.Element {
               </div>
 
               <div className="w-full mt-6 flex flex-wrap justify-center gap-x-6 gap-y-3 px-2">
-                {stats.categoryBreakdown.map((c, index) => {
-                  const color = getSystemColor(c.categoryName, c.icon, index)
+                {pieData.map((c, index) => {
                   return (
                     <div key={index} className="flex items-center gap-2 group cursor-default">
                       <div
                         className="w-3 h-3 rounded-full shrink-0 group-hover:scale-125 transition-transform"
-                        style={{ backgroundColor: color }}
+                        style={{ backgroundColor: c.color }}
                       />
                       <span className="text-[11px] font-black text-foreground/80 group-hover:text-foreground transition-colors uppercase tracking-wider whitespace-nowrap">
-                        {c.categoryName}
+                        {c.name}
                       </span>
                     </div>
                   )
@@ -494,12 +493,15 @@ export function CategoryPieChart(): React.JSX.Element {
 
 export function TopProductsChart(): React.JSX.Element {
   const { stats } = useDashboardContext()
-  const productData =
-    stats?.topProducts.map((p) => ({
+
+  const productData = React.useMemo(() => {
+    if (!stats?.topProducts) return []
+    return stats.topProducts.map((p) => ({
       name: p.productName.length > 15 ? p.productName.slice(0, 15) + '...' : p.productName,
       fullName: p.productName,
       quantity: p.quantity
-    })) || []
+    }))
+  }, [stats?.topProducts])
 
   return (
     <ChartContainer delayUrl="delay-[800ms]">

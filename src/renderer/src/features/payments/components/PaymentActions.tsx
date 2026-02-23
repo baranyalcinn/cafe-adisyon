@@ -9,6 +9,7 @@ interface PaymentActionsProps {
   canCashPay: boolean
   canCardPay: boolean
   onPayment: (method: PaymentMethod) => void
+  onHoverChange?: (hovering: boolean) => void
   itemsPartialBlocked: boolean
   tendered: number
   effectivePayment: number
@@ -18,6 +19,7 @@ export const PaymentActions = memo(function PaymentActions({
   canCashPay,
   canCardPay,
   onPayment,
+  onHoverChange,
   itemsPartialBlocked,
   tendered,
   effectivePayment
@@ -38,6 +40,8 @@ export const PaymentActions = memo(function PaymentActions({
           'shadow-sm border border-primary/20'
         )}
         onClick={() => onPayment('CASH')}
+        onMouseEnter={() => !tendered && onHoverChange?.(true)}
+        onMouseLeave={() => onHoverChange?.(false)}
         disabled={!canCashPay}
         title={cashTitle}
       >
@@ -52,6 +56,8 @@ export const PaymentActions = memo(function PaymentActions({
           'shadow-sm border border-border'
         )}
         onClick={() => onPayment('CARD')}
+        onMouseEnter={() => !tendered && onHoverChange?.(true)}
+        onMouseLeave={() => onHoverChange?.(false)}
         disabled={!canCardPay}
         title={cardTitle}
       >

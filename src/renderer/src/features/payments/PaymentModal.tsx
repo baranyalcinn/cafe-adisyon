@@ -9,6 +9,7 @@ import { type Order, type PaymentMethod } from '@/lib/api'
 import { soundManager } from '@/lib/sound'
 import { cn, formatCurrency } from '@/lib/utils'
 import { useTableStore } from '@/store/useTableStore'
+import { toast } from '@/store/useToastStore'
 
 import { ItemRow } from './components/ItemRow'
 import { Numpad } from './components/Numpad'
@@ -45,6 +46,8 @@ type State = {
   finalChange: number
   splitCount: number
   splitIndex: number // 0-based: which person's share we're collecting
+  splitBaseAmount: number // The remaining amount when split mode was initiated
+  isHoveringPayment: boolean
 }
 
 type Action =
@@ -54,6 +57,7 @@ type Action =
   | { type: 'SET_SPLIT'; value: number }
   | { type: 'SET_SPLIT_INDEX'; value: number }
   | { type: 'NEXT_SPLIT_PERSON' }
+  | { type: 'SET_SPLIT_BASE'; value: number }
   | { type: 'SET_TENDERED_INPUT'; value: string }
   | { type: 'CLEAR_TENDERED' }
   | { type: 'SET_PROCESSING'; value: boolean }
@@ -62,6 +66,7 @@ type Action =
   | { type: 'SET_SELECTED_QTY'; itemId: string; qty: number }
   | { type: 'CLEAR_SELECTED' }
   | { type: 'SELECT_ALL'; all: Record<string, number> }
+  | { type: 'SET_HOVER_PAYMENT'; value: boolean }
 
 const initialState: State = {
   view: 'PAY',
@@ -71,7 +76,9 @@ const initialState: State = {
   isProcessing: false,
   finalChange: 0,
   splitCount: 2,
-  splitIndex: 0
+  splitIndex: 0,
+  splitBaseAmount: 0,
+  isHoveringPayment: false
 }
 
 function reducer(state: State, action: Action): State {
@@ -94,14 +101,17 @@ function reducer(state: State, action: Action): State {
         paymentMode: action.mode,
         tenderedInput: '',
         selectedQuantities: action.mode === 'items' ? state.selectedQuantities : {},
-        splitIndex: action.mode === 'split' ? 0 : state.splitIndex
+        splitIndex: action.mode === 'split' ? 0 : state.splitIndex,
+        splitBaseAmount: action.mode === 'split' ? 0 : state.splitBaseAmount
       }
     case 'SET_SPLIT':
       return { ...state, splitCount: action.value, splitIndex: 0 }
     case 'SET_SPLIT_INDEX':
       return { ...state, splitIndex: action.value }
     case 'NEXT_SPLIT_PERSON':
-      return { ...state, splitIndex: state.splitIndex + 1, tenderedInput: '' }
+      return { ...state, splitIndex: state.splitIndex + 1, tenderedInput: '', splitBaseAmount: 0 }
+    case 'SET_SPLIT_BASE':
+      return { ...state, splitBaseAmount: action.value }
     case 'SET_TENDERED_INPUT':
       return { ...state, tenderedInput: action.value }
     case 'CLEAR_TENDERED':
@@ -122,6 +132,8 @@ function reducer(state: State, action: Action): State {
       return { ...state, selectedQuantities: {} }
     case 'SELECT_ALL':
       return { ...state, selectedQuantities: action.all }
+    case 'SET_HOVER_PAYMENT':
+      return { ...state, isHoveringPayment: action.value }
     default:
       return state
   }
@@ -212,14 +224,20 @@ export function PaymentModal({
 
   const split = useMemo(() => {
     const n = clamp(state.splitCount, 2, 20)
-    const base = Math.floor(remainingAmount / n)
-    const remainder = remainingAmount % n
-
     const idx = clamp(state.splitIndex, 0, Math.max(0, n - 1))
-    const share = base + (idx < remainder ? 1 : 0)
+
+    // Use stored base amount to prevent flash when transitioning between people
+    const baseAmount = state.splitBaseAmount > 0 ? state.splitBaseAmount : remainingAmount
+
+    // Divide among REMAINING people (n - idx), not total (n)
+    const remainingPeople = n - idx
+    const base = Math.floor(baseAmount / remainingPeople)
+    const remainder = baseAmount % remainingPeople
+    // First person in the remaining group gets the extra cent
+    const share = base + (remainder > 0 ? 1 : 0)
 
     return { n, base, remainder, share, idx }
-  }, [remainingAmount, state.splitCount, state.splitIndex])
+  }, [remainingAmount, state.splitCount, state.splitIndex, state.splitBaseAmount])
 
   const paymentAmount = useMemo(() => {
     switch (state.paymentMode) {
@@ -270,6 +288,13 @@ export function PaymentModal({
     }
   }, [])
 
+  // Stabilize split base amount to prevent flash when transitioning to next person
+  useEffect(() => {
+    if (state.paymentMode === 'split' && state.splitBaseAmount === 0 && remainingAmount > 0) {
+      dispatch({ type: 'SET_SPLIT_BASE', value: remainingAmount })
+    }
+  }, [state.paymentMode, state.splitBaseAmount, remainingAmount])
+
   // --- Callbacks ---
 
   const handleTenderedChange = useCallback((raw: string): void => {
@@ -312,6 +337,10 @@ export function PaymentModal({
     dispatch({ type: 'SET_TENDERED_INPUT', value: centsToInputString(effectivePayment) })
   }, [effectivePayment])
 
+  // Ref to avoid declaration-order issue: handleTenderedKeyDown needs handlePayment
+  // but is declared before it. Ref always holds the latest version.
+  const handlePaymentRef = useRef<(method: PaymentMethod) => void>(() => {})
+
   const handleTenderedKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>): void => {
       if (state.view === 'SUCCESS') return
@@ -339,7 +368,7 @@ export function PaymentModal({
       }
       if (key === 'Enter') {
         e.preventDefault()
-        if (canCashPay) void handlePayment('CASH')
+        if (canCashPay) void handlePaymentRef.current('CASH')
       }
     },
     [state.view, state.tenderedInput, canCashPay, appendTendered, backspaceTendered, clearTendered]
@@ -347,6 +376,9 @@ export function PaymentModal({
 
   const handlePayment = useCallback(
     async (method: PaymentMethod): Promise<void> => {
+      // Guard: prevent double-submit from rapid clicks
+      if (state.isProcessing) return
+
       let actualAmount = effectivePayment
 
       // Items mode: avoid logical inconsistency (items marked paid while amount partial).
@@ -404,6 +436,11 @@ export function PaymentModal({
         tenderedInputRef.current?.focus()
       } catch (error) {
         console.error('Payment failed:', error)
+        toast({
+          title: 'Ödeme başarısız',
+          description: 'Lütfen tekrar deneyin.',
+          variant: 'destructive'
+        })
         dispatch({ type: 'SET_PROCESSING', value: false })
         tenderedInputRef.current?.focus()
       }
@@ -424,6 +461,9 @@ export function PaymentModal({
       selectTable
     ]
   )
+
+  // Keep ref in sync with latest handlePayment
+  handlePaymentRef.current = handlePayment
 
   const handleClose = useCallback((): void => {
     if (state.view === 'SUCCESS') {
@@ -602,7 +642,7 @@ export function PaymentModal({
 
                   {split.remainder > 0 && (
                     <p className="mt-2 text-[11px] text-muted-foreground">
-                      İlk {split.remainder} kişi +₺0,01
+                      Bu pay +₺0,01 yuvarlama içerir
                     </p>
                   )}
 
@@ -703,7 +743,7 @@ export function PaymentModal({
 
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-semibold text-muted-foreground tracking-wide">
-                      Alınan Para
+                      Alınacak
                     </span>
 
                     <button
@@ -729,17 +769,25 @@ export function PaymentModal({
                     )}
                     onClick={() => tenderedInputRef.current?.focus()}
                     type="button"
-                    aria-label="Alınan para alanına odaklan"
+                    aria-label="Alınacak tutar alanına odaklan"
                     title="Klavye girişi için tıklayın"
                   >
                     <span
                       className={cn(
-                        'font-mono tabular-nums tracking-tight',
+                        'font-mono tabular-nums tracking-tight transition-all duration-300',
                         'text-3xl font-semibold',
-                        state.tenderedInput ? 'text-foreground' : 'text-muted-foreground/40'
+                        state.tenderedInput
+                          ? 'text-foreground'
+                          : state.isHoveringPayment
+                            ? 'text-foreground/80 scale-105 inline-block origin-right'
+                            : 'text-muted-foreground/40'
                       )}
                     >
-                      {state.tenderedInput ? formatCurrency(tendered) : '₺ 0,00'}
+                      {state.tenderedInput
+                        ? formatCurrency(tendered)
+                        : state.isHoveringPayment
+                          ? formatCurrency(effectivePayment)
+                          : '0 ₺'}
                     </span>
                   </button>
                 </div>
@@ -771,6 +819,7 @@ export function PaymentModal({
               canCashPay={canCashPay}
               canCardPay={canCardPay}
               onPayment={handlePayment}
+              onHoverChange={(value) => dispatch({ type: 'SET_HOVER_PAYMENT', value })}
               itemsPartialBlocked={itemsPartialBlocked}
               tendered={tendered}
               effectivePayment={effectivePayment}

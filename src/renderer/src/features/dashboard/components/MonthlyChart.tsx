@@ -106,18 +106,20 @@ function MonthlyTooltip({
 
 export function MonthlyPerformanceChart(): React.JSX.Element {
   const { monthlyReports } = useDashboardContext()
-  const monthlyData = [...monthlyReports]
-    .sort((a, b) => new Date(a.monthDate).getTime() - new Date(b.monthDate).getTime())
-    .map((report) => {
-      const date = new Date(report.monthDate)
-      return {
-        month: date.toLocaleDateString('tr-TR', { month: 'short' }),
-        fullMonth: date.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' }),
-        revenue: report.totalRevenue,
-        profit: report.netProfit,
-        expenses: report.totalExpenses
-      }
-    })
+  const monthlyData = React.useMemo(() => {
+    return [...monthlyReports]
+      .sort((a, b) => new Date(a.monthDate).getTime() - new Date(b.monthDate).getTime())
+      .map((report) => {
+        const date = new Date(report.monthDate)
+        return {
+          month: date.toLocaleDateString('tr-TR', { month: 'short' }),
+          fullMonth: date.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' }),
+          revenue: report.totalRevenue,
+          profit: report.netProfit,
+          expenses: report.totalExpenses
+        }
+      })
+  }, [monthlyReports])
 
   return (
     <ChartContainer delayUrl="delay-[900ms]">
