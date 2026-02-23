@@ -36,7 +36,7 @@ export const PaymentActions = memo(function PaymentActions({
       <Button
         className={cn(
           base,
-          'bg-primary text-primary-foreground hover:bg-primary/90',
+          'bg-primary text-primary-foreground hover:bg-primary/95',
           'shadow-sm border border-primary/20'
         )}
         onClick={() => onPayment('CASH')}
@@ -46,14 +46,14 @@ export const PaymentActions = memo(function PaymentActions({
         title={cashTitle}
       >
         <Banknote className="w-5 h-5" />
-        <span className="font-semibold tracking-wide">NAKİT</span>{' '}
+        <span>Nakit</span>
       </Button>
 
       <Button
         className={cn(
           base,
-          'bg-background text-foreground hover:bg-muted',
-          'shadow-sm border border-border'
+          'bg-background text-foreground hover:bg-muted/50',
+          'shadow-sm border border-border/80'
         )}
         onClick={() => onPayment('CARD')}
         onMouseEnter={() => !tendered && onHoverChange?.(true)}
@@ -62,7 +62,7 @@ export const PaymentActions = memo(function PaymentActions({
         title={cardTitle}
       >
         <CreditCard className="w-5 h-5 text-primary" />
-        <span className="uppercase">Kart</span>
+        <span>Kart</span>
       </Button>
     </div>
   )

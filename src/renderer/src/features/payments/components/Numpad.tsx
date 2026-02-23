@@ -71,19 +71,19 @@ export const Numpad = memo(function Numpad({
             key={val}
             variant="outline"
             className={cn(
-              'flex-1 rounded-xl text-sm font-semibold shadow-sm transition active:scale-[0.99]',
+              'flex-1 rounded-xl text-sm font-bold shadow-sm transition active:scale-[0.99]',
 
               // ₺50 – Amber
               color === 'amber' &&
-                'border-amber-500/30 bg-amber-500/10 text-amber-700 hover:bg-amber-600 hover:text-white hover:border-amber-600',
+                'border-amber-500/30 bg-amber-500/10 text-amber-700 hover:bg-amber-600 hover:text-white',
 
               // ₺100 – Blue
               color === 'blue' &&
-                'border-blue-500/30 bg-blue-500/10 text-blue-700 hover:bg-blue-600 hover:text-white hover:border-blue-600',
+                'border-blue-500/30 bg-blue-500/10 text-blue-700 hover:bg-blue-600 hover:text-white',
 
               // ₺200 – Pink
               color === 'pink' &&
-                'border-pink-500/30 bg-pink-500/10 text-pink-700 hover:bg-pink-600 hover:text-white hover:border-pink-600'
+                'border-pink-500/30 bg-pink-500/10 text-pink-700 hover:bg-pink-600 hover:text-white'
             )}
             onClick={() => onQuickCash(val.toString())}
           >
@@ -95,9 +95,9 @@ export const Numpad = memo(function Numpad({
         <Button
           variant="outline"
           className={cn(
-            'flex-1 rounded-xl border border-success/30 bg-success/5',
-            'text-xs font-semibold tracking-wide',
-            'hover:bg-success/10 active:scale-[0.99] transition'
+            'flex-1 rounded-xl border border-success/40 bg-success/10',
+            'text-[11px] font-bold tracking-wider',
+            'text-success-foreground hover:bg-success hover:text-white transition active:scale-[0.99]'
           )}
           onClick={onSetExact}
           title="Tamamı"

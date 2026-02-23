@@ -99,7 +99,7 @@ export const SuccessView = memo(function SuccessView({
 
             <div className="space-y-1">
               <h3 className="text-lg font-semibold text-foreground">Ödeme Başarılı</h3>
-              <p className="text-sm text-muted-foreground">İşlem onaylandı, masa hazır.</p>
+              <p className="text-sm text-foreground/80">İşlem onaylandı, masa hazır.</p>
             </div>
 
             {/* body */}
@@ -108,10 +108,10 @@ export const SuccessView = memo(function SuccessView({
                 <div className="rounded-xl border border-border/40 bg-background/60 px-5 py-4">
                   <div className="flex items-center justify-between gap-3">
                     <div className="text-left">
-                      <div className="text-xs font-semibold text-muted-foreground">
+                      <div className="text-xs font-semibold text-foreground/80">
                         Müşteriye verilecek
                       </div>
-                      <div className="mt-1 text-[11px] text-muted-foreground/80">
+                      <div className="mt-1 text-[11px] text-foreground/80">
                         Para üstünü vermeyi unutmayın
                       </div>
                     </div>
