@@ -1,8 +1,4 @@
-import { useState, useEffect } from 'react'
-import { Plus, Trash2, Tag, Layers } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card } from '@/components/ui/card'
 import {
   Dialog,
   DialogContent,
@@ -11,6 +7,7 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
 import {
   Select,
   SelectContent,
@@ -18,40 +15,68 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select'
-import { cafeApi } from '@/lib/api'
 import { useInventory } from '@/hooks/useInventory'
+import { cafeApi } from '@/lib/api'
 import { toast } from '@/store/useToastStore'
+import { Plus, Tag, Trash2 } from 'lucide-react'
+import { memo, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
+
+// ==========================================
+// PORTAL AKSİYONLARI (Header Alanı)
+// ==========================================
+const CategoriesHeaderActions = memo(
+  ({
+    name,
+    setName,
+    onAdd
+  }: {
+    name: string
+    setName: (name: string) => void
+    onAdd: () => void
+  }) => {
+    return (
+      <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-4 duration-500">
+        <Input
+          placeholder="Yeni kategori adı..."
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="w-48 h-9 bg-background/50 rounded-xl border-border/40 focus:ring-primary/20"
+          onKeyDown={(e) => e.key === 'Enter' && onAdd()}
+        />
+        <Button
+          onClick={onAdd}
+          size="sm"
+          className="gap-2 font-black px-4 rounded-xl h-9 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/20 active:scale-95 transition-all text-[10px] tracking-widest uppercase"
+        >
+          <Plus className="w-4 h-4" strokeWidth={3} />
+          EKLE
+        </Button>
+      </div>
+    )
+  }
+)
 
 export function CategoriesTab(): React.JSX.Element {
   const { categories, products, refetchCategories } = useInventory()
   const [newCategoryName, setNewCategoryName] = useState('')
   const [deleteCategoryId, setDeleteCategoryId] = useState<string | null>(null)
-  const [showDeleteCategoryDialog, setShowDeleteCategoryDialog] = useState(false)
+  const [headerTarget, setHeaderTarget] = useState<HTMLElement | null>(null)
+
+  useEffect(() => {
+    setHeaderTarget(document.getElementById('settings-header-actions'))
+  }, [])
 
   const handleAddCategory = async (): Promise<void> => {
-    if (!newCategoryName.trim()) {
-      toast({ title: 'Uyarı', description: 'Lütfen bir kategori adı girin', variant: 'warning' })
-      return
-    }
+    if (!newCategoryName.trim()) return
     try {
       await cafeApi.categories.create(newCategoryName)
       refetchCategories()
       setNewCategoryName('')
-      toast({ title: 'Başarılı', description: 'Kategori başarıyla eklendi', variant: 'success' })
-    } catch (error) {
-      console.error('Failed to add category:', error)
-      toast({
-        title: 'Hata',
-        description: 'Kategori eklenirken hata oluştu: ' + String(error),
-        variant: 'destructive'
-      })
+      toast({ title: 'Başarılı', description: 'Kategori oluşturuldu', variant: 'success' })
+    } catch {
+      toast({ title: 'Hata', description: 'Kategori eklenemedi', variant: 'destructive' })
     }
-  }
-
-  const handleDeleteCategory = (id: string): void => {
-    setDeleteCategoryId(id)
-    setShowDeleteCategoryDialog(true)
   }
 
   const confirmDeleteCategory = async (): Promise<void> => {
@@ -59,184 +84,160 @@ export function CategoriesTab(): React.JSX.Element {
     try {
       await cafeApi.categories.delete(deleteCategoryId)
       refetchCategories()
-    } catch (error) {
-      console.error('Failed to delete category:', error)
-      toast({
-        title: 'Hata',
-        description: 'Kategori silinemedi: ' + String(error),
-        variant: 'destructive'
-      })
+      toast({ title: 'Başarılı', description: 'Kategori silindi', variant: 'success' })
+    } catch {
+      toast({ title: 'Hata', description: 'Silinemedi', variant: 'destructive' })
     } finally {
-      setShowDeleteCategoryDialog(false)
       setDeleteCategoryId(null)
     }
   }
 
-  // Portal target for header actions
-  const [headerTarget, setHeaderTarget] = useState<HTMLElement | null>(null)
-  useEffect(() => {
-    setHeaderTarget(document.getElementById('settings-header-actions'))
-  }, [])
-
   return (
-    <Card className="h-full flex flex-col border-0 shadow-none bg-transparent">
-      {/* Action Header via Portal */}
+    <div className="h-full flex flex-col bg-muted/10 overflow-hidden">
+      {/* Header Actions via Portal */}
       {headerTarget &&
         createPortal(
-          <>
-            <div className="relative">
-              <Input
-                placeholder="Yeni kategori adı..."
-                value={newCategoryName}
-                onChange={(e) => setNewCategoryName(e.target.value)}
-                className="w-48 h-9 bg-background/50"
-                onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
-              />
-            </div>
-            <Button onClick={handleAddCategory} size="sm" className="gap-2 font-bold px-4">
-              <Plus className="w-4 h-4" />
-              EKLE
-            </Button>
-          </>,
+          <CategoriesHeaderActions
+            name={newCategoryName}
+            setName={setNewCategoryName}
+            onAdd={handleAddCategory}
+          />,
           headerTarget
         )}
 
-      {/* Main List Area */}
-      <div className="flex-1 overflow-y-auto p-8">
-        <div className="max-w-4xl mx-auto space-y-3">
+      {/* Ana Liste Alanı */}
+      <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4">
           {categories.map((cat) => (
             <div
               key={cat.id}
-              className="group flex items-center justify-between p-4 rounded-xl border bg-card/50 hover:bg-card hover:shadow-sm transition-all"
+              className="group flex items-center justify-between p-5 rounded-[2rem] border border-border/40 bg-card shadow-sm hover:shadow-md hover:border-primary/20 transition-all duration-300"
             >
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
-                  <span className="text-xl">
-                    {cat.icon === 'coffee' && '☕'}
-                    {cat.icon === 'ice-cream-cone' && '🍦'}
-                    {cat.icon === 'cookie' && '🍪'}
-                    {cat.icon === 'utensils' && '🍽️'}
-                    {cat.icon === 'wine' && '🍷'}
-                    {cat.icon === 'cake' && '🎂'}
-                    {cat.icon === 'sandwich' && '🥪'}
-                    {!cat.icon && '🍽️'}
-                  </span>
+              <div className="flex items-center gap-5">
+                {/* Kategori İkonu (Emoji) */}
+                <div className="w-16 h-16 rounded-[1.5rem] bg-muted/30 flex items-center justify-center text-3xl shadow-inner border border-border/10 group-hover:scale-105 transition-transform">
+                  {getCategoryEmoji(cat.icon ?? null)}
                 </div>
-                <div>
-                  <h3 className="font-bold text-base">{cat.name}</h3>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                    <Layers className="w-3 h-3" />
-                    <span>
-                      {products.filter((p) => p.categoryId === cat.id).length} Ürün Mevcut
+
+                <div className="space-y-1">
+                  <h3 className="font-black text-lg tracking-tight text-foreground/90">
+                    {cat.name}
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest border border-primary/10">
+                      {products.filter((p) => p.categoryId === cat.id).length} ÜRÜN
                     </span>
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <span className="text-xs font-medium text-muted-foreground mr-1">Simge:</span>
-                  <Select
-                    value={cat.icon || 'utensils'}
-                    onValueChange={async (val) => {
-                      await cafeApi.categories.update(cat.id, {
-                        icon: val
-                      })
-                      refetchCategories()
-                    }}
-                  >
-                    <SelectTrigger className="w-[140px] h-8 bg-muted border-none text-xs font-medium focus:ring-0 focus:ring-offset-0">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl border-white/10 bg-background/95 backdrop-blur-md">
+              <div className="flex items-center gap-2">
+                {/* Simge Seçici */}
+                <Select
+                  value={cat.icon || 'utensils'}
+                  onValueChange={async (val) => {
+                    await cafeApi.categories.update(cat.id, { icon: val })
+                    refetchCategories()
+                  }}
+                >
+                  <SelectTrigger className="w-12 h-10 bg-muted/20 border-none rounded-xl focus:ring-0">
+                    <SelectValue placeholder="İkon" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-2xl border-border/40 shadow-2xl">
+                    {ICON_OPTIONS.map((opt) => (
                       <SelectItem
-                        value="coffee"
-                        className="text-xs font-medium rounded-lg cursor-pointer"
+                        key={opt.value}
+                        value={opt.value}
+                        className="rounded-xl cursor-pointer py-2.5"
                       >
-                        ☕ Kahveler
+                        <span className="flex items-center gap-3 font-bold text-xs">
+                          <span className="text-lg">{opt.emoji}</span> {opt.label}
+                        </span>
                       </SelectItem>
-                      <SelectItem
-                        value="ice-cream-cone"
-                        className="text-xs font-medium rounded-lg cursor-pointer"
-                      >
-                        🍦 Tatlılar
-                      </SelectItem>
-                      <SelectItem
-                        value="cookie"
-                        className="text-xs font-medium rounded-lg cursor-pointer"
-                      >
-                        🍪 Atıştırmalık
-                      </SelectItem>
-                      <SelectItem
-                        value="utensils"
-                        className="text-xs font-medium rounded-lg cursor-pointer"
-                      >
-                        🍽️ Yemekler
-                      </SelectItem>
-                      <SelectItem
-                        value="wine"
-                        className="text-xs font-medium rounded-lg cursor-pointer"
-                      >
-                        🍷 İçecekler
-                      </SelectItem>
-                      <SelectItem
-                        value="cake"
-                        className="text-xs font-medium rounded-lg cursor-pointer"
-                      >
-                        🎂 Pastalar
-                      </SelectItem>
-                      <SelectItem
-                        value="sandwich"
-                        className="text-xs font-medium rounded-lg cursor-pointer"
-                      >
-                        🥪 Sandviçler
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                    ))}
+                  </SelectContent>
+                </Select>
+
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="h-9 w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                  onClick={() => handleDeleteCategory(cat.id)}
+                  className="h-10 w-10 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                  onClick={() => setDeleteCategoryId(cat.id)}
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-4.5 h-4.5" />
                 </Button>
               </div>
             </div>
           ))}
 
+          {/* Boş Durum (Empty State) */}
           {categories.length === 0 && (
-            <div className="flex flex-col items-center justify-center h-64 text-center border-2 border-dashed rounded-2xl">
-              <Tag className="w-12 h-12 text-muted-foreground/30 mb-4" />
-              <h3 className="text-lg font-semibold">Henüz kategori yok</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Üst taraftaki kutudan yeni kategori oluşturun.
+            <div className="col-span-full flex flex-col items-center justify-center h-80 text-center border-2 border-dashed border-border/40 rounded-[3rem] bg-card/30">
+              <div className="w-20 h-20 rounded-full bg-muted/40 flex items-center justify-center mb-6">
+                <Tag className="w-10 h-10 text-muted-foreground/30" />
+              </div>
+              <h3 className="text-xl font-black text-foreground/80 tracking-tight">
+                Kategori Bulunmuyor
+              </h3>
+              <p className="text-sm text-muted-foreground max-w-xs mt-2 font-medium">
+                Sistemi yapılandırmak için üst panelden ilk kategorinizi oluşturun.
               </p>
             </div>
           )}
         </div>
       </div>
 
-      <Dialog open={showDeleteCategoryDialog} onOpenChange={setShowDeleteCategoryDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Kategori Silinsin Mi?</DialogTitle>
-            <DialogDescription>
-              Bu kategoriyi sildiğinizde içindeki tüm ürünler de silinecektir. Bu işlem geri
-              alınamaz. Onaylıyor musunuz?
+      {/* Kategori Silme Diyaloğu */}
+      <Dialog open={!!deleteCategoryId} onOpenChange={(open) => !open && setDeleteCategoryId(null)}>
+        <DialogContent className="rounded-[2.5rem] border-none shadow-2xl">
+          <DialogHeader className="space-y-3">
+            <div className="w-14 h-14 rounded-2xl bg-destructive/10 flex items-center justify-center text-destructive mb-2">
+              <Trash2 size={28} />
+            </div>
+            <DialogTitle className="text-2xl font-black tracking-tight">
+              Kategori Silinsin Mi?
+            </DialogTitle>
+            <DialogDescription className="text-base font-medium">
+              Bu kategoriyi sildiğinizde içindeki <b>tüm ürünler</b> de kalıcı olarak silinecektir.
+              Bu işlem geri alınamaz.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDeleteCategoryDialog(false)}>
-              İptal
+          <DialogFooter className="gap-3 mt-4">
+            <Button
+              variant="ghost"
+              className="rounded-xl font-bold"
+              onClick={() => setDeleteCategoryId(null)}
+            >
+              İPTAL
             </Button>
-            <Button variant="destructive" onClick={confirmDeleteCategory}>
-              Kategoriyi Sil
+            <Button
+              variant="destructive"
+              className="rounded-xl font-black px-8 shadow-lg shadow-destructive/20"
+              onClick={confirmDeleteCategory}
+            >
+              KATEGORİYİ SİL
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Card>
+    </div>
   )
+}
+
+// ==========================================
+// YARDIMCI SABİTLER VE FONKSİYONLAR
+// ==========================================
+const ICON_OPTIONS = [
+  { value: 'coffee', emoji: '☕', label: 'Kahveler' },
+  { value: 'ice-cream-cone', emoji: '🍦', label: 'Tatlılar' },
+  { value: 'cookie', emoji: '🍪', label: 'Atıştırmalık' },
+  { value: 'utensils', emoji: '🍽️', label: 'Yemekler' },
+  { value: 'wine', emoji: '🍷', label: 'İçecekler' },
+  { value: 'cake', emoji: '🎂', label: 'Pastalar' },
+  { value: 'sandwich', emoji: '🥪', label: 'Sandviçler' }
+]
+
+function getCategoryEmoji(icon: string | null): string {
+  const found = ICON_OPTIONS.find((opt) => opt.value === icon)
+  return found ? found.emoji : '🍽️'
 }

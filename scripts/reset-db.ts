@@ -1,16 +1,12 @@
-import { PrismaClient } from '@prisma/client'
-import { PrismaLibSql } from '@prisma/adapter-libsql'
+import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
 import path from 'path'
+import { PrismaClient } from '../src/generated/prisma/client'
 
 // Database path for standalone execution
 const dbPath = path.join(process.cwd(), 'prisma', 'dev.db')
 
-// Create adapter
-const adapter = new PrismaLibSql({
-  url: `file:${dbPath}`
-})
-
-// Create client with adapter
+// Create client with better-sqlite3 adapter
+const adapter = new PrismaBetterSqlite3({ url: `file:${dbPath}` })
 const prisma = new PrismaClient({ adapter })
 
 async function reset(): Promise<void> {

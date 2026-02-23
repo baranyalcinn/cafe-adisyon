@@ -1,6 +1,7 @@
 import { AdminPinModal } from '@/components/ui/AdminPinModal'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
 import {
   Select,
@@ -18,7 +19,6 @@ import { useSettingsStore } from '@/store/useSettingsStore'
 import { type UpdateInfo } from '@shared/types'
 import {
   Activity,
-  AlertCircle,
   ArrowLeft,
   ArrowUpCircle,
   CheckCircle2,
@@ -72,24 +72,6 @@ interface SettingsViewProps {
   colorScheme: ColorScheme
   onColorSchemeChange: (scheme: ColorScheme) => void
 }
-
-const COLOR_SCHEMES: { id: ColorScheme; name: string; color: string; darkColor: string }[] = [
-  {
-    id: 'emerald',
-    name: 'Zümrüt',
-    color: 'oklch(0.55 0.17 155)',
-    darkColor: 'oklch(0.65 0.15 155)'
-  },
-  {
-    id: 'ocean',
-    name: 'Okyanus',
-    color: 'oklch(0.55 0.18 240)',
-    darkColor: 'oklch(0.65 0.16 240)'
-  },
-  { id: 'violet', name: 'Mor', color: 'oklch(0.55 0.2 290)', darkColor: 'oklch(0.65 0.18 290)' },
-  { id: 'amber', name: 'Amber', color: 'oklch(0.6 0.16 60)', darkColor: 'oklch(0.7 0.14 60)' },
-  { id: 'rose', name: 'Gül', color: 'oklch(0.55 0.18 350)', darkColor: 'oklch(0.65 0.16 350)' }
-]
 
 const MENU_ITEMS = [
   {
@@ -381,6 +363,26 @@ export function SettingsView({
 // ============================================================================
 // ALT BİLEŞEN: GENEL AYARLAR (Ayrıştırılmış Kod Alanı)
 // ============================================================================
+
+// Renk Şeması Tanımları
+const COLOR_SCHEMES: { id: ColorScheme; name: string; color: string; darkColor: string }[] = [
+  {
+    id: 'emerald',
+    name: 'Zümrüt',
+    color: 'oklch(0.55 0.17 155)',
+    darkColor: 'oklch(0.65 0.15 155)'
+  },
+  {
+    id: 'ocean',
+    name: 'Okyanus',
+    color: 'oklch(0.55 0.18 240)',
+    darkColor: 'oklch(0.65 0.16 240)'
+  },
+  { id: 'violet', name: 'Mor', color: 'oklch(0.55 0.2 290)', darkColor: 'oklch(0.65 0.18 290)' },
+  { id: 'amber', name: 'Amber', color: 'oklch(0.6 0.16 60)', darkColor: 'oklch(0.7 0.14 60)' },
+  { id: 'rose', name: 'Gül', color: 'oklch(0.55 0.18 350)', darkColor: 'oklch(0.65 0.16 350)' }
+]
+
 interface GeneralSettingsTabProps {
   isDark: boolean
   onThemeToggle: () => void
@@ -389,7 +391,7 @@ interface GeneralSettingsTabProps {
   activeView: string | null
 }
 
-function GeneralSettingsTab({
+export function GeneralSettingsTab({
   isDark,
   onThemeToggle,
   colorScheme,
@@ -401,19 +403,16 @@ function GeneralSettingsTab({
   const { data: tables = [], refetch: refetchTables } = useTables()
   const { products, refetchProducts, refetchCategories } = useInventory()
 
-  // PIN change state
+  // PIN ve Güvenlik State'leri
   const [showChangePinModal, setShowChangePinModal] = useState(false)
   const [newPin, setNewPin] = useState('')
   const [confirmPin, setConfirmPin] = useState('')
   const [pinChangeError, setPinChangeError] = useState<string | null>(null)
-  const [showDemoPinModal, setShowDemoPinModal] = useState(false)
 
-  // Recovery Settings state
   const [securityQuestion, setSecurityQuestion] = useState('')
   const [selectedQuestionVal, setSelectedQuestionVal] = useState('')
   const [securityAnswer, setSecurityAnswer] = useState('')
   const [showRecoveryPinModal, setShowRecoveryPinModal] = useState(false)
-  const [recoveryError, setRecoveryError] = useState<string | null>(null)
 
   const PREDEFINED_QUESTIONS = [
     'İlk evcil hayvanınızın adı?',
@@ -423,31 +422,26 @@ function GeneralSettingsTab({
     'Doğduğunuz şehir?'
   ]
 
-  // Software Update State
+  // Güncelleme State'leri
   const [updateStatus, setUpdateStatus] = useState<
     'idle' | 'checking' | 'available' | 'not-available' | 'downloading' | 'downloaded' | 'error'
   >('idle')
   const [appVersion, setAppVersion] = useState<string>('...')
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null)
   const [downloadProgress, setDownloadProgress] = useState(0)
+  const [showDemoPinModal, setShowDemoPinModal] = useState(false)
 
+  // Sürüm Bilgisini Al
   useEffect(() => {
-    const getVersion = async (): Promise<void> => {
-      try {
-        const version = await window.api.system.getVersion()
-        setAppVersion(`v${version}`)
-      } catch {
-        setAppVersion('v1.0.0')
-      }
-    }
-    getVersion()
+    window.api.system
+      .getVersion()
+      .then((v) => setAppVersion(`v${v}`))
+      .catch(() => setAppVersion('v1.0.0'))
   }, [])
 
-  // KRİTİK DÜZELTME: Cleanup (Temizleme) eklendi.
+  // KRİTİK DÜZELTME: Electron IPC dinleyicisi için temizleme (cleanup)
   useEffect(() => {
     if (activeView === 'general') {
-      // Electron tarafında API'nin döndürdüğü listener'ı temizleme şekline göre uyarlanmalıdır.
-      // Genellikle ipcRenderer.on() kullanıldığında bir unsubscribe objesi döner.
       const unsubscribe = cafeApi.system.onUpdate((event, data: unknown) => {
         switch (event) {
           case 'checking':
@@ -462,7 +456,7 @@ function GeneralSettingsTab({
             break
           case 'progress':
             setUpdateStatus('downloading')
-            setDownloadProgress((data as { percent: number }).percent)
+            setDownloadProgress((data as { percent: number })?.percent || 0)
             break
           case 'downloaded':
             setUpdateStatus('downloaded')
@@ -473,20 +467,16 @@ function GeneralSettingsTab({
             break
         }
       })
-
-      // Memory leak'i önler: Sekmeden çıkıldığında dinleyiciyi kaldır.
       return () => {
-        if (typeof unsubscribe === 'function') {
-          ;(unsubscribe as () => void)()
-        }
+        if (typeof unsubscribe === 'function') (unsubscribe as () => void)()
       }
     }
     return undefined
   }, [activeView])
 
   const handleManualUpdateCheck = async (): Promise<void> => {
+    setUpdateStatus('checking')
     try {
-      setUpdateStatus('checking')
       const result = await cafeApi.system.checkUpdate()
       if (!result.available) setUpdateStatus('not-available')
     } catch {
@@ -494,121 +484,72 @@ function GeneralSettingsTab({
     }
   }
 
-  const handleChangePin = async (): Promise<void> => {
-    const clearingPin = newPin === '' && confirmPin === ''
-    if (!clearingPin) {
-      if (newPin.length !== 4) {
-        setPinChangeError('PIN 4 haneli olmalıdır')
-        return
-      }
-      if (newPin !== confirmPin) {
-        setPinChangeError('PIN kodları eşleşmiyor')
-        return
-      }
+  const handleChangePin = (): void => {
+    if (newPin !== '' && (newPin.length !== 4 || newPin !== confirmPin)) {
+      setPinChangeError(newPin !== confirmPin ? 'PIN kodları eşleşmiyor' : 'PIN 4 haneli olmalıdır')
+      return
     }
     setShowChangePinModal(true)
   }
 
   return (
-    <div className="space-y-4 animate-in fade-in duration-300">
-      {/* Row 1: Appearance & Security */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
-        {/* Appearance Card */}
-        <Card className="rounded-2xl border bg-card shadow-sm h-full">
-          <CardHeader className="pb-3 pt-5 px-5">
-            <CardTitle className="flex items-center gap-2.5 text-lg font-bold tracking-tight">
-              <Palette className="w-5 h-5 text-primary" />
-              Görünüm ve Tercihler
+    <div className="space-y-6 animate-in fade-in duration-500 pb-10">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+        {/* --- GÖRÜNÜM VE TERCİHLER --- */}
+        <Card className="rounded-[2.5rem] border-border/40 shadow-sm bg-card/50 backdrop-blur-sm">
+          <CardHeader className="pb-4 pt-8 px-8">
+            <CardTitle className="flex items-center gap-3 text-xl font-black tracking-tight uppercase">
+              <Palette className="w-6 h-6 text-primary" /> Görünüm
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-5 px-5 pb-5">
-            {/* Theme Mode */}
+          <CardContent className="space-y-6 px-8 pb-8">
+            {/* Tema Modu */}
             <div className="space-y-3">
-              <label className="text-[10px] font-bold text-muted-foreground/90 uppercase tracking-[0.15em] ml-1">
+              <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">
                 Tema Modu
               </label>
-              <div className="grid grid-cols-2 gap-2.5">
-                <button
+              <div className="grid grid-cols-2 gap-3">
+                <ThemeButton
+                  active={!isDark}
                   onClick={() => isDark && onThemeToggle()}
-                  className={cn(
-                    'flex items-center gap-2.5 p-3 rounded-xl border transition-all',
-                    !isDark
-                      ? 'border-primary bg-primary/5 ring-2 ring-primary/10'
-                      : 'border-border hover:bg-accent/50'
-                  )}
-                >
-                  <div
-                    className={cn(
-                      'p-1.5 rounded-lg',
-                      !isDark ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'
-                    )}
-                  >
-                    <Sun className="w-4 h-4" />
-                  </div>
-                  <span
-                    className={cn(
-                      'text-sm font-medium',
-                      !isDark ? 'text-primary' : 'text-muted-foreground'
-                    )}
-                  >
-                    Aydınlık
-                  </span>
-                </button>
-                <button
+                  icon={Sun}
+                  label="Aydınlık"
+                />
+                <ThemeButton
+                  active={isDark}
                   onClick={() => !isDark && onThemeToggle()}
-                  className={cn(
-                    'flex items-center gap-2.5 p-3 rounded-xl border transition-all',
-                    isDark
-                      ? 'border-primary bg-primary/5 ring-2 ring-primary/10'
-                      : 'border-border hover:bg-accent/50'
-                  )}
-                >
-                  <div
-                    className={cn(
-                      'p-1.5 rounded-lg',
-                      isDark ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'
-                    )}
-                  >
-                    <Moon className="w-4 h-4" />
-                  </div>
-                  <span
-                    className={cn(
-                      'text-sm font-medium',
-                      isDark ? 'text-primary' : 'text-muted-foreground'
-                    )}
-                  >
-                    Karanlık
-                  </span>
-                </button>
+                  icon={Moon}
+                  label="Karanlık"
+                />
               </div>
             </div>
 
-            <div className="h-px bg-border/50" />
+            <div className="h-px bg-border/40" />
 
-            {/* Color Scheme */}
+            {/* Renk Şeması */}
             <div className="space-y-3">
               <div className="flex items-center justify-between ml-1">
-                <label className="text-[10px] font-bold text-muted-foreground/90 uppercase tracking-[0.15em]">
+                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">
                   Renk Teması
                 </label>
-                <span className="text-xs font-bold text-primary uppercase tracking-wider">
+                <span className="text-[10px] font-black text-primary uppercase tracking-widest bg-primary/10 px-2 py-0.5 rounded-full">
                   {COLOR_SCHEMES.find((c) => c.id === colorScheme)?.name}
                 </span>
               </div>
-              <div className="flex items-center gap-2 p-1.5 bg-muted/30 rounded-xl">
+              <div className="flex items-center gap-3 p-2 bg-muted/20 rounded-2xl">
                 {COLOR_SCHEMES.map((scheme) => (
                   <button
                     key={scheme.id}
                     onClick={() => onColorSchemeChange(scheme.id)}
                     className={cn(
-                      'relative flex items-center justify-center w-full aspect-square rounded-lg transition-all',
+                      'relative flex items-center justify-center flex-1 aspect-square rounded-xl transition-all',
                       colorScheme === scheme.id
-                        ? 'bg-background shadow-sm ring-1 ring-border scale-110'
+                        ? 'bg-background shadow-md scale-110 ring-2 ring-primary/20'
                         : 'hover:bg-background/50'
                     )}
                   >
                     <div
-                      className="w-6 h-6 rounded-full border border-white/30 dark:border-black/20"
+                      className="w-6 h-6 rounded-full"
                       style={{ backgroundColor: isDark ? scheme.darkColor : scheme.color }}
                     />
                   </button>
@@ -616,17 +557,17 @@ function GeneralSettingsTab({
               </div>
             </div>
 
-            <div className="h-px bg-border/50" />
+            <div className="h-px bg-border/40" />
 
-            {/* Sound */}
+            {/* Ses Ayarları */}
             <div className="flex items-center justify-between py-2 px-1">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-muted/40 rounded-lg">
-                  <Speaker className="w-4 h-4 text-muted-foreground" />
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-muted/40 rounded-2xl">
+                  <Speaker className="w-5 h-5 text-muted-foreground" />
                 </div>
-                <div>
-                  <span className="text-sm font-bold block leading-none mb-1">Ses Efektleri</span>
-                  <span className="text-xs text-muted-foreground/90">
+                <div className="flex flex-col">
+                  <span className="text-sm font-black uppercase tracking-tight">Ses Efektleri</span>
+                  <span className="text-[11px] font-medium text-muted-foreground">
                     Bildirim ve etkileşim sesleri
                   </span>
                 </div>
@@ -634,16 +575,15 @@ function GeneralSettingsTab({
               <Button
                 onClick={toggleSound}
                 variant={soundEnabled ? 'default' : 'outline'}
-                size="sm"
-                className="rounded-full px-6 h-10 text-sm font-bold shadow-sm active:scale-95"
+                className="rounded-xl px-6 h-11 font-black text-xs tracking-widest uppercase transition-all shadow-sm active:scale-95"
               >
                 {soundEnabled ? (
                   <>
-                    <Volume2 className="w-3.5 h-3.5 mr-1.5" /> Açık
+                    <Volume2 className="w-4 h-4 mr-2" /> AÇIK
                   </>
                 ) : (
                   <>
-                    <VolumeX className="w-3.5 h-3.5 mr-1.5" /> Kapalı
+                    <VolumeX className="w-4 h-4 mr-2" /> KAPALI
                   </>
                 )}
               </Button>
@@ -651,116 +591,60 @@ function GeneralSettingsTab({
           </CardContent>
         </Card>
 
-        {/* Security Card */}
-        <Card className="rounded-2xl border bg-card shadow-sm h-full">
-          <CardHeader className="pb-3 pt-5 px-5">
+        {/* --- GÜVENLİK MERKEZİ --- */}
+        <Card className="rounded-[2.5rem] border-border/40 shadow-sm bg-card/50 backdrop-blur-sm">
+          <CardHeader className="pb-4 pt-8 px-8">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2.5 text-lg font-bold tracking-tight">
-                <ShieldCheck className="w-5 h-5 text-success" />
-                Güvenlik Merkezi
+              <CardTitle className="flex items-center gap-3 text-xl font-black tracking-tight uppercase">
+                <ShieldCheck className="w-6 h-6 text-emerald-500" /> Güvenlik
               </CardTitle>
-              <span className="text-[10px] font-bold px-3 py-1 rounded-full bg-success/10 text-success border border-success/20 tracking-widest">
+              <span className="text-[10px] font-black px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 tracking-widest uppercase">
                 GÜVENLİ
               </span>
             </div>
-            <CardDescription className="text-sm text-muted-foreground/80 font-medium">
-              PIN yönetimi ve güvenlik seçenekleri
-            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4 px-5 pb-5">
-            {/* PIN Section */}
-            <div className="p-4 bg-muted/20 rounded-xl border border-border/50 space-y-4">
-              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.15em] flex items-center gap-2 ml-1">
-                <KeyRound className="w-3.5 h-3.5 text-primary" />
-                Erişim Şifreleme (PIN)
+          <CardContent className="space-y-5 px-8 pb-8">
+            {/* PIN Değiştirme */}
+            <div className="p-5 bg-muted/20 rounded-[1.5rem] border border-border/30 space-y-5">
+              <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2">
+                <KeyRound className="w-4 h-4 text-primary" /> ERİŞİM ŞİFRELEME (PIN)
               </label>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2 text-center sm:text-left">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">
-                    Yeni PIN
-                  </span>
-                  <InputOTP
-                    maxLength={4}
-                    value={newPin}
-                    onChange={(val) => {
-                      setNewPin(val)
-                      setPinChangeError(null)
-                    }}
-                  >
-                    <InputOTPGroup className="gap-2 justify-center sm:justify-start">
-                      {[0, 1, 2, 3].map((i) => (
-                        <InputOTPSlot
-                          key={i}
-                          index={i}
-                          className="rounded-lg border h-11 w-11 text-lg font-bold shadow-sm"
-                        />
-                      ))}
-                    </InputOTPGroup>
-                  </InputOTP>
-                </div>
-                <div className="space-y-2 text-center sm:text-left">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">
-                    Tekrar Girin
-                  </span>
-                  <InputOTP
-                    maxLength={4}
-                    value={confirmPin}
-                    onChange={(val) => {
-                      setConfirmPin(val)
-                      setPinChangeError(null)
-                    }}
-                  >
-                    <InputOTPGroup className="gap-2 justify-center sm:justify-start">
-                      {[0, 1, 2, 3].map((i) => (
-                        <InputOTPSlot
-                          key={i}
-                          index={i}
-                          className="rounded-lg border h-11 w-11 text-lg font-bold shadow-sm"
-                        />
-                      ))}
-                    </InputOTPGroup>
-                  </InputOTP>
-                </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <PinInput
+                  label="YENİ PIN"
+                  value={newPin}
+                  onChange={(v) => {
+                    setNewPin(v)
+                    setPinChangeError(null)
+                  }}
+                />
+                <PinInput
+                  label="TEKRAR GİRİN"
+                  value={confirmPin}
+                  onChange={(v) => {
+                    setConfirmPin(v)
+                    setPinChangeError(null)
+                  }}
+                />
               </div>
               <Button
                 onClick={handleChangePin}
                 disabled={newPin.length !== 4 || confirmPin.length !== 4}
-                className="w-full h-11 text-sm font-bold rounded-lg shadow-sm"
-                variant="secondary"
+                className="w-full h-12 text-xs font-black uppercase tracking-[0.2em] rounded-xl shadow-lg shadow-primary/10"
               >
-                Güncellemeyi Onayla
+                GÜNCELLEMEYİ ONAYLA
               </Button>
-              <AdminPinModal
-                open={showChangePinModal}
-                onOpenChange={setShowChangePinModal}
-                onSuccess={async () => {
-                  try {
-                    await cafeApi.admin.changePin(
-                      '',
-                      newPin === '' && confirmPin === '' ? '' : newPin
-                    )
-                    setNewPin('')
-                    setConfirmPin('')
-                    alert('PIN başarıyla güncellendi')
-                    setShowChangePinModal(false)
-                  } catch (err) {
-                    alert((err as Error).message)
-                  }
-                }}
-                title="PIN Değişiklik Onayı"
-                description="İşlemi onaylamak için mevcut yönetici PIN kodunu girin"
-              />
               {pinChangeError && (
-                <div className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/5 p-2.5 text-xs font-medium text-destructive">
+                <div className="text-[11px] font-bold text-rose-500 bg-rose-500/10 p-2 rounded-lg text-center uppercase tracking-wider">
                   {pinChangeError}
                 </div>
               )}
             </div>
 
-            {/* Recovery Section */}
-            <div className="p-4 bg-muted/20 rounded-xl border border-border/50 space-y-3">
-              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.15em] flex items-center gap-2 ml-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-primary" /> Hesap Kurtarma
+            {/* Hesap Kurtarma */}
+            <div className="p-5 bg-muted/20 rounded-[1.5rem] border border-border/30 space-y-4">
+              <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-primary" /> HESAP KURTARMA
               </label>
               <Select
                 value={selectedQuestionVal}
@@ -769,276 +653,350 @@ function GeneralSettingsTab({
                   setSecurityQuestion(val !== 'custom' ? val : '')
                 }}
               >
-                <SelectTrigger className="w-full text-sm h-11 bg-background rounded-lg border font-medium">
-                  <SelectValue placeholder="Bir kurtarma sorusu belirleyin" />
+                <SelectTrigger className="w-full text-xs h-11 bg-background rounded-xl border-none font-bold uppercase tracking-wider px-4">
+                  <SelectValue placeholder="BİR SORU SEÇİN" />
                 </SelectTrigger>
-                <SelectContent className="rounded-xl shadow-xl">
+                <SelectContent className="rounded-2xl border-none shadow-2xl">
                   {PREDEFINED_QUESTIONS.map((q) => (
-                    <SelectItem key={q} value={q} className="text-sm py-2.5 font-medium">
+                    <SelectItem key={q} value={q} className="text-xs font-bold py-3 rounded-xl">
                       {q}
                     </SelectItem>
                   ))}
-                  <SelectItem value="custom" className="text-sm font-bold py-2.5 border-t">
+                  <SelectItem
+                    value="custom"
+                    className="text-xs font-black py-3 border-t uppercase text-primary"
+                  >
                     Kendi sorumu yazacağım...
                   </SelectItem>
                 </SelectContent>
               </Select>
               {selectedQuestionVal === 'custom' && (
-                <input
-                  type="text"
-                  placeholder="Güvenlik sorunuzu yazın..."
+                <Input
                   value={securityQuestion}
                   onChange={(e) => setSecurityQuestion(e.target.value)}
-                  className="w-full text-sm border rounded-lg px-3 py-2 h-11 bg-background outline-none focus:ring-2 focus:ring-primary/20 font-medium"
+                  placeholder="Güvenlik sorunuzu yazın..."
+                  className="h-11 rounded-xl bg-background border-none text-xs font-bold"
                 />
               )}
-              <input
-                type="text"
-                placeholder="Cevabınızı yazın..."
+              <Input
                 value={securityAnswer}
                 onChange={(e) => setSecurityAnswer(e.target.value)}
-                className="w-full text-sm border rounded-lg px-3 py-2 h-11 bg-background outline-none focus:ring-2 focus:ring-primary/20 font-bold tracking-tight"
+                placeholder="Cevabınızı yazın..."
+                className="h-11 rounded-xl bg-background border-none text-xs font-bold"
               />
               <Button
-                className="w-full h-11 text-sm font-bold rounded-lg shadow-sm"
                 onClick={() => setShowRecoveryPinModal(true)}
                 disabled={!securityQuestion || !securityAnswer}
                 variant="outline"
+                className="w-full h-11 text-xs font-black uppercase tracking-widest rounded-xl"
               >
-                Yöntemi Kaydet
+                YÖNTEMİ KAYDET
               </Button>
-              <AdminPinModal
-                open={showRecoveryPinModal}
-                onOpenChange={setShowRecoveryPinModal}
-                onSuccess={async () => {
-                  try {
-                    await cafeApi.admin.setRecovery('', securityQuestion, securityAnswer)
-                    setSecurityAnswer('')
-                    setSecurityQuestion('')
-                    setSelectedQuestionVal('')
-                    setRecoveryError(null)
-                    alert('Kurtarma yöntemi başarıyla kaydedildi')
-                    setShowRecoveryPinModal(false)
-                  } catch (err) {
-                    setRecoveryError((err as Error).message)
-                  }
-                }}
-                title="Kurtarma Ayarı Onayı"
-                description="Ayarları kaydetmek için yönetici PIN kodunu girin"
-              />
-              {recoveryError && (
-                <div className="text-xs text-destructive p-2 bg-destructive/5 rounded-lg border border-destructive/10">
-                  {recoveryError}
-                </div>
-              )}
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Row 2: Software Update & System Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch pb-4">
-        {/* Software Update Card */}
-        <Card className="rounded-2xl border bg-card shadow-sm h-full">
-          <CardHeader className="pb-3 pt-5 px-5">
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2.5 text-lg font-bold tracking-tight">
-                <ArrowUpCircle className="w-5 h-5 text-primary" /> Yazılım Güncelleme
-              </CardTitle>
-              <span className="text-[10px] font-bold px-3 py-1 rounded-full bg-muted border border-border/50 font-mono tracking-tighter">
-                {appVersion}
-              </span>
-            </div>
-            <CardDescription className="text-sm text-muted-foreground/80 font-medium">
-              Sistem güncelliğini kontrol edin
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="px-5 pb-5 space-y-4">
-            {updateStatus === 'idle' || updateStatus === 'not-available' ? (
-              <div className="flex items-center justify-between p-4 bg-success/5 border border-success/20 rounded-xl">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-success/10 rounded-lg">
-                    <CheckCircle2 className="w-5 h-5 text-success" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold">Sistem Güncel</p>
-                    <p className="text-xs text-muted-foreground/70">
-                      En son sürümü kullanıyorsunuz
-                    </p>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleManualUpdateCheck}
-                  className="h-10 text-sm font-bold hover:bg-primary/10 hover:text-primary rounded-lg px-4"
-                >
-                  <RefreshCw className="w-4 h-4 mr-2" /> Denetle
-                </Button>
-              </div>
-            ) : updateStatus === 'checking' ? (
-              <div className="flex items-center justify-center gap-4 py-8 bg-muted/10 rounded-xl border border-dashed border-border/50">
-                <RefreshCw className="w-6 h-6 text-primary animate-spin" />
-                <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest">
-                  Kontrol ediliyor...
-                </p>
-              </div>
-            ) : updateStatus === 'available' || updateStatus === 'downloading' ? (
-              <div className="p-4 bg-primary/5 border border-primary/20 rounded-xl space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <Download className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold">Yeni Sürüm Mevcut</p>
-                    <p className="text-xs text-primary/70">
-                      v{updateInfo?.version || '...'} indiriliyor
-                    </p>
-                  </div>
-                </div>
-                <div className="h-2.5 w-full bg-primary/10 rounded-full overflow-hidden shadow-inner">
-                  <div
-                    className="h-full bg-primary rounded-full transition-all duration-500 shadow-sm"
-                    style={{ width: `${downloadProgress}%` }}
-                  />
-                </div>
-                <p className="text-sm text-right font-black text-primary tabular-nums tracking-tighter">
-                  %{downloadProgress}
-                </p>
-              </div>
-            ) : updateStatus === 'downloaded' ? (
-              <div className="p-4 bg-success/5 border border-success/20 rounded-xl space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-success/10 rounded-lg">
-                    <CheckCircle2 className="w-5 h-5 text-success" />
-                  </div>
-                  <p className="text-sm font-bold text-success uppercase tracking-wider">
-                    İndirme Tamamlandı
-                  </p>
-                </div>
-                <Button
-                  onClick={() => cafeApi.system.restart()}
-                  className="w-full h-11 bg-success hover:bg-success/90 text-white text-sm font-bold rounded-lg gap-3 shadow-md active:scale-95 transition-all"
-                >
-                  <RefreshCw className="w-4 h-4" /> Yeniden Başlat ve Yükle
-                </Button>
-              </div>
-            ) : (
-              <div className="p-4 bg-destructive/5 border border-destructive/20 rounded-xl flex items-center gap-3">
-                <div className="p-2 bg-destructive/10 rounded-lg">
-                  <AlertCircle className="w-5 h-5 text-destructive" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-bold text-destructive">Hata Oluştu</p>
-                  <p className="text-xs text-muted-foreground/70">Güncelleme kontrolü başarısız.</p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleManualUpdateCheck}
-                  className="h-10 text-sm font-bold text-destructive hover:bg-destructive/10 rounded-lg px-4"
-                >
-                  Tekrar Dene
-                </Button>
-              </div>
-            )}
-            <p className="text-[10px] text-center text-muted-foreground/50 leading-relaxed font-medium uppercase tracking-tighter">
-              Güncellemeler otomatik kontrol edilir ve arka planda indirilir.
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* System Status Card */}
-        <Card className="rounded-2xl border bg-card shadow-sm h-full">
-          <CardHeader className="pb-3 pt-5 px-5">
-            <CardTitle className="flex items-center gap-2.5 text-lg font-bold tracking-tight">
-              <Activity className="w-5 h-5 text-blue-500" /> Sistem Durumu
+      {/* --- GÜNCELLEME VE SİSTEM DURUMU --- */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch pb-4">
+        {/* Yazılım Güncelleme */}
+        <Card className="rounded-[2.5rem] border-border/40 shadow-sm bg-card/50 backdrop-blur-sm">
+          <CardHeader className="pb-4 pt-8 px-8 flex flex-row items-center justify-between">
+            <CardTitle className="flex items-center gap-3 text-xl font-black tracking-tight uppercase">
+              <ArrowUpCircle className="w-6 h-6 text-primary" /> Güncelleme
             </CardTitle>
+            <span className="text-[10px] font-black px-3 py-1 rounded-full bg-muted border border-border/50 font-mono tracking-tighter uppercase">
+              {appVersion}
+            </span>
           </CardHeader>
-          <CardContent className="space-y-4 px-5 pb-5">
-            <div className="p-4 bg-muted/20 border border-border/50 rounded-xl flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-background rounded-xl border border-border/50 shadow-sm">
-                  <Database className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold">Veritabanı</p>
-                  <p className="text-xs font-bold text-success flex items-center gap-1.5 uppercase tracking-wider">
-                    <span className="w-2 h-2 rounded-full bg-success animate-pulse shadow-sm shadow-success/40" />{' '}
-                    Sağlıklı
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-6">
-                <div className="text-right">
-                  <p className="text-2xl font-black text-primary tabular-nums leading-none tracking-tighter">
-                    {tables.length}
-                  </p>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1.5 opacity-60">
-                    Masa
-                  </p>
-                </div>
-                <div className="w-px h-12 bg-border/80" />
-                <div className="text-right">
-                  <p className="text-2xl font-black text-primary tabular-nums leading-none tracking-tighter">
-                    {products.length}
-                  </p>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1.5 opacity-60">
-                    Ürün
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <Button
-                onClick={() => setShowDemoPinModal(true)}
-                variant="outline"
-                className="h-[4.5rem] flex flex-col gap-2 items-center justify-center rounded-xl text-xs font-bold uppercase tracking-widest border-blue-500/10 hover:bg-blue-50/50 hover:border-blue-500/30 transition-all active:scale-95 shadow-sm"
-              >
-                <RefreshCw className="w-5 h-5 text-blue-500" /> Demo Yükle
-              </Button>
-              <Button
-                onClick={async () => {
-                  try {
-                    await Promise.all([refetchTables(), refetchProducts(), refetchCategories()])
-                    alert('Sistem kontrolü tamamlandı.')
-                  } catch {
-                    alert('Hata oluştu.')
-                  }
-                }}
-                variant="outline"
-                className="h-[4.5rem] flex flex-col gap-2 items-center justify-center rounded-xl text-xs font-bold uppercase tracking-widest border-amber-500/10 hover:bg-amber-50/50 hover:border-amber-500/30 transition-all active:scale-95 shadow-sm"
-              >
-                <Wrench className="w-5 h-5 text-amber-500" /> Kontrol Et
-              </Button>
-            </div>
-            <AdminPinModal
-              open={showDemoPinModal}
-              onOpenChange={setShowDemoPinModal}
-              onSuccess={async () => {
-                setShowDemoPinModal(false)
-                setTimeout(async () => {
-                  if (
-                    confirm(
-                      'DİKKAT: Demo verileri yüklendiğinde MEVCUT TÜM VERİLER SİLİNECEKTİR.\n\nDevam etmek istiyor musunuz?'
-                    )
-                  ) {
-                    try {
-                      await cafeApi.seed.database()
-                      await Promise.all([refetchTables(), refetchProducts(), refetchCategories()])
-                    } catch {
-                      alert('Demo veri yükleme başarısız oldu.')
-                    }
-                  }
-                }, 100)
-              }}
-              title="Demo Verisi Onayı"
-              description="Kritik işlem onayı için PIN girin"
+          <CardContent className="px-8 pb-8">
+            <UpdateStatusArea
+              status={updateStatus}
+              progress={downloadProgress}
+              info={updateInfo}
+              onCheck={handleManualUpdateCheck}
             />
           </CardContent>
         </Card>
+
+        {/* Sistem Durumu */}
+        <Card className="rounded-[2.5rem] border-border/40 shadow-sm bg-card/50 backdrop-blur-sm">
+          <CardHeader className="pb-4 pt-8 px-8">
+            <CardTitle className="flex items-center gap-3 text-xl font-black tracking-tight uppercase">
+              <Activity className="w-6 h-6 text-blue-500" /> Sistem Durumu
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6 px-8 pb-8">
+            <div className="p-5 bg-muted/20 border border-border/40 rounded-[1.5rem] flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-background rounded-2xl border border-border/50 shadow-sm">
+                  <Database className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-black uppercase tracking-tight">Veritabanı</p>
+                  <p className="text-[11px] font-black text-emerald-500 flex items-center gap-2 uppercase tracking-widest">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> SAĞLIKLI
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-8">
+                <StatItem label="Masa" value={tables.length} />
+                <StatItem label="Ürün" value={products.length} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <SystemActionButton
+                onClick={() => setShowDemoPinModal(true)}
+                icon={RefreshCw}
+                label="DEMO YÜKLE"
+                color="text-blue-500"
+              />
+              <SystemActionButton
+                onClick={async () => {
+                  await Promise.all([refetchTables(), refetchProducts(), refetchCategories()])
+                  alert('Sistem kontrolü tamamlandı.')
+                }}
+                icon={Wrench}
+                label="KONTROL ET"
+                color="text-amber-500"
+              />
+            </div>
+          </CardContent>
+        </Card>
       </div>
+
+      {/* MODALLAR */}
+      <AdminPinModal
+        open={showChangePinModal}
+        onOpenChange={setShowChangePinModal}
+        title="PIN Onayı"
+        description="Mevcut yönetici şifresini girin"
+        onSuccess={async () => {
+          await cafeApi.admin.changePin('', newPin === '' && confirmPin === '' ? '' : newPin)
+          setNewPin('')
+          setConfirmPin('')
+          alert('PIN güncellendi')
+          setShowChangePinModal(false)
+        }}
+      />
+      <AdminPinModal
+        open={showRecoveryPinModal}
+        onOpenChange={setShowRecoveryPinModal}
+        title="Güvenlik Onayı"
+        description="İşlemi onaylamak için PIN girin"
+        onSuccess={async () => {
+          await cafeApi.admin.setRecovery('', securityQuestion, securityAnswer)
+          setSecurityAnswer('')
+          setSecurityQuestion('')
+          setSelectedQuestionVal('')
+          alert('Yöntem kaydedildi')
+          setShowRecoveryPinModal(false)
+        }}
+      />
+      <AdminPinModal
+        open={showDemoPinModal}
+        onOpenChange={setShowDemoPinModal}
+        title="Kritik İşlem"
+        description="Demo yüklemek için PIN girin"
+        onSuccess={async () => {
+          setShowDemoPinModal(false)
+          setTimeout(async () => {
+            if (confirm('DİKKAT: Mevcut tüm veriler silinecektir!')) {
+              await cafeApi.seed.database()
+              await Promise.all([refetchTables(), refetchProducts(), refetchCategories()])
+            }
+          }, 100)
+        }}
+      />
+    </div>
+  )
+}
+
+// ==========================================
+// YARDIMCI KÜÇÜK BİLEŞENLER (Temizlik İçin)
+// ==========================================
+
+const ThemeButton = ({
+  active,
+  onClick,
+  icon: Icon,
+  label
+}: {
+  active: boolean
+  onClick: () => void
+  icon: React.ElementType
+  label: string
+}): React.ReactNode => (
+  <button
+    onClick={onClick}
+    className={cn(
+      'flex items-center gap-3 p-4 rounded-2xl border transition-all',
+      active
+        ? 'border-primary bg-primary/5 ring-2 ring-primary/10'
+        : 'border-border/60 hover:bg-muted/50'
+    )}
+  >
+    <div
+      className={cn(
+        'p-2 rounded-xl',
+        active ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'
+      )}
+    >
+      <Icon className="w-5 h-5" />
+    </div>
+    <span
+      className={cn(
+        'text-sm font-black uppercase tracking-widest',
+        active ? 'text-primary' : 'text-muted-foreground'
+      )}
+    >
+      {label}
+    </span>
+  </button>
+)
+
+const PinInput = ({
+  label,
+  value,
+  onChange
+}: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+}): React.ReactNode => (
+  <div className="space-y-3 flex flex-col items-center sm:items-start">
+    <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">
+      {label}
+    </span>
+    <InputOTP maxLength={4} value={value} onChange={onChange}>
+      <InputOTPGroup className="gap-2.5">
+        {[0, 1, 2, 3].map((i) => (
+          <InputOTPSlot
+            key={i}
+            index={i}
+            className="rounded-xl border-2 h-12 w-12 text-lg font-black shadow-sm bg-background"
+          />
+        ))}
+      </InputOTPGroup>
+    </InputOTP>
+  </div>
+)
+
+const StatItem = ({ label, value }: { label: string; value: number | string }): React.ReactNode => (
+  <div className="text-right">
+    <p className="text-2xl font-black text-primary tabular-nums leading-none tracking-tighter">
+      {value}
+    </p>
+    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-2 opacity-60">
+      {label}
+    </p>
+  </div>
+)
+
+const SystemActionButton = ({
+  onClick,
+  icon: Icon,
+  label,
+  color
+}: {
+  onClick: () => void
+  icon: React.ElementType
+  label: string
+  color: string
+}): React.ReactNode => (
+  <Button
+    onClick={onClick}
+    variant="outline"
+    className={cn(
+      'h-20 flex flex-col gap-2 items-center justify-center rounded-[1.5rem] border-none bg-muted/30 hover:bg-muted/50 transition-all active:scale-95 shadow-sm'
+    )}
+  >
+    <Icon className={cn('w-6 h-6', color)} />
+    <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">{label}</span>
+  </Button>
+)
+
+const UpdateStatusArea = ({
+  status,
+  progress,
+  info,
+  onCheck
+}: {
+  status: string
+  progress: number
+  info: UpdateInfo | null
+  onCheck: () => void
+}): React.ReactNode => {
+  if (status === 'checking')
+    return (
+      <div className="flex items-center justify-center gap-4 py-12 bg-muted/10 rounded-3xl border border-dashed border-border/50">
+        <RefreshCw className="w-8 h-8 text-primary animate-spin" />
+        <p className="text-xs font-black text-muted-foreground uppercase tracking-[0.3em]">
+          KONTROL EDİLİYOR...
+        </p>
+      </div>
+    )
+
+  if (status === 'available' || status === 'downloading')
+    return (
+      <div className="p-6 bg-primary/5 border border-primary/20 rounded-[2rem] space-y-5 animate-pulse">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-primary/10 rounded-2xl">
+            <Download className="w-6 h-6 text-primary" />
+          </div>
+          <div>
+            <p className="text-sm font-black uppercase tracking-tight">Yeni Sürüm Mevcut</p>
+            <p className="text-[11px] font-bold text-primary/70 uppercase tracking-widest">
+              v{info?.version} İNDİRİLİYOR
+            </p>
+          </div>
+        </div>
+        <div className="h-3 w-full bg-primary/10 rounded-full overflow-hidden shadow-inner">
+          <div
+            className="h-full bg-primary transition-all duration-500 shadow-sm"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+        <p className="text-xs text-right font-black text-primary tabular-nums">%{progress}</p>
+      </div>
+    )
+
+  if (status === 'downloaded')
+    return (
+      <Button
+        onClick={() => cafeApi.system.restart()}
+        className="w-full h-20 bg-emerald-600 hover:bg-emerald-700 text-white rounded-[2rem] flex flex-col gap-1 shadow-xl shadow-emerald-500/20"
+      >
+        <div className="flex items-center gap-2">
+          <CheckCircle2 className="w-5 h-5" />{' '}
+          <span className="font-black uppercase tracking-widest">İNDİRME TAMAMLANDI</span>
+        </div>
+        <span className="text-[10px] font-bold opacity-80 uppercase tracking-wider text-white/90">
+          Yeniden Başlat ve Yükle
+        </span>
+      </Button>
+    )
+
+  return (
+    <div className="flex items-center justify-between p-6 bg-emerald-500/5 border border-emerald-500/10 rounded-[2rem]">
+      <div className="flex items-center gap-4">
+        <div className="p-3 bg-emerald-500/10 rounded-2xl">
+          <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+        </div>
+        <div className="flex flex-col">
+          <p className="text-sm font-black uppercase tracking-tight">Sistem Güncel</p>
+          <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
+            En son sürümdesiniz
+          </p>
+        </div>
+      </div>
+      <Button
+        variant="ghost"
+        onClick={onCheck}
+        className="h-12 px-6 font-black text-xs tracking-widest uppercase hover:bg-emerald-500/10 rounded-xl"
+      >
+        DENETLE
+      </Button>
     </div>
   )
 }

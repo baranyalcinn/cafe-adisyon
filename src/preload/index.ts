@@ -189,7 +189,9 @@ const api = {
       userName?: string,
       details?: string
     ): Promise<ApiResponse<ActivityLog>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.LOGS_CREATE, action, tableName, userName, details)
+      ipcRenderer.invoke(IPC_CHANNELS.LOGS_CREATE, action, tableName, userName, details),
+    getStatsToday: (): Promise<ApiResponse<{ total: number; sys: number; ops: number }>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.LOGS_GET_STATS_TODAY)
   },
 
   // Maintenance
@@ -222,6 +224,7 @@ const api = {
       description: string
       amount: number
       category?: string
+      paymentMethod?: string
     }): Promise<ApiResponse<Expense>> => ipcRenderer.invoke(IPC_CHANNELS.EXPENSES_CREATE, data),
     getAll: (options?: {
       limit?: number
@@ -241,7 +244,7 @@ const api = {
       ipcRenderer.invoke(IPC_CHANNELS.EXPENSES_GET_STATS, options),
     update: (
       id: string,
-      data: { description?: string; amount?: number; category?: string }
+      data: { description?: string; amount?: number; category?: string; paymentMethod?: string }
     ): Promise<ApiResponse<Expense>> => ipcRenderer.invoke(IPC_CHANNELS.EXPENSES_UPDATE, id, data),
     delete: (id: string): Promise<ApiResponse<null>> =>
       ipcRenderer.invoke(IPC_CHANNELS.EXPENSES_DELETE, id)

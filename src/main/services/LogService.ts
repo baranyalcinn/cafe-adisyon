@@ -1,8 +1,20 @@
+import { endOfDay, startOfDay } from 'date-fns'
 import { Prisma } from '../../generated/prisma/client'
 import { ActivityLog, ApiResponse } from '../../shared/types'
 import { prisma } from '../db/prisma'
 import { logger } from '../lib/logger'
 import { toPlain } from '../lib/toPlain'
+
+const SYSTEM_ACTIONS = [
+  'GENERATE_ZREPORT',
+  'ARCHIVE_DATA',
+  'BACKUP_DATABASE',
+  'END_OF_DAY',
+  'VACUUM',
+  'SOFT_RESET',
+  'SECURITY_RESCUE',
+  'SECURITY_CHANGE_PIN'
+] as const
 
 export class LogService {
   private logQueue: Prisma.ActivityLogCreateManyInput[] = []
@@ -40,21 +52,10 @@ export class LogService {
       }
 
       // Category filtering
-      if (category && category !== 'all') {
-        const systemActions = [
-          'GENERATE_ZREPORT',
-          'BACKUP_DATABASE',
-          'ARCHIVE_DATA',
-          'END_OF_DAY',
-          'VACUUM',
-          'SOFT_RESET'
-        ]
-
-        if (category === 'system') {
-          where.action = { in: systemActions }
-        } else {
-          where.action = { notIn: systemActions }
-        }
+      if (category === 'system') {
+        where.action = { in: [...SYSTEM_ACTIONS] }
+      } else if (category === 'operation') {
+        where.action = { notIn: [...SYSTEM_ACTIONS] }
       }
 
       const logs = await prisma.activityLog.findMany({
@@ -100,6 +101,40 @@ export class LogService {
       })
     } catch (error) {
       logger.error('LogService.flushLogs', error)
+    }
+  }
+
+  async getStatsToday(): Promise<ApiResponse<{ total: number; sys: number; ops: number }>> {
+    try {
+      const now = new Date()
+      const start = startOfDay(now)
+      const end = endOfDay(now)
+
+      const [total, sys] = await Promise.all([
+        prisma.activityLog.count({
+          where: {
+            createdAt: { gte: start, lte: end }
+          }
+        }),
+        prisma.activityLog.count({
+          where: {
+            createdAt: { gte: start, lte: end },
+            action: { in: [...SYSTEM_ACTIONS] }
+          }
+        })
+      ])
+
+      return {
+        success: true,
+        data: {
+          total,
+          sys,
+          ops: Math.max(0, total - sys)
+        }
+      }
+    } catch (error) {
+      logger.error('LogService.getStatsToday', error)
+      return { success: false, error: 'Günlük istatistikler alınamadı.' }
     }
   }
 

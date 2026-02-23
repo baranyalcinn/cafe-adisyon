@@ -301,6 +301,7 @@ export const IPC_CHANNELS = {
   // Activity Logs
   LOGS_GET_RECENT: 'logs:getRecent',
   LOGS_CREATE: 'logs:create',
+  LOGS_GET_STATS_TODAY: 'logs:getStatsToday',
 
   // Maintenance
   MAINTENANCE_ARCHIVE_OLD_DATA: 'maintenance:archiveOldData',

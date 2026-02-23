@@ -11,7 +11,16 @@ import { useTableStore } from '@/store/useTableStore'
 import '@/styles/globals.css'
 
 import { LayoutGrid, Loader2, Settings } from 'lucide-react'
-import { Suspense, lazy, useCallback, useEffect, useState, useTransition } from 'react'
+import {
+  Suspense,
+  lazy,
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition
+} from 'react'
 
 const SettingsView = lazy(() =>
   import('@/features/settings/SettingsView').then((m) => ({ default: m.SettingsView }))
@@ -29,49 +38,42 @@ function App(): React.JSX.Element {
   const { prefetchAll } = useInventoryPrefetch()
 
   useEffect(() => {
-    prefetchAll().finally(() => setIsBooting(false))
+    prefetchAll().finally(() => {
+      setTimeout(() => setIsBooting(false), 400)
+    })
   }, [prefetchAll])
 
+  // --- useCallback ile fonksiyonları sabitledik ---
   const handleTableSelect = useCallback(
     (tableId: string, tableName: string): void => {
       selectTable(tableId, tableName)
-      // Transition ile geçişi yumuşatıyoruz
-      startTransition(() => {
-        setCurrentView('order')
-      })
+      startTransition(() => setCurrentView('order'))
     },
     [selectTable]
   )
 
   const handleBackToTables = useCallback((): void => {
     selectTable(null, null)
-    startTransition(() => {
-      setCurrentView('tables')
-    })
+    startTransition(() => setCurrentView('tables'))
   }, [selectTable])
 
-  const changeView = (view: ViewType): void => {
-    startTransition(() => {
-      setCurrentView(view)
-    })
-  }
+  const changeView = useCallback((view: ViewType): void => {
+    startTransition(() => setCurrentView(view))
+  }, []) // Hiçbir bağımlılığı yok, uygulama ömrü boyunca sabit kalır
 
-  if (isBooting) {
-    return <LoadingFallback />
-  }
+  if (isBooting) return <BootLoader />
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-background text-foreground">
+    <div className="h-screen flex flex-col overflow-hidden bg-background text-foreground selection:bg-rose-500/30">
       <TitleBar />
 
       <div className="flex-1 flex overflow-hidden">
-        {/* Sidebar */}
         <aside className="w-20 flex flex-col items-center py-6 bg-card/40 backdrop-blur-2xl border-r border-border/20 z-50 transition-all duration-500">
           <LogoSection />
 
           <nav className="flex-1 flex flex-col gap-4 pt-10">
             <NavButton
-              active={currentView === 'tables'}
+              active={currentView === 'tables' || currentView === 'order'}
               onClick={() => changeView('tables')}
               icon={LayoutGrid}
               label="MASALAR"
@@ -88,13 +90,11 @@ function App(): React.JSX.Element {
           </div>
         </aside>
 
-        {/* Main Content Area */}
         <main className="flex-1 relative bg-muted/5">
           <div
-            key={currentView}
             className={cn(
-              'absolute inset-0 overflow-hidden animate-in fade-in duration-300',
-              isPending && 'opacity-70 pointer-events-none' // Yüklenirken hafif silikleşir
+              'absolute inset-0 overflow-hidden animate-in fade-in slide-in-from-bottom-1 duration-500',
+              isPending && 'opacity-60 grayscale-[0.3] pointer-events-none'
             )}
           >
             <Suspense fallback={<LoadingFallback />}>
@@ -119,7 +119,9 @@ function App(): React.JSX.Element {
   )
 }
 
-// Alt Bileşenler
+// ==========================================
+// OPTİMİZE EDİLMİŞ ALT BİLEŞENLER
+// ==========================================
 
 interface NavButtonProps {
   active: boolean
@@ -128,52 +130,60 @@ interface NavButtonProps {
   label: string
 }
 
-function NavButton({ active, onClick, icon: Icon, label }: NavButtonProps): React.JSX.Element {
-  return (
-    <div className="relative px-3">
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={onClick}
+const NavButton = memo(({ active, onClick, icon: Icon, label }: NavButtonProps) => (
+  <div className="relative px-3 flex flex-col items-center gap-1 group">
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={onClick}
+      className={cn(
+        'w-12 h-12 rounded-2xl transition-all duration-500 border',
+        active
+          ? 'bg-rose-600 text-white border-rose-500 shadow-lg shadow-rose-500/20'
+          : 'text-foreground/60 border-transparent hover:bg-muted/40 hover:text-foreground'
+      )}
+    >
+      <Icon
         className={cn(
-          'w-12 h-12 rounded-2xl transition-all duration-500 group overflow-hidden',
-          active
-            ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30 hover:bg-primary/90 hover:text-primary-foreground'
-            : 'text-foreground/80 hover:text-foreground hover:bg-muted/40'
+          'w-5 h-5 transition-all',
+          active ? 'scale-110 stroke-[2.5px]' : 'group-hover:scale-110'
         )}
-        title={label}
-      >
-        <Icon
-          className={cn(
-            'w-5 h-5 transition-all duration-500',
-            active ? 'scale-110' : 'scale-100 group-hover:scale-110'
-          )}
-        />
-      </Button>
-    </div>
-  )
-}
+      />
+    </Button>
+    <span
+      className={cn(
+        'text-[8px] font-black tracking-widest transition-all uppercase',
+        active ? 'text-rose-500' : 'opacity-0 group-hover:opacity-60'
+      )}
+    >
+      {label}
+    </span>
+  </div>
+))
 
-function LogoSection(): React.JSX.Element {
+// LogoSection: useMemo ile içindeki array'i sabitledik
+const LogoSection = memo(() => {
+  const configs = useMemo(
+    () => [
+      { color: 'text-rose-600', offset: 'translate-y-0.5', delay: '0s' },
+      { color: 'text-rose-500', offset: 'translate-y-0', delay: '0.1s' },
+      { color: 'text-rose-400', offset: '-translate-y-0.5', delay: '0.2s' }
+    ],
+    []
+  )
+
   return (
     <div className="flex flex-col items-center group select-none animate-in fade-in zoom-in duration-1000">
-      <div className="relative p-2 flex flex-col items-center">
-        {/* Abstract Background Glow */}
-        <div className="absolute inset-x-0 top-0 bottom-0 bg-rose-500/[0.03] dark:bg-rose-500/[0.08] blur-2xl rounded-full scale-150 group-hover:bg-rose-500/10 transition-colors duration-1000" />
-
-        <div className="flex flex-col items-center gap-2 relative z-10">
-          {/* Staggered Vertical 7s */}
-          <div className="flex items-center gap-1">
-            {[
-              { color: 'text-rose-500', offset: 'translate-y-1', delay: '0s' },
-              { color: 'text-rose-500/90', offset: 'translate-y-0', delay: '0.1s' },
-              { color: 'text-rose-500/65', offset: '-translate-y-1', delay: '0.2s' }
-            ].map((config, i) => (
+      <div className="relative p-1 flex flex-col items-center">
+        <div className="absolute inset-x-0 top-0 bottom-0 bg-rose-500/[0.05] blur-2xl rounded-full scale-150 group-hover:bg-rose-500/15 transition-colors duration-1000" />
+        <div className="flex flex-col items-center gap-1.5 relative z-10">
+          <div className="flex items-center gap-0.5">
+            {configs.map((config, i) => (
               <div
                 key={i}
                 style={{ animationDelay: config.delay }}
                 className={cn(
-                  'w-4 h-6 rounded-md border border-rose-500/10 bg-rose-500/[0.02] dark:bg-rose-500/[0.05] flex items-center justify-center font-[1000] text-base transition-all duration-500 group-hover:border-rose-500/30 group-hover:bg-rose-500/10 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-500 fill-mode-both',
+                  'w-3.5 h-5 rounded-sm border border-rose-500/10 bg-rose-500/5 flex items-center justify-center font-black text-xs transition-all duration-500 group-hover:scale-110 shadow-sm',
                   config.color,
                   config.offset,
                   'group-hover:translate-y-0'
@@ -183,29 +193,47 @@ function LogoSection(): React.JSX.Element {
               </div>
             ))}
           </div>
-
-          {/* Minimalist Cafe Text */}
-          <div className="flex flex-col items-center">
-            <span className="text-[9px] font-black text-rose-500/70 dark:text-rose-500/50 uppercase tracking-[0.3em] transition-all duration-500 group-hover:text-rose-500 group-hover:tracking-[0.45em] relative">
-              CAFE
-              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-[1px] bg-rose-500/20 group-hover:w-6 transition-all duration-500" />
-            </span>
-          </div>
+          <span className="text-[8px] font-black text-rose-500/80 uppercase tracking-[0.3em] leading-none">
+            CAFE
+          </span>
         </div>
       </div>
     </div>
   )
-}
+})
 
-function LoadingFallback(): React.JSX.Element {
-  return (
-    <div className="flex items-center justify-center h-full">
-      <div className="flex flex-col items-center gap-2 animate-in fade-in duration-300">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        <span className="text-xs text-muted-foreground font-medium">Yükleniyor...</span>
-      </div>
+// BootLoader ve LoadingFallback: Memo ile render maliyetini sıfırladık
+const BootLoader = memo(() => (
+  <div className="h-screen w-screen flex flex-col items-center justify-center bg-background gap-8">
+    <div className="scale-150">
+      <LogoSection />
     </div>
-  )
-}
+    <div className="flex flex-col items-center gap-3 animate-pulse">
+      <div className="h-1 w-24 bg-muted rounded-full overflow-hidden">
+        <div className="h-full bg-rose-500 w-1/2 animate-[loading_1.5s_infinite_ease-in-out]" />
+      </div>
+      <span className="text-[9px] font-black text-rose-500/40 tracking-[0.2em] uppercase">
+        Sistem Yükleniyor
+      </span>
+    </div>
+    <style>{`@keyframes loading { 0% { transform: translateX(-100%); } 100% { transform: translateX(200%); } }`}</style>
+  </div>
+))
+
+const LoadingFallback = memo(() => (
+  <div className="flex items-center justify-center h-full bg-background/20 backdrop-blur-sm">
+    <div className="flex flex-col items-center gap-4">
+      <div className="relative">
+        <Loader2 className="w-8 h-8 animate-spin text-rose-500 opacity-20" />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-ping" />
+        </div>
+      </div>
+      <span className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.15em]">
+        Lütfen Bekleyin
+      </span>
+    </div>
+  </div>
+))
 
 export default App

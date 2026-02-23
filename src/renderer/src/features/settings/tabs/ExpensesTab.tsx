@@ -1,41 +1,72 @@
 import { Button } from '@/components/ui/button'
 import type { Expense } from '@shared/types'
 import { Plus } from 'lucide-react'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ExpenseSheet } from '../components/ExpenseSheet'
 import { ExpensesTable } from '../components/ExpensesTable'
 import { RevenueSidebar } from '../components/RevenueSidebar'
 
-// Using api directly from window as defined in preload
 const api = window.api
+
+// ==========================================
+// PORTAL AKSİYONLARI (Header Butonları)
+// ==========================================
+const ExpensesHeaderActions = memo(({ onAdd }: { onAdd: () => void }) => {
+  return (
+    <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-4 duration-500">
+      <Button
+        onClick={onAdd}
+        className="gap-2 font-black px-6 rounded-xl h-9 bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-500/20 active:scale-95 transition-all text-[10px] tracking-widest uppercase"
+      >
+        <Plus className="w-4 h-4" strokeWidth={3} />
+        GİDER EKLE
+      </Button>
+    </div>
+  )
+})
 
 export function ExpensesTab(): React.JSX.Element {
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null)
+  const [headerTarget, setHeaderTarget] = useState<HTMLElement | null>(null)
 
-  // Filter State
+  // Filtreleme State'i
   const [filters, setFilters] = useState({
     search: '',
     category: 'all',
     dateRange: 'month'
   })
 
-  const loadExpenses = async (): Promise<void> => {
+  // İstatistik State'i
+  const [stats, setStats] = useState<{
+    todayTotal: number
+    monthTotal: number
+    topCategory?: { name: string; total: number }
+  }>({ todayTotal: 0, monthTotal: 0 })
+
+  // ==========================================
+  // VERİ YÜKLEME FONKSİYONLARI
+  // ==========================================
+
+  const loadStats = useCallback(async () => {
+    try {
+      const result = await api.expenses.getStats()
+      if (result.success && result.data) setStats(result.data)
+    } catch (error) {
+      console.error('Failed to load stats:', error)
+    }
+  }, [])
+
+  const loadExpenses = useCallback(async () => {
     setIsLoading(true)
     try {
-      // Load expenses (default limit is now 500 in backend)
       const result = await api.expenses.getAll()
       if (result.success && result.data) {
-        // Handle both legacy (Array) and new (Object) response formats during HMR/Update
         const data = result.data as unknown as Expense[] | { expenses: Expense[] }
-        if (Array.isArray(data)) {
-          setExpenses(data)
-        } else {
-          setExpenses(data.expenses)
-        }
+        setExpenses(Array.isArray(data) ? data : data.expenses)
       }
     } catch (error) {
       console.error('Failed to load expenses:', error)
@@ -43,166 +74,138 @@ export function ExpensesTab(): React.JSX.Element {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [])
 
-  // Stats State
-  const [stats, setStats] = useState<{
-    todayTotal: number
-    monthTotal: number
-    topCategory?: { name: string; total: number }
-  }>({ todayTotal: 0, monthTotal: 0 })
-
-  const loadStats = async (): Promise<void> => {
-    try {
-      const result = await api.expenses.getStats()
-      if (result.success && result.data) {
-        setStats(result.data)
-      }
-    } catch (error) {
-      console.error('Failed to load stats:', error)
-    }
-  }
-
+  // Sayfa açılışında verileri çek
   useEffect(() => {
     loadExpenses()
     loadStats()
-  }, [])
+    setHeaderTarget(document.getElementById('settings-header-actions'))
+  }, [loadExpenses, loadStats])
 
-  const handleFilterChange = (key: string, value: string): void => {
-    setFilters((prev) => ({ ...prev, [key]: value }))
+  // ==========================================
+  // İŞLEM YÖNETİCİLERİ (Güncelleme sonrası Statları da yeniler)
+  // ==========================================
+
+  const handleUpdate = useCallback(
+    async (id: string, data: Partial<Expense>) => {
+      try {
+        const result = await api.expenses.update(id, data)
+        if (result.success) {
+          await loadExpenses()
+          await loadStats() // Kritik: Statları güncelle
+        }
+      } catch (error) {
+        console.error('Update failed:', error)
+      }
+    },
+    [loadExpenses, loadStats]
+  )
+
+  const handleDelete = useCallback(
+    async (id: string) => {
+      try {
+        const result = await api.expenses.delete(id)
+        if (result.success) {
+          setExpenses((prev) => prev.filter((e) => e.id !== id))
+          await loadStats() // Kritik: Statları güncelle
+        }
+      } catch (error) {
+        console.error('Delete failed:', error)
+      }
+    },
+    [loadStats]
+  )
+
+  const handleSheetSubmit = async (data: Partial<Expense>): Promise<void> => {
+    try {
+      if (selectedExpense) {
+        await handleUpdate(selectedExpense.id, data)
+      } else {
+        const result = await api.expenses.create({
+          description: data.description!,
+          amount: data.amount!,
+          category: data.category,
+          paymentMethod: data.paymentMethod
+        })
+        if (result.success) {
+          await loadExpenses()
+          await loadStats()
+        }
+      }
+      setIsSheetOpen(false)
+    } catch (error) {
+      console.error('Submit failed:', error)
+    }
   }
+
+  // ==========================================
+  // FİLTRELEME MANTIĞI
+  // ==========================================
 
   const categories = useMemo(() => {
     return Array.from(new Set(expenses.map((e) => e.category).filter(Boolean))) as string[]
   }, [expenses])
 
-  // Client-side filtering for search/category on loaded items
-  // Note: For full infinite scroll, this should be server-side too,
-  // but for now we have 500 items loaded which covers most cases.
   const filteredExpenses = useMemo(() => {
     return expenses.filter((e) => {
       const matchesSearch = e.description.toLowerCase().includes(filters.search.toLowerCase())
       const matchesCategory = filters.category === 'all' || e.category === filters.category
 
-      // Basic Date Filtering
       const date = new Date(e.createdAt)
       const now = new Date()
       let matchesDate = true
-      if (filters.dateRange === 'today') {
-        matchesDate = date.toDateString() === now.toDateString()
-      } else if (filters.dateRange === 'week') {
-        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-        matchesDate = date >= weekAgo
-      } else if (filters.dateRange === 'month') {
+      if (filters.dateRange === 'today') matchesDate = date.toDateString() === now.toDateString()
+      else if (filters.dateRange === 'week')
+        matchesDate = date >= new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+      else if (filters.dateRange === 'month')
         matchesDate = date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()
-      }
 
       return matchesSearch && matchesCategory && matchesDate
     })
   }, [expenses, filters])
 
-  const handleAddExpense = (): void => {
-    setSelectedExpense(null)
-    setIsSheetOpen(true)
-  }
-
-  const handleEditExpense = (expense: Expense): void => {
-    // In ExpensesTable, we have dropdown edit. If we want to use the sheet:
-    // We could pass handleEditExpense to ExpensesTable as a prop.
-    // For now, let's keep inline editing working but provide the sheet for full edits or Add.
-    setSelectedExpense(expense)
-    setIsSheetOpen(true)
-  }
-
-  const handleDelete = useCallback(async (id: string): Promise<void> => {
-    try {
-      const result = await api.expenses.delete(id)
-      if (result.success) {
-        setExpenses((prev) => prev.filter((e) => e.id !== id))
-      }
-    } catch (error) {
-      console.error('Failed to delete expense:', error)
-    }
-  }, [])
-
-  const handleUpdate = useCallback(async (id: string, data: Partial<Expense>): Promise<void> => {
-    try {
-      const result = await api.expenses.update(id, data)
-      if (result.success && result.data) {
-        setExpenses((prev) => prev.map((e) => (e.id === id ? result.data! : e)))
-      }
-    } catch (error) {
-      console.error('Failed to update expense:', error)
-      throw error
-    }
-  }, [])
-
-  const handleSheetSubmit = async (data: Partial<Expense>): Promise<void> => {
-    try {
-      if (selectedExpense) {
-        // Update
-        await handleUpdate(selectedExpense.id, data)
-      } else {
-        // Create
-        const result = await api.expenses.create({
-          description: data.description!,
-          amount: data.amount!,
-          category: data.category
-        })
-        if (result.success && result.data) {
-          setExpenses((prev) => [result.data!, ...prev])
-        }
-      }
-      setIsSheetOpen(false)
-    } catch (error) {
-      console.error('Sheet submit failed:', error)
-    }
-  }
-
-  // Portal target for header actions
-  const [headerTarget, setHeaderTarget] = useState<HTMLElement | null>(null)
-  useEffect(() => {
-    setHeaderTarget(document.getElementById('settings-header-actions'))
-  }, [])
-
   return (
-    <div className="h-full flex flex-row overflow-hidden bg-background">
+    <div className="h-full flex flex-row overflow-hidden bg-muted/10 dark:bg-background/40">
       {/* Header Actions via Portal */}
       {headerTarget &&
         createPortal(
-          <Button onClick={handleAddExpense} className="gap-2 font-bold px-6 rounded-xl h-9">
-            <Plus className="w-5 h-5" />
-            GİDER EKLE
-          </Button>,
+          <ExpensesHeaderActions
+            onAdd={() => {
+              setSelectedExpense(null)
+              setIsSheetOpen(true)
+            }}
+          />,
           headerTarget
         )}
 
-      {/* Sidebar */}
+      {/* Sol Sidebar (Filtreler ve Özetler) */}
       <RevenueSidebar
         stats={stats}
         filters={filters}
         categories={categories}
-        onFilterChange={handleFilterChange}
+        onFilterChange={(k, v) => setFilters((prev) => ({ ...prev, [k]: v }))}
       />
 
-      {/* Main Content */}
+      {/* Ana İçerik Alanı */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Content Area */}
-        {/* Content Area */}
-        <div className="flex-1 overflow-hidden p-6">
-          <div className="h-full max-w-6xl mx-auto">
+        <div className="flex-1 overflow-hidden p-6 lg:p-8">
+          <div className="h-full max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
             <ExpensesTable
               data={filteredExpenses}
               onUpdate={handleUpdate}
               onDelete={handleDelete}
-              onEdit={handleEditExpense}
+              onEdit={(e) => {
+                setSelectedExpense(e)
+                setIsSheetOpen(true)
+              }}
               isLoading={isLoading}
             />
           </div>
         </div>
       </div>
 
-      {/* Side Drawer */}
+      {/* Gider Ekle/Düzenle Çekmecesi */}
       <ExpenseSheet
         open={isSheetOpen}
         onOpenChange={setIsSheetOpen}

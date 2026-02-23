@@ -1,8 +1,8 @@
 /// <reference types="vitest" />
-import { resolve } from 'path'
-import { defineConfig } from 'electron-vite'
-import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import react from '@vitejs/plugin-react'
+import { defineConfig } from 'electron-vite'
+import { resolve } from 'path'
 
 export default defineConfig({
   main: {
@@ -19,43 +19,20 @@ export default defineConfig({
           'clsx',
           'tailwind-merge',
           'class-variance-authority',
+          // --- PRISMA & ADAPTER BUNDLING ---
           '@prisma/client',
           '@prisma/client-runtime-utils',
-          '@prisma/adapter-libsql',
           '@prisma/driver-adapter-utils',
-          '@libsql/client',
-          '@libsql/core',
-          '@libsql/hrana-client',
-          '@libsql/isomorphic-ws',
-          'js-base64',
-          'ws',
-          'cross-fetch',
-          'node-fetch',
-          'node-fetch-native',
-          'whatwg-url',
-          'webidl-conversions',
-          'tr46',
-          'web-streams-polyfill',
-          'data-uri-to-buffer',
-          'fetch-blob',
-          'formdata-polyfill',
-          'async-mutex',
-          'promise-limit',
-          'node-domexception'
+          '@prisma/adapter-better-sqlite3',
+          'js-base64'
         ]
       },
       commonjsOptions: {
         ignoreDynamicRequires: true
       },
       rollupOptions: {
-        external: [
-          'libsql',
-          '@libsql/win32-x64-msvc',
-          'bufferutil',
-          'utf-8-validate',
-          'detect-libc',
-          'electron'
-        ]
+        // Native modüller (C++) Vite tarafından paketlenemez, external kalmalıdır!
+        external: ['bufferutil', 'utf-8-validate', 'detect-libc', 'electron', 'better-sqlite3']
       }
     }
   },
@@ -101,7 +78,6 @@ export default defineConfig({
               ) {
                 return 'vendor-core'
               }
-              // Let other dependencies be handled by default splitting
             }
           }
         }

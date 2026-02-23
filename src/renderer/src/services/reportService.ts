@@ -1,4 +1,4 @@
-import { DailySummary, ActivityLog, MonthlyReport } from '../../../shared/types'
+import { ActivityLog, DailySummary, MonthlyReport } from '../../../shared/types'
 
 const api = window.api
 
@@ -47,6 +47,11 @@ export const reportService = {
       details?: string
     ): Promise<ActivityLog> {
       const result = await api.logs.create(action, tableName, userName, details)
+      if (!result.success) throw new Error(result.error)
+      return result.data
+    },
+    async getStatsToday(): Promise<{ total: number; sys: number; ops: number }> {
+      const result = await api.logs.getStatsToday()
       if (!result.success) throw new Error(result.error)
       return result.data
     }

@@ -1,15 +1,5 @@
-import React, { useState, useEffect } from 'react'
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription
-} from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Separator } from '@/components/ui/separator'
-import { Trash2, TrendingDown, AlignLeft, Tag, Banknote, CreditCard } from 'lucide-react'
 import {
   Select,
   SelectContent,
@@ -17,7 +7,17 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select'
+import { Separator } from '@/components/ui/separator'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle
+} from '@/components/ui/sheet'
 import type { Expense } from '@shared/types'
+import { AlignLeft, Banknote, CreditCard, Tag, Trash2, TrendingDown } from 'lucide-react'
+import React, { useEffect, useState } from 'react'
 
 interface ExpenseSheetProps {
   open: boolean
@@ -136,12 +136,12 @@ export function ExpenseSheet({
                 <Input
                   id="amount"
                   type="number"
-                  step="0.01"
                   min="0"
-                  placeholder="0.00"
+                  step="any"
+                  placeholder="0 ₺"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  className="pl-12 h-12 text-xl font-black bg-muted/20 border-transparent focus:border-rose-500/20 focus:ring-rose-500/20 transition-all rounded-lg"
+                  className="pl-12 h-12 text-xl font-black bg-muted/20 border-transparent focus:border-rose-500/20 focus:ring-rose-500/20 transition-all rounded-lg [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   autoFocus={!isEditMode}
                 />
               </div>
