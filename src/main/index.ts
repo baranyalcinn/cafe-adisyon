@@ -279,6 +279,15 @@ if (!gotTheLock) {
     // Run DB Maintenance on startup
     await dbMaintenance.runMaintenance()
 
+    // Merge any duplicate monthly reports caused by legacy timezone issues
+    try {
+      const { ReportingService } = await import('./services/ReportingService')
+      const service = new ReportingService()
+      await service.mergeDuplicateMonthlyReports()
+    } catch (e) {
+      logger.error('App', 'Failed to merge duplicate monthly reports: ' + (e as Error).message)
+    }
+
     // Register IPC handlers for database operations
     registerAllHandlers()
 

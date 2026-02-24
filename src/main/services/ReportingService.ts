@@ -1,4 +1,4 @@
-import { startOfDay, startOfMonth, subDays } from 'date-fns'
+import { subDays } from 'date-fns'
 import {
   ApiResponse,
   DailySummary,
@@ -330,74 +330,82 @@ export class ReportingService {
   async getRevenueTrend(days: number = 7): Promise<ApiResponse<RevenueTrendItem[]>> {
     try {
       const result: RevenueTrendItem[] = []
+      const now = new Date()
+      // Current business day start
+      const today = getBusinessDayStart(now)
+      // Range start (e.g., 7 business days ago)
+      const startDate = subDays(today, days - 1)
 
-      // 1. Calculate the start boundary
-      const startDate = subDays(startOfDay(new Date()), days - 1)
+      // 1. Fetch historical summaries from DailySummary table (Source of Truth for past days)
+      const pastSummaries = await prisma.dailySummary.findMany({
+        where: {
+          date: {
+            gte: startDate,
+            lt: today
+          }
+        },
+        orderBy: { date: 'asc' }
+      })
 
-      // 2. Fetch aggregated buckets via raw SQL instead of mapping in Node.js
-      const [transactionsArr, ordersArr] = await Promise.all([
-        prisma.$queryRaw<{ date: string; revenue: number | bigint }[]>`
-          SELECT
-            strftime('%Y-%m-%d', "createdAt", 'localtime') as date,
-            SUM(amount) as revenue
-          FROM "Transaction"
-          WHERE "createdAt" >= ${startDate.toISOString()}
-          GROUP BY date
-        `,
-        prisma.$queryRaw<{ date: string; count: number | bigint }[]>`
-          SELECT
-            strftime('%Y-%m-%d', "createdAt", 'localtime') as date,
-            COUNT(id) as count
-          FROM "Order"
-          WHERE "status" = 'CLOSED' AND "createdAt" >= ${startDate.toISOString()}
-          GROUP BY date
-        `
-      ])
+      // 2. Fetch current day's live transactions (For the unfinished business day)
+      const currentAgg = await prisma.transaction.aggregate({
+        where: {
+          createdAt: { gte: today }
+        },
+        _sum: { amount: true }
+      })
 
-      // 3. O(1) Bucket Map merge
-      const buckets = new Map<string, { revenue: number; orderCount: number }>()
+      const currentOrderCount = await prisma.order.count({
+        where: {
+          status: 'CLOSED',
+          createdAt: { gte: today }
+        }
+      })
 
-      for (const t of transactionsArr) {
-        if (!t.date) continue
-        const b = buckets.get(t.date) ?? { revenue: 0, orderCount: 0 }
-        b.revenue += Number(t.revenue || 0)
-        buckets.set(t.date, b)
-      }
+      const liveRevenue = currentAgg._sum.amount || 0
 
-      for (const o of ordersArr) {
-        if (!o.date) continue
-        const b = buckets.get(o.date) ?? { revenue: 0, orderCount: 0 }
-        b.orderCount += Number(o.count || 0)
-        buckets.set(o.date, b)
-      }
+      // Map summaries for quick lookup
+      const summaryMap = new Map<string, { revenue: number; orderCount: number }>()
+      pastSummaries.forEach((s) => {
+        const key = s.date.toISOString().split('T')[0]
+        summaryMap.set(key, {
+          revenue: s.totalRevenue,
+          orderCount: s.orderCount || 0
+        })
+      })
 
-      const toDayKey = (d: Date): string => {
-        // Enforcing local time breakdown since businesses operate on local dates, not UTC borders.
-        const year = d.getFullYear()
-        const month = String(d.getMonth() + 1).padStart(2, '0')
-        const day = String(d.getDate()).padStart(2, '0')
-        return `${year}-${month}-${day}`
-      }
-
-      // 4. Extract into correctly ordered result list based on `days` window
-      const todayStart = getBusinessDayStart(new Date())
+      // 3. Build the response array
       for (let i = days - 1; i >= 0; i--) {
-        const date = subDays(todayStart, i)
+        const date = subDays(today, i)
+        const dateKey = date.toISOString().split('T')[0]
 
-        const k = toDayKey(date)
-        const bucket = buckets.get(k) || { revenue: 0, orderCount: 0 }
+        let revenue = 0
+        let orderCount = 0
+
+        if (i === 0) {
+          // Today (Live data)
+          revenue = liveRevenue
+          orderCount = currentOrderCount
+        } else {
+          // Past days (Z-Report data)
+          const bucket = summaryMap.get(dateKey)
+          if (bucket) {
+            revenue = bucket.revenue
+            orderCount = bucket.orderCount
+          }
+        }
 
         result.push({
-          date: date.toISOString(), // Keep standard payload
-          revenue: bucket.revenue,
-          orderCount: bucket.orderCount
+          date: date.toISOString(),
+          revenue,
+          orderCount
         })
       }
 
       return { success: true, data: result }
     } catch (error) {
       logger.error('ReportingService.getRevenueTrend', error)
-      return { success: false, error: String(error) }
+      return { success: false, error: 'Gelir trendi hesaplanamadı.' }
     }
   }
 
@@ -413,16 +421,19 @@ export class ReportingService {
     ordersCount: number
   ): Promise<void> {
     try {
-      // Use local timezone start of month to maintain timezone consistency with Z-Reports
-      const startOfMonthRecord = startOfMonth(date)
+      // Create a timezone-stable absolute month date regardless of system local time
+      // E.g., for Feb 2026, it will always be "2026-02-01T00:00:00.000Z"
+      const year = date.getFullYear()
+      const monthStr = String(date.getMonth() + 1).padStart(2, '0')
+      const stableMonthDate = new Date(`${year}-${monthStr}-01T00:00:00.000Z`)
 
       logger.debug(
         'ReportingService.incrementMonthlyReport',
-        `Incrementing report for ${startOfMonthRecord.toISOString()}: Revenue=+${revenue}, Expenses=+${expenses}, Profit=+${profit}`
+        `Incrementing report for ${stableMonthDate.toISOString()}: Revenue=+${revenue}, Expenses=+${expenses}, Profit=+${profit}`
       )
 
       await prisma.monthlyReport.upsert({
-        where: { monthDate: startOfMonthRecord },
+        where: { monthDate: stableMonthDate },
         update: {
           totalRevenue: { increment: revenue },
           totalExpenses: { increment: expenses },
@@ -430,7 +441,7 @@ export class ReportingService {
           orderCount: { increment: ordersCount }
         },
         create: {
-          monthDate: startOfMonthRecord,
+          monthDate: stableMonthDate,
           totalRevenue: revenue,
           totalExpenses: expenses,
           netProfit: profit,
@@ -439,6 +450,79 @@ export class ReportingService {
       })
     } catch (error) {
       logger.error('ReportingService.incrementMonthlyReport', error)
+    }
+  }
+
+  /**
+   * One-time cleanup utility to merge duplicate MonthlyReport entries caused by prior timezone inconsistencies.
+   * Runs on application startup.
+   */
+  async mergeDuplicateMonthlyReports(): Promise<void> {
+    try {
+      const allReports = await prisma.monthlyReport.findMany({
+        orderBy: { monthDate: 'asc' }
+      })
+
+      // Group by YYYY-MM
+      const grouped = new Map<string, typeof allReports>()
+      for (const report of allReports) {
+        const d = new Date(report.monthDate)
+        const formatKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+        const arr = grouped.get(formatKey) || []
+        arr.push(report)
+        grouped.set(formatKey, arr)
+      }
+
+      // Merge groups with > 1 record
+      for (const [key, records] of grouped.entries()) {
+        if (records.length <= 1) continue
+
+        logger.info('ReportingService', `Merging duplicate monthly reports for ${key}`)
+        const [primary, ...duplicates] = records
+
+        let totalRevenue = primary.totalRevenue
+        let totalExpenses = primary.totalExpenses
+        let netProfit = primary.netProfit
+        let orderCount = primary.orderCount
+
+        const idsToDelete: string[] = []
+
+        // Accumulate totals and collect IDs
+        for (const dup of duplicates) {
+          totalRevenue += dup.totalRevenue
+          totalExpenses += dup.totalExpenses
+          netProfit += dup.netProfit
+          orderCount += dup.orderCount
+          idsToDelete.push(dup.id)
+        }
+
+        const stableMonthDate = new Date(`${key}-01T00:00:00.000Z`)
+
+        // Run as transaction: First delete conflicting duplicates, then update primary.
+        await prisma.$transaction(async (tx) => {
+          await tx.monthlyReport.deleteMany({
+            where: { id: { in: idsToDelete } }
+          })
+
+          await tx.monthlyReport.update({
+            where: { id: primary.id },
+            data: {
+              totalRevenue,
+              totalExpenses,
+              netProfit,
+              orderCount,
+              monthDate: stableMonthDate
+            }
+          })
+        })
+
+        logger.info(
+          'ReportingService',
+          `Successfully merged ${idsToDelete.length} duplicates for ${key}.`
+        )
+      }
+    } catch (error) {
+      logger.error('ReportingService.mergeDuplicateMonthlyReports', error)
     }
   }
 
