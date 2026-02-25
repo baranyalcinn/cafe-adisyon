@@ -22,6 +22,7 @@ export class DBMaintenance {
       logger.info('DBMaintenance', 'Starting maintenance tasks...')
       await this.runMigrations()
       await this.walCheckpoint()
+      await this.quickCheck()
       await this.runVacuum()
       await this.createBackup()
       this.cleanupOldBackups()
@@ -134,6 +135,40 @@ export class DBMaintenance {
       logger.debug('DBMaintenance', 'WAL checkpoint executed (TRUNCATE).')
     } catch (error) {
       logger.error('DBMaintenance WAL Checkpoint', error)
+    }
+  }
+
+  /**
+   * Runs PRAGMA quick_check to verify database integrity.
+   * Runs weekly (marker-based) to avoid performance impact on every startup.
+   */
+  private async quickCheck(): Promise<void> {
+    try {
+      const marker = path.join(this.backupDir, '.last-quickcheck')
+      try {
+        const stat = await fs.promises.stat(marker)
+        const daysSince = (Date.now() - stat.mtime.getTime()) / (1000 * 60 * 60 * 24)
+        if (daysSince < 7) {
+          logger.debug('DBMaintenance', 'quick_check skipped (last run < 7 days ago)')
+          return
+        }
+      } catch {
+        // No marker file = never checked
+      }
+
+      const result: Array<{ integrity_check: string }> =
+        await prisma.$queryRawUnsafe('PRAGMA quick_check')
+      const isOk = result.length === 1 && result[0].integrity_check === 'ok'
+
+      if (isOk) {
+        logger.info('DBMaintenance', 'quick_check passed — database integrity OK')
+      } else {
+        logger.error('DBMaintenance', `quick_check FAILED: ${JSON.stringify(result)}`)
+      }
+
+      await fs.promises.writeFile(marker, '')
+    } catch (error) {
+      logger.error('DBMaintenance quick_check', error)
     }
   }
 

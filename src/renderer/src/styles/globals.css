@@ -8,13 +8,13 @@
   --font-sans:
     'Plus Jakarta Sans', 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
     'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
-  --font-sans--font-feature-settings: 'cv11', 'ss01', 'cv01';
+  --font-sans--font-feature-settings: 'cv11', 'ss01';
   --font-sans--font-variation-settings: 'wght' 420;
 
   --font-display:
     'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
     'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
-  --font-display--font-feature-settings: 'cv11', 'ss01', 'cv01';
+  --font-display--font-feature-settings: 'cv11', 'ss01';
   --font-display--font-variation-settings: 'wght' 580;
 
   /* Base tokens */

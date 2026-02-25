@@ -4,68 +4,86 @@ import { memo, useCallback } from 'react'
 import { type OrderItem } from '@/lib/api'
 import { cn, formatCurrency } from '@/lib/utils'
 
+// ============================================================================
+// Types
+// ============================================================================
+
 interface ItemRowProps {
   item: OrderItem
   selected: number
   onQtyChange: (itemId: string, qty: number) => void
 }
 
+// ============================================================================
+// Constants & Styles
+// ============================================================================
+
+const STYLES = {
+  rowBase: cn(
+    'group relative flex w-full items-center justify-between gap-3 rounded-2xl border py-1.5 px-3.5 text-left transition-all duration-200 ease-in-out cursor-pointer',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1'
+  ),
+  badgeBase:
+    'flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border font-mono text-[15px] font-black transition-colors',
+  stepperWrap:
+    'flex items-center rounded-full border bg-background p-0.5 shadow-sm transition-opacity',
+  stepBtn:
+    'flex h-7 w-7 items-center justify-center rounded-full text-foreground/70 transition-colors hover:bg-muted hover:text-foreground disabled:opacity-40 disabled:pointer-events-none'
+} as const
+
+// ============================================================================
+// Component
+// ============================================================================
+
 export const ItemRow = memo(function ItemRow({ item, selected, onQtyChange }: ItemRowProps) {
+  const isSelected = selected > 0
   const totalLine = item.unitPrice * selected
 
-  const inc = useCallback(
-    () => onQtyChange(item.id, Math.min(selected + 1, item.quantity)),
-    [item.id, item.quantity, selected, onQtyChange]
-  )
-
-  const dec = useCallback(
-    () => onQtyChange(item.id, Math.max(selected - 1, 0)),
-    [item.id, selected, onQtyChange]
-  )
-
-  const handleRowClick = useCallback(() => {
-    if (selected <= 0) onQtyChange(item.id, 1)
-    else onQtyChange(item.id, Math.min(selected + 1, item.quantity))
+  // Satır tıklaması ile "Artır" butonu birebir aynı işi yaptığı için tek fonksiyonda birleştirdik
+  const handleInc = useCallback(() => {
+    onQtyChange(item.id, Math.min(selected + 1, item.quantity))
   }, [item.id, item.quantity, selected, onQtyChange])
 
+  const handleDec = useCallback(() => {
+    onQtyChange(item.id, Math.max(selected - 1, 0))
+  }, [item.id, selected, onQtyChange])
+
+  // Klavye erişilebilirliği (Enter veya Boşluk tuşu ile seçme/artırma)
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault()
-        handleRowClick()
+        handleInc()
       }
     },
-    [handleRowClick]
+    [handleInc]
   )
-
-  const isSelected = selected > 0
 
   return (
     <div
       role="button"
       tabIndex={0}
-      onClick={handleRowClick}
+      onClick={handleInc}
       onKeyDown={handleKeyDown}
+      title={isSelected ? 'Artırmak için tekrar tıkla' : 'Seçmek için tıkla'}
       className={cn(
-        'group relative flex w-full items-center justify-between gap-3 rounded-2xl border py-1.5 px-3.5 text-left transition-all duration-200 ease-in-out cursor-pointer',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1',
+        STYLES.rowBase,
         isSelected
           ? 'border-primary/40 bg-primary/[0.03] shadow-sm'
           : 'border-border/40 bg-card hover:border-border hover:bg-muted/30'
       )}
-      title={!isSelected ? 'Seçmek için tıkla' : 'Artırmak için tekrar tıkla'}
     >
       {/* Sol Kısım: Ürün Bilgisi */}
       <div className="flex min-w-0 flex-1 items-center gap-4">
-        {/* Stok Rozeti - Boyutu küçültüldü (h-8 w-8) */}
+        {/* Stok Rozeti */}
         <div
+          aria-label={`Toplam adet: ${item.quantity}`}
           className={cn(
-            'flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border font-mono text-[15px] font-black transition-colors',
+            STYLES.badgeBase,
             isSelected
               ? 'border-primary/50 bg-primary text-primary-foreground shadow-sm'
               : 'border-border/60 bg-muted/80 text-foreground group-hover:bg-muted'
           )}
-          aria-label={`Toplam adet: ${item.quantity}`}
         >
           {item.quantity}
         </div>
@@ -81,23 +99,22 @@ export const ItemRow = memo(function ItemRow({ item, selected, onQtyChange }: It
       </div>
 
       {/* Sağ Kısım: Kontroller ve Fiyat */}
-      {/* gap-4 yerine gap-2.5 kullanarak stepper'ı sağdaki fiyata iyice yaklaştırdık */}
       <div className="flex shrink-0 items-center gap-2.5">
-        {/* Stepper Kontrolü - Boyutları hafifçe sıkılaştırıldı */}
+        {/* Stepper Kontrolü */}
         <div
+          onClick={(e) => e.stopPropagation()} // Tıklamanın satıra sıçramasını engeller
           className={cn(
-            'flex items-center rounded-full border bg-background p-0.5 shadow-sm transition-opacity',
+            STYLES.stepperWrap,
             !isSelected &&
               'opacity-0 pointer-events-none group-hover:opacity-100 group-focus-visible:opacity-100'
           )}
-          onClick={(e) => e.stopPropagation()}
         >
           <button
             type="button"
-            className="flex h-7 w-7 items-center justify-center rounded-full text-foreground/70 transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
-            onClick={dec}
-            disabled={!isSelected}
             title="Azalt"
+            className={STYLES.stepBtn}
+            onClick={handleDec}
+            disabled={!isSelected}
           >
             <Minus className="h-3.5 w-3.5" strokeWidth={2.5} />
           </button>
@@ -108,10 +125,10 @@ export const ItemRow = memo(function ItemRow({ item, selected, onQtyChange }: It
 
           <button
             type="button"
-            className="flex h-7 w-7 items-center justify-center rounded-full text-foreground/70 transition-colors hover:bg-muted hover:text-foreground disabled:opacity-40"
-            onClick={inc}
-            disabled={selected >= item.quantity}
             title="Artır"
+            className={STYLES.stepBtn}
+            onClick={handleInc}
+            disabled={selected >= item.quantity}
           >
             <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
           </button>
@@ -127,7 +144,7 @@ export const ItemRow = memo(function ItemRow({ item, selected, onQtyChange }: It
           >
             {formatCurrency(totalLine)}
           </span>
-          <span className="text-[9px] font-bold  tracking-wider text-foreground/80 mt-0.5">
+          <span className="text-[9px] font-bold tracking-wider text-foreground/80 mt-0.5">
             Toplam
           </span>
         </div>

@@ -4,100 +4,132 @@ import { memo, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
+// ============================================================================
+// Types
+// ============================================================================
+
 interface NumpadProps {
   onAppend: (chunk: string) => void
   onBackspace: () => void
   onQuickCash: (value: string) => void
   onSetExact: () => void
+  partialPaymentsBlocked?: boolean
+  effectivePayment?: number
 }
+
+type QuickCashColor = 'amber' | 'blue' | 'pink'
+
+interface QuickCashOption {
+  val: number
+  color: QuickCashColor
+}
+
+// ============================================================================
+// Constants & Configurations
+// ============================================================================
 
 const NUMPAD_KEYS = [1, 2, 3, 4, 5, 6, 7, 8, 9, '00', 0] as const
 
-const QUICK_CASH_OPTIONS = [
+const QUICK_CASH_OPTIONS: readonly QuickCashOption[] = [
   { val: 50, color: 'amber' },
   { val: 100, color: 'blue' },
   { val: 200, color: 'pink' }
-] as const
+]
+
+// Tailwind sınıflarını objede topluyoruz (Okunabilirlik ve bakım kolaylığı için)
+const QUICK_CASH_STYLES: Record<QuickCashColor, string> = {
+  amber:
+    'border-amber-500/50 bg-amber-500/25 text-amber-900 dark:text-amber-400 hover:bg-amber-600 hover:text-white',
+  blue: 'border-blue-500/50 bg-blue-500/25 text-blue-900 dark:text-blue-400 hover:bg-blue-600 hover:text-white',
+  pink: 'border-pink-500/50 bg-pink-500/25 text-pink-900 dark:text-pink-400 hover:bg-pink-600 hover:text-white'
+}
+
+const COMMON_KEY_BASE = cn(
+  'h-14 rounded-xl border bg-background text-2xl font-semibold',
+  'border-border/50 shadow-sm transition-all active:scale-[0.98]',
+  'hover:bg-zinc-700 hover:text-white dark:hover:bg-zinc-600 hover:border-zinc-600 hover:shadow-md'
+)
+
+const ACTION_BUTTON_BASE =
+  'flex-1 rounded-xl text-sm font-bold shadow-sm transition active:scale-[0.99]'
+
+// ============================================================================
+// Component
+// ============================================================================
 
 export const Numpad = memo(function Numpad({
   onAppend,
   onBackspace,
   onQuickCash,
-  onSetExact
+  onSetExact,
+  partialPaymentsBlocked = false,
+  effectivePayment = 0
 }: NumpadProps) {
   const handleNumKey = useCallback(
-    (n: (typeof NUMPAD_KEYS)[number]) => onAppend(n.toString()),
+    (n: (typeof NUMPAD_KEYS)[number]) => {
+      onAppend(n.toString())
+    },
     [onAppend]
   )
 
-  const keyBase =
-    'h-14 rounded-xl border bg-background text-2xl font-semibold ' +
-    'border-border/50 shadow-sm ' +
-    'hover:bg-muted/60 active:scale-[0.99] transition'
-
   return (
     <div className="flex gap-3">
-      {/* NUMPAD */}
+      {/* NUMPAD GRID */}
       <div className="flex-1 grid grid-cols-3 gap-2">
         {NUMPAD_KEYS.map((n) => (
           <Button
             key={n}
             variant="ghost"
-            className={cn(keyBase, 'text-foreground')}
+            className={cn(COMMON_KEY_BASE, 'text-foreground')}
             onClick={() => handleNumKey(n)}
           >
-            {n === '00' ? <span className="text-xl">00</span> : n}
+            {n === '00' ? <span className="text-lg">00</span> : n}
           </Button>
         ))}
 
-        {/* BACKSPACE */}
+        {/* BACKSPACE BUTTON */}
         <Button
           variant="ghost"
           className={cn(
-            keyBase,
-            'text-destructive border-destructive/30 bg-destructive/5 hover:bg-destructive/10'
+            COMMON_KEY_BASE,
+            'text-destructive border-destructive/50 bg-destructive/20',
+            'hover:bg-red-500 dark:hover:bg-red-600 dark:hover:border-red-500'
           )}
           onClick={onBackspace}
           aria-label="Sil"
         >
-          <Delete className="w-5 h-5" />
+          <Delete className="!w-7 !h-7 -translate-x-0.5" strokeWidth={2.25} />
         </Button>
       </div>
 
-      {/* QUICK CASH */}
+      {/* QUICK ACTIONS SIDEBAR */}
       <div className="w-[120px] flex flex-col gap-2">
-        {QUICK_CASH_OPTIONS.map(({ val, color }) => (
-          <Button
-            key={val}
-            variant="outline"
-            className={cn(
-              'flex-1 rounded-xl text-sm font-bold shadow-sm transition active:scale-[0.99]',
+        {/* QUICK CASH BUTTONS */}
+        {QUICK_CASH_OPTIONS.map(({ val, color }) => {
+          const isInsufficient = partialPaymentsBlocked && val * 100 < effectivePayment
 
-              // ₺50 – Amber
-              color === 'amber' &&
-                'border-amber-500/30 bg-amber-500/10 text-amber-700 hover:bg-amber-600 hover:text-white',
+          return (
+            <Button
+              key={val}
+              variant="outline"
+              className={cn(ACTION_BUTTON_BASE, QUICK_CASH_STYLES[color])}
+              onClick={() => onQuickCash(val.toString())}
+              disabled={isInsufficient}
+              title={isInsufficient ? 'Ürün seç modunda tutar yetersiz' : undefined}
+            >
+              ₺{val}
+            </Button>
+          )
+        })}
 
-              // ₺100 – Blue
-              color === 'blue' &&
-                'border-blue-500/30 bg-blue-500/10 text-blue-700 hover:bg-blue-600 hover:text-white',
-
-              // ₺200 – Pink
-              color === 'pink' &&
-                'border-pink-500/30 bg-pink-500/10 text-pink-700 hover:bg-pink-600 hover:text-white'
-            )}
-            onClick={() => onQuickCash(val.toString())}
-          >
-            ₺{val}
-          </Button>
-        ))}
-
-        {/* EXACT */}
+        {/* EXACT PAYMENT BUTTON */}
         <Button
           variant="outline"
           className={cn(
-            'flex-1 rounded-xl border border-success/40 bg-success/10',
-            'text-[11px] font-bold tracking-wider',
-            'text-success-foreground hover:bg-success hover:text-white transition active:scale-[0.99]'
+            ACTION_BUTTON_BASE,
+            'border border-success/60 bg-success/25',
+            'text-[11px] tracking-wider text-success-foreground',
+            'hover:bg-success hover:text-white'
           )}
           onClick={onSetExact}
           title="Tamamı"

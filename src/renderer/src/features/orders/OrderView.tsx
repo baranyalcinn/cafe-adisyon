@@ -339,11 +339,25 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
 
         if (!isInInput) onBack()
       }
+
+      // Space → Ödeme modalını aç
+      if (e.key === ' ') {
+        if (isPaymentOpen) return
+
+        const activeElement = document.activeElement
+        const isInInput =
+          activeElement instanceof HTMLInputElement || activeElement instanceof HTMLTextAreaElement
+
+        if (!isInInput && order?.items && order.items.length > 0) {
+          e.preventDefault()
+          setIsPaymentOpen(true)
+        }
+      }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [onBack, isPaymentOpen])
+  }, [onBack, isPaymentOpen, order?.items])
 
   const resetVisibleLimit = useCallback(() => {
     setVisibleLimit(INITIAL_VISIBLE_LIMIT)

@@ -62,6 +62,8 @@ export const ProductCard = memo(function ProductCard({
               type="number"
               value={editPrice}
               onChange={(e) => setEditPrice(e.target.value)}
+              max={9999}
+              min={0}
               className="h-8 font-bold text-lg"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') handleSave()

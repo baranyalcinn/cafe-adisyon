@@ -1,124 +1,278 @@
-import { Banknote, ShieldAlert, Sparkles, Zap } from 'lucide-react'
+import { Banknote, CheckCircle2, Coins, CreditCard, ShieldAlert, Sparkles, Zap } from 'lucide-react'
 import { memo } from 'react'
 
 import { PremiumAmount } from '@/components/PremiumAmount'
+import { type PaymentMethod } from '@/lib/api'
 import { cn } from '@/lib/utils'
+
+// ============================================================================
+// Types
+// ============================================================================
 
 interface ResultBannerProps {
   itemsPartialBlocked: boolean
   tendered: number
   effectivePayment: number
   currentChange: number
+  hoveredMethod?: PaymentMethod | null
 }
 
-type BannerStatus = 'blocked' | 'change' | 'partial' | 'idle'
+type BannerStatus = 'blocked' | 'change' | 'partial' | 'exact' | 'hover' | 'idle'
+type AmountColor = 'destructive' | 'warning' | 'info' | 'success' | 'primary' | 'muted'
+type MethodKey = 'CASH' | 'CARD' | 'NONE'
+
+interface MethodTone {
+  stripe: string
+  wrap: string
+  icon: string
+  amountColor: AmountColor
+  titlePrefix: string
+  Icon: typeof Banknote
+}
+
+interface BannerConfig {
+  stripe: string
+  wrap: string
+  icon: string
+  title: string
+  subtitle: string
+  Icon: typeof Banknote
+  amount: number
+  amountColor: AmountColor
+}
+
+// ============================================================================
+// Constants
+// ============================================================================
+
+const METHOD_THEME: Record<MethodKey, MethodTone> = {
+  CASH: {
+    stripe: 'bg-emerald-500',
+    wrap: 'border-emerald-500/25 bg-emerald-500/8 dark:bg-emerald-500/12',
+    icon: 'text-emerald-700 dark:text-emerald-300',
+    amountColor: 'success',
+    titlePrefix: 'Nakit',
+    Icon: Banknote
+  },
+  CARD: {
+    stripe: 'bg-indigo-500',
+    wrap: 'border-indigo-500/25 bg-indigo-500/8 dark:bg-indigo-500/12',
+    icon: 'text-indigo-700 dark:text-indigo-300',
+    amountColor: 'primary',
+    titlePrefix: 'Kart',
+    Icon: CreditCard
+  },
+  NONE: {
+    stripe: 'bg-sky-500',
+    wrap: 'border-sky-500/20 bg-sky-500/6 dark:bg-sky-500/10',
+    icon: 'text-sky-700 dark:text-sky-300',
+    amountColor: 'info',
+    titlePrefix: '',
+    Icon: Coins
+  }
+}
+
+// Statik konfigürasyonlar - render dışında tanımlı, performans için optimize
+const STATIC_THEMES: Record<
+  'blocked' | 'change' | 'idle',
+  Omit<BannerConfig, 'amount'> & { amount?: number }
+> = {
+  blocked: {
+    stripe: 'bg-rose-500',
+    wrap: 'border-rose-500/25 bg-rose-500/8 dark:bg-rose-500/12',
+    icon: 'text-rose-700 dark:text-rose-300',
+    title: 'Ürün Seç Modu',
+    subtitle: 'Parçalı tahsilat kapalı',
+    Icon: ShieldAlert,
+    amountColor: 'destructive'
+  },
+  change: {
+    stripe: 'bg-amber-500',
+    wrap: 'border-amber-500/25 bg-amber-500/8 dark:bg-amber-500/12',
+    icon: 'text-amber-700 dark:text-amber-300',
+    title: 'Para Üstü',
+    subtitle: 'Müşteriye verilecek tutar',
+    Icon: Zap,
+    amountColor: 'warning'
+  },
+  idle: {
+    stripe: 'bg-muted-foreground/30',
+    wrap: 'border-border/50 bg-card/70 dark:bg-card/40',
+    icon: 'text-muted-foreground',
+    title: 'Ödeme Bekleniyor',
+    subtitle: 'Enter: Nakit · Delete: Sıfırla',
+    Icon: Sparkles,
+    amountColor: 'muted',
+    amount: 0
+  }
+}
+
+// ============================================================================
+// Pure Helpers (testable, zero side effects)
+// ============================================================================
+
+const getMethodKey = (method?: PaymentMethod | null): MethodKey =>
+  method === 'CASH' ? 'CASH' : method === 'CARD' ? 'CARD' : 'NONE'
+
+const resolveStatus = (
+  blocked: boolean,
+  tendered: number,
+  effective: number,
+  hovered?: PaymentMethod | null
+): BannerStatus => {
+  if (blocked) return 'blocked'
+  if (tendered === effective && tendered > 0) return 'exact'
+  if (tendered > effective) return 'change'
+  if (tendered > 0) return 'partial'
+  if (hovered) return 'hover'
+  return 'idle'
+}
+
+const buildTitle = (prefix: string, suffix: string): string =>
+  prefix ? `${prefix} ${suffix}` : suffix
+
+const buildConfig = (
+  status: BannerStatus,
+  methodKey: MethodKey,
+  tendered: number,
+  effective: number,
+  change: number
+): BannerConfig => {
+  const theme = METHOD_THEME[methodKey]
+
+  switch (status) {
+    case 'blocked':
+      return { ...STATIC_THEMES.blocked, amount: effective }
+
+    case 'change':
+      return { ...STATIC_THEMES.change, amount: Math.max(0, change) }
+
+    case 'partial':
+      return {
+        stripe: theme.stripe,
+        wrap: theme.wrap,
+        icon: theme.icon,
+        title: buildTitle(theme.titlePrefix, 'Parçalı Tahsilat'),
+        subtitle: 'Ödenen kısım uygulanacak',
+        Icon: theme.Icon,
+        amountColor: theme.amountColor,
+        amount: tendered
+      }
+
+    case 'exact': {
+      const useDefaultIcon = methodKey === 'NONE'
+      return {
+        stripe: theme.stripe,
+        wrap: theme.wrap,
+        icon: theme.icon,
+        title: buildTitle(theme.titlePrefix, 'Tam Tahsilat'),
+        subtitle: 'Hesap tamamen kapanacak',
+        Icon: useDefaultIcon ? CheckCircle2 : theme.Icon,
+        amountColor: useDefaultIcon ? 'success' : theme.amountColor,
+        amount: effective
+      }
+    }
+
+    case 'hover':
+      return {
+        stripe: theme.stripe,
+        wrap: theme.wrap,
+        icon: theme.icon,
+        title: buildTitle(theme.titlePrefix, 'Tahsilat'),
+        subtitle: 'Tahsilata hazır',
+        Icon: theme.Icon,
+        amountColor: theme.amountColor,
+        amount: effective
+      }
+
+    case 'idle':
+    default:
+      return STATIC_THEMES.idle as BannerConfig
+  }
+}
+
+// ============================================================================
+// Component
+// ============================================================================
 
 export const ResultBanner = memo(function ResultBanner({
   itemsPartialBlocked,
   tendered,
   effectivePayment,
-  currentChange
+  currentChange,
+  hoveredMethod = null
 }: ResultBannerProps) {
-  const status: BannerStatus = itemsPartialBlocked
-    ? 'blocked'
-    : tendered > effectivePayment
-      ? 'change'
-      : tendered > 0 && tendered < effectivePayment
-        ? 'partial'
-        : 'idle'
-
-  const cfg = {
-    blocked: {
-      stripe: 'bg-rose-500',
-      wrap: 'border-rose-500/20 bg-rose-50/40',
-      icon: 'text-rose-700 bg-rose-100/60 ring-rose-200',
-      title: 'Ürün Seç Modu',
-      subtitle: 'Parçalı tahsilat kapalı',
-      Icon: ShieldAlert,
-      amount: effectivePayment,
-      amountColor: 'destructive' as const
-    },
-    change: {
-      stripe: 'bg-amber-500',
-      wrap: 'border-amber-500/20 bg-amber-50/40',
-      icon: 'text-amber-700 bg-amber-100/60 ring-amber-200',
-      title: 'Para Üstü',
-      subtitle: 'Müşteriye verilecek tutar',
-      Icon: Zap,
-      amount: currentChange,
-      amountColor: 'warning' as const
-    },
-    partial: {
-      stripe: 'bg-sky-500',
-      wrap: 'border-sky-500/20 bg-sky-50/40',
-      icon: 'text-sky-700 bg-sky-100/60 ring-sky-200',
-      title: 'Parçalı Tahsilat',
-      subtitle: 'Girilen tutar ile tahsil edilecek',
-      Icon: Banknote,
-      amount: tendered,
-      amountColor: 'info' as const
-    },
-    idle: {
-      stripe: 'bg-muted-foreground/30',
-      wrap: 'border-border/30 bg-background',
-      icon: 'text-muted-foreground bg-muted/40 ring-border/40',
-      title: 'Ödeme Bekleniyor',
-      subtitle: 'Enter: Nakit · Delete: Sıfırla',
-      Icon: Sparkles,
-      amount: 0,
-      amountColor: 'muted' as const
-    }
-  }[status]
+  // useMemo'ya gerek yok, çünkü bileşen (memo sayesinde) sadece bu proplar değiştiğinde çalışır
+  const methodKey = getMethodKey(hoveredMethod)
+  const status = resolveStatus(itemsPartialBlocked, tendered, effectivePayment, hoveredMethod)
+  const config = buildConfig(status, methodKey, tendered, effectivePayment, currentChange)
 
   const showAmount = status !== 'idle'
+  const animationKey = `${status}-${hoveredMethod ?? 'none'}`
 
   return (
     <div
       className={cn(
-        'w-full relative overflow-hidden rounded-xl border',
-        'shadow-[0_1px_0_rgba(0,0,0,0.04)]',
-        cfg.wrap
+        'relative w-full overflow-hidden rounded-2xl border backdrop-blur-sm',
+        'shadow-[0_8px_24px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.24)]',
+        'transition-all duration-300',
+        config.wrap
       )}
       role="status"
       aria-live="polite"
     >
-      {/* subtle left stripe */}
-      <div className={cn('absolute left-0 top-0 bottom-0 w-[3px]', cfg.stripe)} />
+      {/* Left accent stripe */}
+      <div className={cn('absolute left-0 top-0 bottom-0 w-1', config.stripe)} />
 
-      <div className="flex items-center justify-between gap-4 px-4 py-3">
-        {/* left */}
-        <div className="flex items-center gap-3 min-w-0">
+      {/* Soft glow */}
+      <div className="pointer-events-none absolute inset-0 opacity-50">
+        <div className="absolute -left-10 top-1/2 h-20 w-20 -translate-y-1/2 rounded-full bg-white/20 blur-2xl dark:bg-white/5" />
+      </div>
+
+      <div className="relative flex items-center justify-between gap-4 px-4 py-3.5 sm:px-5 sm:py-4">
+        {/* Left side */}
+        <div
+          key={animationKey}
+          className="min-w-0 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-1 duration-300"
+        >
           <div
             className={cn(
-              'w-9 h-9 rounded-lg flex items-center justify-center',
-              'ring-1',
-              cfg.icon
+              'flex shrink-0 items-center justify-center transition-colors duration-300',
+              config.icon
             )}
           >
-            <cfg.Icon className="w-4 h-4" />
+            <config.Icon className="h-7 w-7" strokeWidth={2.75} />
           </div>
 
           <div className="min-w-0">
-            <div className="text-[13px] font-semibold text-foreground truncate">{cfg.title}</div>
-            <div className="text-[11px] font-medium text-muted-foreground truncate">
-              {cfg.subtitle}
+            <div className="truncate text-[14px] sm:text-[15px] font-semibold tracking-tight text-foreground">
+              {config.title}
+            </div>
+            <div className="truncate text-[12px] sm:text-[13px] font-medium text-muted-foreground">
+              {config.subtitle}
             </div>
           </div>
         </div>
 
-        {/* right */}
+        {/* Right side */}
         {showAmount ? (
           <div className="shrink-0">
-            <div className="rounded-lg border border-border/40 bg-background/70 px-3 py-1.5">
-              <PremiumAmount amount={cfg.amount} size="xl" color={cfg.amountColor} />
+            <div
+              className={cn(
+                'rounded-xl border px-3 py-2 sm:px-4',
+                'bg-background/85 dark:bg-background/30',
+                'border-border/50 shadow-sm'
+              )}
+            >
+              <PremiumAmount amount={config.amount} size="2xl" color={config.amountColor} />
             </div>
           </div>
         ) : (
-          <div className="shrink-0 flex items-center gap-2">
-            <span className="text-[10px] font-semibold text-muted-foreground/70  tracking-[0.18em]">
+          <div className="shrink-0 flex items-center gap-2 rounded-full border border-border/40 bg-background/60 px-2.5 py-1.5">
+            <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/80">
               Hazır
             </span>
-            <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
+            <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50" />
           </div>
         )}
       </div>

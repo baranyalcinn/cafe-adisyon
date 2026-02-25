@@ -17,6 +17,10 @@ import { PaymentActions } from './components/PaymentActions'
 import { ResultBanner } from './components/ResultBanner'
 import { SuccessView } from './components/SuccessView'
 
+// ============================================================================
+// Types
+// ============================================================================
+
 interface PaymentModalProps {
   open: boolean
   onClose: () => void
@@ -42,12 +46,12 @@ type State = {
   paymentMode: PaymentMode
   selectedQuantities: Record<string, number>
   tenderedInput: string
-  isProcessing: boolean
+  processingMethod: PaymentMethod | null
   finalChange: number
   splitCount: number
-  splitIndex: number // 0-based: which person's share we're collecting
-  splitBaseAmount: number // The remaining amount when split mode was initiated
-  isHoveringPayment: boolean
+  splitIndex: number
+  splitBaseAmount: number
+  hoveredPaymentMethod: PaymentMethod | null
 }
 
 type Action =
@@ -60,25 +64,73 @@ type Action =
   | { type: 'SET_SPLIT_BASE'; value: number }
   | { type: 'SET_TENDERED_INPUT'; value: string }
   | { type: 'CLEAR_TENDERED' }
-  | { type: 'SET_PROCESSING'; value: boolean }
+  | { type: 'SET_PROCESSING'; method: PaymentMethod | null }
   | { type: 'SET_SUCCESS'; finalChange: number }
   | { type: 'SET_VIEW'; view: ViewState }
   | { type: 'SET_SELECTED_QTY'; itemId: string; qty: number }
   | { type: 'CLEAR_SELECTED' }
   | { type: 'SELECT_ALL'; all: Record<string, number> }
-  | { type: 'SET_HOVER_PAYMENT'; value: boolean }
+  | { type: 'SET_HOVER_PAYMENT'; method: PaymentMethod | null }
+
+// ============================================================================
+// Constants & Pure Functions
+// ============================================================================
+
+const PAYMENT_MODES = [
+  { id: 'full', label: 'Tamamı', Icon: Banknote },
+  { id: 'split', label: 'Bölüştür', Icon: Users },
+  { id: 'items', label: 'Ürün Seç', Icon: ListChecks }
+] as const
+
+const SPLIT_QUICK_OPTIONS = [2, 3, 4, 5] as const
 
 const initialState: State = {
   view: 'PAY',
   paymentMode: 'full',
   selectedQuantities: {},
   tenderedInput: '',
-  isProcessing: false,
+  processingMethod: null,
   finalChange: 0,
   splitCount: 2,
   splitIndex: 0,
   splitBaseAmount: 0,
-  isHoveringPayment: false
+  hoveredPaymentMethod: null
+}
+
+function parseMoneyToCents(input: string): number {
+  const trimmed = input.trim()
+  if (!trimmed) return 0
+  const normalized = trimmed.replace(',', '.')
+  if (!/^\d+(\.\d{0,2})?$/.test(normalized)) return 0
+
+  const [wholeStr, fracStr = ''] = normalized.split('.')
+  const whole = Number(wholeStr)
+  const frac = Number((fracStr + '00').slice(0, 2))
+  if (!Number.isFinite(whole) || !Number.isFinite(frac)) return 0
+  return whole * 100 + frac
+}
+
+function centsToInputString(cents: number): string {
+  const safe = Math.max(0, Math.trunc(cents))
+  const whole = Math.floor(safe / 100)
+  const frac = safe % 100
+  return `${whole}.${String(frac).padStart(2, '0')}`
+}
+
+function normalizeTenderedInput(nextRaw: string): string {
+  if (nextRaw === '') return ''
+  const normalized = nextRaw.replace(',', '.')
+  if (!/^[0-9.]*$/.test(normalized)) return ''
+  if ((normalized.match(/\./g) || []).length > 1) return ''
+  if (normalized.includes('.') && normalized.split('.')[1].length > 2) return ''
+
+  const numericVal = parseFloat(normalized)
+  if (!isNaN(numericVal) && numericVal > 9999) return ''
+  return normalized
+}
+
+function clamp(n: number, min: number, max: number): number {
+  return Math.min(Math.max(n, min), max)
 }
 
 function reducer(state: State, action: Action): State {
@@ -90,7 +142,7 @@ function reducer(state: State, action: Action): State {
         ...state,
         view: 'PAY',
         tenderedInput: '',
-        isProcessing: false,
+        processingMethod: null,
         finalChange: 0,
         selectedQuantities: {},
         splitIndex: 0
@@ -117,9 +169,9 @@ function reducer(state: State, action: Action): State {
     case 'CLEAR_TENDERED':
       return { ...state, tenderedInput: '' }
     case 'SET_PROCESSING':
-      return { ...state, isProcessing: action.value }
+      return { ...state, processingMethod: action.method }
     case 'SET_SUCCESS':
-      return { ...state, view: 'SUCCESS', isProcessing: false, finalChange: action.finalChange }
+      return { ...state, view: 'SUCCESS', processingMethod: null, finalChange: action.finalChange }
     case 'SET_VIEW':
       return { ...state, view: action.view }
     case 'SET_SELECTED_QTY': {
@@ -133,57 +185,15 @@ function reducer(state: State, action: Action): State {
     case 'SELECT_ALL':
       return { ...state, selectedQuantities: action.all }
     case 'SET_HOVER_PAYMENT':
-      return { ...state, isHoveringPayment: action.value }
+      return { ...state, hoveredPaymentMethod: action.method }
     default:
       return state
   }
 }
 
-/**
- * Parses a money input like "12", "12.3", "12,30" to cents (integer).
- * Returns 0 for empty/invalid.
- */
-function parseMoneyToCents(input: string): number {
-  const trimmed = input.trim()
-  if (!trimmed) return 0
-  const normalized = trimmed.replace(',', '.')
-  if (!/^\d+(\.\d{0,2})?$/.test(normalized)) return 0
-
-  const [wholeStr, fracStr = ''] = normalized.split('.')
-  const whole = Number(wholeStr)
-  const frac = Number((fracStr + '00').slice(0, 2))
-  if (!Number.isFinite(whole) || !Number.isFinite(frac)) return 0
-  return whole * 100 + frac
-}
-
-/**
- * Cents (int) -> input string "12.30"
- */
-function centsToInputString(cents: number): string {
-  const safe = Math.max(0, Math.trunc(cents))
-  const whole = Math.floor(safe / 100)
-  const frac = safe % 100
-  return `${whole}.${String(frac).padStart(2, '0')}`
-}
-
-/**
- * Normalizes tendered input live:
- * - only digits + one dot
- * - max 2 decimals
- * - allows empty
- */
-function normalizeTenderedInput(nextRaw: string): string {
-  if (nextRaw === '') return ''
-  const normalized = nextRaw.replace(',', '.')
-  if (!/^[0-9.]*$/.test(normalized)) return ''
-  if ((normalized.match(/\./g) || []).length > 1) return ''
-  if (normalized.includes('.') && normalized.split('.')[1].length > 2) return ''
-  return normalized
-}
-
-function clamp(n: number, min: number, max: number): number {
-  return Math.min(Math.max(n, min), max)
-}
+// ============================================================================
+// Component
+// ============================================================================
 
 export function PaymentModal({
   open,
@@ -201,6 +211,7 @@ export function PaymentModal({
   const contentRef = useRef<HTMLDivElement | null>(null)
   const tenderedInputRef = useRef<HTMLInputElement | null>(null)
 
+  // -- Derived State --
   const total = order?.totalAmount || 0
   const paidAmount = order?.payments?.reduce((sum, p) => sum + p.amount, 0) || 0
   const remainingAmount = total - paidAmount
@@ -225,12 +236,7 @@ export function PaymentModal({
   const split = useMemo(() => {
     const n = clamp(state.splitCount, 2, 20)
     const idx = clamp(state.splitIndex, 0, Math.max(0, n - 1))
-
-    // Use the stored original amount (set once on mode entry) for stable calculation
     const originalAmount = state.splitBaseAmount > 0 ? state.splitBaseAmount : remainingAmount
-
-    // Deterministic per-person share from ORIGINAL total:
-    // Person i gets floor(original/n) + 1 if i < original%n, else floor(original/n)
     const base = Math.floor(originalAmount / n)
     const remainder = originalAmount % n
     const share = base + (idx < remainder ? 1 : 0)
@@ -257,28 +263,31 @@ export function PaymentModal({
 
   const isItemsModeWithSelection =
     state.paymentMode === 'items' && Object.keys(state.selectedQuantities).length > 0
-
   const itemsPartialBlocked =
-    state.paymentMode === 'items' &&
-    isItemsModeWithSelection &&
-    tendered > 0 &&
-    tendered < effectivePayment
-
+    isItemsModeWithSelection && tendered > 0 && tendered < effectivePayment
   const canProceedBase =
     effectivePayment > 0 || (state.paymentMode === 'items' && selectedTotal > 0)
-
-  const canCashPay = !state.isProcessing && canProceedBase && !itemsPartialBlocked
-  const canCardPay = !state.isProcessing && canProceedBase && tendered <= effectivePayment
+  const canCashPay = state.processingMethod === null && canProceedBase && !itemsPartialBlocked
+  const canCardPay = canCashPay && tendered <= effectivePayment
 
   // --- Effects ---
 
+  // Tekleştirilmiş Input Odaklama Efekti (Açılış ve İşlem Sonrası)
   useEffect(() => {
     if (!open) return
-    dispatch({ type: 'RESET_ON_OPEN' })
+
+    // Sadece open değiştiğinde resetle
+    if (state.view === 'SUCCESS') return
+
     const t = setTimeout(() => {
       tenderedInputRef.current?.focus()
-    }, 0)
+    }, 50)
     return () => clearTimeout(t)
+  }, [open, state.paymentMode, state.selectedQuantities, state.splitIndex])
+
+  // Dialog açılış temizliği
+  useEffect(() => {
+    if (open) dispatch({ type: 'RESET_ON_OPEN' })
   }, [open])
 
   useEffect(() => {
@@ -287,7 +296,6 @@ export function PaymentModal({
     }
   }, [])
 
-  // Stabilize split base amount to prevent flash when transitioning to next person
   useEffect(() => {
     if (state.paymentMode === 'split' && state.splitBaseAmount === 0 && remainingAmount > 0) {
       dispatch({ type: 'SET_SPLIT_BASE', value: remainingAmount })
@@ -320,24 +328,10 @@ export function PaymentModal({
     tenderedInputRef.current?.focus()
   }, [])
 
-  const setQty = useCallback((itemId: string, qty: number): void => {
-    dispatch({ type: 'SET_SELECTED_QTY', itemId, qty })
-  }, [])
-
-  const selectAllItems = useCallback((): void => {
-    const all: Record<string, number> = {}
-    unpaidItems.forEach((item) => {
-      all[item.id] = item.quantity
-    })
-    dispatch({ type: 'SELECT_ALL', all })
-  }, [unpaidItems])
-
   const handleSetExact = useCallback((): void => {
     dispatch({ type: 'SET_TENDERED_INPUT', value: centsToInputString(effectivePayment) })
   }, [effectivePayment])
 
-  // Ref to avoid declaration-order issue: handleTenderedKeyDown needs handlePayment
-  // but is declared before it. Ref always holds the latest version.
   const handlePaymentRef = useRef<(method: PaymentMethod) => void>(() => {})
 
   const handleTenderedKeyDown = useCallback(
@@ -367,7 +361,9 @@ export function PaymentModal({
       }
       if (key === 'Enter') {
         e.preventDefault()
-        if (canCashPay) void handlePaymentRef.current('CASH')
+        if (canCashPay && state.tenderedInput.trim() !== '') {
+          void handlePaymentRef.current('CASH')
+        }
       }
     },
     [state.view, state.tenderedInput, canCashPay, appendTendered, backspaceTendered, clearTendered]
@@ -375,23 +371,20 @@ export function PaymentModal({
 
   const handlePayment = useCallback(
     async (method: PaymentMethod): Promise<void> => {
-      // Guard: prevent double-submit from rapid clicks
-      if (state.isProcessing) return
+      if (state.processingMethod !== null) return
 
       let actualAmount = effectivePayment
 
-      // Items mode: avoid logical inconsistency (items marked paid while amount partial).
       if (state.paymentMode === 'items' && isItemsModeWithSelection) {
         if (tendered > 0 && tendered < effectivePayment) return
         actualAmount = effectivePayment
       } else {
-        // Full/Split: allow partial pay if tendered typed and less than due.
         if (tendered > 0 && tendered < effectivePayment) actualAmount = tendered
       }
 
       if (actualAmount <= 0 && !(state.paymentMode === 'items' && selectedTotal > 0)) return
 
-      dispatch({ type: 'SET_PROCESSING', value: true })
+      dispatch({ type: 'SET_PROCESSING', method })
 
       try {
         const finalChange = method === 'CASH' ? currentChange : 0
@@ -410,7 +403,7 @@ export function PaymentModal({
         }
 
         const newRemaining = remainingAmount - actualAmount
-        const shouldClose = newRemaining <= 1 // 1 cent tolerance
+        const shouldClose = newRemaining <= 1
 
         soundManager.playSuccess()
         dispatch({ type: 'CLEAR_TENDERED' })
@@ -426,12 +419,11 @@ export function PaymentModal({
           return
         }
 
-        // Split: move to next person share (keeps user in flow)
         if (state.paymentMode === 'split') {
           dispatch({ type: 'NEXT_SPLIT_PERSON' })
         }
 
-        dispatch({ type: 'SET_PROCESSING', value: false })
+        dispatch({ type: 'SET_PROCESSING', method: null })
         tenderedInputRef.current?.focus()
       } catch (error) {
         console.error('Payment failed:', error)
@@ -440,7 +432,7 @@ export function PaymentModal({
           description: 'Lütfen tekrar deneyin.',
           variant: 'destructive'
         })
-        dispatch({ type: 'SET_PROCESSING', value: false })
+        dispatch({ type: 'SET_PROCESSING', method: null })
         tenderedInputRef.current?.focus()
       }
     },
@@ -461,7 +453,6 @@ export function PaymentModal({
     ]
   )
 
-  // Keep ref in sync with latest handlePayment
   handlePaymentRef.current = handlePayment
 
   const handleClose = useCallback((): void => {
@@ -474,13 +465,6 @@ export function PaymentModal({
     onClose()
   }, [state.view, onPaymentComplete, selectTable, onClose])
 
-  const handleDialogOpenChange = useCallback(
-    (nextOpen: boolean): void => {
-      if (!nextOpen) handleClose()
-    },
-    [handleClose]
-  )
-
   // --- Render ---
 
   if (state.view === 'SUCCESS') {
@@ -488,13 +472,13 @@ export function PaymentModal({
       <SuccessView
         open={open}
         finalChange={state.finalChange}
-        onOpenChange={handleDialogOpenChange}
+        onOpenChange={(nextOpen) => !nextOpen && handleClose()}
       />
     )
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleDialogOpenChange} key="payment-modal">
+    <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && handleClose()} key="payment-modal">
       <DialogContent
         ref={contentRef}
         tabIndex={-1}
@@ -547,28 +531,13 @@ export function PaymentModal({
 
             {/* Mode Tabs */}
             <div className="flex gap-2 mb-2">
-              {(
-                [
-                  { id: 'full', label: 'Tamamı', icon: Banknote },
-                  {
-                    id: 'split',
-                    label: 'Bölüştür',
-                    icon: Users
-                  },
-                  {
-                    id: 'items',
-                    label: 'Ürün Seç',
-                    icon: ListChecks
-                  }
-                ] as const
-              ).map(({ id, label, icon: Icon }) => {
+              {PAYMENT_MODES.map(({ id, label, Icon }) => {
                 const isActive = state.paymentMode === id
-                const IconComponent = Icon as React.ElementType
 
                 return (
                   <button
                     key={id}
-                    onClick={() => dispatch({ type: 'SET_MODE', mode: id as PaymentMode })}
+                    onClick={() => dispatch({ type: 'SET_MODE', mode: id })}
                     className={cn(
                       'flex-1 h-12 flex items-center justify-center gap-2 rounded-xl transition-all duration-200 border',
                       isActive
@@ -577,7 +546,7 @@ export function PaymentModal({
                     )}
                   >
                     <div className="shrink-0 flex items-center">
-                      <IconComponent
+                      <Icon
                         className={cn(
                           'w-[18px] h-[18px]',
                           isActive ? 'text-primary-foreground' : 'text-foreground/60'
@@ -593,8 +562,9 @@ export function PaymentModal({
             </div>
           </div>
 
-          {/* Mode Specific */}
+          {/* Mode Specific Body */}
           <div className="flex-1 overflow-auto px-7 pb-7 scrollbar-hide">
+            {/* FULL MODE */}
             {state.paymentMode === 'full' && (
               <div className="h-full flex flex-col items-center justify-center text-center space-y-3 py-6 animate-in fade-in duration-200">
                 <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/5">
@@ -609,9 +579,9 @@ export function PaymentModal({
               </div>
             )}
 
+            {/* SPLIT MODE */}
             {state.paymentMode === 'split' && (
               <div className="space-y-6 pt-1 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                {/* Unified Selection Toolbar */}
                 <div className="bg-muted/10 rounded-2xl border border-border/10 p-4">
                   <div className="flex items-center justify-between gap-6">
                     <div className="flex flex-col gap-1.5">
@@ -652,7 +622,7 @@ export function PaymentModal({
                         Hızlı Seçim
                       </span>
                       <div className="flex items-center justify-end gap-1.5">
-                        {[2, 3, 4, 5].map((n) => (
+                        {SPLIT_QUICK_OPTIONS.map((n) => (
                           <button
                             key={n}
                             onClick={() => dispatch({ type: 'SET_SPLIT', value: n })}
@@ -706,7 +676,7 @@ export function PaymentModal({
                     <div className="w-full grid grid-cols-2 gap-3">
                       <Button
                         variant="outline"
-                        className="h-11 rounded-2xl bg-background border-border/40 font-bold text-[12px] text-foreground/80 hover:bg-muted/50 hover:text-foreground transition-all"
+                        className="h-11 rounded-2xl bg-background border-border/40 font-bold text-[12px] text-foreground/80 hover:bg-muted/50 transition-all"
                         onClick={() => dispatch({ type: 'SET_SPLIT_INDEX', value: 0 })}
                       >
                         Sıfırla
@@ -724,6 +694,7 @@ export function PaymentModal({
               </div>
             )}
 
+            {/* ITEMS MODE */}
             {state.paymentMode === 'items' && (
               <div className="h-full flex flex-col animate-in fade-in duration-200 overflow-hidden">
                 <div className="flex items-center justify-between mb-2 px-1">
@@ -733,7 +704,13 @@ export function PaymentModal({
                   <button
                     onClick={() => {
                       if (isAllItemsSelected) dispatch({ type: 'CLEAR_SELECTED' })
-                      else selectAllItems()
+                      else {
+                        const all: Record<string, number> = {}
+                        unpaidItems.forEach((i) => {
+                          all[i.id] = i.quantity
+                        })
+                        dispatch({ type: 'SELECT_ALL', all })
+                      }
                     }}
                     className={cn(
                       'text-[12px] font-bold transition-colors',
@@ -752,7 +729,9 @@ export function PaymentModal({
                       key={item.id}
                       item={item}
                       selected={state.selectedQuantities[item.id] || 0}
-                      onQtyChange={setQty}
+                      onQtyChange={(itemId, qty) =>
+                        dispatch({ type: 'SET_SELECTED_QTY', itemId, qty })
+                      }
                     />
                   ))}
                 </div>
@@ -765,12 +744,11 @@ export function PaymentModal({
         <div className="flex-1 flex flex-col bg-muted/5 relative h-full overflow-hidden">
           <div className="px-8 pt-4 pb-2 flex flex-col items-center">
             <div className="flex gap-4 w-full max-w-[640px] mb-8">
-              {/* Total */}
+              {/* Total Amount */}
               <div className="flex-[1.6]">
                 <div
                   className={cn(
-                    'h-full rounded-2xl border border-border/40 bg-background shadow-sm',
-                    'px-6 py-4 flex flex-col items-center justify-center'
+                    'h-full rounded-2xl border border-border/40 bg-background shadow-sm px-6 py-4 flex flex-col items-center justify-center'
                   )}
                 >
                   <span className="text-[13px] font-semibold text-foreground/90 tracking-wide mb-1">
@@ -780,23 +758,19 @@ export function PaymentModal({
                 </div>
               </div>
 
-              {/* Tendered */}
+              {/* Tendered Input Area */}
               <div className="flex-1">
                 <div
                   className={cn(
-                    'h-full rounded-2xl border border-border/40 bg-background shadow-sm',
-                    'px-6 py-4 flex flex-col justify-between',
+                    'h-full rounded-2xl border border-border/40 bg-background shadow-sm px-6 py-4 flex flex-col justify-between',
                     'focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-primary/10'
                   )}
                 >
-                  {/* Accessible / focusable input (keyboard scope) */}
                   <input
                     ref={tenderedInputRef}
                     value={state.tenderedInput}
                     onKeyDown={handleTenderedKeyDown}
-                    onChange={() => {
-                      /* readOnly behavior via controlled keypad */
-                    }}
+                    onChange={() => {}}
                     inputMode="decimal"
                     aria-label="Alınan para"
                     className="sr-only"
@@ -807,13 +781,11 @@ export function PaymentModal({
                     <span className="text-[12px] font-semibold text-foreground/90 tracking-wide">
                       Alınacak
                     </span>
-
                     <button
                       onClick={clearTendered}
                       className={cn(
                         'flex h-11 items-center gap-2 rounded-xl border border-transparent px-4 transition-all',
-                        'text-foreground/80 hover:text-destructive hover:border-destructive/30 hover:bg-destructive/5',
-                        'transition active:scale-[0.99]'
+                        'text-foreground/80 hover:text-destructive hover:border-destructive/30 hover:bg-destructive/5 active:scale-[0.99]'
                       )}
                       title="Sıfırla (Delete)"
                       aria-label="Sıfırla"
@@ -823,30 +795,24 @@ export function PaymentModal({
                   </div>
 
                   <button
-                    className={cn(
-                      'mt-2 w-full text-right rounded-xl',
-                      'px-2 py-2',
-                      'hover:bg-muted/40 transition active:scale-[0.99]'
-                    )}
+                    className="mt-2 w-full text-right rounded-xl px-2 py-2 hover:bg-muted/40 transition active:scale-[0.99]"
                     onClick={() => tenderedInputRef.current?.focus()}
                     type="button"
                     aria-label="Alınacak tutar alanına odaklan"
-                    title="Klavye girişi için tıklayın"
                   >
                     <span
                       className={cn(
-                        'font-mono tabular-nums tracking-tight transition-all duration-300',
-                        'text-3xl font-semibold',
+                        'font-sans tabular-nums tracking-tight transition-all duration-300 text-3xl font-bold',
                         state.tenderedInput
-                          ? 'text-foreground'
-                          : state.isHoveringPayment
+                          ? 'text-teal-600 dark:text-teal-500'
+                          : state.hoveredPaymentMethod !== null
                             ? 'text-foreground/80 scale-105 inline-block origin-right'
                             : 'text-foreground/30'
                       )}
                     >
                       {state.tenderedInput
                         ? formatCurrency(tendered)
-                        : state.isHoveringPayment
+                        : state.hoveredPaymentMethod !== null
                           ? formatCurrency(effectivePayment)
                           : '0 ₺'}
                     </span>
@@ -855,33 +821,35 @@ export function PaymentModal({
               </div>
             </div>
 
-            {/* Result */}
-            <div className="w-full max-w-[640px] h-[72px] mb-2 px-1 flex items-center">
+            {/* Result Banner */}
+            <div className="w-full max-w-[640px] min-h-[88px] mb-2 px-1 flex items-center">
               <ResultBanner
                 itemsPartialBlocked={itemsPartialBlocked}
                 tendered={tendered}
                 effectivePayment={effectivePayment}
                 currentChange={currentChange}
+                hoveredMethod={state.hoveredPaymentMethod}
               />
             </div>
           </div>
 
-          {/* Controls */}
+          {/* Controls Bottom Area */}
           <div className="mt-auto p-8 pt-0 flex flex-col gap-4 w-full max-w-[560px] mx-auto">
             <Numpad
               onAppend={appendTendered}
               onBackspace={backspaceTendered}
               onQuickCash={handleTenderedChange}
               onSetExact={handleSetExact}
+              partialPaymentsBlocked={isItemsModeWithSelection}
+              effectivePayment={effectivePayment}
             />
 
-            {/* Actions */}
             <PaymentActions
               canCashPay={canCashPay}
               canCardPay={canCardPay}
-              isProcessing={state.isProcessing}
+              processingMethod={state.processingMethod}
               onPayment={handlePayment}
-              onHoverChange={(value) => dispatch({ type: 'SET_HOVER_PAYMENT', value })}
+              onHoverChange={(method) => dispatch({ type: 'SET_HOVER_PAYMENT', method })}
               itemsPartialBlocked={itemsPartialBlocked}
               tendered={tendered}
               effectivePayment={effectivePayment}

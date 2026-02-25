@@ -6,6 +6,7 @@ export const nameSchema = z.string().min(1, 'İsim boş olamaz').max(100, 'İsim
 export const priceSchema = z
   .number()
   .nonnegative('Fiyat negatif olamaz')
+  .max(999900, 'Maksimum tutar 9999₺')
   .transform((val) => Math.round(val))
 
 // --- Standard Response Wrapper ---
@@ -120,7 +121,7 @@ export const orderSchemas = {
 export const paymentSchemas = {
   create: z.object({
     orderId: cuidSchema,
-    amount: z.number().int().positive(),
+    amount: z.number().int().positive().max(999900, 'Maksimum ödeme 9999₺'),
     paymentMethod: z.enum(['CASH', 'CARD']),
     options: z.object({ skipLog: z.boolean().optional() }).optional()
   }),
