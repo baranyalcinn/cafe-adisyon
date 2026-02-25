@@ -1,22 +1,7 @@
-import { ApiResponse, Order, OrderStatus, PaymentMethod } from '../../../shared/types'
+import { Order, OrderStatus, PaymentMethod } from '../../../shared/types'
+import { resolveApi } from './apiClient'
 
 const api = window.api
-
-// ============================================================================
-// Core Helper (DRY Prensibi ve Merkezi Hata Yönetimi)
-// ============================================================================
-
-/**
- * IPC'den dönen standart API yanıtını işler.
- * Hata varsa fırlatır, başarılıysa datayı döner.
- */
-async function resolveApi<T>(requestPromise: Promise<ApiResponse<T>>): Promise<T> {
-  const result = await requestPromise
-  if (!result.success) {
-    throw new Error(result.error || 'İşlem sırasında bilinmeyen bir hata oluştu.')
-  }
-  return result.data
-}
 
 // ============================================================================
 // Order Service

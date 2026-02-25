@@ -182,6 +182,7 @@ export function App(): React.JSX.Element {
   const [currentView, setCurrentView] = useState<ViewType>('tables')
   const { isDark, toggleTheme, colorScheme, setColorScheme } = useTheme()
   const selectTable = useTableStore((s) => s.selectTable)
+  const clearSelection = useTableStore((s) => s.clearSelection)
 
   const [isBooting, setIsBooting] = useState<boolean>(true)
   const [isPending, startTransition] = useTransition()
@@ -206,9 +207,9 @@ export function App(): React.JSX.Element {
   )
 
   const handleBackToTables = useCallback((): void => {
-    selectTable(null, null)
+    clearSelection()
     startTransition(() => setCurrentView('tables'))
-  }, [selectTable])
+  }, [clearSelection])
 
   const changeView = useCallback((view: ViewType): void => {
     startTransition(() => setCurrentView(view))

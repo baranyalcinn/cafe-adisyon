@@ -210,7 +210,7 @@ export function usePaymentLogic({
     handleClose: () => void
   }
 } {
-  const selectTable = useTableStore((s) => s.selectTable)
+  const clearSelection = useTableStore((s) => s.clearSelection)
   const [state, dispatch] = useReducer(reducer, initialState)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -344,7 +344,7 @@ export function usePaymentLogic({
           timerRef.current = setTimeout(() => {
             onClose()
             if (onPaymentComplete) onPaymentComplete()
-            else selectTable(null, null)
+            else clearSelection()
           }, 3000)
           return
         }
@@ -376,7 +376,7 @@ export function usePaymentLogic({
       onProcessPayment,
       onClose,
       onPaymentComplete,
-      selectTable
+      clearSelection
     ]
   )
 
@@ -384,11 +384,11 @@ export function usePaymentLogic({
     if (state.view === 'SUCCESS') {
       if (timerRef.current) clearTimeout(timerRef.current)
       if (onPaymentComplete) onPaymentComplete()
-      else selectTable(null, null)
+      else clearSelection()
     }
     dispatch({ type: 'RESET_TRANSIENT' })
     onClose()
-  }, [state.view, onPaymentComplete, selectTable, onClose])
+  }, [state.view, onPaymentComplete, clearSelection, onClose])
 
   // --- Effects ---
 
