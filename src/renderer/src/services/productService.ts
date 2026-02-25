@@ -1,48 +1,31 @@
 import { Product } from '../../../shared/types'
+import { resolveApi } from './apiClient'
 
 const api = window.api
 
 export const productService = {
-  async getAll(): Promise<Product[]> {
-    const result = await api.products.getAll()
-    if (!result.success) throw new Error(result.error)
-    return result.data
-  },
-  async getByCategory(categoryId: string): Promise<Product[]> {
-    const result = await api.products.getByCategory(categoryId)
-    if (!result.success) throw new Error(result.error)
-    return result.data
-  },
-  async getFavorites(): Promise<Product[]> {
-    const result = await api.products.getFavorites()
-    if (!result.success) throw new Error(result.error)
-    return result.data
-  },
-  async search(query: string): Promise<Product[]> {
-    const result = await api.products.search(query)
-    if (!result.success) throw new Error(result.error)
-    return result.data
-  },
-  async create(data: {
+  getAll: (): Promise<Product[]> => resolveApi(api.products.getAll()),
+
+  getByCategory: (categoryId: string): Promise<Product[]> =>
+    resolveApi(api.products.getByCategory(categoryId)),
+
+  getFavorites: (): Promise<Product[]> => resolveApi(api.products.getFavorites()),
+
+  search: (query: string): Promise<Product[]> => resolveApi(api.products.search(query)),
+
+  create: (data: {
     name: string
     price: number
     categoryId: string
     isFavorite: boolean
-  }): Promise<Product> {
-    const result = await api.products.create(data)
-    if (!result.success) throw new Error(result.error)
-    return result.data
-  },
-  async update(
+  }): Promise<Product> => resolveApi(api.products.create(data)),
+
+  update: (
     id: string,
     data: { name?: string; price?: number; isFavorite?: boolean }
-  ): Promise<Product> {
-    const result = await api.products.update(id, data)
-    if (!result.success) throw new Error(result.error)
-    return result.data
-  },
-  async delete(id: string): Promise<void> {
-    const result = await api.products.delete(id)
-    if (!result.success) throw new Error(result.error)
+  ): Promise<Product> => resolveApi(api.products.update(id, data)),
+
+  delete: async (id: string): Promise<void> => {
+    await resolveApi(api.products.delete(id))
   }
 }

@@ -1,6 +1,6 @@
 import { PremiumAmount } from '@/components/PremiumAmount'
 import { type PaymentMethod } from '@/lib/api'
-import { cn, formatCurrency } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import { RotateCcw } from 'lucide-react'
 
 interface PaymentDisplayProps {
@@ -50,22 +50,19 @@ export function PaymentDisplay({
             </div>
 
             <button
-              className="mt-2 w-full text-right rounded-xl px-2 py-2 hover:bg-muted/40 transition active:scale-[0.99]"
+              className="mt-2 w-full text-right rounded-xl px-2 py-2 hover:bg-muted/30 transition active:scale-[0.99] group/display"
               onClick={onFocus}
-              type="button"
             >
-              <span
+              <PremiumAmount
+                amount={tenderedInput ? parseFloat(tenderedInput) * 100 : effectivePayment}
+                size="2xl"
+                color={tenderedInput ? 'teal' : 'muted'}
                 className={cn(
-                  'font-sans tabular-nums tracking-tight transition-all duration-300 text-3xl font-bold',
-                  tenderedInput
-                    ? 'text-teal-600 dark:text-teal-500'
-                    : isHovering
-                      ? 'text-foreground/80 scale-105 inline-block origin-right'
-                      : 'text-foreground/20'
+                  'transition-all duration-300',
+                  !tenderedInput && 'opacity-30',
+                  isHovering && 'opacity-90 scale-105 origin-right'
                 )}
-              >
-                {tenderedInput || (isHovering ? formatCurrency(effectivePayment) : '0 ₺')}
-              </span>
+              />
             </button>
           </div>
         </div>

@@ -179,7 +179,7 @@ const buildConfig = (
         wrap: theme.wrap,
         icon: theme.icon,
         title: buildTitle(theme.titlePrefix, 'Tahsilat'),
-        subtitle: 'Tahsilata hazır',
+        subtitle: '',
         Icon: theme.Icon,
         amountColor: theme.amountColor,
         amount: effective
@@ -214,7 +214,7 @@ export function ResultBanner({
   return (
     <div
       className={cn(
-        'relative overflow-hidden rounded-2xl border backdrop-blur-sm',
+        'relative overflow-hidden rounded-2xl border backdrop-blur-sm h-[76px] flex items-center',
         'shadow-[0_4px_16px_rgba(0,0,0,0.04)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.3)]',
         'transition-all duration-300',
         config.wrap,
@@ -231,7 +231,7 @@ export function ResultBanner({
         <div className="absolute -left-10 top-1/2 h-20 w-20 -translate-y-1/2 rounded-full bg-white/20 blur-2xl dark:bg-white/5" />
       </div>
 
-      <div className="relative flex items-center justify-between gap-4 px-4 py-3.5 sm:px-5 sm:py-4">
+      <div className="relative w-full flex items-center justify-between gap-4 px-4 sm:px-5">
         {/* Left side */}
         <div
           key={animationKey}
@@ -247,7 +247,7 @@ export function ResultBanner({
           </div>
 
           <div className="min-w-0">
-            <div className="truncate text-[14px] sm:text-[15px] font-semibold tracking-tight text-foreground">
+            <div className="truncate text-[16px] sm:text-[18px] font-bold tracking-tight text-foreground leading-snug">
               {config.title}
             </div>
             <div className="truncate text-[12px] sm:text-[13px] font-medium text-muted-foreground">

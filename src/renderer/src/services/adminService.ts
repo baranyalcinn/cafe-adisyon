@@ -1,103 +1,75 @@
 import { type UpdateInfo } from '../../../shared/types'
+import { resolveApi } from './apiClient'
 
 const api = window.api
 
 export const adminService = {
   // Admin PIN & Recovery
   auth: {
-    async verifyPin(pin: string): Promise<{ valid: boolean; required: boolean }> {
-      const result = await api.admin.verifyPin(pin)
-      if (!result.success) throw new Error(result.error)
-      return result.data
+    verifyPin: (pin: string): Promise<{ valid: boolean; required: boolean }> =>
+      resolveApi(api.admin.verifyPin(pin)),
+
+    checkStatus: (): Promise<{ required: boolean }> => resolveApi(api.admin.checkStatus()),
+
+    changePin: async (currentPin: string, newPin: string): Promise<void> => {
+      await resolveApi(api.admin.changePin(currentPin, newPin))
     },
-    async checkStatus(): Promise<{ required: boolean }> {
-      const result = await api.admin.checkStatus()
-      if (!result.success) throw new Error(result.error)
-      return result.data
+
+    setRecovery: async (currentPin: string, question: string, answer: string): Promise<void> => {
+      await resolveApi(api.admin.setRecovery(currentPin, question, answer))
     },
-    async changePin(currentPin: string, newPin: string): Promise<void> {
-      const result = await api.admin.changePin(currentPin, newPin)
-      if (!result.success) throw new Error(result.error)
+
+    getRecoveryQuestion: async (): Promise<string | null> => {
+      const data = await resolveApi(api.admin.getRecoveryQuestion())
+      return data || null
     },
-    async setRecovery(currentPin: string, question: string, answer: string): Promise<void> {
-      const result = await api.admin.setRecovery(currentPin, question, answer)
-      if (!result.success) throw new Error(result.error)
-    },
-    async getRecoveryQuestion(): Promise<string | null> {
-      const result = await api.admin.getRecoveryQuestion()
-      if (!result.success) throw new Error(result.error)
-      return result.data || null
-    },
-    async resetPin(answer: string): Promise<void> {
-      const result = await api.admin.resetPin(answer)
-      if (!result.success) throw new Error(result.error)
+
+    resetPin: async (answer: string): Promise<void> => {
+      await resolveApi(api.admin.resetPin(answer))
     }
   },
 
   // Maintenance
   maintenance: {
-    async archiveOldData(): Promise<{
+    archiveOldData: (): Promise<{
       deletedOrders: number
       deletedItems: number
       deletedTransactions: number
       deletedExpenses: number
       deletedSummaries: number
-    }> {
-      const result = await api.maintenance.archiveOldData()
-      if (!result.success) throw new Error(result.error)
-      return result.data
+    }> => resolveApi(api.maintenance.archiveOldData()),
+
+    exportData: (format: 'json' | 'csv' = 'json'): Promise<{ filepath: string; count: number }> =>
+      resolveApi(api.maintenance.exportData(format)),
+
+    vacuum: async (): Promise<void> => {
+      await resolveApi(api.maintenance.vacuum())
     },
-    async exportData(
-      format: 'json' | 'csv' = 'json'
-    ): Promise<{ filepath: string; count: number }> {
-      const result = await api.maintenance.exportData(format)
-      if (!result.success) throw new Error(result.error)
-      return result.data
-    },
-    async vacuum(): Promise<void> {
-      const result = await api.maintenance.vacuum()
-      if (!result.success) throw new Error(result.error)
-    },
-    async backup(): Promise<{ backupPath: string }> {
-      const result = await api.maintenance.backup()
-      if (!result.success) throw new Error(result.error)
-      return result.data
-    },
-    async backupWithRotation(
+
+    backup: (): Promise<{ backupPath: string }> => resolveApi(api.maintenance.backup()),
+
+    backupWithRotation: (
       maxBackups: number = 30
-    ): Promise<{ backupPath: string; deletedCount: number; totalBackups: number }> {
-      const result = await api.maintenance.backupWithRotation(maxBackups)
-      if (!result.success) throw new Error(result.error)
-      return result.data
-    }
+    ): Promise<{ backupPath: string; deletedCount: number; totalBackups: number }> =>
+      resolveApi(api.maintenance.backupWithRotation(maxBackups))
   },
 
   // Seed
   seed: {
-    async database(): Promise<{ categories: number; products: number; tables: number }> {
-      const result = await api.seed.database()
-      if (!result.success) throw new Error(result.error)
-      return result.data
-    }
+    database: (): Promise<{ categories: number; products: number; tables: number }> =>
+      resolveApi(api.seed.database())
   },
 
   // System
   system: {
-    async check(): Promise<{ dbPath: string; connection: boolean; tableCount: number }> {
-      const result = await api.system.check()
-      if (!result.success) throw new Error(result.error)
-      return result.data
-    },
-    checkUpdate(): Promise<{
+    check: (): Promise<{ dbPath: string; connection: boolean; tableCount: number }> =>
+      resolveApi(api.system.check()),
+
+    checkUpdate: (): Promise<{
       available: boolean
       version?: string
       currentVersion?: string
-    }> {
-      return api.system.checkUpdate().then((result) => {
-        if (!result.success) throw new Error(result.error)
-        return result.data
-      })
-    },
+    }> => resolveApi(api.system.checkUpdate()),
     downloadUpdate(): void {
       api.system.downloadUpdate()
     },

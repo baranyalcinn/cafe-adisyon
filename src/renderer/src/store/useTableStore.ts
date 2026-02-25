@@ -1,20 +1,38 @@
 import { create } from 'zustand'
 
-// --- Client-only UI State ---
-// Server data (tables list) lives in React Query via useTables() hook.
-// This store only tracks ephemeral client state.
+// ============================================================================
+// Types
+// ============================================================================
 
 interface TableUIState {
+  // State
   selectedTableId: string | null
   selectedTableName: string | null
-  selectTable: (tableId: string | null, tableName?: string | null) => void
+
+  // Actions
+  selectTable: (tableId: string, tableName: string) => void
+  clearSelection: () => void
 }
 
+// ============================================================================
+// Store
+// ============================================================================
+
 export const useTableStore = create<TableUIState>((set) => ({
+  // Initial State
   selectedTableId: null,
   selectedTableName: null,
 
-  selectTable: (tableId, tableName = null) => {
+  // Actions
+  selectTable: (tableId: string, tableName: string): void => {
+    // Tip güvenliği: Hem ID hem İsim zorunlu hale getirildi.
+    // Böylece hiçbir bileşen eksik veri gönderip arayüzü bozamaz.
     set({ selectedTableId: tableId, selectedTableName: tableName })
+  },
+
+  clearSelection: (): void => {
+    // App.tsx veya OrderView içinden geriye (Masalara) dönerken
+    // selectTable(null, null) yerine bu net metot çağrılacak.
+    set({ selectedTableId: null, selectedTableName: null })
   }
 }))

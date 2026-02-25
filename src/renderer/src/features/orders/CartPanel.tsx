@@ -351,17 +351,17 @@ const CartFooter = function CartFooter({
       <div className="space-y-4">
         {paidAmount > 0 && (
           <div className="space-y-2 px-1">
-            <div className="flex justify-between items-center text-[13px]">
-              <div className="flex items-center gap-2 text-muted-foreground/80 font-bold tracking-tight">
-                <Receipt className="w-3.5 h-3.5" /> Ara Toplam
+            <div className="flex justify-between items-center text-[14px]">
+              <div className="flex items-center gap-2 text-muted-foreground/95 font-bold tracking-tight">
+                <Receipt className="w-4 h-4" /> Ara Toplam
               </div>
-              <span className="text-foreground/90 font-black tabular-nums tracking-tight">
+              <span className="text-foreground/99 font-black tabular-nums tracking-tight">
                 {formatCurrency(total)}
               </span>
             </div>
-            <div className="flex justify-between items-center text-[13px]">
-              <div className="flex items-center gap-2 text-emerald-600/80 dark:text-emerald-400/80 font-bold tracking-tight">
-                <Wallet className="w-3.5 h-3.5" /> Ödenen
+            <div className="flex justify-between items-center text-[14px]">
+              <div className="flex items-center gap-2 text-emerald-600/90 dark:text-emerald-400/90 font-bold tracking-tight">
+                <Wallet className="w-4 h-4" /> Ödenen
               </div>
               <span className="text-emerald-600 dark:text-emerald-400 font-black tabular-nums tracking-tight">
                 -{formatCurrency(paidAmount)}

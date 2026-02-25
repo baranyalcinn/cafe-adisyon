@@ -1,3 +1,5 @@
+'use client'
+
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -9,7 +11,15 @@ import type { Category, Product } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { useTableStore } from '@/store/useTableStore'
 import { ArrowLeft, LayoutGrid, List, Search, Star, X } from 'lucide-react'
-import React, { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
+import React, {
+  memo,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from 'react'
 
 import { PaymentModal } from '../payments/PaymentModal'
 import { CartPanel } from './CartPanel'
@@ -52,7 +62,7 @@ const STYLES = {
 } as const
 
 // ============================================================================
-// Sub-Components (Ideally in separate files)
+// Sub-Components (Memoized for Performance)
 // ============================================================================
 
 interface FavoriteProductRowProps {
@@ -61,15 +71,15 @@ interface FavoriteProductRowProps {
   onAdd: (product: Product) => void
 }
 
-const FavoriteProductRow = React.memo(function FavoriteProductRow({
+const FavoriteProductRow = memo(function FavoriteProductRow({
   product,
   isLocked,
   onAdd
-}: FavoriteProductRowProps) {
+}: FavoriteProductRowProps): React.JSX.Element {
   return (
     <button
       type="button"
-      onClick={() => onAdd(product)}
+      onClick={(): void => onAdd(product)}
       disabled={isLocked}
       className={cn(STYLES.favRowBase, isLocked ? STYLES.favRowLocked : STYLES.favRowActive)}
       title={isLocked ? 'Sipariş kilitli' : `${product.name} sepete ekle`}
@@ -103,28 +113,28 @@ interface OrderSidebarProps {
   searchInputRef: React.RefObject<HTMLInputElement | null>
 }
 
-const OrderSidebar = ({
+// KRİTİK: Sidebar memo ile sarmalandı. Sepet güncellendiğinde burası bir daha çizilmeyecek!
+const OrderSidebar = memo(function OrderSidebar({
   onBack,
   searchQuery,
   setSearchQuery,
   activeCategory,
   setActiveCategory,
   categories,
-  favoriteProducts,
   favoriteProductsFiltered,
   isLocked,
   onAddToCart,
   playTabChange,
   resetVisibleLimit,
   searchInputRef
-}: OrderSidebarProps): React.JSX.Element => {
-  const handleClearSearch = useCallback(() => {
+}: OrderSidebarProps): React.JSX.Element {
+  const handleClearSearch = useCallback((): void => {
     setSearchQuery('')
     searchInputRef.current?.focus()
   }, [setSearchQuery, searchInputRef])
 
   const onCategoryClick = useCallback(
-    (categoryId: string | null) => {
+    (categoryId: string | null): void => {
       setActiveCategory(categoryId)
       resetVisibleLimit()
       playTabChange()
@@ -145,7 +155,7 @@ const OrderSidebar = ({
             ref={searchInputRef}
             value={searchQuery}
             placeholder="Ürün ara..."
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e): void => setSearchQuery(e.target.value)}
             className={STYLES.searchInput}
           />
           {searchQuery.trim() && (
@@ -186,14 +196,13 @@ const OrderSidebar = ({
           >
             <ScrollArea className="h-full w-full">
               <div className="flex flex-col gap-1 pb-4">
-                {/* Tüm Kategoriler Butonu */}
                 <Button
                   variant="ghost"
                   className={cn(
                     STYLES.catBtnBase,
                     activeCategory === null ? STYLES.catBtnActive : STYLES.catBtnInactive
                   )}
-                  onClick={() => onCategoryClick(null)}
+                  onClick={(): void => onCategoryClick(null)}
                 >
                   {activeCategory === null && (
                     <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-full" />
@@ -211,7 +220,6 @@ const OrderSidebar = ({
                   <span className="truncate flex-1 text-left">Tümü</span>
                 </Button>
 
-                {/* Kategori Listesi */}
                 {categories.map((category) => {
                   const isActive = activeCategory === category.id
                   return (
@@ -222,7 +230,7 @@ const OrderSidebar = ({
                         STYLES.catBtnBase,
                         isActive ? STYLES.catBtnActive : STYLES.catBtnInactive
                       )}
-                      onClick={() => onCategoryClick(category.id)}
+                      onClick={(): void => onCategoryClick(category.id)}
                     >
                       {isActive && (
                         <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-full" />
@@ -257,7 +265,7 @@ const OrderSidebar = ({
                     <FavoriteProductRow product={product} isLocked={isLocked} onAdd={onAddToCart} />
                   </div>
                 ))}
-                {favoriteProducts.length === 0 && (
+                {favoriteProductsFiltered.length === 0 && (
                   <div className="flex flex-col items-center justify-center py-8 text-muted-foreground/50 gap-2">
                     <Star className="w-8 h-8 opacity-40" />
                     <p className="text-xs font-medium">Favori ürün yok</p>
@@ -270,7 +278,47 @@ const OrderSidebar = ({
       </div>
     </div>
   )
+})
+
+interface EmptyProductStateProps {
+  searchQuery: string
+  activeCategory: string | null
+  onClearSearch: () => void
+  onClearCategory: () => void
 }
+
+const EmptyProductState = memo(function EmptyProductState({
+  searchQuery,
+  activeCategory,
+  onClearSearch,
+  onClearCategory
+}: EmptyProductStateProps): React.JSX.Element {
+  return (
+    <div className="min-h-[340px] flex items-center justify-center">
+      <div className="max-w-sm w-full text-center rounded-2xl border border-border/50 bg-muted/10 p-6">
+        <div className="mx-auto mb-3 w-12 h-12 rounded-2xl bg-muted/40 flex items-center justify-center">
+          <Search className="w-5 h-5 text-muted-foreground" />
+        </div>
+        <h3 className="text-sm font-bold text-foreground">Ürün bulunamadı</h3>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Aramayı değiştir veya kategori filtresini kaldır.
+        </p>
+        <div className="mt-4 flex items-center justify-center gap-2">
+          {searchQuery.trim() && (
+            <Button variant="secondary" className="h-9 rounded-xl" onClick={onClearSearch}>
+              Aramayı Temizle
+            </Button>
+          )}
+          {activeCategory && (
+            <Button variant="outline" className="h-9 rounded-xl" onClick={onClearCategory}>
+              Tüm Kategoriler
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+})
 
 // ============================================================================
 // Main Component
@@ -286,6 +334,7 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
 
   const { products, categories, isLoading: isInventoryLoading } = useInventory()
   const { playTabChange, playSuccess } = useSound()
+
   const {
     order,
     addItem,
@@ -306,14 +355,24 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
   const [visibleLimit, setVisibleLimit] = useState(INITIAL_VISIBLE_LIMIT)
 
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
-    return localStorage.getItem('orderViewMode') === 'list' ? 'list' : 'grid'
+    // Tarayıcı dışı ortamlarda (SSR/Electron boot) hata almamak için güvenli kontrol
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('orderViewMode') === 'list' ? 'list' : 'grid'
+    }
+    return 'grid'
   })
 
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const orderItemsLengthRef = useRef<number>(order?.items?.length || 0)
+
+  useEffect(() => {
+    orderItemsLengthRef.current = order?.items?.length || 0
+  }, [order?.items?.length])
 
   useEffect(() => {
     setIsReady(true)
   }, [])
+
   useEffect(() => {
     localStorage.setItem('orderViewMode', viewMode)
   }, [viewMode])
@@ -335,7 +394,8 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
         onBack()
       }
 
-      if (e.key === ' ' && !isPaymentOpen && !isInInput && order?.items?.length) {
+      // Bağımlılığı kırmak için ref kullanıyoruz
+      if (e.key === ' ' && !isPaymentOpen && !isInInput && orderItemsLengthRef.current > 0) {
         e.preventDefault()
         setIsPaymentOpen(true)
       }
@@ -343,10 +403,11 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [onBack, isPaymentOpen, order?.items])
+  }, [onBack, isPaymentOpen]) // order bağımlılığı kalktı, gereksiz sök/tak önlendi
 
   // --- Product Filtering & Sorting ---
-  const resetVisibleLimit = useCallback(() => setVisibleLimit(INITIAL_VISIBLE_LIMIT), [])
+  const resetVisibleLimit = useCallback((): void => setVisibleLimit(INITIAL_VISIBLE_LIMIT), [])
+
   useEffect(() => {
     resetVisibleLimit()
   }, [deferredSearchQuery, resetVisibleLimit])
@@ -374,6 +435,7 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
     () => sortedProducts.filter((p) => p.isFavorite),
     [sortedProducts]
   )
+
   const favoriteProductsFiltered = useMemo(() => {
     if (!normalizedQuery) return favoriteProducts
     return favoriteProducts.filter((p) => p.name.toLocaleLowerCase('tr').includes(normalizedQuery))
@@ -382,7 +444,7 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
   // --- Infinite Scroll (Intersection Observer) ---
   const observer = useRef<IntersectionObserver | null>(null)
   const lastElementRef = useCallback(
-    (node: HTMLDivElement | null) => {
+    (node: HTMLDivElement | null): void => {
       if (isInventoryLoading) return
       if (observer.current) observer.current.disconnect()
 
@@ -404,13 +466,30 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
 
   // --- Cart Handlers ---
   const handleAddToCart = useCallback(
-    (product: Product) => addItem({ product, quantity: 1 }),
+    (product: Product): void => {
+      addItem({ product, quantity: 1 })
+    },
     [addItem]
   )
+
   const handleUpdateItem = useCallback(
-    (itemId: string, qty: number) => updateItem({ orderItemId: itemId, quantity: qty }),
+    (itemId: string, qty: number): void => {
+      updateItem({ orderItemId: itemId, quantity: qty })
+    },
     [updateItem]
   )
+
+  const handleClearSearch = useCallback((): void => {
+    setSearchQuery('')
+    resetVisibleLimit()
+    searchInputRef.current?.focus()
+  }, [resetVisibleLimit])
+
+  const handleClearCategory = useCallback((): void => {
+    setActiveCategory(null)
+    resetVisibleLimit()
+    playTabChange()
+  }, [resetVisibleLimit, playTabChange])
 
   const visibleProducts = useMemo(
     () => filteredProducts.slice(0, visibleLimit),
@@ -454,7 +533,7 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
               type="button"
               variant="ghost"
               size="icon"
-              onClick={() => setViewMode('grid')}
+              onClick={(): void => setViewMode('grid')}
               className={cn(
                 STYLES.viewToggleBtn,
                 viewMode === 'grid'
@@ -468,7 +547,7 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
               type="button"
               variant="ghost"
               size="icon"
-              onClick={() => setViewMode('list')}
+              onClick={(): void => setViewMode('list')}
               className={cn(
                 STYLES.viewToggleBtn,
                 viewMode === 'list'
@@ -493,16 +572,8 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
               <EmptyProductState
                 searchQuery={searchQuery}
                 activeCategory={activeCategory}
-                onClearSearch={() => {
-                  setSearchQuery('')
-                  resetVisibleLimit()
-                  searchInputRef.current?.focus()
-                }}
-                onClearCategory={() => {
-                  setActiveCategory(null)
-                  resetVisibleLimit()
-                  playTabChange()
-                }}
+                onClearSearch={handleClearSearch}
+                onClearCategory={handleClearCategory}
               />
             ) : (
               <>
@@ -547,7 +618,7 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
       <CartPanel
         order={order}
         isLocked={isLocked}
-        onPaymentClick={() => setIsPaymentOpen(true)}
+        onPaymentClick={(): void => setIsPaymentOpen(true)}
         onUpdateItem={handleUpdateItem}
         onRemoveItem={removeItem}
         onToggleLock={toggleLock}
@@ -556,60 +627,18 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
 
       <PaymentModal
         open={isPaymentOpen}
-        onClose={() => setIsPaymentOpen(false)}
+        onClose={(): void => setIsPaymentOpen(false)}
         order={order}
         tableName={selectedTableName}
-        onProcessPayment={async (amount, method, options) => {
+        onProcessPayment={async (amount, method, options): Promise<void> => {
           await processPayment({ amount, method, options })
         }}
-        onPaymentComplete={() => {
+        onPaymentComplete={(): void => {
           setIsPaymentOpen(false)
           playSuccess()
           onBack()
         }}
       />
-    </div>
-  )
-}
-
-// --- Helper UI Component ---
-
-interface EmptyProductStateProps {
-  searchQuery: string
-  activeCategory: string | null
-  onClearSearch: () => void
-  onClearCategory: () => void
-}
-
-function EmptyProductState({
-  searchQuery,
-  activeCategory,
-  onClearSearch,
-  onClearCategory
-}: EmptyProductStateProps): React.JSX.Element {
-  return (
-    <div className="min-h-[340px] flex items-center justify-center">
-      <div className="max-w-sm w-full text-center rounded-2xl border border-border/50 bg-muted/10 p-6">
-        <div className="mx-auto mb-3 w-12 h-12 rounded-2xl bg-muted/40 flex items-center justify-center">
-          <Search className="w-5 h-5 text-muted-foreground" />
-        </div>
-        <h3 className="text-sm font-bold text-foreground">Ürün bulunamadı</h3>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Aramayı değiştir veya kategori filtresini kaldır.
-        </p>
-        <div className="mt-4 flex items-center justify-center gap-2">
-          {searchQuery.trim() && (
-            <Button variant="secondary" className="h-9 rounded-xl" onClick={onClearSearch}>
-              Aramayı Temizle
-            </Button>
-          )}
-          {activeCategory && (
-            <Button variant="outline" className="h-9 rounded-xl" onClick={onClearCategory}>
-              Tüm Kategoriler
-            </Button>
-          )}
-        </div>
-      </div>
     </div>
   )
 }

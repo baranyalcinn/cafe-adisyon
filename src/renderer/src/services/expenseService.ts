@@ -1,33 +1,30 @@
-import { Expense } from '../../../shared/types'
+import { ApiResponse, Expense } from '../../../shared/types'
+import { resolveApi } from './apiClient'
 
 const api = window.api
 
 export const expenseService = {
-  create: async (data: {
+  create: (data: {
     description: string
     amount: number
     category?: string
     paymentMethod?: string
-  }): Promise<Expense> => {
-    const response = await window.api.expenses.create(data)
-    if (!response.success) throw new Error(response.error)
-    return response.data
-  },
-  update: async (
+  }): Promise<Expense> => resolveApi(window.api.expenses.create(data)),
+
+  update: (
     id: string,
     data: { description?: string; amount?: number; category?: string; paymentMethod?: string }
-  ): Promise<Expense> => {
-    const response = await window.api.expenses.update(id, data)
-    if (!response.success) throw new Error(response.error)
-    return response.data
+  ): Promise<Expense> => resolveApi(window.api.expenses.update(id, data)),
+
+  getAll: async (): Promise<Expense[]> => {
+    // API returns `{ expenses: Expense[] }`
+    const data = await resolveApi(
+      api.expenses.getAll() as Promise<ApiResponse<{ expenses: Expense[] }>>
+    )
+    return data.expenses || []
   },
-  async getAll(): Promise<Expense[]> {
-    const result = await api.expenses.getAll()
-    if (!result.success) throw new Error(result.error)
-    return result.data.expenses
-  },
-  async delete(id: string): Promise<void> {
-    const result = await api.expenses.delete(id)
-    if (!result.success) throw new Error(result.error)
+
+  delete: async (id: string): Promise<void> => {
+    await resolveApi(api.expenses.delete(id))
   }
 }

@@ -1,92 +1,79 @@
-import { Order, OrderStatus, PaymentMethod } from '../../../shared/types'
+import { ApiResponse, Order, OrderStatus, PaymentMethod } from '../../../shared/types'
 
 const api = window.api
 
+// ============================================================================
+// Core Helper (DRY Prensibi ve Merkezi Hata Yönetimi)
+// ============================================================================
+
+/**
+ * IPC'den dönen standart API yanıtını işler.
+ * Hata varsa fırlatır, başarılıysa datayı döner.
+ */
+async function resolveApi<T>(requestPromise: Promise<ApiResponse<T>>): Promise<T> {
+  const result = await requestPromise
+  if (!result.success) {
+    throw new Error(result.error || 'İşlem sırasında bilinmeyen bir hata oluştu.')
+  }
+  return result.data
+}
+
+// ============================================================================
+// Order Service
+// ============================================================================
+
 export const orderService = {
-  async getOpenByTable(tableId: string): Promise<Order | null> {
-    const result = await api.orders.getOpenByTable(tableId)
-    if (!result.success) throw new Error(result.error)
-    return result.data
-  },
-  async create(tableId: string): Promise<Order> {
-    const result = await api.orders.create(tableId)
-    if (!result.success) throw new Error(result.error)
-    return result.data
-  },
-  async update(
+  getOpenByTable: (tableId: string): Promise<Order | null> =>
+    resolveApi(api.orders.getOpenByTable(tableId)),
+
+  create: (tableId: string): Promise<Order> => resolveApi(api.orders.create(tableId)),
+
+  update: (
     orderId: string,
     data: { status?: OrderStatus; totalAmount?: number; isLocked?: boolean }
-  ): Promise<Order> {
-    const result = await api.orders.update(orderId, data)
-    if (!result.success) throw new Error(result.error)
-    return result.data
-  },
-  async addItem(
+  ): Promise<Order> => resolveApi(api.orders.update(orderId, data)),
+
+  addItem: (
     orderId: string,
     productId: string,
     quantity: number,
     unitPrice: number
-  ): Promise<Order> {
-    const result = await api.orders.addItem(orderId, productId, quantity, unitPrice)
-    if (!result.success) throw new Error(result.error)
-    return result.data
+  ): Promise<Order> => resolveApi(api.orders.addItem(orderId, productId, quantity, unitPrice)),
+
+  updateItem: (orderItemId: string, quantity: number): Promise<Order> =>
+    resolveApi(api.orders.updateItem(orderItemId, quantity)),
+
+  removeItem: (orderItemId: string): Promise<Order> =>
+    resolveApi(api.orders.removeItem(orderItemId)),
+
+  delete: async (orderId: string): Promise<void> => {
+    // Veri dönmeyen void işlemler için resolveApi'yi kullanıp dönüşü yoksayıyoruz
+    await resolveApi(api.orders.delete(orderId))
   },
-  async updateItem(orderItemId: string, quantity: number): Promise<Order> {
-    const result = await api.orders.updateItem(orderItemId, quantity)
-    if (!result.success) throw new Error(result.error)
-    return result.data
-  },
-  async removeItem(orderItemId: string): Promise<Order> {
-    const result = await api.orders.removeItem(orderItemId)
-    if (!result.success) throw new Error(result.error)
-    return result.data
-  },
-  async delete(orderId: string): Promise<void> {
-    const result = await api.orders.delete(orderId)
-    if (!result.success) throw new Error(result.error)
-  },
-  async transfer(orderId: string, targetTableId: string): Promise<Order> {
-    const result = await api.orders.transfer(orderId, targetTableId)
-    if (!result.success) throw new Error(result.error)
-    return result.data
-  },
-  async merge(sourceOrderId: string, targetOrderId: string): Promise<Order> {
-    const result = await api.orders.merge(sourceOrderId, targetOrderId)
-    if (!result.success) throw new Error(result.error)
-    return result.data
-  },
-  async processPayment(
+
+  transfer: (orderId: string, targetTableId: string): Promise<Order> =>
+    resolveApi(api.orders.transfer(orderId, targetTableId)),
+
+  merge: (sourceOrderId: string, targetOrderId: string): Promise<Order> =>
+    resolveApi(api.orders.merge(sourceOrderId, targetOrderId)),
+
+  processPayment: (
     orderId: string,
-    data: {
-      amount: number
-      method: PaymentMethod
-      options?: { skipLog?: boolean }
-    }
-  ): Promise<{ order: Order; completed: boolean }> {
-    const result = await api.payments.create(orderId, data.amount, data.method, data.options)
-    if (!result.success) throw new Error(result.error)
-    return result.data
-  },
-  async markItemsPaid(
+    data: { amount: number; method: PaymentMethod; options?: { skipLog?: boolean } }
+  ): Promise<{ order: Order; completed: boolean }> =>
+    resolveApi(api.payments.create(orderId, data.amount, data.method, data.options)),
+
+  markItemsPaid: (
     items: { id: string; quantity: number }[],
     paymentDetails?: { amount: number; method: string }
-  ): Promise<Order> {
-    const result = await api.orders.markItemsPaid(items, paymentDetails)
-    if (!result.success) throw new Error(result.error)
-    return result.data
-  },
-  async getHistory(options?: {
+  ): Promise<Order> => resolveApi(api.orders.markItemsPaid(items, paymentDetails)),
+
+  getHistory: (options?: {
     date?: string
     limit?: number
     offset?: number
-  }): Promise<{ orders: Order[]; totalCount: number; hasMore: boolean }> {
-    const result = await api.orders.getHistory(options)
-    if (!result.success) throw new Error(result.error)
-    return result.data
-  },
-  async getDetails(orderId: string): Promise<Order> {
-    const result = await api.orders.getDetails(orderId)
-    if (!result.success) throw new Error(result.error)
-    return result.data
-  }
+  }): Promise<{ orders: Order[]; totalCount: number; hasMore: boolean }> =>
+    resolveApi(api.orders.getHistory(options)),
+
+  getDetails: (orderId: string): Promise<Order> => resolveApi(api.orders.getDetails(orderId))
 }

@@ -26,7 +26,7 @@ const STYLES = {
   locked: 'opacity-75',
   unlocked: 'hover:border-primary/15 hover:bg-card/60',
   quantity: 'shrink-0 text-[13px] leading-none font-black text-rose-500 tabular-nums',
-  name: 'min-w-0 flex-1 font-bold text-[13px] leading-tight text-foreground tracking-tight truncate',
+  name: 'min-w-0 flex-1 font-bold text-[14px] leading-tight text-foreground tracking-tight truncate',
   priceBadge:
     'text-[13px] font-black tabular-nums text-emerald-600 dark:text-emerald-400 bg-emerald-500/5 px-2 py-0.5 rounded-md whitespace-nowrap'
 } as const

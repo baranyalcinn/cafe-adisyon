@@ -1,6 +1,7 @@
 'use client'
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { getCategoryColor } from '@/features/orders/order-icons'
 import { cn, formatCurrency } from '@/lib/utils'
 import { parseISO } from 'date-fns'
 import { LucideIcon, PieChart as PieChartIcon, TrendingUp } from 'lucide-react'
@@ -278,7 +279,8 @@ export const CategoryRevenueChart = memo(function CategoryRevenueChart(): React.
       .map((c) => ({
         name: c.categoryName,
         value: c.revenue || 0,
-        quantity: c.quantity
+        quantity: c.quantity,
+        color: getCategoryColor(c.icon)
       }))
   }, [stats?.categoryBreakdown])
 
@@ -327,10 +329,10 @@ export const CategoryRevenueChart = memo(function CategoryRevenueChart(): React.
                     animationDuration={800}
                     stroke="none"
                   >
-                    {chartData.map((_entry, index) => (
+                    {chartData.map((entry: any, index) => (
                       <Cell
                         key={`cell-${index}`}
-                        fill={PIE_COLORS[index % PIE_COLORS.length]}
+                        fill={entry.color || PIE_COLORS[index % PIE_COLORS.length]}
                         className="outline-none"
                       />
                     ))}
@@ -368,7 +370,9 @@ export const CategoryRevenueChart = memo(function CategoryRevenueChart(): React.
                         'w-2.5 h-2.5 rounded-full shadow-sm transition-transform duration-300',
                         activeIndex === index ? 'scale-125' : ''
                       )}
-                      style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }}
+                      style={{
+                        backgroundColor: category.color || PIE_COLORS[index % PIE_COLORS.length]
+                      }}
                     />
                     <span
                       className={cn(

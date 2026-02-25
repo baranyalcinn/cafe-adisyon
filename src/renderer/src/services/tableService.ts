@@ -1,33 +1,25 @@
 import { Table } from '../../../shared/types'
+import { resolveApi } from './apiClient'
 
 const api = window.api
 
 export const tableService = {
-  async getAll(): Promise<Table[]> {
-    const result = await api.tables.getAll()
-    if (!result.success) throw new Error(result.error)
-    return result.data
+  getAll: (): Promise<Table[]> => resolveApi(api.tables.getAll()),
+
+  getWithStatus: (): Promise<(Table & { hasOpenOrder: boolean })[]> =>
+    resolveApi(api.tables.getWithStatus()),
+
+  create: (name: string): Promise<Table> => resolveApi(api.tables.create(name)),
+
+  delete: async (id: string): Promise<void> => {
+    await resolveApi(api.tables.delete(id))
   },
-  async getWithStatus(): Promise<(Table & { hasOpenOrder: boolean })[]> {
-    const result = await api.tables.getWithStatus()
-    if (!result.success) throw new Error(result.error)
-    return result.data
+
+  transfer: async (sourceId: string, targetId: string): Promise<void> => {
+    await resolveApi(api.tables.transfer(sourceId, targetId))
   },
-  async create(name: string): Promise<Table> {
-    const result = await api.tables.create(name)
-    if (!result.success) throw new Error(result.error)
-    return result.data
-  },
-  async delete(id: string): Promise<void> {
-    const result = await api.tables.delete(id)
-    if (!result.success) throw new Error(result.error)
-  },
-  async transfer(sourceId: string, targetId: string): Promise<void> {
-    const result = await api.tables.transfer(sourceId, targetId)
-    if (!result.success) throw new Error(result.error)
-  },
-  async merge(sourceId: string, targetId: string): Promise<void> {
-    const result = await api.tables.merge(sourceId, targetId)
-    if (!result.success) throw new Error(result.error)
+
+  merge: async (sourceId: string, targetId: string): Promise<void> => {
+    await resolveApi(api.tables.merge(sourceId, targetId))
   }
 }
