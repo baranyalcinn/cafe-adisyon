@@ -1,50 +1,117 @@
 import { app } from 'electron'
 import { existsSync, promises as fs } from 'fs'
 import * as path from 'path'
-import { ApiResponse } from '../../shared/types'
+import { ApiResponse, ArchiveDataResult, EndOfDayCheckResult } from '../../shared/types'
 import { prisma } from '../db/prisma'
 import { logger } from '../lib/logger'
 import { logService } from './LogService'
 
-export class MaintenanceService {
-  /**
-   * Eski logları temizler (varsayılan: 30 günden eski)
-   */
-  async cleanupOldLogs(days: number = 30): Promise<ApiResponse<{ deletedLogs: number }>> {
-    try {
-      const cutoffDate = new Date()
-      cutoffDate.setDate(cutoffDate.getDate() - days)
+// ============================================================================
+// System Configuration & Seed Data
+// ============================================================================
 
+const CONFIG = {
+  DEFAULT_LOG_RETENTION_DAYS: 30,
+  DEFAULT_MAX_BACKUPS: 30,
+  ARCHIVE_YEARS_AGO: 1,
+  EXPORT_DIR: 'exports',
+  BACKUP_DIR: 'backups'
+} as const
+
+const SEED_DATA = {
+  categories: [
+    { id: 'cat-sicak', name: 'Sıcak İçecekler', icon: 'coffee' },
+    { id: 'cat-soguk', name: 'Soğuk İçecekler', icon: 'wine' },
+    { id: 'cat-yiyecek', name: 'Yiyecekler', icon: 'utensils' },
+    { id: 'cat-tatli', name: 'Tatlılar', icon: 'cake' }
+  ],
+  products: [
+    { name: 'Türk Kahvesi', price: 6000, categoryId: 'cat-sicak', isFavorite: true },
+    { name: 'Double Türk Kahvesi', price: 8000, categoryId: 'cat-sicak', isFavorite: false },
+    { name: 'Espresso', price: 5500, categoryId: 'cat-sicak', isFavorite: true },
+    { name: 'Double Espresso', price: 7000, categoryId: 'cat-sicak', isFavorite: false },
+    { name: 'Americano', price: 6500, categoryId: 'cat-sicak', isFavorite: false },
+    { name: 'Latte', price: 7500, categoryId: 'cat-sicak', isFavorite: true },
+    { name: 'Cappuccino', price: 7500, categoryId: 'cat-sicak', isFavorite: true },
+    { name: 'Filtre Kahve', price: 6000, categoryId: 'cat-sicak', isFavorite: false },
+    { name: 'Çay', price: 2500, categoryId: 'cat-sicak', isFavorite: true },
+    { name: 'Sıcak Çikolata', price: 8000, categoryId: 'cat-sicak', isFavorite: false },
+    { name: 'Ice Latte', price: 8000, categoryId: 'cat-soguk', isFavorite: true },
+    { name: 'Ev Yapımı Limonata', price: 6000, categoryId: 'cat-soguk', isFavorite: true },
+    { name: 'Su (33cl)', price: 1500, categoryId: 'cat-soguk', isFavorite: false },
+    { name: 'Soda', price: 2500, categoryId: 'cat-soguk', isFavorite: false },
+    { name: 'Kaşarlı Tost', price: 8000, categoryId: 'cat-yiyecek', isFavorite: true },
+    { name: 'Karışık Tost', price: 9500, categoryId: 'cat-yiyecek', isFavorite: true },
+    { name: 'Patates Cips', price: 7000, categoryId: 'cat-yiyecek', isFavorite: true },
+    { name: 'San Sebastian Cheesecake', price: 14000, categoryId: 'cat-tatli', isFavorite: true },
+    { name: 'Belçika Çikolatalı Brownie', price: 11000, categoryId: 'cat-tatli', isFavorite: true },
+    { name: 'Tiramisu', price: 11000, categoryId: 'cat-tatli', isFavorite: true }
+  ]
+}
+
+// ============================================================================
+// Service Class
+// ============================================================================
+
+export class MaintenanceService {
+  // --- Private Utility Methods ---
+
+  private handleError<T = null>(
+    methodName: string,
+    error: unknown,
+    defaultMessage: string
+  ): ApiResponse<T> {
+    logger.error(`MaintenanceService.${methodName}`, error)
+    if (
+      error instanceof Error &&
+      !error.message.includes('prisma') &&
+      !error.message.includes('Database')
+    ) {
+      return { success: false, error: error.message }
+    }
+    return { success: false, error: defaultMessage }
+  }
+
+  private getCutoffDate(options: { years?: number; days?: number }): Date {
+    const d = new Date()
+    if (options.years) d.setFullYear(d.getFullYear() - options.years)
+    if (options.days) d.setDate(d.getDate() - options.days)
+    return d
+  }
+
+  private async getStorageDir(folderName: string): Promise<string> {
+    const isDev = process.env.NODE_ENV === 'development'
+    const baseDir = isDev ? process.cwd() : app.getPath('userData')
+    const targetDir = path.join(baseDir, folderName)
+    if (!existsSync(targetDir)) {
+      await fs.mkdir(targetDir, { recursive: true })
+    }
+    return targetDir
+  }
+
+  // --- Public Operations ---
+
+  async cleanupOldLogs(
+    days: number = CONFIG.DEFAULT_LOG_RETENTION_DAYS
+  ): Promise<ApiResponse<{ deletedLogs: number }>> {
+    try {
+      const cutoffDate = this.getCutoffDate({ days })
       const deletedLogs = await prisma.activityLog.deleteMany({
-        where: {
-          createdAt: { lt: cutoffDate }
-        }
+        where: { createdAt: { lt: cutoffDate } }
       })
 
       logger.info('MaintenanceService.cleanupOldLogs', `${deletedLogs.count} eski log silindi`)
-
-      return {
-        success: true,
-        data: { deletedLogs: deletedLogs.count }
-      }
+      return { success: true, data: { deletedLogs: deletedLogs.count } }
     } catch (error) {
-      logger.error('MaintenanceService.cleanupOldLogs', error)
-      return { success: false, error: 'Log temizleme başarısız.' }
+      return this.handleError('cleanupOldLogs', error, 'Log temizleme başarısız.')
     }
   }
 
-  /**
-   * 1 yıldan eski giderleri arşivler (siler)
-   */
   async archiveOldExpenses(): Promise<ApiResponse<{ deletedExpenses: number }>> {
     try {
-      const oneYearAgo = new Date()
-      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
-
+      const cutoffDate = this.getCutoffDate({ years: CONFIG.ARCHIVE_YEARS_AGO })
       const deletedExpenses = await prisma.expense.deleteMany({
-        where: {
-          createdAt: { lt: oneYearAgo }
-        }
+        where: { createdAt: { lt: cutoffDate } }
       })
 
       if (deletedExpenses.count > 0) {
@@ -54,29 +121,17 @@ export class MaintenanceService {
           `${deletedExpenses.count} eski gider kaydı silindi`
         )
       }
-
-      return {
-        success: true,
-        data: { deletedExpenses: deletedExpenses.count }
-      }
+      return { success: true, data: { deletedExpenses: deletedExpenses.count } }
     } catch (error) {
-      logger.error('MaintenanceService.archiveOldExpenses', error)
-      return { success: false, error: 'Gider arşivleme başarısız.' }
+      return this.handleError('archiveOldExpenses', error, 'Gider arşivleme başarısız.')
     }
   }
 
-  /**
-   * 1 yıldan eski Z-raporlarını (DailySummary) siler
-   */
   async archiveOldSummaries(): Promise<ApiResponse<{ deletedSummaries: number }>> {
     try {
-      const oneYearAgo = new Date()
-      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
-
+      const cutoffDate = this.getCutoffDate({ years: CONFIG.ARCHIVE_YEARS_AGO })
       const deletedSummaries = await prisma.dailySummary.deleteMany({
-        where: {
-          date: { lt: oneYearAgo }
-        }
+        where: { date: { lt: cutoffDate } }
       })
 
       if (deletedSummaries.count > 0) {
@@ -86,94 +141,46 @@ export class MaintenanceService {
           `${deletedSummaries.count} eski Z-raporu silindi`
         )
       }
-
-      return {
-        success: true,
-        data: { deletedSummaries: deletedSummaries.count }
-      }
+      return { success: true, data: { deletedSummaries: deletedSummaries.count } }
     } catch (error) {
-      logger.error('MaintenanceService.archiveOldSummaries', error)
-      return { success: false, error: 'Z-raporu arşivleme başarısız.' }
+      return this.handleError('archiveOldSummaries', error, 'Z-raporu arşivleme başarısız.')
     }
   }
 
-  /**
-   * Veritabanı bütünlük kontrolü yapar
-   */
   async integrityCheck(): Promise<ApiResponse<{ isHealthy: boolean; details: string }>> {
     try {
       const result =
         await prisma.$queryRawUnsafe<Array<{ integrity_check: string }>>('PRAGMA integrity_check')
-
       const isHealthy = result.length === 1 && result[0].integrity_check === 'ok'
       const details = result.map((r) => r.integrity_check).join(', ')
 
-      if (!isHealthy) {
+      if (!isHealthy)
         logger.error('MaintenanceService.integrityCheck', `Veritabanı bütünlük hatası: ${details}`)
-      }
-
-      return {
-        success: true,
-        data: { isHealthy, details }
-      }
+      return { success: true, data: { isHealthy, details } }
     } catch (error) {
-      logger.error('MaintenanceService.integrityCheck', error)
-      return { success: false, error: 'Bütünlük kontrolü başarısız.' }
+      return this.handleError('integrityCheck', error, 'Bütünlük kontrolü başarısız.')
     }
   }
 
-  /**
-   * 1 yıldan eski siparişleri, giderleri ve Z-raporlarını arşivler
-   */
-  async archiveOldData(): Promise<
-    ApiResponse<{
-      deletedOrders: number
-      deletedItems: number
-      deletedTransactions: number
-      deletedExpenses: number
-      deletedSummaries: number
-    }>
-  > {
+  async archiveOldData(): Promise<ApiResponse<ArchiveDataResult>> {
     try {
-      const oneYearAgo = new Date()
-      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
+      const cutoffDate = this.getCutoffDate({ years: CONFIG.ARCHIVE_YEARS_AGO })
 
       const result = await prisma.$transaction(async (tx) => {
         const deletedItems = await tx.orderItem.deleteMany({
-          where: {
-            order: {
-              createdAt: { lt: oneYearAgo },
-              status: 'CLOSED'
-            }
-          }
+          where: { order: { createdAt: { lt: cutoffDate }, status: 'CLOSED' } }
         })
-
         const deletedTransactions = await tx.transaction.deleteMany({
-          where: {
-            order: {
-              createdAt: { lt: oneYearAgo },
-              status: 'CLOSED'
-            }
-          }
+          where: { order: { createdAt: { lt: cutoffDate }, status: 'CLOSED' } }
         })
-
         const deletedOrders = await tx.order.deleteMany({
-          where: {
-            createdAt: { lt: oneYearAgo },
-            status: 'CLOSED'
-          }
+          where: { createdAt: { lt: cutoffDate }, status: 'CLOSED' }
         })
-
         const deletedExpenses = await tx.expense.deleteMany({
-          where: {
-            createdAt: { lt: oneYearAgo }
-          }
+          where: { createdAt: { lt: cutoffDate } }
         })
-
         const deletedSummaries = await tx.dailySummary.deleteMany({
-          where: {
-            date: { lt: oneYearAgo }
-          }
+          where: { date: { lt: cutoffDate } }
         })
 
         return {
@@ -190,60 +197,44 @@ export class MaintenanceService {
         undefined,
         `Silinen: ${result.deletedOrders} sipariş, ${result.deletedItems} ürün, ${result.deletedTransactions} işlem, ${result.deletedExpenses} gider, ${result.deletedSummaries} Z-raporu`
       )
-
-      // Also purge orphaned soft-deleted records while we're cleaning up
       await this.purgeOrphanedRecords()
 
       return { success: true, data: result }
     } catch (error) {
-      logger.error('MaintenanceService.archiveOldData', error)
-      return { success: false, error: 'Veri arşivleme başarısız.' }
+      return this.handleError('archiveOldData', error, 'Veri arşivleme başarısız.')
     }
   }
 
-  /**
-   * Hard-deletes soft-deleted Products and Categories that are no longer
-   * referenced by any OrderItem. Prevents "ghost record" buildup from
-   * seasonal menu changes (e.g. summer/winter menus, discontinued items).
-   */
   async purgeOrphanedRecords(): Promise<
     ApiResponse<{ deletedProducts: number; deletedCategories: number }>
   > {
     try {
       const result = await prisma.$transaction(async (tx) => {
-        // 1. Find soft-deleted products with ZERO order item references
         const orphanedProducts = await tx.product.findMany({
-          where: {
-            isDeleted: true,
-            orderItems: { none: {} }
-          },
+          where: { isDeleted: true, orderItems: { none: {} } },
           select: { id: true }
         })
+        const deletedProducts =
+          orphanedProducts.length > 0
+            ? (
+                await tx.product.deleteMany({
+                  where: { id: { in: orphanedProducts.map((p) => p.id) } }
+                })
+              ).count
+            : 0
 
-        let deletedProducts = 0
-        if (orphanedProducts.length > 0) {
-          const del = await tx.product.deleteMany({
-            where: { id: { in: orphanedProducts.map((p) => p.id) } }
-          })
-          deletedProducts = del.count
-        }
-
-        // 2. Find soft-deleted categories with ZERO remaining products
         const orphanedCategories = await tx.category.findMany({
-          where: {
-            isDeleted: true,
-            products: { none: {} }
-          },
+          where: { isDeleted: true, products: { none: {} } },
           select: { id: true }
         })
-
-        let deletedCategories = 0
-        if (orphanedCategories.length > 0) {
-          const del = await tx.category.deleteMany({
-            where: { id: { in: orphanedCategories.map((c) => c.id) } }
-          })
-          deletedCategories = del.count
-        }
+        const deletedCategories =
+          orphanedCategories.length > 0
+            ? (
+                await tx.category.deleteMany({
+                  where: { id: { in: orphanedCategories.map((c) => c.id) } }
+                })
+              ).count
+            : 0
 
         return { deletedProducts, deletedCategories }
       })
@@ -262,8 +253,7 @@ export class MaintenanceService {
 
       return { success: true, data: result }
     } catch (error) {
-      logger.error('MaintenanceService.purgeOrphanedRecords', error)
-      return { success: false, error: 'Hayalet kayıt temizleme başarısız.' }
+      return this.handleError('purgeOrphanedRecords', error, 'Hayalet kayıt temizleme başarısız.')
     }
   }
 
@@ -271,42 +261,21 @@ export class MaintenanceService {
     format: 'json' | 'csv' = 'json'
   ): Promise<ApiResponse<{ filepath: string; count: number }>> {
     try {
-      const oneYearAgo = new Date()
-      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
-
+      const cutoffDate = this.getCutoffDate({ years: CONFIG.ARCHIVE_YEARS_AGO })
       const oldOrders = await prisma.order.findMany({
-        where: {
-          createdAt: { lt: oneYearAgo },
-          status: 'CLOSED'
-        },
-        include: {
-          items: { include: { product: true } },
-          payments: true,
-          table: true
-        }
+        where: { createdAt: { lt: cutoffDate }, status: 'CLOSED' },
+        include: { items: { include: { product: true } }, payments: true, table: true }
       })
 
-      const isDev = process.env.NODE_ENV === 'development'
-      const baseDir = isDev ? process.cwd() : app.getPath('userData')
-      const exportDir = path.join(baseDir, 'exports')
-      if (!existsSync(exportDir)) {
-        await fs.mkdir(exportDir, { recursive: true })
-      }
-
+      const exportDir = await this.getStorageDir(CONFIG.EXPORT_DIR)
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
-      const filename = `archive_${timestamp}.${format}`
-      const filepath = path.join(exportDir, filename)
+      const filepath = path.join(exportDir, `archive_${timestamp}.${format}`)
 
       if (format === 'json') {
         await fs.writeFile(filepath, JSON.stringify(oldOrders, null, 2))
       } else {
-        // RFC 4180 compliant CSV escaping
-        const escCsv = (val: string): string => {
-          if (val.includes(',') || val.includes('"') || val.includes('\n')) {
-            return `"${val.replace(/"/g, '""')}"`
-          }
-          return val
-        }
+        const escCsv = (val: string): string =>
+          /["\n,]/.test(val) ? `"${val.replace(/"/g, '""')}"` : val
         const headers = 'OrderId,TableName,TotalAmount,Status,CreatedAt\n'
         const rows = oldOrders
           .map(
@@ -319,86 +288,65 @@ export class MaintenanceService {
 
       return { success: true, data: { filepath, count: oldOrders.length } }
     } catch (error) {
-      logger.error('MaintenanceService.exportData', error)
-      return { success: false, error: 'Veri dışa aktarma başarısız.' }
+      return this.handleError('exportData', error, 'Veri dışa aktarma başarısız.')
     }
   }
 
   async vacuumDatabase(): Promise<ApiResponse<null>> {
     try {
       await prisma.$executeRawUnsafe('VACUUM')
-
       await logService.createLog('VACUUM', undefined, 'Veritabanı optimize edildi')
-
       return { success: true, data: null }
     } catch (error) {
-      logger.error('MaintenanceService.vacuumDatabase', error)
-      return { success: false, error: 'Veritabanı optimizasyonu başarısız.' }
+      return this.handleError('vacuumDatabase', error, 'Veritabanı optimizasyonu başarısız.')
     }
   }
 
   async backupDatabase(): Promise<ApiResponse<{ backupPath: string }>> {
     try {
-      const isDev = process.env.NODE_ENV === 'development'
-      const baseDir = isDev ? process.cwd() : app.getPath('userData')
-      const backupDir = path.join(baseDir, 'backups')
-      if (!existsSync(backupDir)) {
-        await fs.mkdir(backupDir, { recursive: true })
-      }
-
+      const backupDir = await this.getStorageDir(CONFIG.BACKUP_DIR)
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
       const backupPath = path.join(backupDir, `backup_${timestamp}.db`)
 
-      // Use VACUUM INTO for a consistent snapshot (safe during active writes)
       await prisma.$executeRawUnsafe(`VACUUM INTO '${backupPath.replace(/'/g, "''")}'`)
-
       await logService.createLog('BACKUP_DATABASE', undefined, `Yedek oluşturuldu: ${backupPath}`)
 
       return { success: true, data: { backupPath } }
     } catch (error) {
-      logger.error('MaintenanceService.backupDatabase', error)
-      return { success: false, error: 'Yedekleme başarısız.' }
+      return this.handleError('backupDatabase', error, 'Yedekleme başarısız.')
     }
   }
 
   async backupWithRotation(
-    maxBackups: number = 30
+    maxBackups: number = CONFIG.DEFAULT_MAX_BACKUPS
   ): Promise<ApiResponse<{ backupPath: string; deletedCount: number; totalBackups: number }>> {
     try {
-      const isDev = process.env.NODE_ENV === 'development'
-      const baseDir = isDev ? process.cwd() : app.getPath('userData')
-      const backupDir = path.join(baseDir, 'backups')
-      if (!existsSync(backupDir)) {
-        await fs.mkdir(backupDir, { recursive: true })
-      }
-
-      // Create new backup using VACUUM INTO for consistency
+      const backupDir = await this.getStorageDir(CONFIG.BACKUP_DIR)
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
       const backupPath = path.join(backupDir, `backup_${timestamp}.db`)
+
       await prisma.$executeRawUnsafe(`VACUUM INTO '${backupPath.replace(/'/g, "''")}'`)
 
-      // Get all backup files and sort by modification time (oldest first)
       const fileNames = await fs.readdir(backupDir)
-      const backupFiles: { name: string; path: string; mtime: number }[] = []
-      for (const f of fileNames.filter((f) => f.startsWith('backup_') && f.endsWith('.db'))) {
-        const filePath = path.join(backupDir, f)
-        const stat = await fs.stat(filePath)
-        backupFiles.push({ name: f, path: filePath, mtime: stat.mtime.getTime() })
-      }
-      backupFiles.sort((a, b) => a.mtime - b.mtime)
+      const backupFiles = await Promise.all(
+        fileNames
+          .filter((f) => f.startsWith('backup_') && f.endsWith('.db'))
+          .map(async (name) => {
+            const filePath = path.join(backupDir, name)
+            return { name, path: filePath, mtime: (await fs.stat(filePath)).mtime.getTime() }
+          })
+      )
 
-      // Delete old backups if we exceed maxBackups
+      backupFiles.sort((a, b) => a.mtime - b.mtime) // Oldest first
       const toDelete = backupFiles.slice(0, Math.max(0, backupFiles.length - maxBackups))
-      for (const file of toDelete) {
-        await fs.unlink(file.path)
-      }
+
+      await Promise.all(toDelete.map((file) => fs.unlink(file.path)))
 
       await logService.createLog(
         'BACKUP_DATABASE',
         undefined,
         `Yedek oluşturuldu. Silinen eski yedek sayısı: ${toDelete.length}`
       )
-
       return {
         success: true,
         data: {
@@ -408,28 +356,16 @@ export class MaintenanceService {
         }
       }
     } catch (error) {
-      logger.error('MaintenanceService.backupWithRotation', error)
-      return { success: false, error: 'Yedekleme başarısız.' }
+      return this.handleError('backupWithRotation', error, 'Yedekleme başarısız.')
     }
   }
 
-  async endOfDayCheck(): Promise<
-    ApiResponse<{
-      canProceed: boolean
-      openTables: Array<{
-        tableId: string
-        tableName: string
-        orderId: string
-        totalAmount: number
-      }>
-    }>
-  > {
+  async endOfDayCheck(): Promise<ApiResponse<EndOfDayCheckResult>> {
     try {
       const openOrders = await prisma.order.findMany({
         where: { status: 'OPEN' },
         include: { table: true }
       })
-
       const openTables = openOrders.map((o) => ({
         tableId: o.tableId,
         tableName: o.table?.name || 'Bilinmeyen Masa',
@@ -437,22 +373,14 @@ export class MaintenanceService {
         totalAmount: o.totalAmount
       }))
 
-      return {
-        success: true,
-        data: {
-          canProceed: openTables.length === 0,
-          openTables
-        }
-      }
+      return { success: true, data: { canProceed: openTables.length === 0, openTables } }
     } catch (error) {
-      logger.error('MaintenanceService.endOfDayCheck', error)
-      return { success: false, error: 'Gün sonu kontrolü başarısız.' }
+      return this.handleError('endOfDayCheck', error, 'Gün sonu kontrolü başarısız.')
     }
   }
 
   async seedDatabase(): Promise<ApiResponse<null>> {
     try {
-      // Clear existing data in correct order
       await prisma.$transaction([
         prisma.transaction.deleteMany(),
         prisma.orderItem.deleteMany(),
@@ -462,78 +390,10 @@ export class MaintenanceService {
         prisma.table.deleteMany()
       ])
 
-      // Seed Categories
-      await prisma.category.createMany({
-        data: [
-          { id: 'cat-sicak', name: 'Sıcak İçecekler', icon: 'coffee' },
-          { id: 'cat-soguk', name: 'Soğuk İçecekler', icon: 'wine' },
-          { id: 'cat-yiyecek', name: 'Yiyecekler', icon: 'utensils' },
-          { id: 'cat-tatli', name: 'Tatlılar', icon: 'cake' }
-        ]
-      })
-
-      // Seed Products with generated IDs
-      const products = [
-        { name: 'Türk Kahvesi', price: 6000, categoryId: 'cat-sicak', isFavorite: true },
-        { name: 'Double Türk Kahvesi', price: 8000, categoryId: 'cat-sicak', isFavorite: false },
-        { name: 'Espresso', price: 5500, categoryId: 'cat-sicak', isFavorite: true },
-        { name: 'Double Espresso', price: 7000, categoryId: 'cat-sicak', isFavorite: false },
-        { name: 'Americano', price: 6500, categoryId: 'cat-sicak', isFavorite: false },
-        { name: 'Latte', price: 7500, categoryId: 'cat-sicak', isFavorite: true },
-        { name: 'Cappuccino', price: 7500, categoryId: 'cat-sicak', isFavorite: true },
-        { name: 'Flat White', price: 7500, categoryId: 'cat-sicak', isFavorite: false },
-        { name: 'Caramel Macchiato', price: 8500, categoryId: 'cat-sicak', isFavorite: false },
-        { name: 'Filtre Kahve', price: 6000, categoryId: 'cat-sicak', isFavorite: false },
-        { name: 'Çay', price: 2500, categoryId: 'cat-sicak', isFavorite: true },
-        { name: 'Fincan Çay', price: 3500, categoryId: 'cat-sicak', isFavorite: false },
-        {
-          name: 'Bitki Çayı (Yeşil/Ihlamur)',
-          price: 5000,
-          categoryId: 'cat-sicak',
-          isFavorite: false
-        },
-        { name: 'Sıcak Çikolata', price: 8000, categoryId: 'cat-sicak', isFavorite: false },
-        { name: 'Salep', price: 8000, categoryId: 'cat-sicak', isFavorite: false },
-        { name: 'Ice Latte', price: 8000, categoryId: 'cat-soguk', isFavorite: true },
-        { name: 'Ice Americano', price: 7000, categoryId: 'cat-soguk', isFavorite: false },
-        { name: 'Ice Caramel Macchiato', price: 9000, categoryId: 'cat-soguk', isFavorite: false },
-        { name: 'House Frappe', price: 9500, categoryId: 'cat-soguk', isFavorite: true },
-        {
-          name: 'Milkshake (Çil/Muz/Özel)',
-          price: 9500,
-          categoryId: 'cat-soguk',
-          isFavorite: false
-        },
-        { name: 'Ev Yapımı Limonata', price: 6000, categoryId: 'cat-soguk', isFavorite: true },
-        { name: 'Churchill', price: 5000, categoryId: 'cat-soguk', isFavorite: false },
-        { name: 'Taze Portakal Suyu', price: 8000, categoryId: 'cat-soguk', isFavorite: false },
-        { name: 'Su (33cl)', price: 1500, categoryId: 'cat-soguk', isFavorite: false },
-        { name: 'Soda', price: 2500, categoryId: 'cat-soguk', isFavorite: false },
-        { name: 'Kaşarlı Tost', price: 8000, categoryId: 'cat-yiyecek', isFavorite: true },
-        { name: 'Karışık Tost', price: 9500, categoryId: 'cat-yiyecek', isFavorite: true },
-        { name: 'Soğuk Sandviç', price: 8500, categoryId: 'cat-yiyecek', isFavorite: false },
-        { name: 'Patates Cips', price: 7000, categoryId: 'cat-yiyecek', isFavorite: true },
-        { name: 'Sigara Böreği (6 lı)', price: 8000, categoryId: 'cat-yiyecek', isFavorite: false },
-        {
-          name: 'San Sebastian Cheesecake',
-          price: 14000,
-          categoryId: 'cat-tatli',
-          isFavorite: true
-        },
-        { name: 'Limonlu Cheesecake', price: 13000, categoryId: 'cat-tatli', isFavorite: false },
-        {
-          name: 'Belçika Çikolatalı Brownie',
-          price: 11000,
-          categoryId: 'cat-tatli',
-          isFavorite: true
-        },
-        { name: 'Çilekli Magnolia', price: 9000, categoryId: 'cat-tatli', isFavorite: false },
-        { name: 'Tiramisu', price: 11000, categoryId: 'cat-tatli', isFavorite: true },
-        { name: 'Waffle', price: 15000, categoryId: 'cat-tatli', isFavorite: false }
-      ]
+      await prisma.category.createMany({ data: SEED_DATA.categories })
 
       await prisma.product.createMany({
-        data: products.map((product) => ({
+        data: SEED_DATA.products.map((product) => ({
           id: `prod-${product.name
             .toLowerCase()
             .replace(/[^\w\s-]/g, '')
@@ -554,11 +414,9 @@ export class MaintenanceService {
         undefined,
         'Demo verileri yüklendi (12 masa, 4 kategori, 40+ ürün)'
       )
-
       return { success: true, data: null }
     } catch (error) {
-      logger.error('MaintenanceService.seedDatabase', error)
-      return { success: false, error: 'Demo veri yükleme başarısız oldu.' }
+      return this.handleError('seedDatabase', error, 'Demo veri yükleme başarısız oldu.')
     }
   }
 }

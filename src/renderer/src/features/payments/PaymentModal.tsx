@@ -30,11 +30,7 @@ interface PaymentModalProps {
   onProcessPayment: (
     amount: number,
     method: PaymentMethod,
-    options?: { skipLog?: boolean }
-  ) => Promise<unknown>
-  onMarkItemsPaid: (
-    items: { id: string; quantity: number }[],
-    paymentDetails?: { amount: number; method: PaymentMethod }
+    options?: { skipLog?: boolean; itemsToMarkPaid?: { id: string; quantity: number }[] }
   ) => Promise<unknown>
 }
 
@@ -201,7 +197,6 @@ export function PaymentModal({
   onPaymentComplete,
   order,
   onProcessPayment,
-  onMarkItemsPaid,
   tableName
 }: PaymentModalProps): React.JSX.Element {
   const selectTable = useTableStore((s) => s.selectTable)
@@ -389,17 +384,18 @@ export function PaymentModal({
       try {
         const finalChange = method === 'CASH' ? currentChange : 0
 
-        if (actualAmount > 0) {
-          await onProcessPayment(actualAmount, method, { skipLog: isItemsModeWithSelection })
-        }
+        if (actualAmount > 0 || isItemsModeWithSelection) {
+          const itemsToPay = isItemsModeWithSelection
+            ? Object.entries(state.selectedQuantities).map(([id, quantity]) => ({
+                id,
+                quantity
+              }))
+            : undefined
 
-        if (isItemsModeWithSelection) {
-          const itemsToPay = Object.entries(state.selectedQuantities).map(([id, quantity]) => ({
-            id,
-            quantity
-          }))
-          const paymentDetails = actualAmount > 0 ? { amount: actualAmount, method } : undefined
-          await onMarkItemsPaid(itemsToPay, paymentDetails)
+          await onProcessPayment(actualAmount, method, {
+            skipLog: false,
+            itemsToMarkPaid: itemsToPay
+          })
         }
 
         const newRemaining = remainingAmount - actualAmount
@@ -446,7 +442,6 @@ export function PaymentModal({
       currentChange,
       remainingAmount,
       onProcessPayment,
-      onMarkItemsPaid,
       onClose,
       onPaymentComplete,
       selectTable

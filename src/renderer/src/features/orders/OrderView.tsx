@@ -296,7 +296,6 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
     toggleLock,
     deleteOrder,
     processPayment,
-    markItemsPaid,
     isLocked
   } = useOrder(selectedTableId)
 
@@ -564,12 +563,6 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
         tableName={selectedTableName}
         onProcessPayment={async (amount, method, options) => {
           await processPayment({ amount, method, options })
-        }}
-        onMarkItemsPaid={async (items, paymentDetails) => {
-          await markItemsPaid(
-            items,
-            paymentDetails as { amount: number; method: string } | undefined
-          )
         }}
         onPaymentComplete={() => {
           setIsPaymentOpen(false)

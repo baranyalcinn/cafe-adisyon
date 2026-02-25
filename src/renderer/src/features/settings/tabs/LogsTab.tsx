@@ -36,9 +36,9 @@ import {
 } from 'date-fns'
 import { tr } from 'date-fns/locale'
 
-/* =========================
- * Types / Constants
- * ========================= */
+// ============================================================================
+// Types & Constants
+// ============================================================================
 
 type LogCategory = 'all' | 'system' | 'operation'
 type DateRangeType = 'today' | 'yesterday' | 'week' | 'month' | 'all'
@@ -61,6 +61,11 @@ type GroupedLog = ActivityLog & {
   groupItems?: { details: string; count: number }[]
 }
 
+type LogDetail = {
+  summary: string
+  items: { qty: number; name: string }[]
+}
+
 const LOGS_PAGE_SIZE = 50
 
 const CATEGORY_TABS: { id: LogCategory; label: string; icon: React.ElementType }[] = [
@@ -77,7 +82,7 @@ const DATE_FILTERS: { id: DateRangeType; label: string }[] = [
   { id: 'all', label: 'Tümü' }
 ]
 
-const ACTION_CONFIG = {
+const ACTION_CONFIG: Record<string, ActionMeta> = {
   GENERATE_ZREPORT: {
     label: 'Z-Raporu',
     color: 'text-purple-400',
@@ -204,11 +209,7 @@ const ACTION_CONFIG = {
     bg: 'bg-amber-500/5',
     category: 'system'
   }
-} as const satisfies Record<string, ActionMeta>
-
-/* =========================
- * Regex Caching & Hooks
- * ========================= */
+}
 
 const LOG_PATTERNS = {
   ADD_ITEM: /(\d+)x (.*) eklendi/i,
@@ -216,6 +217,36 @@ const LOG_PATTERNS = {
   DETAIL_PARSER: /^(.+?(?:Ödenenler|alındı|boşaltıldı)):\s*(.+)$/i,
   ITEM_SPLIT: /,\s*/
 } as const
+
+// ============================================================================
+// Styles (Extracted for clean JSX)
+// ============================================================================
+
+const STYLES = {
+  container: 'h-full flex flex-col p-6 space-y-4',
+  searchInput:
+    'w-48 h-9 pl-9 pr-9 bg-white dark:bg-zinc-900 border-2 rounded-xl text-xs font-bold transition-all focus:w-64 focus:ring-0',
+  filterBtn:
+    'flex items-center gap-2 px-5 py-2 text-xs font-black tracking-tight rounded-xl transition-all',
+  filterBtnActive: 'bg-zinc-950 dark:bg-zinc-50 text-white dark:text-black shadow-lg',
+  filterBtnInactive: 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800',
+  dateBtn: 'px-4 py-2 text-[11px] font-black tracking-tight rounded-xl transition-all',
+  dateBtnActive: 'bg-primary text-white shadow-lg',
+  dateBtnInactive: 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800',
+  tableHeader: 'sticky top-0 bg-zinc-50/80 dark:bg-zinc-950/80 backdrop-blur-sm z-10 border-b-2',
+  tableHeadCell: 'text-[10px] font-black tracking-[0.2em] text-muted-foreground/40',
+  rowBase:
+    'group cursor-pointer transition-colors border-b border-zinc-200/50 dark:border-zinc-800/50 animate-in fade-in slide-in-from-bottom-2 duration-300 fill-mode-both',
+  rowExpanded: 'bg-primary/5',
+  rowCollapsed: 'hover:bg-zinc-200/20 dark:hover:bg-zinc-800/20',
+  expandedContainer:
+    'h-full bg-zinc-50 dark:bg-zinc-950/40 border-b border-zinc-200/60 dark:border-zinc-800/60 animate-in slide-in-from-top-2 duration-300 overflow-hidden',
+  emptyLoadingCell: 'h-48 text-center hover:bg-transparent border-0'
+} as const
+
+// ============================================================================
+// Hooks & Pure Utils
+// ============================================================================
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState(value)
@@ -226,13 +257,7 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue
 }
 
-/* =========================
- * Utils
- * ========================= */
-
-function parseLogDetail(
-  detail: string
-): { summary: string; items: { qty: number; name: string }[] } | null {
+function parseLogDetail(detail: string): LogDetail | null {
   const match = detail.match(LOG_PATTERNS.DETAIL_PARSER)
   if (!match) return null
 
@@ -245,20 +270,16 @@ function parseLogDetail(
       const m = s.match(/^(\d+)x\s+(.+)$/i)
       return m ? { qty: parseInt(m[1], 10), name: m[2] } : { qty: 1, name: s }
     })
-
   return { summary, items }
 }
 
 function getDateRangeBounds(dateRange: DateRangeType): { start?: Date; end?: Date } {
   const now = new Date()
-
   switch (dateRange) {
     case 'today':
       return { start: startOfDay(now), end: endOfDay(now) }
-    case 'yesterday': {
-      const y = subDays(now, 1)
-      return { start: startOfDay(y), end: endOfDay(y) }
-    }
+    case 'yesterday':
+      return { start: startOfDay(subDays(now, 1)), end: endOfDay(subDays(now, 1)) }
     case 'week':
       return {
         start: startOfWeek(now, { weekStartsOn: 1 }),
@@ -285,7 +306,6 @@ function groupActivityLogs(logs: ActivityLog[]): GroupedLog[] {
     if (log.action === 'ADD_ITEM' || log.action === 'REMOVE_ITEM') {
       const actionWord = log.action === 'ADD_ITEM' ? 'eklendi' : 'çıkarıldı'
       const pattern = log.action === 'ADD_ITEM' ? LOG_PATTERNS.ADD_ITEM : LOG_PATTERNS.REMOVE_ITEM
-
       const canMerge =
         currentGroup &&
         currentGroup.action === log.action &&
@@ -295,16 +315,13 @@ function groupActivityLogs(logs: ActivityLog[]): GroupedLog[] {
 
       if (canMerge && currentGroup) {
         currentGroup.groupCount = (currentGroup.groupCount || 1) + 1
-
         const match = log.details?.match(pattern)
         if (match) {
           const qty = parseInt(match[1], 10)
           const name = match[2]
-          const existingItem = currentGroup.groupItems?.find((item) => {
-            const itemMatch = item.details.match(pattern)
-            return itemMatch && itemMatch[2] === name
-          })
-
+          const existingItem = currentGroup.groupItems?.find(
+            (item) => item.details.match(pattern)?.[2] === name
+          )
           if (existingItem) {
             existingItem.count += qty
             existingItem.details = `${existingItem.count}x ${name} ${actionWord}`
@@ -316,11 +333,10 @@ function groupActivityLogs(logs: ActivityLog[]): GroupedLog[] {
         }
       } else {
         const match = log.details?.match(pattern)
-        const qty = match ? parseInt(match[1], 10) : 1
         currentGroup = {
           ...log,
           groupCount: 1,
-          groupItems: [{ details: log.details || '', count: qty }]
+          groupItems: [{ details: log.details || '', count: match ? parseInt(match[1], 10) : 1 }]
         }
         grouped.push(currentGroup)
       }
@@ -329,38 +345,41 @@ function groupActivityLogs(logs: ActivityLog[]): GroupedLog[] {
       grouped.push(log)
     }
   }
-
   return grouped
 }
 
 function getActionMeta(action: string): ActionMeta | undefined {
-  return ACTION_CONFIG[action as keyof typeof ACTION_CONFIG]
+  return ACTION_CONFIG[action]
 }
 
-/* =========================
- * Small memo components
- * ========================= */
+// ============================================================================
+// Sub-Components
+// ============================================================================
+
+interface LogsHeaderProps {
+  stats: LogStats
+  searchTerm: string
+  onChangeSearch: (v: string) => void
+  onClearSearch: () => void
+}
 
 const LogsHeader = memo(function LogsHeader({
   stats,
   searchTerm,
   onChangeSearch,
   onClearSearch
-}: {
-  stats: LogStats
-  searchTerm: string
-  onChangeSearch: (v: string) => void
-  onClearSearch: () => void
-}) {
+}: LogsHeaderProps): React.JSX.Element {
+  const STAT_CARDS = [
+    { label: 'Bugün Toplam', value: stats.total, color: 'text-primary' },
+    { label: 'Operasyon', value: stats.ops, color: 'text-emerald-500' },
+    { label: 'Sistem', value: stats.sys, color: 'text-blue-500' }
+  ]
+
   return (
     <div className="flex items-center justify-between px-2">
       <div className="flex items-center gap-8">
-        <div className="flex md:flex items-center gap-6">
-          {[
-            { label: 'Bugün Toplam', value: stats.total, color: 'text-primary' },
-            { label: 'Operasyon', value: stats.ops, color: 'text-emerald-500' },
-            { label: 'Sistem', value: stats.sys, color: 'text-blue-500' }
-          ].map((s) => (
+        <div className="flex items-center gap-6">
+          {STAT_CARDS.map((s) => (
             <div key={s.label} className="flex flex-col min-w-[100px]">
               <span className="text-[11px] font-black text-zinc-400 tracking-widest mb-1">
                 {s.label}
@@ -378,14 +397,13 @@ const LogsHeader = memo(function LogsHeader({
             placeholder="Kayıtlarda ara..."
             value={searchTerm}
             onChange={(e) => onChangeSearch(e.target.value)}
-            className="w-48 h-9 pl-9 pr-9 bg-white dark:bg-zinc-900 border-2 rounded-xl text-xs font-bold transition-all focus:w-64 focus:ring-0"
+            className={STYLES.searchInput}
           />
           {searchTerm && (
             <button
               type="button"
               onClick={onClearSearch}
               className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-muted/60 transition-colors"
-              aria-label="Filtreyi temizle"
             >
               <X className="w-3.5 h-3.5 text-muted-foreground/60" />
             </button>
@@ -396,17 +414,19 @@ const LogsHeader = memo(function LogsHeader({
   )
 })
 
+interface ControlBarProps {
+  category: LogCategory
+  dateRange: DateRangeType
+  onChangeCategory: (v: LogCategory) => void
+  onChangeDateRange: (v: DateRangeType) => void
+}
+
 const ControlBar = memo(function ControlBar({
   category,
   dateRange,
   onChangeCategory,
   onChangeDateRange
-}: {
-  category: LogCategory
-  dateRange: DateRangeType
-  onChangeCategory: (v: LogCategory) => void
-  onChangeDateRange: (v: DateRangeType) => void
-}) {
+}: ControlBarProps): React.JSX.Element {
   return (
     <div className="flex flex-col sm:flex-row items-center gap-4">
       <div className="flex flex-1 gap-1">
@@ -417,18 +437,14 @@ const ControlBar = memo(function ControlBar({
             onClick={() => onChangeCategory(tab.id)}
             aria-pressed={category === tab.id}
             className={cn(
-              'flex items-center gap-2 px-5 py-2 text-xs font-black tracking-tight rounded-xl transition-all',
-              category === tab.id
-                ? 'bg-zinc-950 dark:bg-zinc-50 text-white dark:text-black shadow-lg'
-                : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+              STYLES.filterBtn,
+              category === tab.id ? STYLES.filterBtnActive : STYLES.filterBtnInactive
             )}
           >
-            <tab.icon size={13} />
-            {tab.label}
+            <tab.icon size={13} /> {tab.label}
           </button>
         ))}
       </div>
-
       <div className="flex gap-1 h-fit">
         {DATE_FILTERS.map((f) => (
           <button
@@ -437,10 +453,8 @@ const ControlBar = memo(function ControlBar({
             onClick={() => onChangeDateRange(f.id)}
             aria-pressed={dateRange === f.id}
             className={cn(
-              'px-4 py-2 text-[11px] font-black tracking-tight rounded-xl transition-all',
-              dateRange === f.id
-                ? 'bg-primary text-white shadow-lg'
-                : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+              STYLES.dateBtn,
+              dateRange === f.id ? STYLES.dateBtnActive : STYLES.dateBtnInactive
             )}
           >
             {f.label}
@@ -451,79 +465,75 @@ const ControlBar = memo(function ControlBar({
   )
 })
 
+interface ExpandedLogContentProps {
+  log: GroupedLog
+  createdAtDate: Date
+  config?: ActionMeta
+}
+
+// === Group vs Single Renderer Refactored ===
 const ExpandedLogContent = memo(function ExpandedLogContent({
   log,
   createdAtDate,
   config
-}: {
-  log: GroupedLog
-  createdAtDate: Date
-  config?: ActionMeta
-}) {
+}: ExpandedLogContentProps): React.JSX.Element {
   const isGroup = Boolean(log.groupCount && log.groupCount > 1)
+
+  const renderGroupedItems = (): React.JSX.Element => (
+    <div className="space-y-1">
+      {log.groupItems?.map((item: { details: string; count: number }, idx: number) => (
+        <p
+          key={`${log.id}-group-item-${idx}`}
+          className="text-[15px] font-bold leading-relaxed text-foreground/90 border-b border-zinc-100 dark:border-zinc-800/10 last:border-0 pb-1.5 last:pb-0 break-words"
+        >
+          {item.details}
+        </p>
+      ))}
+    </div>
+  )
+
+  const renderSingleItem = (): React.JSX.Element => {
+    const parsed = parseLogDetail(log.details || '')
+    if (!parsed) {
+      return (
+        <p className="text-base font-bold leading-relaxed text-foreground/90 break-words">
+          {log.details || '-'}
+        </p>
+      )
+    }
+
+    return (
+      <div className="space-y-1.5">
+        <p className="text-xs font-semibold text-foreground/70 tracking-tight">{parsed.summary}</p>
+        <div className="space-y-1">
+          {parsed.items.map((item: { qty: number; name: string }, idx: number) => (
+            <div
+              key={`${log.id}-parsed-${idx}`}
+              className="flex items-center gap-3 py-1.5 border-b border-zinc-100 dark:border-zinc-800/10 last:border-0"
+            >
+              <span className="inline-flex items-center justify-center min-w-[3rem] h-7 px-2 rounded-xl bg-primary/10 text-primary text-[13px] font-black tabular-nums scale-90 -ml-1">
+                {item.qty}×
+              </span>
+              <span className="text-[15px] font-bold text-foreground/90">{item.name}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <TableRow className="hover:bg-transparent border-0">
       <TableCell colSpan={5} className="p-0">
-        <div className="h-full bg-zinc-50 dark:bg-zinc-950/40 border-b border-zinc-200/60 dark:border-zinc-800/60 animate-in slide-in-from-top-2 duration-300 overflow-hidden">
+        <div className={STYLES.expandedContainer}>
           <div className="px-6 py-4 grid grid-cols-[1fr_240px] gap-6">
-            {/* Left Column: Details */}
-            <div className="min-w-0">
-              <div className="space-y-3">
-                <p className="text-[11px] font-black tracking-widest text-zinc-400 leading-none">
-                  Sipariş Detayı
-                </p>
-
-                {isGroup ? (
-                  <div className="space-y-1">
-                    {log.groupItems?.map((item, idx) => (
-                      <p
-                        key={`${log.id}-group-item-${idx}`}
-                        className="text-[15px] font-bold leading-relaxed text-foreground/90 border-b border-zinc-100 dark:border-zinc-800/10 last:border-0 pb-1.5 last:pb-0 break-words"
-                      >
-                        {item.details}
-                      </p>
-                    ))}
-                  </div>
-                ) : (
-                  (() => {
-                    const parsed = parseLogDetail(log.details || '')
-                    if (!parsed) {
-                      return (
-                        <p className="text-base font-bold leading-relaxed text-foreground/90 break-words">
-                          {log.details || '-'}
-                        </p>
-                      )
-                    }
-
-                    return (
-                      <div className="space-y-1.5">
-                        <p className="text-xs font-semibold text-foreground/70 tracking-tight">
-                          {parsed.summary}
-                        </p>
-                        <div className="space-y-1">
-                          {parsed.items.map((item, idx) => (
-                            <div
-                              key={`${log.id}-parsed-${idx}`}
-                              className="flex items-center gap-3 py-1.5 border-b border-zinc-100 dark:border-zinc-800/10 last:border-0"
-                            >
-                              <span className="inline-flex items-center justify-center min-w-[3rem] h-7 px-2 rounded-xl bg-primary/10 text-primary text-[13px] font-black tabular-nums scale-90 -ml-1">
-                                {item.qty}×
-                              </span>
-                              <span className="text-[15px] font-bold text-foreground/90">
-                                {item.name}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )
-                  })()
-                )}
-              </div>
+            <div className="min-w-0 space-y-3">
+              <p className="text-[11px] font-black tracking-widest text-zinc-400 leading-none">
+                Sipariş Detayı
+              </p>
+              {isGroup ? renderGroupedItems() : renderSingleItem()}
             </div>
 
-            {/* Right Column: Metadata */}
             <div className="space-y-3">
               <p className="text-[11px] font-black tracking-widest text-zinc-400 leading-none">
                 İşlem Bilgileri
@@ -568,34 +578,34 @@ const ExpandedLogContent = memo(function ExpandedLogContent({
   )
 })
 
+interface LogRowProps {
+  log: GroupedLog
+  dateRange: DateRangeType
+  isExpanded: boolean
+  onToggle: (id: string) => void
+  index: number
+}
+
 const LogRow = memo(function LogRow({
   log,
   dateRange,
   isExpanded,
   onToggle,
   index
-}: {
-  log: GroupedLog
-  dateRange: DateRangeType
-  isExpanded: boolean
-  onToggle: (id: string) => void
-  index: number
-}) {
+}: LogRowProps): React.JSX.Element {
   const config = getActionMeta(log.action)
   const createdAtDate = useMemo(() => new Date(log.createdAt), [log.createdAt])
   const isGroup = Boolean(log.groupCount && log.groupCount > 1)
 
-  const animationDelay = Math.min(index * 20, 300)
+  // Custom CSS ile yazılan animasyon yerine tailwind animate-in kullanılarak daha güvenli delay eklendi.
+  const style = { animationDelay: `${Math.min(index * 20, 300)}ms` }
 
   return (
     <>
       <TableRow
         onClick={() => onToggle(log.id)}
-        style={{ animationDelay: `${animationDelay}ms` }}
-        className={cn(
-          'group cursor-pointer transition-colors border-b border-zinc-200/50 dark:border-zinc-800/50 opacity-0 animate-fade-in-row',
-          isExpanded ? 'bg-primary/5' : 'hover:bg-zinc-200/20 dark:hover:bg-zinc-800/20'
-        )}
+        style={style}
+        className={cn(STYLES.rowBase, isExpanded ? STYLES.rowExpanded : STYLES.rowCollapsed)}
       >
         <TableCell className="pl-6 py-2.5 font-bold text-base">
           <div className="flex flex-col leading-tight">
@@ -658,24 +668,21 @@ const LogRow = memo(function LogRow({
   )
 })
 
-/* =========================
- * Main Component
- * ========================= */
+// ============================================================================
+// Main Component
+// ============================================================================
 
 export function LogsTab(): React.JSX.Element {
   const [logs, setLogs] = useState<ActivityLog[]>([])
   const [stats, setStats] = useState<LogStats>({ total: 0, sys: 0, ops: 0 })
-
   const [isInitialLoading, setIsInitialLoading] = useState(false)
   const [isFetchingMore, setIsFetchingMore] = useState(false)
   const [isStatsLoading, setIsStatsLoading] = useState(false)
-
   const [category, setCategory] = useState<LogCategory>('all')
   const [dateRange, setDateRange] = useState<DateRangeType>('today')
   const [searchTerm, setSearchTerm] = useState('')
   const debouncedSearchTerm = useDebounce(searchTerm, 400)
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null)
-
   const [offset, setOffset] = useState(0)
   const [hasMore, setHasMore] = useState(true)
 
@@ -708,7 +715,6 @@ export function LogsTab(): React.JSX.Element {
 
         const { start, end } = getDateRangeBounds(dateRange)
         const currentOffset = isLoadMore ? offsetRef.current : 0
-
         const data = await cafeApi.logs.getRecent(
           LOGS_PAGE_SIZE,
           start?.toISOString(),
@@ -741,27 +747,22 @@ export function LogsTab(): React.JSX.Element {
     [dateRange, category, debouncedSearchTerm]
   )
 
-  // ✅ Gerçek stats için backend endpoint varsa bunu kullan
   const loadStats = useCallback(async () => {
     const requestId = ++statsRequestIdRef.current
     setIsStatsLoading(true)
 
     try {
       const data = await cafeApi.logs.getStatsToday()
-
       if (requestId !== statsRequestIdRef.current) return
       if (data) {
         setStats(data)
         return
       }
 
-      // fallback (endpoint yoksa)
+      // Fallback
       const now = new Date()
       const todayLogs = logs.filter((l) =>
-        isWithinInterval(new Date(l.createdAt), {
-          start: startOfDay(now),
-          end: endOfDay(now)
-        })
+        isWithinInterval(new Date(l.createdAt), { start: startOfDay(now), end: endOfDay(now) })
       )
       const sysCount = todayLogs.filter(
         (l) => getActionMeta(l.action)?.category === 'system'
@@ -772,13 +773,10 @@ export function LogsTab(): React.JSX.Element {
         ops: Math.max(0, todayLogs.length - sysCount)
       })
     } catch {
-      // fallback local
+      // Local Fallback
       const now = new Date()
       const todayLogs = logs.filter((l) =>
-        isWithinInterval(new Date(l.createdAt), {
-          start: startOfDay(now),
-          end: endOfDay(now)
-        })
+        isWithinInterval(new Date(l.createdAt), { start: startOfDay(now), end: endOfDay(now) })
       )
       const sysCount = todayLogs.filter(
         (l) => getActionMeta(l.action)?.category === 'system'
@@ -793,7 +791,6 @@ export function LogsTab(): React.JSX.Element {
     }
   }, [logs])
 
-  // Filters changed -> reset + reload
   useEffect(() => {
     setExpandedLogId(null)
     setOffset(0)
@@ -802,47 +799,85 @@ export function LogsTab(): React.JSX.Element {
     loadLogs(false)
   }, [dateRange, category, debouncedSearchTerm, loadLogs])
 
-  // Stats refresh (ilk açılışta + logs değişince fallback için)
   useEffect(() => {
     loadStats()
   }, [loadStats])
 
-  // Infinite observer
   useEffect(() => {
     const target = observerTarget.current
     if (!target) return
 
     const observer = new IntersectionObserver(
       (entries) => {
-        const entry = entries[0]
-        if (!entry?.isIntersecting) return
-        if (!hasMoreRef.current) return
-        if (isInitialLoadingRef.current || isFetchingMoreRef.current) return
+        if (
+          !entries[0]?.isIntersecting ||
+          !hasMoreRef.current ||
+          isInitialLoadingRef.current ||
+          isFetchingMoreRef.current
+        )
+          return
         loadLogs(true)
       },
-      {
-        threshold: 0.1,
-        rootMargin: '100px'
-      }
+      { threshold: 0.1, rootMargin: '100px' }
     )
 
     observer.observe(target)
     return () => observer.disconnect()
   }, [loadLogs])
 
-  const handleToggleRow = useCallback((id: string) => {
-    setExpandedLogId((prev) => (prev === id ? null : id))
-  }, [])
+  // --- Render Helpers ---
+
+  const renderTableBody = (): React.JSX.Element => {
+    if (isInitialLoading && logs.length === 0) {
+      return (
+        <TableRow className="hover:bg-transparent">
+          <TableCell colSpan={5} className={STYLES.emptyLoadingCell}>
+            <div className="flex flex-col items-center justify-center space-y-2 opacity-20">
+              <RefreshCw className="animate-spin" size={32} />
+              <span className="text-xs font-bold">Yükleniyor...</span>
+            </div>
+          </TableCell>
+        </TableRow>
+      )
+    }
+
+    if (logs.length === 0) {
+      return (
+        <TableRow className="hover:bg-transparent">
+          <TableCell colSpan={5} className={STYLES.emptyLoadingCell}>
+            <div className="flex flex-col items-center justify-center space-y-2 opacity-20">
+              <History size={32} />
+              <span className="text-xs font-bold">Kayıt Bulunmuyor</span>
+            </div>
+          </TableCell>
+        </TableRow>
+      )
+    }
+
+    return (
+      <>
+        {groupedLogs.map((log, index) => (
+          <LogRow
+            key={log.id}
+            log={log}
+            dateRange={dateRange}
+            isExpanded={expandedLogId === log.id}
+            onToggle={(id: string) => setExpandedLogId((prev) => (prev === id ? null : id))}
+            index={index}
+          />
+        ))}
+      </>
+    )
+  }
 
   return (
-    <div className="h-full flex flex-col p-6 space-y-4">
+    <div className={STYLES.container}>
       <LogsHeader
         stats={stats}
         searchTerm={searchTerm}
         onChangeSearch={setSearchTerm}
         onClearSearch={() => setSearchTerm('')}
       />
-
       <ControlBar
         category={category}
         dateRange={dateRange}
@@ -853,56 +888,20 @@ export function LogsTab(): React.JSX.Element {
       <div className="flex-1 min-h-0 bg-transparent">
         <ScrollArea className="h-full">
           <Table className="table-fixed w-full">
-            <TableHeader className="sticky top-0 bg-zinc-50/80 dark:bg-zinc-950/80 backdrop-blur-sm z-10 border-b-2">
+            <TableHeader className={STYLES.tableHeader}>
               <TableRow className="hover:bg-transparent border-0">
-                <TableHead className="w-[140px] pl-6 text-[10px] font-black tracking-[0.2em] text-muted-foreground/40">
-                  SAAT
-                </TableHead>
-                <TableHead className="w-[180px] text-[10px] font-black tracking-[0.2em] text-muted-foreground/40">
-                  İŞLEM TÜRÜ
-                </TableHead>
-                <TableHead className="w-[140px] text-[10px] font-black tracking-[0.2em] text-muted-foreground/40">
-                  KONUM
-                </TableHead>
-                <TableHead className="text-[10px] font-black tracking-[0.2em] text-muted-foreground/40">
-                  AÇIKLAMA
-                </TableHead>
+                <TableHead className={cn('w-[140px] pl-6', STYLES.tableHeadCell)}>SAAT</TableHead>
+                <TableHead className={cn('w-[180px]', STYLES.tableHeadCell)}>İŞLEM TÜRÜ</TableHead>
+                <TableHead className={cn('w-[140px]', STYLES.tableHeadCell)}>KONUM</TableHead>
+                <TableHead className={STYLES.tableHeadCell}>AÇIKLAMA</TableHead>
                 <TableHead className="w-10" />
               </TableRow>
             </TableHeader>
 
             <TableBody>
-              {isInitialLoading && logs.length === 0 ? (
-                <TableRow className="hover:bg-transparent">
-                  <TableCell colSpan={5} className="h-48 text-center">
-                    <div className="flex flex-col items-center justify-center space-y-2 opacity-20">
-                      <RefreshCw className="animate-spin" size={32} />
-                      <span className="text-xs font-bold">Yükleniyor...</span>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : logs.length === 0 ? (
-                <TableRow className="hover:bg-transparent">
-                  <TableCell colSpan={5} className="h-48 text-center">
-                    <div className="flex flex-col items-center justify-center space-y-2 opacity-20">
-                      <History size={32} />
-                      <span className="text-xs font-bold">Kayıt Bulunmuyor</span>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                groupedLogs.map((log, index) => (
-                  <LogRow
-                    key={log.id}
-                    log={log}
-                    dateRange={dateRange}
-                    isExpanded={expandedLogId === log.id}
-                    onToggle={handleToggleRow}
-                    index={index}
-                  />
-                ))
-              )}
+              {renderTableBody()}
 
+              {/* Intersection Observer Target (Infinite Scroll) */}
               <TableRow className="hover:bg-transparent border-0">
                 <TableCell colSpan={5} className="p-0">
                   <div ref={observerTarget} className="h-4 w-full" />
@@ -917,23 +916,6 @@ export function LogsTab(): React.JSX.Element {
           </Table>
         </ScrollArea>
       </div>
-
-      {/* Global styles for animations */}
-      <style>{`
-        @keyframes fade-in-row {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .animate-fade-in-row {
-          animation: fade-in-row 0.3s ease-out forwards;
-        }
-      `}</style>
     </div>
   )
 }

@@ -1,24 +1,47 @@
-import { UseMutateFunction, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { cafeApi, Order, PaymentMethod, Product } from '../lib/api'
+import {
+  type UseMutateFunction,
+  useMutation,
+  useQuery,
+  useQueryClient
+} from '@tanstack/react-query'
+import { cafeApi, type Order, type OrderItem, type PaymentMethod, type Product } from '../lib/api'
 import { toast } from '../store/useToastStore'
 
-// We need a way to generate temp IDs for optimistic updates
-const generateTempId = (): string => `temp-${Math.random().toString(36).substr(2, 9)}`
+// ============================================================================
+// Pure Helpers
+// ============================================================================
+
+const generateTempId = (): string => `temp-${Math.random().toString(36).substring(2, 9)}`
+
+// Sepet tutarını hesaplayan saf fonksiyon (Kod tekrarını önler)
+const calculateTotalAmount = (items: NonNullable<Order['items']>): number =>
+  items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
+
+// ============================================================================
+// Types
+// ============================================================================
+
+type MutationContext = { previousOrder: Order | null | undefined }
 
 interface UseOrderResult {
   order: Order | null | undefined
   isLoading: boolean
   isRefetching: boolean
   error: unknown
-  addItem: UseMutateFunction<Order, Error, { product: Product; quantity: number }, unknown>
-  updateItem: UseMutateFunction<Order, Error, { orderItemId: string; quantity: number }, unknown>
-  removeItem: UseMutateFunction<Order, Error, string, unknown>
+  addItem: UseMutateFunction<Order, Error, { product: Product; quantity: number }, MutationContext>
+  updateItem: UseMutateFunction<
+    Order,
+    Error,
+    { orderItemId: string; quantity: number },
+    MutationContext
+  >
+  removeItem: UseMutateFunction<Order, Error, string, MutationContext>
   processPayment: (variables: {
     amount: number
     method: PaymentMethod
-    options?: { skipLog?: boolean }
+    options?: { skipLog?: boolean; itemsToMarkPaid?: { id: string; quantity: number }[] }
   }) => Promise<{ order: Order; completed: boolean }>
-  toggleLock: UseMutateFunction<void | undefined, Error, void, unknown>
+  toggleLock: UseMutateFunction<void | undefined, Error, void, MutationContext>
   deleteOrder: UseMutateFunction<void, Error, string, unknown>
   markItemsPaid: (
     items: { id: string; quantity: number }[],
@@ -27,47 +50,84 @@ interface UseOrderResult {
   isLocked: boolean
 }
 
+// ============================================================================
+// Hook
+// ============================================================================
+
 export function useOrder(tableId: string | null): UseOrderResult {
   const queryClient = useQueryClient()
   const queryKey = ['order', tableId]
 
-  // --- Fetch Order ---
+  // --- Fetch Base Order ---
   const orderQuery = useQuery({
     queryKey,
     queryFn: () => (tableId ? cafeApi.orders.getOpenByTable(tableId) : null),
     enabled: !!tableId,
-    staleTime: 5_000 // Mutations invalidate cache, so 5s is safe
+    staleTime: 5_000 // Mutasyonlar zaten cache'i bozduğu için 5 sn güvenli
   })
 
-  // --- Mutations ---
+  // ============================================================================
+  // Mutation Boilerplate Handlers (DRY Prensibi)
+  // ============================================================================
 
-  // 1. Add Item
-  const addItemMutation = useMutation({
+  // 1. Ortak Optimistic Update Kurulumu
+  const executeOptimisticUpdate = async (
+    updater: (old: Order | null | undefined) => Order | null
+  ): Promise<MutationContext> => {
+    await queryClient.cancelQueries({ queryKey })
+    const previousOrder = queryClient.getQueryData<Order | null>(queryKey)
+    queryClient.setQueryData<Order | null>(queryKey, updater)
+    return { previousOrder }
+  }
+
+  // 2. Ortak Hata Yönetimi (Rollback)
+  const handleOptimisticError =
+    (actionName: string) =>
+    (err: Error, _vars: unknown, context: MutationContext | undefined): void => {
+      if (context?.previousOrder) {
+        queryClient.setQueryData(queryKey, context.previousOrder)
+      }
+      toast({
+        title: 'İşlem Başarısız',
+        description: `${actionName} sırasında hata oluştu: ${err.message}`,
+        variant: 'destructive'
+      })
+    }
+
+  // 3. Ortak Tamamlanma Durumu (Cache Tazeleme)
+  const handleSettled = (): void => {
+    queryClient.invalidateQueries({ queryKey })
+    queryClient.invalidateQueries({ queryKey: ['tables'] }) // Masalar listesini de tetikle
+  }
+
+  // ============================================================================
+  // Mutations
+  // ============================================================================
+
+  const addItemMutation = useMutation<
+    Order,
+    Error,
+    { product: Product; quantity: number },
+    MutationContext
+  >({
     mutationFn: async ({ product, quantity }: { product: Product; quantity: number }) => {
-      if (!tableId) throw new Error('No table selected')
+      if (!tableId) throw new Error('Masa seçilmedi')
 
       const currentOrder = orderQuery.data
       let orderId = currentOrder?.id
 
       if (!orderId) {
-        // Create order first
         const newOrder = await cafeApi.orders.create(tableId)
         orderId = newOrder.id
       }
-
       return cafeApi.orders.addItem(orderId, product.id, quantity, product.price)
     },
-    onMutate: async ({ product, quantity }) => {
-      if (!tableId) return
+    onMutate: async ({ product, quantity }): Promise<MutationContext> => {
+      if (!tableId) throw new Error('Masa seçilmedi')
 
-      await queryClient.cancelQueries({ queryKey })
-
-      const previousOrder = queryClient.getQueryData<Order | null>(queryKey)
-
-      // Optimistic Update
-      queryClient.setQueryData<Order | null>(queryKey, (old) => {
+      return executeOptimisticUpdate((old) => {
+        // Sepet boşsa sıfırdan oluştur
         if (!old) {
-          // If no order exists, we are creating one optimistically.
           return {
             id: 'temp-order',
             tableId,
@@ -77,136 +137,103 @@ export function useOrder(tableId: string | null): UseOrderResult {
                 id: generateTempId(),
                 orderId: 'temp-order',
                 productId: product.id,
-                product: product,
+                product,
                 quantity,
                 unitPrice: product.price,
                 isPaid: false
-              }
+              } as OrderItem
             ],
             totalAmount: product.price * quantity,
             createdAt: new Date(),
             updatedAt: new Date(),
-            isLocked: false // Default for optimistic
-          } // No cast needed if type matches Order interface
+            isLocked: false
+          } as Order
         }
 
-        // Existing order - find only UNPAID items to increment
-        const existingItemIndex = old.items?.findIndex(
-          (i) => i.productId === product.id && !i.isPaid
-        )
         const newItems = [...(old.items || [])]
+        const existingItemIndex = newItems.findIndex((i) => i.productId === product.id && !i.isPaid)
 
-        if (existingItemIndex !== undefined && existingItemIndex > -1) {
-          // Update existing item
+        if (existingItemIndex > -1) {
           const existingItem = newItems[existingItemIndex]
           newItems[existingItemIndex] = {
             ...existingItem,
             quantity: existingItem.quantity + quantity
-            // totalPrice removed as it's not on OrderItem type
           }
         } else {
-          // Add new item
           newItems.push({
             id: generateTempId(),
             orderId: old.id,
             productId: product.id,
-            product: product, // Store full product for UI
+            product,
             quantity,
             unitPrice: product.price,
             isPaid: false
-          })
+          } as OrderItem)
         }
-
-        const newTotal = newItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
 
         return {
           ...old,
           items: newItems,
-          totalAmount: newTotal
+          totalAmount: calculateTotalAmount(newItems as OrderItem[])
         }
       })
-
-      return { previousOrder }
     },
-    onError: (err, _variables, context) => {
-      if (context?.previousOrder) {
-        queryClient.setQueryData(queryKey, context.previousOrder)
-      }
-      toast({
-        title: 'Hata',
-        description: 'Ürün eklenirken bir hata oluştu: ' + String(err),
-        variant: 'destructive'
-      })
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey })
-      // Also invalidate tables list to show "DOLU" status if it was empty
-      queryClient.invalidateQueries({ queryKey: ['tables'] })
-    }
+    onError: handleOptimisticError('Ürün ekleme'),
+    onSettled: handleSettled
   })
 
-  // 2. Update Item Quantity
-  const updateItemMutation = useMutation({
-    mutationFn: async ({ orderItemId, quantity }: { orderItemId: string; quantity: number }) => {
-      return cafeApi.orders.updateItem(orderItemId, quantity)
-    },
+  const updateItemMutation = useMutation<
+    Order,
+    Error,
+    { orderItemId: string; quantity: number },
+    MutationContext
+  >({
+    mutationFn: ({ orderItemId, quantity }: { orderItemId: string; quantity: number }) =>
+      cafeApi.orders.updateItem(orderItemId, quantity),
     onMutate: async ({ orderItemId, quantity }) => {
-      await queryClient.cancelQueries({ queryKey })
-      const previousOrder = queryClient.getQueryData<Order | null>(queryKey)
-
-      queryClient.setQueryData<Order | null>(queryKey, (old) => {
-        if (!old || !old.items) return old
-
-        const newItems = old.items.map((item) => {
-          if (item.id === orderItemId) {
-            return { ...item, quantity }
-          }
-          return item
-        })
-
-        const newTotal = newItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
-
-        return { ...old, items: newItems, totalAmount: newTotal }
+      return executeOptimisticUpdate((old) => {
+        if (!old || !old.items) return old ?? null
+        const newItems = old.items.map((item) =>
+          item.id === orderItemId ? { ...item, quantity } : item
+        )
+        return { ...old, items: newItems, totalAmount: calculateTotalAmount(newItems) }
       })
-
-      return { previousOrder }
     },
-    onError: (_err, _vars, context) => {
-      queryClient.setQueryData(queryKey, context?.previousOrder)
-      toast({ title: 'Hata', description: 'Güncelleme hatası', variant: 'destructive' })
-    },
-    onSettled: () => queryClient.invalidateQueries({ queryKey })
+    onError: handleOptimisticError('Ürün güncelleme'),
+    onSettled: handleSettled
   })
 
-  // 3. Remove Item
-  const removeItemMutation = useMutation({
-    mutationFn: async (orderItemId: string) => {
-      return cafeApi.orders.removeItem(orderItemId)
-    },
+  const removeItemMutation = useMutation<Order, Error, string, MutationContext>({
+    mutationFn: (orderItemId: string) => cafeApi.orders.removeItem(orderItemId),
     onMutate: async (orderItemId) => {
-      await queryClient.cancelQueries({ queryKey })
-      const previousOrder = queryClient.getQueryData<Order | null>(queryKey)
-
-      queryClient.setQueryData<Order | null>(queryKey, (old) => {
-        if (!old || !old.items) return old
+      return executeOptimisticUpdate((old) => {
+        if (!old || !old.items) return old ?? null
         const newItems = old.items.filter((item) => item.id !== orderItemId)
-        const newTotal = newItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
-        return { ...old, items: newItems, totalAmount: newTotal }
+        return { ...old, items: newItems, totalAmount: calculateTotalAmount(newItems) }
       })
-
-      return { previousOrder }
     },
-    onError: (_err, _vars, context) => {
-      queryClient.setQueryData(queryKey, context?.previousOrder)
-      toast({ title: 'Hata', description: 'Silme hatası', variant: 'destructive' })
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey })
-      queryClient.invalidateQueries({ queryKey: ['tables'] }) // Might become empty
-    }
+    onError: handleOptimisticError('Ürün silme'),
+    onSettled: handleSettled
   })
 
-  // 4. Payment
+  const toggleLockMutation = useMutation<void | undefined, Error, void, MutationContext>({
+    mutationFn: async () => {
+      const currentOrder = orderQuery.data
+      if (!currentOrder) return
+      await cafeApi.orders.update(currentOrder.id, { isLocked: !currentOrder.isLocked })
+    },
+    onMutate: async () => {
+      return executeOptimisticUpdate((old) => {
+        if (!old) return old ?? null
+        return { ...old, isLocked: !old.isLocked }
+      })
+    },
+    onError: handleOptimisticError('Masa kilitleme'),
+    onSettled: handleSettled
+  })
+
+  // --- Non-Optimistic Mutations (Sunucu Onayı Gerektirenler) ---
+
   const paymentMutation = useMutation({
     mutationFn: async ({
       amount,
@@ -215,74 +242,32 @@ export function useOrder(tableId: string | null): UseOrderResult {
     }: {
       amount: number
       method: PaymentMethod
-      options?: { skipLog?: boolean }
+      options?: { skipLog?: boolean; itemsToMarkPaid?: { id: string; quantity: number }[] }
     }) => {
       const currentOrder = orderQuery.data
-      if (!currentOrder) throw new Error('No order to pay')
-
-      const result = await cafeApi.payments.create(currentOrder.id, amount, method, options)
-      return result
+      if (!currentOrder) throw new Error('Ödenecek adisyon bulunamadı')
+      return cafeApi.payments.create(currentOrder.id, amount, method, options)
     },
     onSuccess: (data) => {
       if (data.order.status === 'CLOSED') {
         toast({ title: 'Ödeme Başarılı', description: 'Adisyon kapatıldı.', variant: 'success' })
-        // If closed, query usually returns null for "open order".
-        // We can set cache to null or invalidate.
         queryClient.setQueryData(queryKey, null)
       } else {
         toast({ title: 'Ödeme Alındı', description: 'Kısmi ödeme başarılı.', variant: 'success' })
       }
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey })
-      queryClient.invalidateQueries({ queryKey: ['tables'] })
-    }
+    onSettled: handleSettled
   })
 
-  // 5. Toggle Lock
-  const toggleLockMutation = useMutation({
-    mutationFn: async () => {
-      const currentOrder = orderQuery.data
-      if (!currentOrder) return
-      await cafeApi.orders.update(currentOrder.id, { isLocked: !currentOrder.isLocked })
-    },
-    onMutate: async () => {
-      await queryClient.cancelQueries({ queryKey })
-      const previousOrder = queryClient.getQueryData<Order | null>(queryKey)
-
-      queryClient.setQueryData<Order | null>(queryKey, (old) => {
-        if (!old) return old
-        return { ...old, isLocked: !old.isLocked }
-      })
-
-      return { previousOrder }
-    },
-    onError: (_err, _vars, context) => {
-      queryClient.setQueryData(queryKey, context?.previousOrder)
-      toast({ title: 'Hata', description: 'Kilit işlemi başarısız', variant: 'destructive' })
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey })
-      queryClient.invalidateQueries({ queryKey: ['tables'] })
-    }
-  })
-
-  // 6. Delete Order
   const deleteOrderMutation = useMutation({
-    mutationFn: async (orderId: string) => {
-      await cafeApi.orders.delete(orderId)
-    },
+    mutationFn: (orderId: string) => cafeApi.orders.delete(orderId),
     onSuccess: () => {
       queryClient.setQueryData(queryKey, null)
       toast({ title: 'Başarılı', description: 'Masa boşaltıldı', variant: 'success' })
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey })
-      queryClient.invalidateQueries({ queryKey: ['tables'] })
-    }
+    onSettled: handleSettled
   })
 
-  // 7. Mark Items Paid
   const markItemsPaidMutation = useMutation({
     mutationFn: async ({
       items,
@@ -292,7 +277,7 @@ export function useOrder(tableId: string | null): UseOrderResult {
       paymentDetails?: { amount: number; method: string }
     }) => {
       const currentOrder = orderQuery.data
-      if (!currentOrder) throw new Error('No order found')
+      if (!currentOrder) throw new Error('Sipariş bulunamadı')
       return cafeApi.orders.markItemsPaid(items, paymentDetails)
     },
     onSuccess: (updatedOrder) => {
@@ -303,10 +288,7 @@ export function useOrder(tableId: string | null): UseOrderResult {
         variant: 'success'
       })
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey })
-      queryClient.invalidateQueries({ queryKey: ['tables'] })
-    }
+    onSettled: handleSettled
   })
 
   return {

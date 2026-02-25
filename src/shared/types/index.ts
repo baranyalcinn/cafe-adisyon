@@ -216,6 +216,25 @@ export interface MonthlyReport {
   updatedAt: Date
 }
 
+// Maintenance & Cleanup
+export interface ArchiveDataResult {
+  deletedOrders: number
+  deletedItems: number
+  deletedTransactions: number
+  deletedExpenses: number
+  deletedSummaries: number
+}
+
+export interface EndOfDayCheckResult {
+  canProceed: boolean
+  openTables: Array<{
+    tableId: string
+    tableName: string
+    orderId: string
+    totalAmount: number
+  }>
+}
+
 // Update Information
 export interface UpdateInfo {
   version: string
