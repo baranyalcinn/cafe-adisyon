@@ -7,6 +7,7 @@ import {
   BootBundle,
   Category,
   DailySummary,
+  DashboardBundle,
   Expense,
   ExpenseStats,
   ExtendedDashboardStats,
@@ -150,8 +151,8 @@ const api = {
       invoke<ExtendedDashboardStats>(IPC_CHANNELS.DASHBOARD_GET_EXTENDED_STATS),
     getRevenueTrend: (days: number = 7): Promise<ApiResponse<RevenueTrendItem[]>> =>
       invoke<RevenueTrendItem[]>(IPC_CHANNELS.DASHBOARD_GET_REVENUE_TREND, days),
-    getBundle: (): Promise<ApiResponse<BootBundle>> =>
-      invoke<BootBundle>(IPC_CHANNELS.DASHBOARD_GET_BUNDLE)
+    getBundle: (): Promise<ApiResponse<DashboardBundle>> =>
+      invoke<DashboardBundle>(IPC_CHANNELS.DASHBOARD_GET_BUNDLE)
   },
 
   // --- Admin ---
