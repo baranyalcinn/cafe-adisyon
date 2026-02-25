@@ -1,3 +1,5 @@
+'use client'
+
 import { PremiumAmount } from '@/components/PremiumAmount'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
@@ -70,10 +72,10 @@ const STYLES = {
 } as const
 
 // ============================================================================
-// Component
+// Main Component
 // ============================================================================
 
-export const CartPanel = React.memo(function CartPanel({
+export const CartPanel = memo(function CartPanel({
   order,
   isLocked,
   onPaymentClick,
@@ -83,26 +85,18 @@ export const CartPanel = React.memo(function CartPanel({
   onDeleteOrder
 }: CartPanelProps): React.JSX.Element {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
-  const debounceTimers = useRef<Map<string, NodeJS.Timeout>>(new Map())
+
+  // Timeout tipini TS ve ortama tam uyumlu hale getirdik
+  const debounceTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
   const { playAdd, playRemove, playClick } = useSound()
 
-  // Tüm timer'ları güvenli şekilde temizler (hem unmount anında hem de manuel)
-  const clearAllTimers = useCallback(() => {
-    debounceTimers.current.forEach((timer) => clearTimeout(timer))
-    debounceTimers.current.clear()
-  }, [])
-
-  useEffect(() => {
-    return clearAllTimers
-  }, [clearAllTimers])
-
   const items = order?.items ?? []
+  const total = order?.totalAmount || 0
+  const paidAmount = order?.payments?.reduce((sum, p) => sum + p.amount, 0) || 0
+  const remainingAmount = Math.max(0, total - paidAmount)
 
-  // Unpaid ve Paid listeyi ayır
   const { unpaidItems, paidItems } = useMemo(() => {
-    if (!items.length) {
-      return { unpaidItems: [] as ProcessedCartItem[], paidItems: [] as ProcessedCartItem[] }
-    }
+    if (!items.length) return { unpaidItems: [], paidItems: [] }
 
     const unpaid: ProcessedCartItem[] = []
     const paidMap = new Map<string, ProcessedCartItem>()
@@ -126,19 +120,28 @@ export const CartPanel = React.memo(function CartPanel({
     return { unpaidItems: unpaid, paidItems: Array.from(paidMap.values()) }
   }, [items])
 
-  // Totaller
-  const total = order?.totalAmount || 0
-  const paidAmount = order?.payments?.reduce((sum, p) => sum + p.amount, 0) || 0
-  const remainingAmount = Math.max(0, total - paidAmount)
+  // KRİTİK OPTİMİZASYON: Referans Kopmasını Önlemek İçin "Latest State Ref"
+  // Bu sayede useCallback hook'ları order objesine bağımlı olmayacak ve her renderda sıfırdan oluşmayacak.
+  const stateRef = useRef({ order, unpaidItems, paidAmount, isLocked })
+  stateRef.current = { order, unpaidItems, paidAmount, isLocked }
+
+  const clearAllTimers = useCallback((): void => {
+    debounceTimers.current.forEach((timer) => clearTimeout(timer))
+    debounceTimers.current.clear()
+  }, [])
+
+  useEffect(() => clearAllTimers, [clearAllTimers])
 
   const handleUpdateQuantity = useCallback(
     (orderItemId: string, _productId: string, newQuantity: number): void => {
-      if (isLocked) {
+      // Güncel değerleri useRef üzerinden okuyoruz
+      const current = stateRef.current
+      if (current.isLocked) {
         soundManager.playError()
         return
       }
 
-      const item = order?.items?.find((i) => i.id === orderItemId)
+      const item = current.order?.items?.find((i) => i.id === orderItemId)
       if (item?.isPaid) {
         soundManager.playError()
         return
@@ -146,25 +149,18 @@ export const CartPanel = React.memo(function CartPanel({
 
       const currentQuantity = item?.quantity || 0
 
-      // Ses efekti çal
-      if (newQuantity > currentQuantity) {
-        playAdd()
-      } else {
-        playRemove()
-      }
+      if (newQuantity > currentQuantity) playAdd()
+      else playRemove()
 
-      // Varolan timer'ı iptal et
       const existingTimer = debounceTimers.current.get(orderItemId)
-      if (existingTimer) {
-        clearTimeout(existingTimer)
-      }
+      if (existingTimer) clearTimeout(existingTimer)
 
-      // Eğer ürün tamamen silinmek isteniyorsa timer bekleme, anında sil
       if (newQuantity <= 0) {
-        const isLastUnpaidItem = unpaidItems.length === 1 && unpaidItems[0]?.id === orderItemId
+        const isLastUnpaidItem =
+          current.unpaidItems.length === 1 && current.unpaidItems[0]?.id === orderItemId
 
         if (isLastUnpaidItem) {
-          if (paidAmount > 0) {
+          if (current.paidAmount > 0) {
             onRemoveItem(orderItemId)
           } else {
             setShowDeleteDialog(true)
@@ -175,7 +171,6 @@ export const CartPanel = React.memo(function CartPanel({
         return
       }
 
-      // Değilse miktar güncellemeyi debounce'a al
       const timer = setTimeout(() => {
         onUpdateItem(orderItemId, newQuantity)
         debounceTimers.current.delete(orderItemId)
@@ -183,40 +178,41 @@ export const CartPanel = React.memo(function CartPanel({
 
       debounceTimers.current.set(orderItemId, timer)
     },
-    [
-      isLocked,
-      order?.items,
-      unpaidItems,
-      paidAmount,
-      onRemoveItem,
-      onUpdateItem,
-      playAdd,
-      playRemove
-    ]
+    [onRemoveItem, onUpdateItem, playAdd, playRemove] // Dependency listesi artık tertemiz!
   )
 
   const handleConfirmDelete = useCallback((): void => {
-    if (!order || paidAmount > 0) return
-    clearAllTimers() // Sipariş silinmeden önce bekleyen tüm güncellemeleri iptal et
-    onDeleteOrder(order.id)
+    const current = stateRef.current
+    if (!current.order || current.paidAmount > 0) return
+
+    clearAllTimers()
+    onDeleteOrder(current.order.id)
     setShowDeleteDialog(false)
-  }, [order, onDeleteOrder, paidAmount, clearAllTimers])
+  }, [onDeleteOrder, clearAllTimers])
 
-  const hasItems = unpaidItems.length > 0 || paidItems.length > 0
-  const hasPaidItems = paidItems.length > 0
-
-  // Stable reference: CartFooter memo'nun faydalanabilmesi için useCallback ile sabit referans
   const handlePaymentClick = useCallback((): void => {
     playClick()
     onPaymentClick()
   }, [playClick, onPaymentClick])
 
+  // Dialog actions (Memoization için sabitlendi)
+  const onDialogConfirm = useCallback((): void => {
+    playRemove()
+    handleConfirmDelete()
+  }, [playRemove, handleConfirmDelete])
+
+  const onDialogCancel = useCallback((): void => {
+    playClick()
+    setShowDeleteDialog(false)
+  }, [playClick])
+
+  const hasItems = unpaidItems.length > 0 || paidItems.length > 0
+  const hasPaidItems = paidItems.length > 0
+
   return (
     <div className={STYLES.container}>
-      {/* Header */}
       <div className={STYLES.header}>
         <h2 className={STYLES.headerTitle}>Adisyon</h2>
-
         <div className="flex items-center gap-1.5 relative z-10">
           <Button
             variant="ghost"
@@ -224,7 +220,6 @@ export const CartPanel = React.memo(function CartPanel({
             onClick={onToggleLock}
             className={cn(STYLES.iconBtn, isLocked ? STYLES.lockedBtn : STYLES.unlockedBtn)}
             title={isLocked ? 'Masayı Aç' : 'Masayı Kilitle'}
-            aria-label={isLocked ? 'Masayı Aç' : 'Masayı Kilitle'}
           >
             {isLocked ? (
               <Lock className="w-4 h-4" strokeWidth={2.5} />
@@ -243,19 +238,16 @@ export const CartPanel = React.memo(function CartPanel({
             onClick={() => setShowDeleteDialog(true)}
             disabled={!hasItems || paidAmount > 0}
             title={paidAmount > 0 ? 'Ödeme alınmış adisyon silinemez' : 'Masayı Boşalt'}
-            aria-label="Masayı Boşalt"
           >
             <Trash2 className="w-4 h-4" strokeWidth={2.5} />
           </Button>
         </div>
       </div>
 
-      {/* Body */}
       <div className={STYLES.bodyContainer}>
         {hasItems ? (
           <div className={STYLES.scrollArea}>
             <div className={STYLES.itemsWrapper}>
-              {/* Unpaid Items */}
               <div className="space-y-1">
                 {unpaidItems.map((item) => (
                   <CartUnpaidItem
@@ -267,7 +259,6 @@ export const CartPanel = React.memo(function CartPanel({
                 ))}
               </div>
 
-              {/* Paid Items */}
               {hasPaidItems && (
                 <div className="mt-6 pt-4 border-t border-dashed border-border/35">
                   <div className="flex items-center gap-2 mb-3 px-1 text-muted-foreground/65">
@@ -276,7 +267,6 @@ export const CartPanel = React.memo(function CartPanel({
                       ÖDENMİŞ KALEMLER
                     </span>
                   </div>
-
                   <div className="space-y-1 opacity-90">
                     {paidItems.map((item) => (
                       <CartPaidItem key={`${item.productId}-paid-group`} item={item} />
@@ -291,7 +281,6 @@ export const CartPanel = React.memo(function CartPanel({
         )}
       </div>
 
-      {/* Footer */}
       {hasItems && (
         <CartFooter
           total={total}
@@ -301,28 +290,20 @@ export const CartPanel = React.memo(function CartPanel({
         />
       )}
 
-      {/* Delete Modal */}
       <DeleteOrderDialog
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
-        onConfirm={() => {
-          playRemove()
-          handleConfirmDelete()
-        }}
-        onCancel={() => {
-          playClick()
-          setShowDeleteDialog(false)
-        }}
+        onConfirm={onDialogConfirm}
+        onCancel={onDialogCancel}
       />
     </div>
   )
 })
 
 // ============================================================================
-// Sub-Components (Memoized for performance)
+// Sub-Components
 // ============================================================================
 
-// Sabit bileşen: props yok, hiç re-render olmamalı
 const EmptyCartState = memo(function EmptyCartState(): React.JSX.Element {
   return (
     <div className={STYLES.emptyState}>
@@ -402,7 +383,7 @@ interface DeleteOrderDialogProps {
   onCancel: () => void
 }
 
-const DeleteOrderDialog = function DeleteOrderDialog({
+const DeleteOrderDialog = memo(function DeleteOrderDialog({
   open,
   onOpenChange,
   onConfirm,
@@ -449,4 +430,4 @@ const DeleteOrderDialog = function DeleteOrderDialog({
       </DialogContent>
     </Dialog>
   )
-}
+})
