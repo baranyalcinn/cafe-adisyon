@@ -1,7 +1,7 @@
+import { getBusinessDayStart } from '@shared/utils/date'
 import { Prisma } from '../../generated/prisma/client'
 import { ApiResponse, Expense } from '../../shared/types'
 import { prisma } from '../db/prisma'
-import { getBusinessDayStart } from '../lib/dateUtils'
 import { logger } from '../lib/logger'
 
 export class ExpenseService {

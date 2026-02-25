@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input'
 import { cafeApi, type DailySummary } from '@/lib/api'
 import { cn, formatCurrency } from '@/lib/utils'
+import { getBusinessDayStart } from '@shared/utils/date'
 import { AlertTriangle, CheckCircle, Database, FileText, Loader2, Moon, X } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 
@@ -65,8 +66,7 @@ export function EndOfDayModal({ open, onClose }: EndOfDayModalProps): React.JSX.
         })
         // Fetch today's expenses specifically for better accuracy in reconciliation
         const expenses = await cafeApi.expenses.getAll()
-        const today = new Date()
-        today.setHours(0, 0, 0, 0)
+        const today = getBusinessDayStart(new Date())
         const dayExpensesTotal = expenses
           .filter((e) => new Date(e.createdAt) >= today)
           .filter((e) => e.paymentMethod === 'CASH' || !e.paymentMethod) // Default to CASH for old records

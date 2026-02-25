@@ -4,6 +4,7 @@ import type { OrderStatus, PaymentMethod } from '../shared/types'
 import {
   ActivityLog,
   ApiResponse,
+  BootBundle,
   Category,
   DailySummary,
   Expense,
@@ -18,100 +19,114 @@ import {
   Transaction
 } from '../shared/types'
 
-// Type-safe API for renderer process
+// ============================================================================
+// IPC Communication Helpers (DRY Prensibi)
+// ============================================================================
+
+/** Standart ApiResponse dönen tüm invoke işlemleri için tip güvenli kısaltıcı */
+const invoke = <T>(channel: string, ...args: unknown[]): Promise<ApiResponse<T>> =>
+  ipcRenderer.invoke(channel, ...args)
+
+/** Yanıt dönmeyen (Fire-and-forget) send işlemleri için kısaltıcı */
+const send = (channel: string, ...args: unknown[]): void => ipcRenderer.send(channel, ...args)
+
+// ============================================================================
+// API Object
+// ============================================================================
+
 const api = {
-  // Tables
+  // --- Tables ---
   tables: {
-    getAll: (): Promise<ApiResponse<Table[]>> => ipcRenderer.invoke(IPC_CHANNELS.TABLES_GET_ALL),
+    getAll: (): Promise<ApiResponse<Table[]>> => invoke<Table[]>(IPC_CHANNELS.TABLES_GET_ALL),
     getWithStatus: (): Promise<ApiResponse<(Table & { hasOpenOrder: boolean })[]>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.TABLES_GET_WITH_STATUS),
+      invoke<(Table & { hasOpenOrder: boolean })[]>(IPC_CHANNELS.TABLES_GET_WITH_STATUS),
     create: (name: string): Promise<ApiResponse<Table>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.TABLES_CREATE, { name }),
+      invoke<Table>(IPC_CHANNELS.TABLES_CREATE, { name }),
     delete: (id: string): Promise<ApiResponse<null>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.TABLES_DELETE, { id })
+      invoke<null>(IPC_CHANNELS.TABLES_DELETE, { id })
   },
 
-  // Categories
+  // --- Categories ---
   categories: {
     getAll: (): Promise<ApiResponse<Category[]>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.CATEGORIES_GET_ALL),
+      invoke<Category[]>(IPC_CHANNELS.CATEGORIES_GET_ALL),
     create: (name: string): Promise<ApiResponse<Category>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.CATEGORIES_CREATE, { name }),
+      invoke<Category>(IPC_CHANNELS.CATEGORIES_CREATE, { name }),
     update: (id: string, data: { name?: string; icon?: string }): Promise<ApiResponse<Category>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.CATEGORIES_UPDATE, { id, data }),
+      invoke<Category>(IPC_CHANNELS.CATEGORIES_UPDATE, { id, data }),
     delete: (id: string): Promise<ApiResponse<null>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.CATEGORIES_DELETE, { id })
+      invoke<null>(IPC_CHANNELS.CATEGORIES_DELETE, { id })
   },
 
-  // Products
+  // --- Products ---
   products: {
-    getAll: (): Promise<ApiResponse<Product[]>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.PRODUCTS_GET_ALL),
+    getAll: (): Promise<ApiResponse<Product[]>> => invoke<Product[]>(IPC_CHANNELS.PRODUCTS_GET_ALL),
     getByCategory: (categoryId: string): Promise<ApiResponse<Product[]>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.PRODUCTS_GET_BY_CATEGORY, { categoryId }),
+      invoke<Product[]>(IPC_CHANNELS.PRODUCTS_GET_BY_CATEGORY, { categoryId }),
     getFavorites: (): Promise<ApiResponse<Product[]>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.PRODUCTS_GET_FAVORITES),
+      invoke<Product[]>(IPC_CHANNELS.PRODUCTS_GET_FAVORITES),
     search: (query: string): Promise<ApiResponse<Product[]>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.PRODUCTS_SEARCH, { query }),
+      invoke<Product[]>(IPC_CHANNELS.PRODUCTS_SEARCH, { query }),
     create: (data: {
       name: string
       price: number
       categoryId: string
       isFavorite: boolean
-    }): Promise<ApiResponse<Product>> => ipcRenderer.invoke(IPC_CHANNELS.PRODUCTS_CREATE, data),
+    }): Promise<ApiResponse<Product>> => invoke<Product>(IPC_CHANNELS.PRODUCTS_CREATE, data),
     update: (
       id: string,
       data: { name?: string; price?: number; isFavorite?: boolean }
-    ): Promise<ApiResponse<Product>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.PRODUCTS_UPDATE, { id, data }),
+    ): Promise<ApiResponse<Product>> => invoke<Product>(IPC_CHANNELS.PRODUCTS_UPDATE, { id, data }),
     delete: (id: string): Promise<ApiResponse<null>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.PRODUCTS_DELETE, { id })
+      invoke<null>(IPC_CHANNELS.PRODUCTS_DELETE, { id })
   },
 
-  // Orders
+  // --- Orders ---
   orders: {
     getOpenByTable: (tableId: string): Promise<ApiResponse<Order | null>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.ORDERS_GET_OPEN_BY_TABLE, { tableId }),
+      invoke<Order | null>(IPC_CHANNELS.ORDERS_GET_OPEN_BY_TABLE, { tableId }),
     create: (tableId: string): Promise<ApiResponse<Order>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.ORDERS_CREATE, { tableId }),
+      invoke<Order>(IPC_CHANNELS.ORDERS_CREATE, { tableId }),
     update: (
       orderId: string,
       data: { status?: OrderStatus; totalAmount?: number; isLocked?: boolean }
-    ): Promise<ApiResponse<Order>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.ORDERS_UPDATE, { orderId, data }),
+    ): Promise<ApiResponse<Order>> => invoke<Order>(IPC_CHANNELS.ORDERS_UPDATE, { orderId, data }),
     addItem: (
       orderId: string,
       productId: string,
       quantity: number,
       unitPrice: number
     ): Promise<ApiResponse<Order>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.ORDERS_ADD_ITEM, { orderId, productId, quantity, unitPrice }),
+      invoke<Order>(IPC_CHANNELS.ORDERS_ADD_ITEM, { orderId, productId, quantity, unitPrice }),
     updateItem: (orderItemId: string, quantity: number): Promise<ApiResponse<Order>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.ORDERS_UPDATE_ITEM, { orderItemId, quantity }),
+      invoke<Order>(IPC_CHANNELS.ORDERS_UPDATE_ITEM, { orderItemId, quantity }),
     removeItem: (orderItemId: string): Promise<ApiResponse<Order>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.ORDERS_REMOVE_ITEM, { orderItemId }),
+      invoke<Order>(IPC_CHANNELS.ORDERS_REMOVE_ITEM, { orderItemId }),
     delete: (orderId: string): Promise<ApiResponse<null>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.ORDERS_DELETE, { orderId }),
+      invoke<null>(IPC_CHANNELS.ORDERS_DELETE, { orderId }),
     transfer: (orderId: string, targetTableId: string): Promise<ApiResponse<Order>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.ORDERS_TRANSFER, { orderId, targetTableId }),
+      invoke<Order>(IPC_CHANNELS.ORDERS_TRANSFER, { orderId, targetTableId }),
     merge: (sourceOrderId: string, targetOrderId: string): Promise<ApiResponse<Order>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.ORDERS_MERGE, { sourceOrderId, targetOrderId }),
+      invoke<Order>(IPC_CHANNELS.ORDERS_MERGE, { sourceOrderId, targetOrderId }),
     markItemsPaid: (
       items: { id: string; quantity: number }[],
       paymentDetails?: { amount: number; method: string }
     ): Promise<ApiResponse<Order>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.ORDERS_MARK_ITEMS_PAID, { items, paymentDetails }),
+      invoke<Order>(IPC_CHANNELS.ORDERS_MARK_ITEMS_PAID, { items, paymentDetails }),
     getHistory: (options?: {
       date?: string
       limit?: number
       offset?: number
     }): Promise<ApiResponse<{ orders: Order[]; totalCount: number; hasMore: boolean }>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.ORDERS_GET_HISTORY, options),
+      invoke<{ orders: Order[]; totalCount: number; hasMore: boolean }>(
+        IPC_CHANNELS.ORDERS_GET_HISTORY,
+        options
+      ),
     getDetails: (orderId: string): Promise<ApiResponse<Order>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.ORDERS_GET_DETAILS, { orderId })
+      invoke<Order>(IPC_CHANNELS.ORDERS_GET_DETAILS, { orderId })
   },
 
-  // Payments
+  // --- Payments ---
   payments: {
     create: (
       orderId: string,
@@ -119,54 +134,59 @@ const api = {
       paymentMethod: PaymentMethod,
       options?: { skipLog?: boolean }
     ): Promise<ApiResponse<{ order: Order; completed: boolean }>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.PAYMENTS_CREATE, { orderId, amount, paymentMethod, options }),
+      invoke<{ order: Order; completed: boolean }>(IPC_CHANNELS.PAYMENTS_CREATE, {
+        orderId,
+        amount,
+        paymentMethod,
+        options
+      }),
     getByOrder: (orderId: string): Promise<ApiResponse<Transaction[]>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.PAYMENTS_GET_BY_ORDER, orderId)
+      invoke<Transaction[]>(IPC_CHANNELS.PAYMENTS_GET_BY_ORDER, orderId)
   },
 
-  // Dashboard
+  // --- Dashboard ---
   dashboard: {
     getExtendedStats: (): Promise<ApiResponse<ExtendedDashboardStats>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.DASHBOARD_GET_EXTENDED_STATS),
+      invoke<ExtendedDashboardStats>(IPC_CHANNELS.DASHBOARD_GET_EXTENDED_STATS),
     getRevenueTrend: (days: number = 7): Promise<ApiResponse<RevenueTrendItem[]>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.DASHBOARD_GET_REVENUE_TREND, days),
-    getBundle: (): Promise<ApiResponse<import('../shared/types').DashboardBundle>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.DASHBOARD_GET_BUNDLE)
+      invoke<RevenueTrendItem[]>(IPC_CHANNELS.DASHBOARD_GET_REVENUE_TREND, days),
+    getBundle: (): Promise<ApiResponse<BootBundle>> =>
+      invoke<BootBundle>(IPC_CHANNELS.DASHBOARD_GET_BUNDLE)
   },
 
-  // Admin
+  // --- Admin ---
   admin: {
     verifyPin: (pin: string): Promise<ApiResponse<{ valid: boolean; required: boolean }>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.ADMIN_VERIFY_PIN, { pin }),
+      invoke<{ valid: boolean; required: boolean }>(IPC_CHANNELS.ADMIN_VERIFY_PIN, { pin }),
     checkStatus: (): Promise<ApiResponse<{ required: boolean }>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.ADMIN_CHECK_STATUS),
+      invoke<{ required: boolean }>(IPC_CHANNELS.ADMIN_CHECK_STATUS),
     changePin: (currentPin: string, newPin: string): Promise<ApiResponse<null>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.ADMIN_CHANGE_PIN, { currentPin, newPin }),
+      invoke<null>(IPC_CHANNELS.ADMIN_CHANGE_PIN, { currentPin, newPin }),
     setRecovery: (
       currentPin: string,
       question: string,
       answer: string
     ): Promise<ApiResponse<null>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.ADMIN_SET_RECOVERY, { currentPin, question, answer }),
+      invoke<null>(IPC_CHANNELS.ADMIN_SET_RECOVERY, { currentPin, question, answer }),
     getRecoveryQuestion: (): Promise<ApiResponse<string | null>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.ADMIN_GET_RECOVERY_QUESTION),
+      invoke<string | null>(IPC_CHANNELS.ADMIN_GET_RECOVERY_QUESTION),
     resetPin: (answer: string): Promise<ApiResponse<null>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.ADMIN_RESET_PIN, { answer })
+      invoke<null>(IPC_CHANNELS.ADMIN_RESET_PIN, { answer })
   },
 
-  // Z-Report
+  // --- Z-Report ---
   zReport: {
     generate: (actualCash?: number): Promise<ApiResponse<DailySummary>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.ZREPORT_GENERATE, actualCash),
+      invoke<DailySummary>(IPC_CHANNELS.ZREPORT_GENERATE, actualCash),
     getHistory: (
       limit: number,
       startDate?: string,
       endDate?: string
     ): Promise<ApiResponse<DailySummary[]>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.ZREPORT_GET_HISTORY, limit, startDate, endDate)
+      invoke<DailySummary[]>(IPC_CHANNELS.ZREPORT_GET_HISTORY, limit, startDate, endDate)
   },
 
-  // Activity Logs
+  // --- Logs ---
   logs: {
     getRecent: (
       limit: number = 100,
@@ -176,7 +196,7 @@ const api = {
       search?: string,
       category?: string
     ): Promise<ApiResponse<ActivityLog[]>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.LOGS_GET_RECENT, {
+      invoke<ActivityLog[]>(IPC_CHANNELS.LOGS_GET_RECENT, {
         limit,
         startDate,
         endDate,
@@ -190,12 +210,12 @@ const api = {
       userName?: string,
       details?: string
     ): Promise<ApiResponse<ActivityLog>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.LOGS_CREATE, { action, tableName, userName, details }),
+      invoke<ActivityLog>(IPC_CHANNELS.LOGS_CREATE, { action, tableName, userName, details }),
     getStatsToday: (): Promise<ApiResponse<{ total: number; sys: number; ops: number }>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.LOGS_GET_STATS_TODAY)
+      invoke<{ total: number; sys: number; ops: number }>(IPC_CHANNELS.LOGS_GET_STATS_TODAY)
   },
 
-  // Maintenance
+  // --- Maintenance ---
   maintenance: {
     archiveOldData: (): Promise<
       ApiResponse<{
@@ -205,28 +225,31 @@ const api = {
         deletedExpenses: number
         deletedSummaries: number
       }>
-    > => ipcRenderer.invoke(IPC_CHANNELS.MAINTENANCE_ARCHIVE_OLD_DATA),
+    > => invoke(IPC_CHANNELS.MAINTENANCE_ARCHIVE_OLD_DATA),
     exportData: (
       format: 'json' | 'csv' = 'json'
     ): Promise<ApiResponse<{ filepath: string; count: number }>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.MAINTENANCE_EXPORT_DATA, format),
-    vacuum: (): Promise<ApiResponse<null>> => ipcRenderer.invoke(IPC_CHANNELS.MAINTENANCE_VACUUM),
+      invoke<{ filepath: string; count: number }>(IPC_CHANNELS.MAINTENANCE_EXPORT_DATA, format),
+    vacuum: (): Promise<ApiResponse<null>> => invoke<null>(IPC_CHANNELS.MAINTENANCE_VACUUM),
     backup: (): Promise<ApiResponse<{ backupPath: string }>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.MAINTENANCE_BACKUP),
+      invoke<{ backupPath: string }>(IPC_CHANNELS.MAINTENANCE_BACKUP),
     backupWithRotation: (
       maxBackups: number = 30
     ): Promise<ApiResponse<{ backupPath: string; deletedCount: number; totalBackups: number }>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.MAINTENANCE_BACKUP_WITH_ROTATION, maxBackups)
+      invoke<{ backupPath: string; deletedCount: number; totalBackups: number }>(
+        IPC_CHANNELS.MAINTENANCE_BACKUP_WITH_ROTATION,
+        maxBackups
+      )
   },
 
-  // Expenses
+  // --- Expenses ---
   expenses: {
     create: (data: {
       description: string
       amount: number
       category?: string
       paymentMethod?: string
-    }): Promise<ApiResponse<Expense>> => ipcRenderer.invoke(IPC_CHANNELS.EXPENSES_CREATE, data),
+    }): Promise<ApiResponse<Expense>> => invoke<Expense>(IPC_CHANNELS.EXPENSES_CREATE, data),
     getAll: (options?: {
       limit?: number
       offset?: number
@@ -235,36 +258,33 @@ const api = {
       startDate?: string
       endDate?: string
     }): Promise<ApiResponse<{ expenses: Expense[]; totalCount: number; hasMore: boolean }>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.EXPENSES_GET_ALL, options),
+      invoke<{ expenses: Expense[]; totalCount: number; hasMore: boolean }>(
+        IPC_CHANNELS.EXPENSES_GET_ALL,
+        options
+      ),
     getStats: (options?: {
       search?: string
       category?: string
       startDate?: string
       endDate?: string
     }): Promise<ApiResponse<ExpenseStats>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.EXPENSES_GET_STATS, options),
+      invoke<ExpenseStats>(IPC_CHANNELS.EXPENSES_GET_STATS, options),
     update: (
       id: string,
       data: { description?: string; amount?: number; category?: string; paymentMethod?: string }
-    ): Promise<ApiResponse<Expense>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.EXPENSES_UPDATE, { id, data }),
+    ): Promise<ApiResponse<Expense>> => invoke<Expense>(IPC_CHANNELS.EXPENSES_UPDATE, { id, data }),
     delete: (id: string): Promise<ApiResponse<null>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.EXPENSES_DELETE, { id })
+      invoke<null>(IPC_CHANNELS.EXPENSES_DELETE, { id })
   },
 
-  // End of Day
+  // --- End of Day ---
   endOfDay: {
     check: (): Promise<
       ApiResponse<{
         canProceed: boolean
-        openTables: {
-          tableId: string
-          tableName: string
-          orderId: string
-          totalAmount: number
-        }[]
+        openTables: { tableId: string; tableName: string; orderId: string; totalAmount: number }[]
       }>
-    > => ipcRenderer.invoke(IPC_CHANNELS.END_OF_DAY_CHECK),
+    > => invoke(IPC_CHANNELS.END_OF_DAY_CHECK),
     execute: (
       actualCash?: number
     ): Promise<
@@ -274,51 +294,47 @@ const api = {
         deletedBackups: number
         vacuumCompleted: boolean
       }>
-    > => ipcRenderer.invoke(IPC_CHANNELS.END_OF_DAY_EXECUTE, actualCash)
+    > => invoke(IPC_CHANNELS.END_OF_DAY_EXECUTE, actualCash)
   },
 
-  // Seed
+  // --- System & Reports & Others ---
   seed: {
     database: (): Promise<ApiResponse<{ categories: number; products: number; tables: number }>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.SEED_DATABASE)
+      invoke<{ categories: number; products: number; tables: number }>(IPC_CHANNELS.SEED_DATABASE)
   },
-
-  // System
   system: {
     check: (): Promise<ApiResponse<{ dbPath: string; connection: boolean; tableCount: number }>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.SYSTEM_CHECK),
+      invoke<{ dbPath: string; connection: boolean; tableCount: number }>(
+        IPC_CHANNELS.SYSTEM_CHECK
+      ),
     checkUpdate: (): Promise<
       ApiResponse<{ available: boolean; version?: string; currentVersion?: string }>
-    > => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM_CHECK_UPDATE),
-    downloadUpdate: (): void => ipcRenderer.send(IPC_CHANNELS.SYSTEM_DOWNLOAD_UPDATE),
-    getVersion: (): Promise<string> => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM_GET_VERSION),
-    restart: (): void => ipcRenderer.send(IPC_CHANNELS.SYSTEM_RESTART),
-    getBootBundle: (): Promise<ApiResponse<import('../shared/types').BootBundle>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.SYSTEM_GET_BOOT_BUNDLE)
+    > => invoke(IPC_CHANNELS.SYSTEM_CHECK_UPDATE),
+    downloadUpdate: (): void => send(IPC_CHANNELS.SYSTEM_DOWNLOAD_UPDATE), // <--- Send kullanıldı
+    getVersion: (): Promise<string> => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM_GET_VERSION), // <--- ApiResponse dönmediği için istisna!
+    restart: (): void => send(IPC_CHANNELS.SYSTEM_RESTART), // <--- Send kullanıldı
+    getBootBundle: (): Promise<ApiResponse<BootBundle>> =>
+      invoke<BootBundle>(IPC_CHANNELS.SYSTEM_GET_BOOT_BUNDLE)
   },
-
-  // Reports
   reports: {
     getMonthly: (limit: number = 12): Promise<ApiResponse<MonthlyReport[]>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.REPORTS_GET_MONTHLY, limit)
+      invoke<MonthlyReport[]>(IPC_CHANNELS.REPORTS_GET_MONTHLY, limit)
   },
-
-  // Window Controls
   window: {
-    minimize: (): void => ipcRenderer.send(IPC_CHANNELS.WINDOW_MINIMIZE),
-    maximize: (): void => ipcRenderer.send(IPC_CHANNELS.WINDOW_MAXIMIZE),
-    close: (): void => ipcRenderer.send(IPC_CHANNELS.WINDOW_CLOSE)
+    minimize: (): void => send(IPC_CHANNELS.WINDOW_MINIMIZE),
+    maximize: (): void => send(IPC_CHANNELS.WINDOW_MAXIMIZE),
+    close: (): void => send(IPC_CHANNELS.WINDOW_CLOSE)
   },
 
-  // Events
+  // --- Main Event Listener ---
   on: (
     channel: (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS] | 'dashboard:update',
     callback: (...args: unknown[]) => void
-  ) => {
+  ): (() => void) => {
     const subscription = (_event: Electron.IpcRendererEvent, ...args: unknown[]): void =>
       callback(...args)
     ipcRenderer.on(channel, subscription)
-    return () => {
+    return (): void => {
       ipcRenderer.removeListener(channel, subscription)
     }
   }
@@ -327,19 +343,17 @@ const api = {
 // Export API type for renderer
 export type ApiType = typeof api
 
-// Use `contextBridge` APIs to expose Electron APIs to
-// renderer only if context isolation is enabled, otherwise
-// just add to the DOM global.
+// Expose API
 if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('electron', electronAPI)
     contextBridge.exposeInMainWorld('api', api)
   } catch (error) {
-    console.error(error)
+    console.error('Failed to expose APIs in contextBridge:', error)
   }
 } else {
-  // @ts-ignore (define in dts)
+  // @ts-ignore - Define window globals for development/non-isolated mode
   window.electron = electronAPI
-  // @ts-ignore (define in dts)
+  // @ts-ignore - Define window globals for development/non-isolated mode
   window.api = api
 }

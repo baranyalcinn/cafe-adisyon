@@ -16,6 +16,7 @@ import {
   SheetTitle
 } from '@/components/ui/sheet'
 import type { Expense } from '@shared/types'
+import { toCents, toLira } from '@shared/utils/currency'
 import { AlignLeft, Banknote, CreditCard, Tag, Trash2, TrendingDown } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 
@@ -46,7 +47,7 @@ export function ExpenseSheet({
       if (expense) {
         // Edit Mode - amount is stored in kuruş, convert to TL for display
         setDescription(expense.description)
-        setAmount((expense.amount / 100).toString())
+        setAmount(toLira(expense.amount).toString())
         setCategory(expense.category || '')
         setPaymentMethod(expense.paymentMethod || 'CASH')
         // Expense type currently doesn't have 'note', but UI could support it later
@@ -68,7 +69,7 @@ export function ExpenseSheet({
     try {
       await onSubmit({
         description,
-        amount: parseFloat(amount),
+        amount: toCents(amount),
         category: category || undefined,
         paymentMethod
       })

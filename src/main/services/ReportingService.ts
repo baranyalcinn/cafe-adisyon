@@ -1,3 +1,5 @@
+import { formatCurrency } from '@shared/utils/currency'
+import { getBusinessDayStart } from '@shared/utils/date'
 import { subDays } from 'date-fns'
 import {
   ApiResponse,
@@ -7,103 +9,125 @@ import {
   RevenueTrendItem
 } from '../../shared/types'
 import { prisma } from '../db/prisma'
-import { getBusinessDayStart } from '../lib/dateUtils'
 import { logger } from '../lib/logger'
 import { logService } from './LogService'
 
-const DEFAULT_VAT_RATE = 0.1
+// ============================================================================
+// System Configuration
+// ============================================================================
+
+const CONFIG = {
+  VAT_RATE: 0.1,
+  DEFAULT_TREND_DAYS: 7,
+  DEFAULT_HISTORY_LIMIT: 30,
+  DEFAULT_MONTHLY_LIMIT: 12
+} as const
+
+// ============================================================================
+// Service Class
+// ============================================================================
+
+interface BaseStats {
+  today: Date
+  dailyRevenue: number
+  totalOrders: number
+  paymentMethodBreakdown: { cash: number; card: number }
+  topProducts: { productId: string; productName: string; quantity: number }[]
+  categoryBreakdown: { categoryName: string; revenue: number; quantity: number; icon?: string }[]
+}
 
 export class ReportingService {
+  // --- Private Utility Methods ---
+
+  private handleError<T = null>(
+    methodName: string,
+    error: unknown,
+    defaultMessage: string
+  ): ApiResponse<T> {
+    logger.error(`ReportingService.${methodName}`, error)
+    if (
+      error instanceof Error &&
+      !error.message.includes('prisma') &&
+      !error.message.includes('Database')
+    ) {
+      return { success: false, error: error.message }
+    }
+    return { success: false, error: defaultMessage }
+  }
+
   /**
-   * Generates a Z-Report for the current shift.
-   * Logic: Revenue is based on TRANSACTIONS (Payments) collected since last report.
-   * Orders count is based on CLOSED orders.
-   * Handles midnight shifts by smart-dating < 5AM to yesterday.
+   * Ayın ilk gününü temsil eden, timezone sorunlarından arındırılmış UTC string üretir.
    */
+  private getStableMonthDate(dateInput: Date | string): Date {
+    const d = new Date(dateInput)
+    const year = d.getFullYear()
+    const monthStr = String(d.getMonth() + 1).padStart(2, '0')
+    return new Date(`${year}-${monthStr}-01T00:00:00.000Z`)
+  }
+
+  /**
+   * Gelen değerin geçerli bir Date nesnesine dönüşüp dönüşemeyeceğini kontrol eder.
+   */
+  private parseSafeDate(val?: Date | string): Date | undefined {
+    if (!val) return undefined
+    const parsed = new Date(val)
+    return !isNaN(parsed.getTime()) ? parsed : undefined
+  }
+
+  // --- Public Methods ---
+
   async generateZReport(actualCash?: number): Promise<ApiResponse<DailySummary>> {
     try {
       const now = new Date()
-
-      // Smart Dating: If before 05:00 AM, assume it belongs to the previous day (Shift logic)
       const reportDate = getBusinessDayStart(now)
 
-      // Find the Last Z-Report taken BEFORE this report date
       const lastReport = await prisma.dailySummary.findFirst({
-        where: {
-          date: { lt: reportDate }
-        },
-        orderBy: {
-          createdAt: 'desc'
-        }
+        where: { date: { lt: reportDate } },
+        orderBy: { createdAt: 'desc' }
       })
 
       const startDate = lastReport ? lastReport.createdAt : new Date(0)
+      const dateFilter = { gt: startDate, lte: now }
 
-      // 1. Get ALL closed orders count since last report
-      const periodicOrdersCount = await prisma.order.count({
-        where: {
-          status: 'CLOSED',
-          createdAt: { gt: startDate, lte: now }
-        }
-      })
-
-      // 2. Get Revenue & Payment Breakdown using Aggregation
-      const [transactionAgg, paymentMethodAgg] = await Promise.all([
-        // Total revenue from all transactions
-        prisma.transaction.aggregate({
-          where: { createdAt: { gt: startDate, lte: now } },
-          _sum: { amount: true }
-        }),
-        // Breakdown by payment method
-        prisma.transaction.groupBy({
-          by: ['paymentMethod'],
-          where: { createdAt: { gt: startDate, lte: now } },
-          _sum: { amount: true }
-        })
-      ])
+      const [periodicOrdersCount, transactionAgg, paymentMethodAgg, expenseAgg] = await Promise.all(
+        [
+          prisma.order.count({ where: { status: 'CLOSED', createdAt: dateFilter } }),
+          prisma.transaction.aggregate({
+            where: { createdAt: dateFilter },
+            _sum: { amount: true }
+          }),
+          prisma.transaction.groupBy({
+            by: ['paymentMethod'],
+            where: { createdAt: dateFilter },
+            _sum: { amount: true }
+          }),
+          prisma.expense.aggregate({ where: { createdAt: dateFilter }, _sum: { amount: true } })
+        ]
+      )
 
       const totalRevenue = transactionAgg._sum.amount || 0
-
-      // Extract cash/card totals from groupBy result
       const totalCash = paymentMethodAgg.find((p) => p.paymentMethod === 'CASH')?._sum.amount || 0
       const totalCard = paymentMethodAgg.find((p) => p.paymentMethod === 'CARD')?._sum.amount || 0
-
-      // 3. Get Total Expenses using Aggregation
-      const expenseAgg = await prisma.expense.aggregate({
-        where: { createdAt: { gt: startDate, lte: now } },
-        _sum: { amount: true }
-      })
       const totalExpenses = expenseAgg._sum.amount || 0
 
       const netProfit = totalRevenue - totalExpenses
-      const totalVat = Math.round(totalRevenue * DEFAULT_VAT_RATE)
+      const totalVat = Math.round(totalRevenue * CONFIG.VAT_RATE)
 
-      // Upsert summary
+      const summaryPayload = {
+        totalCash,
+        actualCash: actualCash ?? totalCash,
+        totalCard,
+        totalExpenses,
+        netProfit,
+        totalVat,
+        orderCount: periodicOrdersCount,
+        totalRevenue
+      }
+
       const summary = await prisma.dailySummary.upsert({
         where: { date: reportDate },
-        create: {
-          date: reportDate,
-          totalCash,
-          actualCash: actualCash ?? totalCash,
-          totalCard,
-          totalExpenses,
-          netProfit,
-          cancelCount: 0,
-          totalVat,
-          orderCount: periodicOrdersCount,
-          totalRevenue
-        },
-        update: {
-          totalCash,
-          actualCash: actualCash ?? totalCash,
-          totalCard,
-          totalExpenses,
-          netProfit,
-          totalVat,
-          orderCount: periodicOrdersCount,
-          totalRevenue,
-          createdAt: now
-        }
+        create: { date: reportDate, cancelCount: 0, ...summaryPayload },
+        update: { ...summaryPayload, createdAt: now }
       })
 
       await this.incrementMonthlyReport(
@@ -113,51 +137,30 @@ export class ReportingService {
         netProfit,
         periodicOrdersCount
       )
-
-      // Log activity
       await logService.createLog(
         'GENERATE_ZREPORT',
         undefined,
-        `Gün sonu Z-Raporu oluşturuldu: ₺${totalRevenue / 100}`
+        `Gün sonu Z-Raporu oluşturuldu: ${formatCurrency(totalRevenue)}`
       )
 
-      // WAL Checkpoint: Flush Write-Ahead Log to main DB at end of business day
+      // WAL Checkpoint
       try {
         await prisma.$executeRawUnsafe('PRAGMA wal_checkpoint(TRUNCATE)')
-        logger.debug('ReportingService', 'WAL checkpoint executed after Z-Report.')
       } catch (walError) {
         logger.error('ReportingService.walCheckpoint', walError)
       }
 
       return { success: true, data: summary }
     } catch (error) {
-      logger.error('ReportingService.generateZReport', error)
-      return { success: false, error: 'Z-Raporu oluşturulamadı.' }
+      return this.handleError('generateZReport', error, 'Z-Raporu oluşturulamadı.')
     }
   }
 
-  /**
-   * Shared base stats calculation used by both getDashboardStats and getExtendedDashboardStats.
-   * Avoids duplicating the common queries for transactions, items, and top products.
-   */
-  private async getBaseStats(topProductLimit: number = 5): Promise<{
-    today: Date
-    dailyRevenue: number
-    totalOrders: number
-    paymentMethodBreakdown: { cash: number; card: number }
-    topProducts: { productId: string; productName: string; quantity: number }[]
-    categoryBreakdown: { categoryName: string; revenue: number; quantity: number }[]
-  }> {
-    const now = new Date()
-    const today = getBusinessDayStart(now)
+  private async getBaseStats(topProductLimit: number = 5): Promise<BaseStats> {
+    const today = getBusinessDayStart(new Date())
 
-    // Fetch Orders count directly
-    const totalOrders = await prisma.order.count({
-      where: { status: 'CLOSED', createdAt: { gte: today } }
-    })
-
-    // Parallel fetch: transaction sums and orderItem grouping
-    const [transactionAgg, paymentMethods, orderItemGroups] = await Promise.all([
+    const [totalOrders, transactionAgg, paymentMethods, orderItemGroups] = await Promise.all([
+      prisma.order.count({ where: { status: 'CLOSED', createdAt: { gte: today } } }),
       prisma.transaction.aggregate({
         where: { createdAt: { gte: today } },
         _sum: { amount: true }
@@ -175,26 +178,15 @@ export class ReportingService {
     ])
 
     const dailyRevenue = transactionAgg._sum.amount || 0
-
     const paymentMethodBreakdown = {
       cash: paymentMethods.find((p) => p.paymentMethod === 'CASH')?._sum.amount || 0,
       card: paymentMethods.find((p) => p.paymentMethod === 'CARD')?._sum.amount || 0
     }
 
-    // Since we can't join relations in Prisma groupBy, fetch product metadata for the grouped items
     const productIds = Array.from(new Set(orderItemGroups.map((g) => g.productId)))
     const products = await prisma.product.findMany({
       where: { id: { in: productIds } },
-      select: {
-        id: true,
-        name: true,
-        category: {
-          select: {
-            name: true,
-            icon: true
-          }
-        }
-      }
+      select: { id: true, name: true, category: { select: { name: true, icon: true } } }
     })
 
     const productCounts = new Map<string, { name: string; quantity: number }>()
@@ -202,41 +194,30 @@ export class ReportingService {
 
     orderItemGroups.forEach((group) => {
       const quantity = group._sum.quantity || 0
-      const productId = group.productId
-      const unitPrice = group.unitPrice
-      const product = products.find((p) => p.id === productId)
-
+      const product = products.find((p) => p.id === group.productId)
       const productName = product?.name || 'Ürün'
 
-      // Accumulate Product quantities (ignoring unitPrice splits here, just total quantity per product)
-      const existingProd = productCounts.get(productId)
-      if (existingProd) {
-        existingProd.quantity += quantity
-      } else {
-        productCounts.set(productId, { name: productName, quantity })
-      }
+      const existingProd = productCounts.get(group.productId)
+      if (existingProd) existingProd.quantity += quantity
+      else productCounts.set(group.productId, { name: productName, quantity })
 
-      // Accumulate Category breakdowns
       const catName = product?.category?.name || 'Diğer'
-      const catIcon = product?.category?.icon
-      const existingCat = categoryMap.get(catName) || { revenue: 0, quantity: 0 }
-
+      const existingCat = categoryMap.get(catName) || {
+        revenue: 0,
+        quantity: 0,
+        icon: product?.category?.icon
+      }
       categoryMap.set(catName, {
-        revenue: existingCat.revenue + quantity * unitPrice,
+        revenue: existingCat.revenue + quantity * group.unitPrice,
         quantity: existingCat.quantity + quantity,
-        icon: catIcon
+        icon: existingCat.icon
       })
     })
 
-    const allProducts = Array.from(productCounts.entries())
-      .map(([productId, data]) => ({
-        productId,
-        productName: data.name,
-        quantity: data.quantity
-      }))
+    const topProducts = Array.from(productCounts.entries())
+      .map(([productId, data]) => ({ productId, productName: data.name, quantity: data.quantity }))
       .sort((a, b) => b.quantity - a.quantity)
-
-    const topProducts = allProducts.slice(0, topProductLimit)
+      .slice(0, topProductLimit)
 
     const categoryBreakdown = Array.from(categoryMap.entries())
       .map(([categoryName, data]) => ({ categoryName, ...data }))
@@ -252,48 +233,31 @@ export class ReportingService {
     }
   }
 
-  // NOTE: getDashboardStats removed — only getExtendedDashboardStats is used by the frontend.
-
   async getExtendedDashboardStats(): Promise<ApiResponse<ExtendedDashboardStats>> {
     try {
-      const {
-        dailyRevenue,
-        totalOrders,
-        paymentMethodBreakdown,
-        topProducts,
-        categoryBreakdown,
-        today
-      } = await this.getBaseStats(10)
+      const baseStats = await this.getBaseStats(10)
 
       const [openTables, pendingOrders, expensesAggregate, hourlyAgg] = await Promise.all([
         prisma.table.count({ where: { orders: { some: { status: 'OPEN' } } } }),
         prisma.order.count({ where: { status: 'OPEN', items: { some: {} } } }),
-        prisma.expense.aggregate({ where: { createdAt: { gte: today } }, _sum: { amount: true } }),
-        // Group by hour in SQL instead of Node to avoid memory bloat
+        prisma.expense.aggregate({
+          where: { createdAt: { gte: baseStats.today } },
+          _sum: { amount: true }
+        }),
         prisma.$queryRaw<{ hour: string; revenue: number | bigint; count: number | bigint }[]>`
-          SELECT
-            strftime('%H', "createdAt", 'localtime') as hour,
-            SUM("totalAmount") as revenue,
-            COUNT(id) as count
-          FROM "Order"
-          WHERE "status" = 'CLOSED' AND "createdAt" >= ${today.toISOString()}
-          GROUP BY hour
+          SELECT strftime('%H', "createdAt", 'localtime') as hour, SUM("totalAmount") as revenue, COUNT(id) as count
+          FROM "Order" WHERE "status" = 'CLOSED' AND "createdAt" >= ${baseStats.today.toISOString()} GROUP BY hour
         `
       ])
 
-      const dailyExpenses = expensesAggregate._sum.amount || 0
-
-      // Calculate Hourly Activity from closed orders aggregated in DB
       const hourlyStats = new Map<string, { revenue: number; count: number }>()
-      for (let i = 0; i < 24; i++) {
-        hourlyStats.set(i.toString().padStart(2, '0'), { revenue: 0, count: 0 })
-      }
+      for (let i = 0; i < 24; i++)
+        hourlyStats.set(String(i).padStart(2, '0'), { revenue: 0, count: 0 })
 
       for (const row of hourlyAgg) {
         if (!row.hour) continue
-        const hourStr = row.hour
-        const current = hourlyStats.get(hourStr) || { revenue: 0, count: 0 }
-        hourlyStats.set(hourStr, {
+        const current = hourlyStats.get(row.hour) || { revenue: 0, count: 0 }
+        hourlyStats.set(row.hour, {
           revenue: current.revenue + Number(row.revenue || 0),
           count: current.count + Number(row.count || 0)
         })
@@ -310,71 +274,41 @@ export class ReportingService {
       return {
         success: true,
         data: {
-          dailyRevenue,
-          totalOrders,
-          paymentMethodBreakdown,
-          topProducts,
-          categoryBreakdown,
-          dailyExpenses,
+          ...baseStats,
+          dailyExpenses: expensesAggregate._sum.amount || 0,
           openTables,
           pendingOrders,
           hourlyActivity
         }
       }
     } catch (error) {
-      logger.error('ReportingService.getExtendedDashboardStats', error)
-      return { success: false, error: String(error) }
+      return this.handleError('getExtendedDashboardStats', error, 'Dashboard verileri alınamadı.')
     }
   }
 
-  async getRevenueTrend(days: number = 7): Promise<ApiResponse<RevenueTrendItem[]>> {
+  async getRevenueTrend(
+    days: number = CONFIG.DEFAULT_TREND_DAYS
+  ): Promise<ApiResponse<RevenueTrendItem[]>> {
     try {
       const result: RevenueTrendItem[] = []
-      const now = new Date()
-      // Current business day start
-      const today = getBusinessDayStart(now)
-      // Range start (e.g., 7 business days ago)
+      const today = getBusinessDayStart(new Date())
       const startDate = subDays(today, days - 1)
 
-      // 1. Fetch historical summaries from DailySummary table (Source of Truth for past days)
-      const pastSummaries = await prisma.dailySummary.findMany({
-        where: {
-          date: {
-            gte: startDate,
-            lt: today
-          }
-        },
-        orderBy: { date: 'asc' }
-      })
-
-      // 2. Fetch current day's live transactions (For the unfinished business day)
-      const currentAgg = await prisma.transaction.aggregate({
-        where: {
-          createdAt: { gte: today }
-        },
-        _sum: { amount: true }
-      })
-
-      const currentOrderCount = await prisma.order.count({
-        where: {
-          status: 'CLOSED',
-          createdAt: { gte: today }
-        }
-      })
+      const [pastSummaries, currentAgg, currentOrderCount] = await Promise.all([
+        prisma.dailySummary.findMany({
+          where: { date: { gte: startDate, lt: today } },
+          orderBy: { date: 'asc' }
+        }),
+        prisma.transaction.aggregate({
+          where: { createdAt: { gte: today } },
+          _sum: { amount: true }
+        }),
+        prisma.order.count({ where: { status: 'CLOSED', createdAt: { gte: today } } })
+      ])
 
       const liveRevenue = currentAgg._sum.amount || 0
+      const summaryMap = new Map(pastSummaries.map((s) => [s.date.toISOString().split('T')[0], s]))
 
-      // Map summaries for quick lookup
-      const summaryMap = new Map<string, { revenue: number; orderCount: number }>()
-      pastSummaries.forEach((s) => {
-        const key = s.date.toISOString().split('T')[0]
-        summaryMap.set(key, {
-          revenue: s.totalRevenue,
-          orderCount: s.orderCount || 0
-        })
-      })
-
-      // 3. Build the response array
       for (let i = days - 1; i >= 0; i--) {
         const date = subDays(today, i)
         const dateKey = date.toISOString().split('T')[0]
@@ -383,36 +317,24 @@ export class ReportingService {
         let orderCount = 0
 
         if (i === 0) {
-          // Today (Live data)
           revenue = liveRevenue
           orderCount = currentOrderCount
         } else {
-          // Past days (Z-Report data)
           const bucket = summaryMap.get(dateKey)
           if (bucket) {
-            revenue = bucket.revenue
-            orderCount = bucket.orderCount
+            revenue = bucket.totalRevenue
+            orderCount = bucket.orderCount || 0
           }
         }
-
-        result.push({
-          date: date.toISOString(),
-          revenue,
-          orderCount
-        })
+        result.push({ date: date.toISOString(), revenue, orderCount })
       }
 
       return { success: true, data: result }
     } catch (error) {
-      logger.error('ReportingService.getRevenueTrend', error)
-      return { success: false, error: 'Gelir trendi hesaplanamadı.' }
+      return this.handleError('getRevenueTrend', error, 'Gelir trendi hesaplanamadı.')
     }
   }
 
-  /**
-   * Instead of fully recalculating the month on every Z-Report,
-   * cleanly increment using the latest closed numbers to avoid heavy database load.
-   */
   async incrementMonthlyReport(
     date: Date,
     revenue: number,
@@ -421,16 +343,7 @@ export class ReportingService {
     ordersCount: number
   ): Promise<void> {
     try {
-      // Create a timezone-stable absolute month date regardless of system local time
-      // E.g., for Feb 2026, it will always be "2026-02-01T00:00:00.000Z"
-      const year = date.getFullYear()
-      const monthStr = String(date.getMonth() + 1).padStart(2, '0')
-      const stableMonthDate = new Date(`${year}-${monthStr}-01T00:00:00.000Z`)
-
-      logger.debug(
-        'ReportingService.incrementMonthlyReport',
-        `Incrementing report for ${stableMonthDate.toISOString()}: Revenue=+${revenue}, Expenses=+${expenses}, Profit=+${profit}`
-      )
+      const stableMonthDate = this.getStableMonthDate(date)
 
       await prisma.monthlyReport.upsert({
         where: { monthDate: stableMonthDate },
@@ -453,41 +366,25 @@ export class ReportingService {
     }
   }
 
-  /**
-   * One-time cleanup utility to merge duplicate MonthlyReport entries caused by prior timezone inconsistencies.
-   * Runs on application startup.
-   */
   async mergeDuplicateMonthlyReports(): Promise<void> {
     try {
-      const allReports = await prisma.monthlyReport.findMany({
-        orderBy: { monthDate: 'asc' }
-      })
+      const allReports = await prisma.monthlyReport.findMany({ orderBy: { monthDate: 'asc' } })
 
-      // Group by YYYY-MM
       const grouped = new Map<string, typeof allReports>()
       for (const report of allReports) {
-        const d = new Date(report.monthDate)
-        const formatKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+        const formatKey = this.getStableMonthDate(report.monthDate).toISOString()
         const arr = grouped.get(formatKey) || []
         arr.push(report)
         grouped.set(formatKey, arr)
       }
 
-      // Merge groups with > 1 record
       for (const [key, records] of grouped.entries()) {
         if (records.length <= 1) continue
 
-        logger.info('ReportingService', `Merging duplicate monthly reports for ${key}`)
         const [primary, ...duplicates] = records
-
-        let totalRevenue = primary.totalRevenue
-        let totalExpenses = primary.totalExpenses
-        let netProfit = primary.netProfit
-        let orderCount = primary.orderCount
-
+        let { totalRevenue, totalExpenses, netProfit, orderCount } = primary
         const idsToDelete: string[] = []
 
-        // Accumulate totals and collect IDs
         for (const dup of duplicates) {
           totalRevenue += dup.totalRevenue
           totalExpenses += dup.totalExpenses
@@ -496,30 +393,13 @@ export class ReportingService {
           idsToDelete.push(dup.id)
         }
 
-        const stableMonthDate = new Date(`${key}-01T00:00:00.000Z`)
-
-        // Run as transaction: First delete conflicting duplicates, then update primary.
         await prisma.$transaction(async (tx) => {
-          await tx.monthlyReport.deleteMany({
-            where: { id: { in: idsToDelete } }
-          })
-
+          await tx.monthlyReport.deleteMany({ where: { id: { in: idsToDelete } } })
           await tx.monthlyReport.update({
             where: { id: primary.id },
-            data: {
-              totalRevenue,
-              totalExpenses,
-              netProfit,
-              orderCount,
-              monthDate: stableMonthDate
-            }
+            data: { totalRevenue, totalExpenses, netProfit, orderCount, monthDate: new Date(key) }
           })
         })
-
-        logger.info(
-          'ReportingService',
-          `Successfully merged ${idsToDelete.length} duplicates for ${key}.`
-        )
       }
     } catch (error) {
       logger.error('ReportingService.mergeDuplicateMonthlyReports', error)
@@ -527,45 +407,34 @@ export class ReportingService {
   }
 
   async getReportsHistory(
-    limit: number = 30,
+    limit: number = CONFIG.DEFAULT_HISTORY_LIMIT,
     startDate?: Date | string,
     endDate?: Date | string
   ): Promise<ApiResponse<DailySummary[]>> {
     try {
-      // Explicitly convert to Date objects to ensure IPC reliability
-      const start =
-        startDate && !isNaN(new Date(startDate).getTime()) ? new Date(startDate) : undefined
-      const end = endDate && !isNaN(new Date(endDate).getTime()) ? new Date(endDate) : undefined
+      const start = this.parseSafeDate(startDate)
+      const end = this.parseSafeDate(endDate)
 
-      logger.debug(
-        'ReportingService.getReportsHistory',
-        `Fetching reports: limit=${limit}, start=${start ? start.toISOString() : 'any'}, end=${end ? end.toISOString() : 'any'}`
-      )
+      // Temiz where filtresi
+      const dateFilter: { gte?: Date; lte?: Date } = {}
+      if (start) dateFilter.gte = start
+      if (end) dateFilter.lte = end
 
       const reports = await prisma.dailySummary.findMany({
-        where: {
-          ...(start || end
-            ? {
-                date: {
-                  ...(start && { gte: start }),
-                  ...(end && { lte: end })
-                }
-              }
-            : {})
-        },
+        where: Object.keys(dateFilter).length > 0 ? { date: dateFilter } : {},
         orderBy: { date: 'desc' },
         take: limit
       })
 
-      logger.debug('ReportingService.getReportsHistory', `Found ${reports.length} reports`)
       return { success: true, data: reports }
     } catch (error) {
-      logger.error('ReportingService.getReportsHistory', error)
-      return { success: false, error: String(error) }
+      return this.handleError('getReportsHistory', error, 'Rapor geçmişi alınamadı.')
     }
   }
 
-  async getMonthlyReports(limit: number = 12): Promise<ApiResponse<MonthlyReport[]>> {
+  async getMonthlyReports(
+    limit: number = CONFIG.DEFAULT_MONTHLY_LIMIT
+  ): Promise<ApiResponse<MonthlyReport[]>> {
     try {
       const reports = await prisma.monthlyReport.findMany({
         orderBy: { monthDate: 'desc' },
@@ -573,8 +442,7 @@ export class ReportingService {
       })
       return { success: true, data: reports }
     } catch (error) {
-      logger.error('ReportingService.getMonthlyReports', error)
-      return { success: false, error: 'Aylık raporlar alınamadı.' }
+      return this.handleError('getMonthlyReports', error, 'Aylık raporlar alınamadı.')
     }
   }
 }

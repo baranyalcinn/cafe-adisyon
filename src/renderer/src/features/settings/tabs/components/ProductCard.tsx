@@ -9,6 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@renderer/components/ui/dropdown-menu'
+import { toCents, toLira } from '@shared/utils/currency'
 import { Check, MoreHorizontal, Pencil, Star, Trash2, X } from 'lucide-react'
 import { memo, useState } from 'react'
 
@@ -27,14 +28,14 @@ export const ProductCard = memo(function ProductCard({
 }: ProductCardProps): React.JSX.Element {
   const [isEditing, setIsEditing] = useState(false)
   const [editName, setEditName] = useState(product.name)
-  const [editPrice, setEditPrice] = useState((product.price / 100).toString())
+  const [editPrice, setEditPrice] = useState(toLira(product.price).toString())
 
   const handleSave = async (): Promise<void> => {
     if (!editName.trim() || !editPrice) return
-    const sanitizedPrice = editPrice.replace(',', '.') // Virgül desteği
+    // const sanitizedPrice = editPrice.replace(',', '.') // Virgül desteği - toCents handles this
     await onUpdate(product.id, {
       name: editName,
-      price: Math.round(parseFloat(sanitizedPrice) * 100)
+      price: toCents(editPrice)
     })
     setIsEditing(false)
   }

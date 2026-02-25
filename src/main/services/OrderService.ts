@@ -1,3 +1,5 @@
+import { formatCurrency } from '@shared/utils/currency'
+import { getBusinessDayStart } from '@shared/utils/date'
 import { EventEmitter } from 'events'
 import { Prisma } from '../../generated/prisma/client'
 import { ApiResponse, Order, ORDER_STATUS, OrderStatus } from '../../shared/types'
@@ -537,7 +539,7 @@ export class OrderService extends EventEmitter {
 
       if (result.logs.length > 0) {
         const logDetails = paymentDetails
-          ? `₺${paymentDetails.amount / 100} ${paymentDetails.method === 'CASH' ? 'Nakit' : 'Kart'} ile Ürün ödemesi alındı: ${result.logs.join(', ')}`
+          ? `${formatCurrency(paymentDetails.amount)} ${paymentDetails.method === 'CASH' ? 'Nakit' : 'Kart'} ile Ürün ödemesi alındı: ${result.logs.join(', ')}`
           : `Ürün ödemesi alındı: ${result.logs.join(', ')}`
         await logService.createLog('ITEMS_PAID', finalOrder.table?.name, logDetails)
       }
@@ -558,8 +560,7 @@ export class OrderService extends EventEmitter {
       let dateFilter = {}
 
       if (date) {
-        const filterDate = new Date(date)
-        filterDate.setHours(0, 0, 0, 0)
+        const filterDate = getBusinessDayStart(new Date(date))
         const nextDay = new Date(filterDate)
         nextDay.setDate(nextDay.getDate() + 1)
         dateFilter = { createdAt: { gte: filterDate, lt: nextDay } }
@@ -724,7 +725,7 @@ export class OrderService extends EventEmitter {
       await logService.createLog(
         'MERGE_TABLES',
         result.table?.name,
-        `Adisyonlar birleştirildi (Toplam: ₺${result.totalAmount / 100})`
+        `Adisyonlar birleştirildi (Toplam: ${formatCurrency(result.totalAmount)})`
       )
       return { success: true as const, data: result }
     } catch (error) {

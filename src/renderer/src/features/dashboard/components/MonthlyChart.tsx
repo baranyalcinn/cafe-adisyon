@@ -166,7 +166,7 @@ export function MonthlyPerformanceChart(): React.JSX.Element {
                   axisLine={false}
                   tickLine={false}
                   tick={{ fill: 'currentColor', fontSize: 11, fontWeight: 800 }}
-                  tickFormatter={(val) => `${(val / 100).toLocaleString('tr-TR')} ₺`}
+                  tickFormatter={(val) => formatCurrency(val)}
                   width={90}
                 />
                 <Tooltip content={<MonthlyTooltip />} isAnimationActive={false} />

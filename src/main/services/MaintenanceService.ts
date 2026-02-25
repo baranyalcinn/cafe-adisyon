@@ -1,3 +1,4 @@
+import { getBusinessDayStart } from '@shared/utils/date'
 import { app } from 'electron'
 import { existsSync, promises as fs } from 'fs'
 import * as path from 'path'
@@ -73,7 +74,7 @@ export class MaintenanceService {
   }
 
   private getCutoffDate(options: { years?: number; days?: number }): Date {
-    const d = new Date()
+    const d = getBusinessDayStart(new Date())
     if (options.years) d.setFullYear(d.getFullYear() - options.years)
     if (options.days) d.setDate(d.getDate() - options.days)
     return d

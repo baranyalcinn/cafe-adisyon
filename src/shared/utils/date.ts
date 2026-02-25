@@ -7,11 +7,7 @@ import { startOfDay, subDays } from 'date-fns'
  *
  * @param date The date to calculate the business day for. Defaults to `new Date()`.
  * @returns Date object representing the start of the business day (00:00:00 of the calculated day).
- * Note: Returning 00:00 of the "business day" makes it easier to query,
- * but actual shifts end at 04:59 next day.
- * For exact shift querying, use `getBusinessDayStartExact` below.
  */
-
 export const getBusinessDayStart = (date: Date = new Date()): Date => {
   let reportDate = startOfDay(date)
   // If before 5 AM, it belongs to the previous "business day"
@@ -39,4 +35,13 @@ export const getBusinessShiftEnd = (date: Date = new Date()): Date => {
   shiftEnd.setDate(shiftEnd.getDate() + 1)
   shiftEnd.setMilliseconds(shiftEnd.getMilliseconds() - 1)
   return shiftEnd
+}
+
+/**
+ * Common date formatting patterns.
+ */
+export const DATE_FORMATS = {
+  UI_DISPLAY: 'dd.MM.yyyy',
+  UI_TIME: 'HH:mm',
+  DB_ISO: "yyyy-MM-dd'T'HH:mm:ss.SSSxxx"
 }

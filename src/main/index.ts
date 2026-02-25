@@ -8,43 +8,76 @@ import { dbMaintenance } from './lib/db-maintenance'
 import { electronLog, logger } from './lib/logger'
 import { orderService } from './services/OrderService'
 
-// Chromium memory optimizations for POS
-app.commandLine.appendSwitch('js-flags', '--max-old-space-size=350')
-app.commandLine.appendSwitch('disable-software-rasterizer')
-app.commandLine.appendSwitch('force-color-profile', 'srgb')
+// ============================================================================
+// Global Configuration & State
+// ============================================================================
 
-// Configuration constants
-const isDev = process.env.NODE_ENV === 'development'
-const isPackaged = app.isPackaged
-
-if (isDev) {
-  // Disable Chromium HTTP disk cache in development to prevent blockfile corruption (-8)
-  // that frequently occurs during rapid HMR application reloads.
-  app.commandLine.appendSwitch('disable-http-cache')
-}
-
-// Quit flag for graceful shutdown
-let isQuitting = false
-let updateCheckRetries = 0
-const MAX_RETRIES = 3
-
-function createWindow(): void {
-  // Create the browser window - optimized for POS application
-  const mainWindow = new BrowserWindow({
+const APP_CONFIG = {
+  DEV: process.env.NODE_ENV === 'development',
+  PACKAGED: app.isPackaged,
+  WINDOW: {
     width: 1400,
     height: 900,
     minWidth: 1024,
     minHeight: 768,
+    bg: '#000000'
+  },
+  UPDATER: {
+    maxRetries: 3,
+    retryDelayMs: 30_000, // 30 seconds
+    pollIntervalMs: 24 * 60 * 60 * 1000, // 24 hours
+    initialDelayMs: 3_000 // 3 seconds after boot
+  }
+} as const
+
+const appState = {
+  isQuitting: false,
+  updateCheckRetries: 0
+}
+
+// ============================================================================
+// Chromium & App Optimizations
+// ============================================================================
+
+function applyChromiumOptimizations(): void {
+  // Memory & Rendering optimizations for POS
+  app.commandLine.appendSwitch('js-flags', '--max-old-space-size=350')
+  app.commandLine.appendSwitch('disable-software-rasterizer')
+  app.commandLine.appendSwitch('force-color-profile', 'srgb')
+  app.commandLine.appendSwitch('enable-gpu-rasterization')
+  app.commandLine.appendSwitch('ignore-gpu-blocklist')
+
+  if (APP_CONFIG.DEV) {
+    // Disable cache in dev to prevent blockfile corruption during HMR
+    app.commandLine.appendSwitch('disable-http-cache')
+  }
+}
+
+// ============================================================================
+// Window Management
+// ============================================================================
+
+function sendToAllWindows(channel: string, ...args: unknown[]): void {
+  BrowserWindow.getAllWindows().forEach((win) => {
+    win.webContents.send(channel, ...args)
+  })
+}
+
+function createWindow(): void {
+  const mainWindow = new BrowserWindow({
+    width: APP_CONFIG.WINDOW.width,
+    height: APP_CONFIG.WINDOW.height,
+    minWidth: APP_CONFIG.WINDOW.minWidth,
+    minHeight: APP_CONFIG.WINDOW.minHeight,
     title: 'Caffio',
     show: false,
     frame: false,
     titleBarStyle: 'hidden',
     autoHideMenuBar: true,
-    icon:
-      process.env.NODE_ENV === 'development'
-        ? join(__dirname, '../../resources/icon.png')
-        : join(process.resourcesPath, 'resources/icon.png'),
-    backgroundColor: '#000000', // Optimize startup paint
+    backgroundColor: APP_CONFIG.WINDOW.bg,
+    icon: APP_CONFIG.DEV
+      ? join(__dirname, '../../resources/icon.png')
+      : join(process.resourcesPath, 'resources/icon.png'),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: true,
@@ -54,20 +87,15 @@ function createWindow(): void {
     }
   })
 
-  // Window control IPC handlers
-  ipcMain.on('window:minimize', () => mainWindow.minimize())
-  ipcMain.on('window:maximize', () => {
-    if (mainWindow.isMaximized()) {
-      mainWindow.unmaximize()
-    } else {
-      mainWindow.maximize()
-    }
-  })
-  ipcMain.on('window:close', () => mainWindow.close())
+  // IPC Handlers: Window Controls
+  ipcMain.on(IPC_CHANNELS.WINDOW_MINIMIZE, () => mainWindow.minimize())
+  ipcMain.on(IPC_CHANNELS.WINDOW_MAXIMIZE, () =>
+    mainWindow.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize()
+  )
+  ipcMain.on(IPC_CHANNELS.WINDOW_CLOSE, () => mainWindow.close())
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
-    // Start maximized for POS usage
     mainWindow.maximize()
   })
 
@@ -76,193 +104,222 @@ function createWindow(): void {
     return { action: 'deny' }
   })
 
-  // Content Security Policy (CSP)
+  // Content Security Policy (CSP) - Cleanly formatted
   mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
-    callback({
-      responseHeaders: {
-        ...details.responseHeaders,
-        'Content-Security-Policy': [
-          "default-src 'self' 'unsafe-inline' data:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: resource: blob: file:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://api.caffio.app https://github.com https://*.github.com;"
-        ]
-      }
-    })
+    const csp = [
+      "default-src 'self' 'unsafe-inline' data:;",
+      "script-src 'self' 'unsafe-inline';",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;",
+      "img-src 'self' data: resource: blob: file:;",
+      "font-src 'self' data: https://fonts.gstatic.com;",
+      "connect-src 'self' https://api.caffio.app https://github.com https://*.github.com;"
+    ].join(' ')
+
+    callback({ responseHeaders: { ...details.responseHeaders, 'Content-Security-Policy': [csp] } })
   })
 
-  // HMR for renderer base on electron-vite cli.
-  // Load the remote URL for development or the local html file for production.
-  if (process.env.NODE_ENV === 'development' && process.env['ELECTRON_RENDERER_URL']) {
+  // Load App URL/File
+  if (APP_CONFIG.DEV && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
 
-  // Prevent DevTools from opening in production
-  if (process.env.NODE_ENV !== 'development') {
-    mainWindow.webContents.on('devtools-opened', () => {
-      mainWindow.webContents.closeDevTools()
-    })
+  if (!APP_CONFIG.DEV) {
+    mainWindow.webContents.on('devtools-opened', () => mainWindow.webContents.closeDevTools())
   }
 }
 
-// --- Auto Updater Global Configuration ---
+// ============================================================================
+// Auto Updater Service
+// ============================================================================
 
-// Configure Auto Updater (Production Only)
-if (!isDev && isPackaged) {
+function setupAutoUpdater(): void {
+  if (APP_CONFIG.DEV || !APP_CONFIG.PACKAGED) return
+
   autoUpdater.logger = electronLog
   autoUpdater.autoDownload = true
   autoUpdater.allowDowngrade = false
   autoUpdater.allowPrerelease = false
   autoUpdater.autoInstallOnAppQuit = true
-}
 
-// Send events to all windows
-function sendToAllWindows(channel: string, ...args: unknown[]): void {
-  BrowserWindow.getAllWindows().forEach((win) => {
-    win.webContents.send(channel, ...args)
-  })
-}
-
-// Safety Check IPC
-ipcMain.handle('can-update-safely', async () => {
-  try {
-    // Check for open orders (OPEN, PREPARING, SERVED, etc.)
-    // We assume 'COMPLETED' and 'CANCELLED' are the only safe statuses.
-    const openOrders = await prisma.order.count({
-      where: {
-        status: {
-          notIn: ['COMPLETED', 'CANCELLED']
-        }
-      }
-    })
-    return openOrders === 0
-  } catch (error) {
-    logger.error('Safety Check', error)
-    return false // Fail safe
-  }
-})
-
-// Auto Updater Events
-autoUpdater.on('checking-for-update', () => {
-  logger.info('AutoUpdater', 'Checking for update...')
-  sendToAllWindows('checking-for-update')
-})
-
-autoUpdater.on('update-available', (info) => {
-  updateCheckRetries = 0
-  logger.info('AutoUpdater', `Update available: ${info.version}`)
-  sendToAllWindows('update-available', { version: info.version })
-})
-
-autoUpdater.on('update-not-available', () => {
-  updateCheckRetries = 0
-  logger.info('AutoUpdater', 'Update not available')
-  sendToAllWindows('update-not-available')
-})
-
-autoUpdater.on('download-progress', (progress) => {
-  // logger.info('AutoUpdater', `Downloaded ${Math.round(progress.percent)}%`) // Optional: Log progress
-  sendToAllWindows('download-progress', {
-    percent: Math.round(progress.percent),
-    transferred: progress.transferred,
-    total: progress.total
-  })
-})
-
-autoUpdater.on('update-downloaded', async (info) => {
-  logger.info('AutoUpdater', `Update downloaded: ${info.version}`)
-
-  // Check if safe to update
-  let safeToUpdate = false
-  try {
-    const openOrders = await prisma.order.count({
-      where: {
-        status: {
-          notIn: ['COMPLETED', 'CANCELLED']
-        }
-      }
-    })
-    safeToUpdate = openOrders === 0
-  } catch (e) {
-    logger.error('AutoUpdater', e)
-  }
-
-  // Notify Renderer
-  sendToAllWindows('update-downloaded', {
-    version: info.version,
-    releaseNotes: info.releaseNotes,
-    releaseDate: info.releaseDate,
-    currentVersion: app.getVersion(),
-    safeToUpdate
-  })
-})
-
-autoUpdater.on('error', (err) => {
-  logger.error('AutoUpdater', err)
-
-  // Network Error Retry Mechanism
-  if (err.message?.includes('net::') && updateCheckRetries < MAX_RETRIES) {
-    updateCheckRetries++
-    logger.info('AutoUpdater', `Retrying... (${updateCheckRetries}/${MAX_RETRIES})`)
-
-    setTimeout(() => {
-      if (!isDev && isPackaged) {
-        autoUpdater.checkForUpdatesAndNotify()
-      }
-    }, 30000) // Retry after 30 seconds
-  } else {
-    updateCheckRetries = 0
-    sendToAllWindows('update-error', {
-      message: err.message || 'Bilinmeyen güncelleme hatası',
-      canRetry: true
-    })
-  }
-})
-
-// Global IPC for restarting after update
-ipcMain.on(IPC_CHANNELS.SYSTEM_RESTART, () => {
-  isQuitting = true // Bypass graceful shutdown check
-  autoUpdater.quitAndInstall(true, true)
-})
-
-// Manual Check IPC
-ipcMain.handle(IPC_CHANNELS.SYSTEM_CHECK_UPDATE, async () => {
-  if (!isDev && !isPackaged) {
-    return { success: true, data: { available: false, message: 'Dev modunda güncelleme yok' } }
-  }
-
-  try {
-    const result = await autoUpdater.checkForUpdates()
-    return {
-      success: true,
-      data: {
-        available: result !== null,
-        version: result?.updateInfo.version,
-        currentVersion: app.getVersion()
-      }
+  // Safety Check IPC
+  ipcMain.handle('can-update-safely', async () => {
+    try {
+      const openOrders = await prisma.order.count({
+        where: { status: { notIn: ['COMPLETED', 'CANCELLED'] } }
+      })
+      return openOrders === 0
+    } catch (error) {
+      logger.error('Safety Check', error)
+      return false
     }
-  } catch (error) {
-    logger.error('Manual update check failed', error)
-    return { success: false, error: (error as Error).message }
+  })
+
+  // Updater Events
+  autoUpdater.on('checking-for-update', () => {
+    logger.info('AutoUpdater', 'Checking for update...')
+    sendToAllWindows('checking-for-update')
+  })
+
+  autoUpdater.on('update-available', (info) => {
+    appState.updateCheckRetries = 0
+    logger.info('AutoUpdater', `Update available: ${info.version}`)
+    sendToAllWindows('update-available', { version: info.version })
+  })
+
+  autoUpdater.on('update-not-available', () => {
+    appState.updateCheckRetries = 0
+    sendToAllWindows('update-not-available')
+  })
+
+  autoUpdater.on('download-progress', (progress) => {
+    sendToAllWindows('download-progress', {
+      percent: Math.round(progress.percent),
+      transferred: progress.transferred,
+      total: progress.total
+    })
+  })
+
+  autoUpdater.on('update-downloaded', async (info) => {
+    logger.info('AutoUpdater', `Update downloaded: ${info.version}`)
+    let safeToUpdate = false
+    try {
+      const openOrders = await prisma.order.count({
+        where: { status: { notIn: ['COMPLETED', 'CANCELLED'] } }
+      })
+      safeToUpdate = openOrders === 0
+    } catch (e) {
+      logger.error('AutoUpdater', e)
+    }
+
+    sendToAllWindows('update-downloaded', {
+      version: info.version,
+      releaseNotes: info.releaseNotes,
+      releaseDate: info.releaseDate,
+      currentVersion: app.getVersion(),
+      safeToUpdate
+    })
+  })
+
+  autoUpdater.on('error', (err) => {
+    logger.error('AutoUpdater', err)
+    // Network Error Retry Mechanism
+    if (
+      err.message?.includes('net::') &&
+      appState.updateCheckRetries < APP_CONFIG.UPDATER.maxRetries
+    ) {
+      appState.updateCheckRetries++
+      logger.info(
+        'AutoUpdater',
+        `Retrying... (${appState.updateCheckRetries}/${APP_CONFIG.UPDATER.maxRetries})`
+      )
+      setTimeout(() => autoUpdater.checkForUpdatesAndNotify(), APP_CONFIG.UPDATER.retryDelayMs)
+    } else {
+      appState.updateCheckRetries = 0
+      sendToAllWindows('update-error', {
+        message: err.message || 'Bilinmeyen güncelleme hatası',
+        canRetry: true
+      })
+    }
+  })
+
+  // Global IPCs
+  ipcMain.on(IPC_CHANNELS.SYSTEM_RESTART, () => {
+    appState.isQuitting = true
+    autoUpdater.quitAndInstall(true, true)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.SYSTEM_CHECK_UPDATE, async () => {
+    try {
+      const result = await autoUpdater.checkForUpdates()
+      return {
+        success: true,
+        data: {
+          available: result !== null,
+          version: result?.updateInfo.version,
+          currentVersion: app.getVersion()
+        }
+      }
+    } catch (error) {
+      logger.error('Manual update check failed', error)
+      return { success: false, error: (error as Error).message }
+    }
+  })
+}
+
+// ============================================================================
+// System Monitors (Power & OS)
+// ============================================================================
+
+function setupSystemMonitors(): void {
+  powerMonitor.on('suspend', () => logger.info('System', 'System stopped (suspend)'))
+  powerMonitor.on('resume', () => logger.info('System', 'System resumed'))
+  powerMonitor.on('lock-screen', () => logger.info('System', 'Screen locked'))
+  powerMonitor.on('unlock-screen', () => logger.info('System', 'Screen unlocked'))
+
+  app.on('activate', () => {
+    // macOS re-create window on dock click
+    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+  })
+
+  // Hardware Info
+  ipcMain.handle(IPC_CHANNELS.SYSTEM_GET_VERSION, () => app.getVersion())
+}
+
+// ============================================================================
+// App Boot Sequence
+// ============================================================================
+
+async function initializeDatabaseTasks(): Promise<void> {
+  await dbMaintenance.runMaintenance()
+  try {
+    const { ReportingService } = await import('./services/ReportingService')
+    await new ReportingService().mergeDuplicateMonthlyReports()
+  } catch (e) {
+    logger.error('App', 'Failed to merge duplicate monthly reports: ' + (e as Error).message)
   }
-})
+}
 
-// Get System Version IPC
-ipcMain.handle(IPC_CHANNELS.SYSTEM_GET_VERSION, () => {
-  return app.getVersion()
-})
+async function bootstrapApp(): Promise<void> {
+  if (process.platform === 'win32') app.setAppUserModelId('com.caffio.caffio')
 
-// Force GPU acceleration features for maximum performance
-app.commandLine.appendSwitch('enable-gpu-rasterization')
-app.commandLine.appendSwitch('ignore-gpu-blocklist')
+  // 1. Prepare Data Layer
+  await initializeDatabaseTasks()
+  registerAllHandlers()
 
-// Single Instance Lock
-const gotTheLock = app.requestSingleInstanceLock()
+  // 2. Setup Event Listeners
+  setupSystemMonitors()
+  setupAutoUpdater()
+  orderService.on('order:updated', () => sendToAllWindows('dashboard:update'))
 
-if (!gotTheLock) {
+  // 3. Render UI
+  createWindow()
+  logger.info('App', `Starting Caffio v${app.getVersion()}`)
+
+  // 4. Start Background Processes
+  import('./services/ScheduledJobs')
+    .then(({ scheduledJobs }) => scheduledJobs.init())
+    .catch((err) => logger.error('App', 'Failed to initialize ScheduledJobs: ' + err.message))
+
+  // 5. Trigger Initial Update Check
+  setTimeout(() => {
+    if (!APP_CONFIG.DEV && APP_CONFIG.PACKAGED) {
+      autoUpdater.checkForUpdatesAndNotify()
+      setInterval(() => autoUpdater.checkForUpdatesAndNotify(), APP_CONFIG.UPDATER.pollIntervalMs)
+    }
+  }, APP_CONFIG.UPDATER.initialDelayMs)
+}
+
+// ============================================================================
+// App Lifecycle
+// ============================================================================
+
+// Verify Single Instance
+if (!app.requestSingleInstanceLock()) {
   app.quit()
 } else {
   app.on('second-instance', () => {
-    // Someone tried to run a second instance, we should focus our window.
     const mainWindow = BrowserWindow.getAllWindows()[0]
     if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore()
@@ -270,103 +327,19 @@ if (!gotTheLock) {
     }
   })
 
-  // This method will be called when Electron has finished
-  // initialization and is ready to create browser windows.
-  app.whenReady().then(async () => {
-    // Set app user model id for windows
-    if (process.platform === 'win32') {
-      app.setAppUserModelId('com.caffio.caffio')
-    }
-
-    // Run DB Maintenance on startup
-    await dbMaintenance.runMaintenance()
-
-    // Merge any duplicate monthly reports caused by legacy timezone issues
-    try {
-      const { ReportingService } = await import('./services/ReportingService')
-      const service = new ReportingService()
-      await service.mergeDuplicateMonthlyReports()
-    } catch (e) {
-      logger.error('App', 'Failed to merge duplicate monthly reports: ' + (e as Error).message)
-    }
-
-    // Register IPC handlers for database operations
-    registerAllHandlers()
-
-    // Listen for backend service events
-    orderService.on('order:updated', () => {
-      sendToAllWindows('dashboard:update')
-    })
-
-    createWindow()
-
-    logger.info('App', `Starting Caffio v${app.getVersion()}`)
-
-    // Initialize scheduled background jobs (e.g. 04:00 AM daily maintenance)
-    import('./services/ScheduledJobs')
-      .then(({ scheduledJobs }) => {
-        scheduledJobs.init()
-      })
-      .catch((err) => {
-        logger.error('App', 'Failed to initialize ScheduledJobs: ' + err.message)
-      })
-
-    // Check for updates (Production Only)
-    // We wait a bit to let the window load
-    setTimeout(() => {
-      if (!isDev && isPackaged) {
-        autoUpdater.checkForUpdatesAndNotify()
-        // Check daily
-        setInterval(
-          () => {
-            autoUpdater.checkForUpdatesAndNotify()
-          },
-          24 * 60 * 60 * 1000
-        )
-      }
-    }, 3000)
-
-    // Power Monitor
-    powerMonitor.on('suspend', () => {
-      logger.info('System', 'System stopped (suspend)')
-    })
-
-    powerMonitor.on('resume', () => {
-      logger.info('System', 'System resumed')
-      // Optional: Refresh data or check connectivity here
-    })
-
-    powerMonitor.on('lock-screen', () => {
-      logger.info('System', 'Screen locked')
-    })
-
-    powerMonitor.on('unlock-screen', () => {
-      logger.info('System', 'Screen unlocked')
-    })
-
-    app.on('activate', function () {
-      // On macOS it's common to re-create a window in the app when the
-      // dock icon is clicked and there are no other windows open.
-      if (BrowserWindow.getAllWindows().length === 0) createWindow()
-    })
-  })
+  applyChromiumOptimizations()
+  app.whenReady().then(bootstrapApp)
 }
 
-// Quit when all windows are closed, except on macOS.
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit()
-  }
+  if (process.platform !== 'darwin') app.quit()
 })
 
-// Graceful shutdown — flush pending operations before exit
 app.on('before-quit', async (event) => {
-  // If explicitly quitting (e.g. for update), skip this check
-  if (isQuitting || !prisma) return
+  if (appState.isQuitting || !prisma) return
 
-  // Prevent immediate quit to allow DB disconnect
   event.preventDefault()
-  isQuitting = true // Prevent infinite loop if we call app.quit() again
+  appState.isQuitting = true
 
   try {
     await disconnectDb()
@@ -378,11 +351,5 @@ app.on('before-quit', async (event) => {
   }
 })
 
-// Global Exception Handlers
-process.on('uncaughtException', (error) => {
-  logger.error('Uncaught Exception', error)
-})
-
-process.on('unhandledRejection', (reason) => {
-  logger.error('Unhandled Rejection', reason)
-})
+process.on('uncaughtException', (error) => logger.error('Uncaught Exception', error))
+process.on('unhandledRejection', (reason) => logger.error('Unhandled Rejection', reason))

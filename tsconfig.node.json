@@ -12,7 +12,9 @@
     "composite": true,
     "moduleResolution": "bundler",
     "baseUrl": ".",
-    "paths": {},
+    "paths": {
+      "@shared/*": ["src/shared/*"]
+    },
     "types": [
       "electron-vite/node"
     ]

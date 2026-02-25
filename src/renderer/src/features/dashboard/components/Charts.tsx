@@ -204,7 +204,7 @@ export function WeeklyTrendChart(): React.JSX.Element {
                   tickLine={false}
                   width={80}
                   tick={{ fill: 'currentColor', fontSize: 11, fontWeight: 800 }}
-                  tickFormatter={(val) => `${(val / 100).toLocaleString('tr-TR')} ₺`}
+                  tickFormatter={(val) => formatCurrency(val)}
                 />
                 <Tooltip content={<RevenueTooltip />} isAnimationActive={false} />
                 <Area
@@ -278,7 +278,7 @@ export function HourlyActivityChart(): React.JSX.Element {
                       tickLine={false}
                       width={80}
                       tick={{ fill: 'currentColor', fontSize: 11, fontWeight: 800 }}
-                      tickFormatter={(value) => `${(value / 100).toLocaleString('tr-TR')} ₺`}
+                      tickFormatter={(value) => formatCurrency(value)}
                     />
                     <Tooltip
                       cursor={{ fill: 'var(--color-muted)', opacity: 0.1 }}
