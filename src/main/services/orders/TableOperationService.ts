@@ -2,7 +2,7 @@ import { formatCurrency } from '@shared/utils/currency'
 import { ApiResponse, Order, ORDER_STATUS } from '../../../shared/types'
 import { prisma } from '../../db/prisma'
 import { logService } from '../LogService'
-import { formatOrder, ORDER_SELECT, SYSTEM_CONFIG } from './types'
+import { formatOrder, ORDER_SELECT, OrderWithRelations, SYSTEM_CONFIG } from './types'
 import { handleOrderError } from './utils'
 
 export class TableOperationService {

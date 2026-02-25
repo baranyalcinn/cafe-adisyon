@@ -15,7 +15,7 @@ export function PaymentDisplay({
   tenderedInput,
   onClear,
   onFocus
-}: PaymentDisplayProps) {
+}: PaymentDisplayProps): React.JSX.Element {
   return (
     <div className="px-8 pt-4 pb-2 flex flex-col items-center">
       <div className="flex gap-4 w-full max-w-[640px] mb-8">

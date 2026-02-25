@@ -1,15 +1,21 @@
 import { Minus, Plus } from 'lucide-react'
 import { memo, useCallback } from 'react'
 
-import { type OrderItem } from '@/lib/api'
 import { cn, formatCurrency } from '@/lib/utils'
 
 // ============================================================================
 // Types
 // ============================================================================
 
+export interface PaymentItem {
+  id: string
+  quantity: number
+  unitPrice: number
+  product?: { name: string }
+}
+
 interface ItemRowProps {
-  item: OrderItem
+  item: PaymentItem
   selected: number
   onQtyChange: (itemId: string, qty: number) => void
 }

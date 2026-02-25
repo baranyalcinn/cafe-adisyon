@@ -25,7 +25,7 @@ export function PaymentSummary({
   paymentMode,
   setMode,
   tableName
-}: PaymentSummaryProps) {
+}: PaymentSummaryProps): React.JSX.Element {
   return (
     <div className="p-6 pb-2">
       <div className="flex items-center justify-between mb-2">

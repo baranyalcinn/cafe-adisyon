@@ -4,14 +4,14 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { Banknote, Minus, Plus } from 'lucide-react'
 import { PaymentMode } from '../hooks/usePaymentLogic'
-import { ItemRow } from './ItemRow'
+import { ItemRow, type PaymentItem } from './ItemRow'
 
 interface ModeContentProps {
   mode: PaymentMode
   remainingAmount: number
   split: { n: number; share: number; idx: number; remainder: number }
   items: {
-    unpaidItems: any[]
+    unpaidItems: PaymentItem[]
     selectedQuantities: Record<string, number>
     isAllItemsSelected: boolean
   }
@@ -33,7 +33,7 @@ export function ModeContent({
   onNextSplit,
   onSelectAll,
   onItemQtyChange
-}: ModeContentProps) {
+}: ModeContentProps): React.JSX.Element {
   if (mode === 'full') {
     return (
       <div className="h-full flex flex-col items-center justify-center text-center space-y-3 py-6 animate-in fade-in duration-200">

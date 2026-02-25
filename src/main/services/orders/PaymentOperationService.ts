@@ -42,7 +42,12 @@ export class PaymentOperationService {
           id,
           quantity,
           productName,
-          orderItem: orderItem as OrderWithRelations
+          orderItem: {
+            orderId: orderItem.orderId,
+            productId: orderItem.productId,
+            quantity: orderItem.quantity,
+            unitPrice: orderItem.unitPrice
+          }
         })
       }
     }

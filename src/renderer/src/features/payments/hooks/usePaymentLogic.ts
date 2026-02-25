@@ -176,7 +176,40 @@ export function usePaymentLogic({
   onClose,
   onPaymentComplete,
   open
-}: UsePaymentLogicProps) {
+}: UsePaymentLogicProps): {
+  state: State
+  dispatch: React.Dispatch<Action>
+  totals: {
+    total: number
+    paidAmount: number
+    remainingAmount: number
+    effectivePayment: number
+    tendered: number
+    currentChange: number
+  }
+  split: { n: number; base: number; remainder: number; share: number; idx: number }
+  items: {
+    unpaidItems: Array<{
+      id: string
+      quantity: number
+      unitPrice: number
+      product?: { name: string }
+    }>
+    selectedTotal: number
+    isAllItemsSelected: boolean
+  }
+  flags: { canCashPay: boolean; canCardPay: boolean; processing: boolean }
+  actions: {
+    setTenderedInput: (raw: string) => void
+    appendTendered: (chunk: string) => void
+    backspaceTendered: () => void
+    clearTendered: () => void
+    handleSetExact: () => void
+    handlePayment: (method: PaymentMethod) => Promise<void>
+    setHoveredPaymentMethod: (method: PaymentMethod | null) => void
+    handleClose: () => void
+  }
+} {
   const selectTable = useTableStore((s) => s.selectTable)
   const [state, dispatch] = useReducer(reducer, initialState)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -383,11 +416,14 @@ export function usePaymentLogic({
     items: { unpaidItems, selectedTotal, isAllItemsSelected },
     flags: { canCashPay, canCardPay, processing: !!state.processingMethod },
     actions: {
+      setTenderedInput: handleTenderedChange,
       appendTendered,
       backspaceTendered,
       clearTendered,
       handleSetExact,
       handlePayment,
+      setHoveredPaymentMethod: (method: PaymentMethod | null) =>
+        dispatch({ type: 'SET_HOVER_PAYMENT', method }),
       handleClose
     }
   }

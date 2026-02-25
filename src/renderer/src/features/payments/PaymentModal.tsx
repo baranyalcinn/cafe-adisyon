@@ -55,7 +55,7 @@ export function PaymentModal({
     return () => clearTimeout(t)
   }, [open, state.paymentMode, state.selectedQuantities, state.splitIndex, state.view])
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
     if (state.view === 'SUCCESS') return
 
     const key = e.key
@@ -160,19 +160,27 @@ export function PaymentModal({
           <div className="flex-1 flex flex-col px-8 pb-8">
             <div className="flex-1 mb-6 flex items-center justify-center">
               <Numpad
-                onInput={actions.appendTendered}
+                onAppend={actions.appendTendered}
                 onBackspace={actions.backspaceTendered}
-                onClear={actions.clearTendered}
+                onQuickCash={actions.setTenderedInput}
                 onSetExact={actions.handleSetExact}
+                effectivePayment={totals.effectivePayment}
               />
             </div>
 
             <PaymentActions
               canCashPay={flags.canCashPay}
               canCardPay={flags.canCardPay}
-              onCashPay={() => actions.handlePayment('CASH')}
-              onCardPay={() => actions.handlePayment('CARD')}
-              processing={flags.processing}
+              processingMethod={state.processingMethod}
+              onPayment={actions.handlePayment}
+              onHoverChange={actions.setHoveredPaymentMethod}
+              itemsPartialBlocked={
+                state.paymentMode === 'items' &&
+                totals.tendered > 0 &&
+                totals.tendered < totals.effectivePayment
+              }
+              tendered={totals.tendered}
+              effectivePayment={totals.effectivePayment}
             />
           </div>
         </div>

@@ -1,6 +1,5 @@
 import { ApiResponse, Order, ORDER_STATUS } from '../../../shared/types'
 import { prisma } from '../../db/prisma'
-import { toPlain } from '../../lib/toPlain'
 import { logService } from '../LogService'
 import { formatOrder, ORDER_SELECT, OrderWithRelations } from './types'
 import { handleOrderError } from './utils'
@@ -21,9 +20,12 @@ export class OrderCoreService {
   async createOrder(tableId: string): Promise<ApiResponse<Order>> {
     try {
       const existing = await prisma.order.findFirst({
-        where: { tableId, status: ORDER_STATUS.OPEN }
+        where: { tableId, status: ORDER_STATUS.OPEN },
+        select: ORDER_SELECT
       })
-      if (existing) return { success: true, data: toPlain<Order>(existing) }
+      if (existing) {
+        return { success: true, data: formatOrder(existing as OrderWithRelations) as Order }
+      }
 
       const order = await prisma.order.create({
         data: { tableId, status: ORDER_STATUS.OPEN, totalAmount: 0 },
@@ -43,40 +45,50 @@ export class OrderCoreService {
     unitPrice: number
   ): Promise<ApiResponse<Order>> {
     try {
-      if (quantity <= 0 || !Number.isInteger(quantity))
+      if (quantity <= 0 || !Number.isInteger(quantity)) {
         throw new Error('Miktar pozitif tam sayı olmalıdır.')
-      if (unitPrice < 0 || !Number.isInteger(unitPrice))
+      }
+      if (unitPrice < 0 || !Number.isInteger(unitPrice)) {
         throw new Error('Birim fiyat negatif olamaz.')
+      }
 
-      const txResult = await prisma.$transaction(async (tx) => {
-        const existingItem = await tx.orderItem.findFirst({
-          where: { orderId, productId, isPaid: false }
-        })
-
-        if (existingItem) {
-          await tx.orderItem.update({
-            where: { id: existingItem.id },
-            data: { quantity: existingItem.quantity + quantity }
+      const txResult = await prisma.$transaction(
+        async (
+          tx
+        ): Promise<{
+          updatedOrder: Order
+          productName: string
+          tableName: string | undefined
+        }> => {
+          const existingItem = await tx.orderItem.findFirst({
+            where: { orderId, productId, isPaid: false }
           })
-        } else {
-          await tx.orderItem.create({ data: { orderId, productId, quantity, unitPrice } })
-        }
 
-        const [updatedOrder, product] = await Promise.all([
-          tx.order.update({
-            where: { id: orderId },
-            data: { totalAmount: { increment: quantity * unitPrice } },
-            select: ORDER_SELECT
-          }),
-          tx.product.findUnique({ where: { id: productId }, select: { name: true } })
-        ])
+          if (existingItem) {
+            await tx.orderItem.update({
+              where: { id: existingItem.id },
+              data: { quantity: existingItem.quantity + quantity }
+            })
+          } else {
+            await tx.orderItem.create({ data: { orderId, productId, quantity, unitPrice } })
+          }
 
-        return {
-          updatedOrder: formatOrder(updatedOrder as OrderWithRelations) as Order,
-          productName: product?.name || 'Ürün',
-          tableName: updatedOrder.table?.name
+          const [updatedOrder, product] = await Promise.all([
+            tx.order.update({
+              where: { id: orderId },
+              data: { totalAmount: { increment: quantity * unitPrice } },
+              select: ORDER_SELECT
+            }),
+            tx.product.findUnique({ where: { id: productId }, select: { name: true } })
+          ])
+
+          return {
+            updatedOrder: formatOrder(updatedOrder as OrderWithRelations) as Order,
+            productName: product?.name || 'Ürün',
+            tableName: updatedOrder.table?.name
+          }
         }
-      })
+      )
 
       await logService.createLog(
         'ADD_ITEM',
@@ -93,7 +105,7 @@ export class OrderCoreService {
     try {
       if (quantity <= 0) return this.removeItem(itemId)
 
-      const txResult = await prisma.$transaction(async (tx) => {
+      const txResult = await prisma.$transaction(async (tx): Promise<Order> => {
         const oldItem = await tx.orderItem.findUnique({ where: { id: itemId } })
         if (!oldItem) throw new Error('Ürün bulunamadı.')
 
@@ -136,40 +148,65 @@ export class OrderCoreService {
 
   async removeItem(itemId: string): Promise<ApiResponse<Order>> {
     try {
-      const txResult = await prisma.$transaction(async (tx) => {
-        const item = await tx.orderItem.delete({
-          where: { id: itemId },
-          include: { product: true, order: { include: { table: true } } }
-        })
-
-        const diff = item.quantity * item.unitPrice
-        const updatedOrder = await tx.order.update({
-          where: { id: item.orderId },
-          data: { totalAmount: { decrement: diff } },
-          select: ORDER_SELECT
-        })
-
-        const agg = await tx.transaction.aggregate({
-          where: { orderId: item.orderId },
-          _sum: { amount: true }
-        })
-        const totalPaid = agg._sum.amount || 0
-
-        if (totalPaid > 0 && (updatedOrder as OrderWithRelations).totalAmount <= totalPaid) {
-          await tx.orderItem.updateMany({
-            where: { orderId: item.orderId, isPaid: false },
-            data: { isPaid: true }
+      const txResult = await prisma.$transaction(
+        async (
+          tx
+        ): Promise<{
+          updatedOrder: Order
+          item: {
+            quantity: number
+            product: { name: string } | null
+            order: { table: { name: string } | null } | null
+          }
+        }> => {
+          const item = await tx.orderItem.delete({
+            where: { id: itemId },
+            include: { product: true, order: { include: { table: true } } }
           })
-          const closedOrder = await tx.order.update({
+
+          const diff = item.quantity * item.unitPrice
+          const updatedOrder = await tx.order.update({
             where: { id: item.orderId },
-            data: { status: ORDER_STATUS.CLOSED },
+            data: { totalAmount: { decrement: diff } },
             select: ORDER_SELECT
           })
-          return { updatedOrder: formatOrder(closedOrder as OrderWithRelations) as Order, item }
-        }
 
-        return { updatedOrder: formatOrder(updatedOrder as OrderWithRelations) as Order, item }
-      })
+          const agg = await tx.transaction.aggregate({
+            where: { orderId: item.orderId },
+            _sum: { amount: true }
+          })
+          const totalPaid = agg._sum.amount || 0
+
+          const returnedItemDetails = {
+            quantity: item.quantity,
+            product: item.product ? { name: item.product.name } : null,
+            order: item.order
+              ? { table: item.order.table ? { name: item.order.table.name } : null }
+              : null
+          }
+
+          if (totalPaid > 0 && (updatedOrder as OrderWithRelations).totalAmount <= totalPaid) {
+            await tx.orderItem.updateMany({
+              where: { orderId: item.orderId, isPaid: false },
+              data: { isPaid: true }
+            })
+            const closedOrder = await tx.order.update({
+              where: { id: item.orderId },
+              data: { status: ORDER_STATUS.CLOSED },
+              select: ORDER_SELECT
+            })
+            return {
+              updatedOrder: formatOrder(closedOrder as OrderWithRelations) as Order,
+              item: returnedItemDetails
+            }
+          }
+
+          return {
+            updatedOrder: formatOrder(updatedOrder as OrderWithRelations) as Order,
+            item: returnedItemDetails
+          }
+        }
+      )
 
       await logService.createLog(
         'REMOVE_ITEM',
@@ -303,7 +340,7 @@ export class OrderCoreService {
     try {
       const updatedOrder = await prisma.order.update({
         where: { id: orderId },
-        data: data as any,
+        data,
         select: ORDER_SELECT
       })
       return { success: true, data: formatOrder(updatedOrder as OrderWithRelations) as Order }
