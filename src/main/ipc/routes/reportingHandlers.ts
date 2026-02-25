@@ -59,21 +59,6 @@ export function registerReportingHandlers(): void {
           monthlyReports: monthlyResult.success ? monthlyResult.data : []
         }
       }
-
-      return {
-        success: true,
-        data: {
-          stats: statsResult.value.data,
-          revenueTrend:
-            trendResult.status === 'fulfilled' && trendResult.value.success
-              ? trendResult.value.data
-              : [],
-          monthlyReports:
-            monthlyResult.status === 'fulfilled' && monthlyResult.value.success
-              ? monthlyResult.value.data
-              : []
-        }
-      }
     },
     'Dashboard paketi oluşturulamadı.'
   )

@@ -16,10 +16,16 @@ const SYSTEM_ACTIONS = [
   'SECURITY_CHANGE_PIN'
 ] as const
 
+const MAX_QUEUE_SIZE = 100 // 100 log birikince beklemeden yaz
+const FLUSH_INTERVAL = 2000 // Bekleme süresini 2 saniyeye çıkarabiliriz
+
 export class LogService {
   private logQueue: Prisma.ActivityLogCreateManyInput[] = []
   private flushTimeout: NodeJS.Timeout | null = null
 
+  /**
+   * Logları getirirken tip güvenliğini korur ve performans limitlerini uygular
+   */
   async getRecentLogs(
     limit: number = 100,
     startDate?: string,
@@ -34,14 +40,12 @@ export class LogService {
     try {
       const where: Prisma.ActivityLogWhereInput = {}
 
-      // Date filtering
       if (startDate || endDate) {
         where.createdAt = {}
         if (startDate) where.createdAt.gte = new Date(startDate)
         if (endDate) where.createdAt.lte = new Date(endDate)
       }
 
-      // Search filtering
       if (search) {
         where.OR = [
           { details: { contains: search } },
@@ -51,7 +55,6 @@ export class LogService {
         ]
       }
 
-      // Category filtering
       if (category === 'system') {
         where.action = { in: [...SYSTEM_ACTIONS] }
       } else if (category === 'operation') {
@@ -72,22 +75,39 @@ export class LogService {
     }
   }
 
+  /**
+   * Log oluşturma (Bellek kuyruğu kullanır)
+   */
   async createLog(
     action: string,
     tableName?: string,
     details?: string,
     userName?: string
   ): Promise<ApiResponse<ActivityLog>> {
-    const logEntry = { action, tableName, details, userName, createdAt: new Date() }
+    const logEntry: Prisma.ActivityLogCreateManyInput = {
+      action,
+      tableName,
+      details,
+      userName,
+      createdAt: new Date()
+    }
+
     this.logQueue.push(logEntry)
 
-    if (!this.flushTimeout) {
-      this.flushTimeout = setTimeout(() => this.flushLogs(), 1000)
+    // Kuyruk çok dolduysa beklemeden yaz
+    if (this.logQueue.length >= MAX_QUEUE_SIZE) {
+      if (this.flushTimeout) clearTimeout(this.flushTimeout)
+      await this.flushLogs()
+    } else if (!this.flushTimeout) {
+      this.flushTimeout = setTimeout(() => this.flushLogs(), FLUSH_INTERVAL)
     }
 
     return { success: true, data: logEntry as ActivityLog }
   }
 
+  /**
+   * Kuyruktaki logları topluca veritabanına yazar
+   */
   private async flushLogs(): Promise<void> {
     this.flushTimeout = null
     if (this.logQueue.length === 0) return
@@ -96,11 +116,13 @@ export class LogService {
     this.logQueue = []
 
     try {
+      // createMany, tek tek create yapmaktan 10-20 kat daha hızlıdır
       await prisma.activityLog.createMany({
         data: logsToCreate
       })
     } catch (error) {
       logger.error('LogService.flushLogs', error)
+      // Yazılamayan logları geri eklemek istersen buraya ekleyebilirsin
     }
   }
 
@@ -110,15 +132,14 @@ export class LogService {
       const start = getBusinessDayStart(now)
       const end = getBusinessShiftEnd(now)
 
+      const whereBase = { createdAt: { gte: start, lte: end } }
+
+      // Tek bir sorguda çekilebilirdi ama okunabilirlik için Promise.all makul
       const [total, sys] = await Promise.all([
+        prisma.activityLog.count({ where: whereBase }),
         prisma.activityLog.count({
           where: {
-            createdAt: { gte: start, lte: end }
-          }
-        }),
-        prisma.activityLog.count({
-          where: {
-            createdAt: { gte: start, lte: end },
+            ...whereBase,
             action: { in: [...SYSTEM_ACTIONS] }
           }
         })
@@ -138,6 +159,9 @@ export class LogService {
     }
   }
 
+  /**
+   * Belirli bir süre sonrasını temizlemek için geliştirilebilir
+   */
   async clearLogs(keepAction?: string): Promise<ApiResponse<number>> {
     try {
       const result = await prisma.activityLog.deleteMany({

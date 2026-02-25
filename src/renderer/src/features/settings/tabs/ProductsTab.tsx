@@ -14,7 +14,7 @@ import { useInventory } from '@/hooks/useInventory'
 import { cafeApi } from '@/lib/api'
 import { toast } from '@/store/useToastStore'
 import { Plus, Trash2 } from 'lucide-react'
-import React, { memo, useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { CategorySidebar } from './components/CategorySidebar'
 import { ProductCard } from './components/ProductCard'
 
@@ -57,16 +57,16 @@ const STYLES = {
 
 /** * Kategori Silme Onay Diyaloğu
  */
-const DeleteCategoryDialog = memo(
-  ({
-    categoryId,
-    onClose,
-    onConfirm
-  }: {
-    categoryId: string | null
-    onClose: () => void
-    onConfirm: () => Promise<void>
-  }): React.JSX.Element => (
+export function DeleteCategoryDialog({
+  categoryId,
+  onClose,
+  onConfirm
+}: {
+  categoryId: string | null
+  onClose: () => void
+  onConfirm: () => Promise<void>
+}): React.JSX.Element {
+  return (
     <Dialog open={!!categoryId} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md p-0 overflow-hidden border-0 shadow-2xl bg-white dark:bg-zinc-950 rounded-2xl [&>button:last-child]:hidden">
         <div className={STYLES.dialogRedHeader}>
@@ -106,83 +106,85 @@ const DeleteCategoryDialog = memo(
       </DialogContent>
     </Dialog>
   )
-)
-DeleteCategoryDialog.displayName = 'DeleteCategoryDialog'
+}
 
 /** * Hızlı Ürün Ekleme Kartı
  */
-const QuickAddProductCard = memo(
-  ({ categoryId, onSuccess }: { categoryId: string; onSuccess: () => void }): React.JSX.Element => {
-    const [isAdding, setIsAdding] = useState(false)
-    const [name, setName] = useState('')
-    const [price, setPrice] = useState('')
+export function QuickAddProductCard({
+  categoryId,
+  onSuccess
+}: {
+  categoryId: string
+  onSuccess: () => void
+}): React.JSX.Element {
+  const [isAdding, setIsAdding] = useState(false)
+  const [name, setName] = useState('')
+  const [price, setPrice] = useState('')
 
-    const handleAdd = async (): Promise<void> => {
-      if (!name.trim() || !price) return
-      try {
-        const sanitizedPrice = price.replace(',', '.')
-        await cafeApi.products.create({
-          name,
-          price: Math.round(parseFloat(sanitizedPrice) * 100),
-          categoryId,
-          isFavorite: false
-        })
-        onSuccess()
-        setName('')
-        setPrice('')
-        setIsAdding(false)
-        toast({ title: 'Başarılı', description: 'Ürün eklendi', variant: 'success' })
-      } catch {
-        toast({ title: 'Hata', description: 'Eklenemedi', variant: 'destructive' })
-      }
+  const handleAdd = async (): Promise<void> => {
+    if (!name.trim() || !price) return
+    try {
+      const sanitizedPrice = price.replace(',', '.')
+      await cafeApi.products.create({
+        name,
+        price: Math.round(parseFloat(sanitizedPrice) * 100),
+        categoryId,
+        isFavorite: false
+      })
+      onSuccess()
+      setName('')
+      setPrice('')
+      setIsAdding(false)
+      toast({ title: 'Başarılı', description: 'Ürün eklendi', variant: 'success' })
+    } catch {
+      toast({ title: 'Hata', description: 'Eklenemedi', variant: 'destructive' })
     }
+  }
 
-    if (!isAdding) {
-      return (
-        <button onClick={() => setIsAdding(true)} className={STYLES.quickAddBtn}>
-          <div className={STYLES.quickAddIcon}>
-            <Plus size={24} strokeWidth={3} />
-          </div>
-          <span className="text-[11px] font-black text-zinc-500 tracking-tight">Yeni Ürün</span>
-        </button>
-      )
-    }
-
+  if (!isAdding) {
     return (
-      <Card className="h-[160px] p-4 rounded-2xl border-2 border-indigo-500 flex flex-col gap-2 shadow-xl animate-in zoom-in-95 duration-200">
-        <Input
-          placeholder="Ürün Adı"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className={STYLES.quickAddInput}
-          autoFocus
-        />
-        <Input
-          type="number"
-          placeholder="Fiyat ₺"
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
-          className={STYLES.quickAddInput}
-          onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-        />
-        <div className="grid grid-cols-2 gap-2 mt-auto">
-          <Button size="sm" onClick={handleAdd} className="h-9 bg-indigo-600 font-black">
-            Ekle
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => setIsAdding(false)}
-            className="h-9 font-bold text-zinc-500"
-          >
-            İptal
-          </Button>
+      <button onClick={() => setIsAdding(true)} className={STYLES.quickAddBtn}>
+        <div className={STYLES.quickAddIcon}>
+          <Plus size={24} strokeWidth={3} />
         </div>
-      </Card>
+        <span className="text-[11px] font-black text-zinc-500 tracking-tight">Yeni Ürün</span>
+      </button>
     )
   }
-)
-QuickAddProductCard.displayName = 'QuickAddProductCard'
+
+  return (
+    <Card className="h-[160px] p-4 rounded-2xl border-2 border-indigo-500 flex flex-col gap-2 shadow-xl animate-in zoom-in-95 duration-200">
+      <Input
+        placeholder="Ürün Adı"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        className={STYLES.quickAddInput}
+        autoFocus
+      />
+      <Input
+        type="number"
+        placeholder="Fiyat ₺"
+        value={price}
+        onChange={(e) => setPrice(e.target.value)}
+        className={STYLES.quickAddInput}
+        onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+      />
+      <div className="grid grid-cols-2 gap-2 mt-auto">
+        <Button size="sm" onClick={handleAdd} className="h-9 bg-indigo-600 font-black">
+          Ekle
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => setIsAdding(false)}
+          className="h-9 font-bold text-zinc-500"
+        >
+          İptal
+        </Button>
+      </div>
+    </Card>
+  )
+}
 
 // ============================================================================
 // Main Component
@@ -266,6 +268,30 @@ export function ProductsTab(): React.JSX.Element {
     [refetchProducts]
   )
 
+  const handleToggleFavorite = useCallback(
+    async (id: string, currentStatus: boolean): Promise<void> => {
+      try {
+        await cafeApi.products.update(id, { isFavorite: !currentStatus })
+        refetchProducts()
+      } catch {
+        toast({ title: 'Hata', description: 'Kaydedilemedi', variant: 'destructive' })
+      }
+    },
+    [refetchProducts]
+  )
+
+  const handleUpdateCategory = useCallback(
+    async (id: string, name: string): Promise<void> => {
+      try {
+        await cafeApi.categories.update(id, { name })
+        refetchCategories()
+      } catch {
+        toast({ title: 'Hata', description: 'Güncellenemedi', variant: 'destructive' })
+      }
+    },
+    [refetchCategories]
+  )
+
   return (
     <div className={STYLES.container}>
       <div className={STYLES.sidebarWrap}>
@@ -274,9 +300,7 @@ export function ProductsTab(): React.JSX.Element {
           selectedCategoryId={selectedCategoryId}
           onSelectCategory={setSelectedCategoryId}
           onAddCategory={handleAddCategory}
-          onUpdateCategory={(id, name) =>
-            cafeApi.categories.update(id, { name }).then(refetchCategories)
-          }
+          onUpdateCategory={handleUpdateCategory}
           onDeleteCategory={setDeleteCategoryId}
         />
       </div>
@@ -294,9 +318,7 @@ export function ProductsTab(): React.JSX.Element {
                 product={product}
                 onUpdate={handleUpdateProduct}
                 onDelete={handleDeleteProduct}
-                onToggleFavorite={(id, cur) =>
-                  cafeApi.products.update(id, { isFavorite: !cur }).then(refetchProducts)
-                }
+                onToggleFavorite={handleToggleFavorite}
               />
             ))}
           </div>

@@ -1,23 +1,27 @@
+'use client'
+
 import { cn, formatCurrency } from '@/lib/utils'
 import { parseISO } from 'date-fns'
 import { LucideIcon, PieChart as PieChartIcon, TrendingUp } from 'lucide-react'
-import React, { memo, useMemo, useState } from 'react'
+import React, { memo, useCallback, useMemo } from 'react'
 import {
   Area,
   AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
   Pie,
   PieChart,
   ResponsiveContainer,
   Sector,
   Tooltip,
-  TooltipProps,
   XAxis,
   YAxis
 } from 'recharts'
 import { useDashboardContext } from '../context/DashboardContext'
 
 // ============================================================================
-// Types & Styles
+// Types
 // ============================================================================
 
 interface PieDataPoint {
@@ -27,11 +31,33 @@ interface PieDataPoint {
   color: string
 }
 
+interface RevenueTooltipPayload {
+  name: string
+  value: number
+  color?: string
+  payload: {
+    date: string
+    revenue: number
+  }
+}
+
+interface RevenueTooltipProps {
+  active?: boolean
+  payload?: RevenueTooltipPayload[]
+  label?: string
+}
+
+/** Recharts Sector Props tanımı */
+
 const CHART_COLORS = {
   revenue: '#007AFF',
   hourly: '#10b981',
   product: '#8b5cf6'
 } as const
+
+// ============================================================================
+// Styles
+// ============================================================================
 
 const STYLES = {
   cardBase:
@@ -40,7 +66,9 @@ const STYLES = {
   title: 'text-xl font-black text-foreground tracking-tight',
   subtitle: 'text-[10px] text-muted-foreground/70 font-black tracking-[0.2em] uppercase',
   emptyStateWrap: 'h-full flex flex-col items-center justify-center space-y-4',
-  tooltipCard: 'bg-card border border-border/80 p-4 rounded-2xl shadow-xl min-w-[160px]'
+  tooltipCard: 'bg-card border border-border/80 p-4 rounded-2xl shadow-xl min-w-[160px]',
+  tooltipLabel: 'text-[10px] font-black text-muted-foreground/60 tracking-[0.25em] mb-2 uppercase',
+  tooltipValue: 'text-2xl font-black text-foreground tabular-nums'
 } as const
 
 // ============================================================================
@@ -86,8 +114,9 @@ const RevenueTooltip = ({
   active,
   label,
   payload
-}: TooltipProps<number, string>): React.JSX.Element | null => {
+}: RevenueTooltipProps): React.JSX.Element | null => {
   if (!active || !payload?.length) return null
+
   const dateStr =
     label && !isNaN(parseISO(label).getTime())
       ? parseISO(label).toLocaleDateString('tr-TR', {
@@ -96,14 +125,11 @@ const RevenueTooltip = ({
           month: 'long'
         })
       : label
+
   return (
     <div className={STYLES.tooltipCard}>
-      <p className="text-[10px] font-black text-muted-foreground/60 tracking-[0.25em] mb-2">
-        {dateStr}
-      </p>
-      <p className="text-2xl font-black text-foreground tabular-nums">
-        {formatCurrency(payload[0].value as number)}
-      </p>
+      <p className={STYLES.tooltipLabel}>{dateStr}</p>
+      <p className={STYLES.tooltipValue}>{formatCurrency(payload[0].value)}</p>
       <div className="flex items-center gap-2 mt-1">
         <span className="h-1.5 w-1.5 rounded-full bg-primary" />
         <span className="text-[9px] font-black text-primary tracking-[0.2em]">GÜNLÜK GELİR</span>
@@ -118,6 +144,7 @@ const RevenueTooltip = ({
 
 export const WeeklyTrendChart = memo((): React.JSX.Element => {
   const { revenueTrend } = useDashboardContext()
+
   return (
     <ChartCard
       title="Haftalık Performans"
@@ -141,7 +168,7 @@ export const WeeklyTrendChart = memo((): React.JSX.Element => {
                 tickLine={false}
                 dy={10}
                 tick={{ fill: 'currentColor', fontSize: 11, fontWeight: 800 }}
-                tickFormatter={(str) =>
+                tickFormatter={(str): string =>
                   parseISO(str).toLocaleDateString('tr-TR', { weekday: 'short' })
                 }
               />
@@ -172,10 +199,10 @@ export const WeeklyTrendChart = memo((): React.JSX.Element => {
     </ChartCard>
   )
 })
+WeeklyTrendChart.displayName = 'WeeklyTrendChart'
 
 export const CategoryPieChart = memo((): React.JSX.Element => {
   const { stats } = useDashboardContext()
-  const [hovered, setHovered] = useState<PieDataPoint | null>(null)
 
   const pieData = useMemo<PieDataPoint[]>(() => {
     if (!stats?.categoryBreakdown) return []
@@ -183,37 +210,60 @@ export const CategoryPieChart = memo((): React.JSX.Element => {
       name: c.categoryName,
       value: c.revenue || 0.1,
       quantity: c.quantity,
-      color: CHART_COLORS.revenue // Gerçek renk eşleştirme fonksiyonunuzu buraya ekleyin
+      color: CHART_COLORS.revenue
     }))
   }, [stats?.categoryBreakdown])
 
-  const renderSector = (props: any): React.JSX.Element => (
-    <Sector
-      {...props}
-      fill={props.payload.color}
-      className="focus:outline-none transition-all duration-300"
-    />
-  )
+  // activeShape için any yerine tanımladığımız tipi kullanıyoruz
+  const renderShape = useCallback((props: any): React.JSX.Element => {
+    const { isActive, ...restProps } = props
+    return (
+      <Sector
+        {...restProps}
+        fill={isActive ? props.payload?.color : props.fill}
+        className="focus:outline-none transition-all duration-300"
+      />
+    )
+  }, [])
 
   return (
-    <ChartCard title="Kategori Dağılımı" icon={PieChartIcon} delay="delay-[700ms]">
-      <div className="flex-1 w-full flex flex-col items-center justify-center relative min-h-[320px]">
+    <ChartCard
+      title="Kategori Dağılımı"
+      subtitle="KATEGORİ BAZLI GELİR"
+      icon={PieChartIcon}
+      delay="delay-[500ms]"
+    >
+      <div className="h-[300px] w-full">
         {pieData.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
                 data={pieData}
-                innerRadius="70%"
-                outerRadius="100%"
-                paddingAngle={4}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={80}
+                paddingAngle={5}
                 dataKey="value"
-                stroke="none"
-                isAnimationActive={false}
-                shape={renderSector}
-                onMouseEnter={(data: PieDataPoint) => setHovered(data)}
-                onMouseLeave={() => setHovered(null)}
+                shape={renderShape}
               />
-              <Tooltip content={<div className="hidden" />} isAnimationActive={false} />
+              <Tooltip
+                content={({ active, payload }): React.JSX.Element | null => {
+                  if (!active || !payload?.length) return null
+                  const item = payload[0].payload as PieDataPoint
+                  return (
+                    <div className={STYLES.tooltipCard}>
+                      <p className={STYLES.tooltipLabel}>{item.name}</p>
+                      <p className="text-xl font-black text-foreground">
+                        {formatCurrency(item.value)}
+                      </p>
+                      <p className="text-[9px] font-black text-primary/60 mt-1 uppercase">
+                        {item.quantity} ÜRÜN
+                      </p>
+                    </div>
+                  )
+                }}
+              />
             </PieChart>
           </ResponsiveContainer>
         ) : (
@@ -221,23 +271,131 @@ export const CategoryPieChart = memo((): React.JSX.Element => {
             <PieChartIcon className="w-10 h-10 opacity-20" />
           </div>
         )}
-        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          {hovered ? (
-            <div className="flex flex-col items-center animate-in fade-in zoom-in duration-200">
-              <span
-                className="text-[10px] font-black tracking-widest mb-1"
-                style={{ color: hovered.color }}
-              >
-                {hovered.name}
-              </span>
-              <span className="text-3xl font-black">{formatCurrency(hovered.value)}</span>
-              <span className="text-[10px] opacity-30">{hovered.quantity} ADET</span>
-            </div>
-          ) : (
-            <PieChartIcon className="w-10 h-10 opacity-10" />
-          )}
-        </div>
       </div>
     </ChartCard>
   )
 })
+CategoryPieChart.displayName = 'CategoryPieChart'
+
+export const HourlyActivityChart = memo((): React.JSX.Element => {
+  const { stats } = useDashboardContext()
+  const data = stats?.hourlyActivity || []
+
+  return (
+    <ChartCard
+      title="Saatlik Yoğunluk"
+      subtitle="GÜNLÜK SATIŞ DAĞILIMI"
+      icon={TrendingUp}
+      delay="delay-[600ms]"
+    >
+      <div className="h-[300px] w-full">
+        {data.length > 0 ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={data} margin={{ left: 10, right: 25, top: 10, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} />
+              <XAxis
+                dataKey="hour"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: 'currentColor', fontSize: 10, fontWeight: 700 }}
+              />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                width={80}
+                tick={{ fill: 'currentColor', fontSize: 10, fontWeight: 700 }}
+                tickFormatter={formatCurrency}
+              />
+              <Tooltip
+                cursor={{ fill: 'currentColor', opacity: 0.05 }}
+                content={({ active, payload, label }): React.JSX.Element | null => {
+                  if (!active || !payload?.length) return null
+                  return (
+                    <div className={STYLES.tooltipCard}>
+                      <p className={STYLES.tooltipLabel}>SAAT {label}</p>
+                      <p className="text-xl font-black text-foreground tabular-nums">
+                        {formatCurrency(payload[0].value as number)}
+                      </p>
+                      <p className="text-[9px] font-black text-primary/60 mt-1 uppercase">
+                        {payload[0].payload.orderCount} SİPARİŞ
+                      </p>
+                    </div>
+                  )
+                }}
+              />
+              <Bar
+                dataKey="revenue"
+                fill={CHART_COLORS.hourly}
+                radius={[4, 4, 0, 0]}
+                isAnimationActive={false}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className={STYLES.emptyStateWrap}>
+            <TrendingUp className="w-10 h-10 opacity-20" />
+          </div>
+        )}
+      </div>
+    </ChartCard>
+  )
+})
+HourlyActivityChart.displayName = 'HourlyActivityChart'
+
+export const TopProductsChart = memo((): React.JSX.Element => {
+  const { stats } = useDashboardContext()
+  const data = stats?.topProducts || []
+
+  return (
+    <ChartCard title="En Çok Satanlar" icon={TrendingUp} delay="delay-[800ms]">
+      <div className="h-[320px] w-full">
+        {data.length > 0 ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={data}
+              layout="vertical"
+              margin={{ left: 20, right: 40, top: 10, bottom: 10 }}
+            >
+              <XAxis type="number" hide />
+              <YAxis
+                type="category"
+                dataKey="productName"
+                axisLine={false}
+                tickLine={false}
+                width={120}
+                tick={{ fill: 'currentColor', fontSize: 10, fontWeight: 800 }}
+              />
+              <Tooltip
+                cursor={{ fill: 'currentColor', opacity: 0.05 }}
+                content={({ active, payload }): React.JSX.Element | null => {
+                  if (!active || !payload?.length) return null
+                  const item = payload[0].payload
+                  return (
+                    <div className={STYLES.tooltipCard}>
+                      <p className={STYLES.tooltipLabel}>{item.productName}</p>
+                      <p className="text-xl font-black text-primary">
+                        {item.quantity} <span className="text-[10px] opacity-50">ADET</span>
+                      </p>
+                    </div>
+                  )
+                }}
+              />
+              <Bar
+                dataKey="quantity"
+                fill={CHART_COLORS.product}
+                radius={[0, 4, 4, 0]}
+                barSize={12}
+                isAnimationActive={false}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className={STYLES.emptyStateWrap}>
+            <TrendingUp className="w-10 h-10 opacity-20" />
+          </div>
+        )}
+      </div>
+    </ChartCard>
+  )
+})
+TopProductsChart.displayName = 'TopProductsChart'

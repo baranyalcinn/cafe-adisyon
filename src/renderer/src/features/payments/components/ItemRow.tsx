@@ -1,4 +1,5 @@
 import { Minus, Plus } from 'lucide-react'
+import React from 'react'
 
 import { cn, formatCurrency } from '@/lib/utils'
 
@@ -40,21 +41,21 @@ const STYLES = {
 // Component
 // ============================================================================
 
-export function ItemRow({ item, selected, onQtyChange }: ItemRowProps) {
+export function ItemRow({ item, selected, onQtyChange }: ItemRowProps): React.JSX.Element {
   const isSelected = selected > 0
   const totalLine = item.unitPrice * selected
 
   // Satır tıklaması ile "Artır" butonu birebir aynı işi yaptığı için tek fonksiyonda birleştirdik
-  const handleInc = () => {
+  const handleInc = (): void => {
     onQtyChange(item.id, Math.min(selected + 1, item.quantity))
   }
 
-  const handleDec = () => {
+  const handleDec = (): void => {
     onQtyChange(item.id, Math.max(selected - 1, 0))
   }
 
   // Klavye erişilebilirliği (Enter veya Boşluk tuşu ile seçme/artırma)
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent): void => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault()
       handleInc()

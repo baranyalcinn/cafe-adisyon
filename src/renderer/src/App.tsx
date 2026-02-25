@@ -1,8 +1,8 @@
+'use client'
+
 import { TitleBar } from '@/components/TitleBar'
 import { Button } from '@/components/ui/button'
 import { UpdateNotifier } from '@/components/UpdateNotifier'
-import { OrderView } from '@/features/orders/OrderView'
-import { TablesView } from '@/features/tables/TablesView'
 import { useInventoryPrefetch } from '@/hooks/useInventory'
 import { useTheme } from '@/hooks/useTheme'
 import { cn } from '@/lib/utils'
@@ -10,11 +10,14 @@ import { useTableStore } from '@/store/useTableStore'
 import '@/styles/globals.css'
 import { Toaster } from 'sonner'
 
-import { LayoutGrid, Loader2, Settings } from 'lucide-react'
-import {
+// Kritik Ekranlar (Eager Load): Uygulama açılırken hazır gelir.
+import { OrderView } from '@/features/orders/OrderView'
+import { TablesView } from '@/features/tables/TablesView'
+
+import { LayoutGrid, Loader2, LucideIcon, Settings } from 'lucide-react'
+import React, {
   Suspense,
   lazy,
-  memo,
   useCallback,
   useEffect,
   useMemo,
@@ -23,17 +26,18 @@ import {
 } from 'react'
 
 // ============================================================================
-// Types & Lazy Imports
+// Types & Lazy Imports (Code Splitting)
 // ============================================================================
 
 type ViewType = 'tables' | 'order' | 'settings'
 
+// Ağır Ayarlar Ekranı (Lazy Load): Sadece tıklandığında yüklenir ve RAM'den atılabilir.
 const SettingsView = lazy(() =>
   import('@/features/settings/SettingsView').then((m) => ({ default: m.SettingsView }))
 )
 
 // ============================================================================
-// Constants & Styles
+// Styles
 // ============================================================================
 
 const STYLES = {
@@ -46,7 +50,7 @@ const STYLES = {
   contentArea: 'flex-1 relative bg-muted/5',
   contentWrapper:
     'absolute inset-0 overflow-hidden animate-in fade-in slide-in-from-bottom-1 duration-500',
-  contentPending: 'opacity-60 grayscale-[0.3] pointer-events-none',
+  contentPending: 'opacity-50 pointer-events-none transition-opacity duration-300',
 
   // NavButton
   navBtnWrap: 'relative px-3 flex flex-col items-center gap-1 group',
@@ -67,27 +71,28 @@ const STYLES = {
   logoBlurBg:
     'absolute inset-x-0 top-0 bottom-0 bg-primary/5 blur-2xl rounded-full scale-150 group-hover:bg-primary/15 transition-colors duration-1000',
   logoBlocks:
-    'w-3.5 h-5 rounded-sm border border-primary/20 bg-primary/10 flex items-center justify-center font-black text-xs transition-all duration-500 group-hover:scale-110 shadow-sm group-hover:translate-y-0',
-  logoText: 'text-[9px] font-black text-primary/80 uppercase tracking-[0.3em] leading-none',
+    'w-3.5 h-5 rounded-sm border border-primary/20 bg-primary/10 flex items-center justify-center font-black text-xs transition-all duration-500 group-hover:scale-110 shadow-sm',
+  logoText: 'text-[9px] font-black text-primary/80 uppercase tracking-[0.3em] leading-none mt-1.5',
 
   // Loaders
   bootLoaderWrap: 'h-screen w-screen flex flex-col items-center justify-center bg-background gap-8',
   bootText: 'text-[9px] font-black text-primary/40 tracking-[0.2em] uppercase',
-  fallbackWrap: 'flex items-center justify-center h-full bg-background/20 backdrop-blur-sm'
+  fallbackWrap:
+    'flex items-center justify-center h-full w-full bg-background/40 backdrop-blur-sm absolute inset-0 z-50 animate-in fade-in duration-300'
 } as const
 
 // ============================================================================
-// Sub-Components (Optimized)
+// Sub-Components
 // ============================================================================
 
 interface NavButtonProps {
   active: boolean
   onClick: () => void
-  icon: React.ElementType
+  icon: LucideIcon
   label: string
 }
 
-const NavButton = memo(({ active, onClick, icon: Icon, label }: NavButtonProps) => (
+const NavButton = ({ active, onClick, icon: Icon, label }: NavButtonProps): React.JSX.Element => (
   <div className={STYLES.navBtnWrap}>
     <Button
       variant="ghost"
@@ -105,10 +110,9 @@ const NavButton = memo(({ active, onClick, icon: Icon, label }: NavButtonProps) 
       {label}
     </span>
   </div>
-))
-NavButton.displayName = 'NavButton'
+)
 
-const LogoSection = memo(() => {
+const LogoSection = (): React.JSX.Element => {
   const configs = useMemo(
     () => [
       { color: 'text-primary', offset: 'translate-y-0.5', delay: '0s' },
@@ -122,7 +126,7 @@ const LogoSection = memo(() => {
     <div className={STYLES.logoWrap}>
       <div className="relative p-1 flex flex-col items-center">
         <div className={STYLES.logoBlurBg} />
-        <div className="flex flex-col items-center gap-1.5 relative z-10">
+        <div className="flex flex-col items-center relative z-10">
           <div className="flex items-center gap-0.5">
             {configs.map((config, i) => (
               <div
@@ -139,10 +143,9 @@ const LogoSection = memo(() => {
       </div>
     </div>
   )
-})
-LogoSection.displayName = 'LogoSection'
+}
 
-const BootLoader = memo(() => (
+const BootLoader = (): React.JSX.Element => (
   <div className={STYLES.bootLoaderWrap}>
     <div className="scale-150">
       <LogoSection />
@@ -155,10 +158,9 @@ const BootLoader = memo(() => (
     </div>
     <style>{`@keyframes loading { 0% { transform: translateX(-100%); } 100% { transform: translateX(200%); } }`}</style>
   </div>
-))
-BootLoader.displayName = 'BootLoader'
+)
 
-const LoadingFallback = memo(() => (
+const LoadingFallback = (): React.JSX.Element => (
   <div className={STYLES.fallbackWrap}>
     <div className="flex flex-col items-center gap-4">
       <div className="relative">
@@ -167,22 +169,21 @@ const LoadingFallback = memo(() => (
           <div className="w-1.5 h-1.5 bg-primary rounded-full animate-ping" />
         </div>
       </div>
-      <span className={STYLES.bootText}>Lütfen Bekleyin</span>
+      <span className={STYLES.bootText}>Modül Yükleniyor...</span>
     </div>
   </div>
-))
-LoadingFallback.displayName = 'LoadingFallback'
+)
 
 // ============================================================================
 // Main Application Component
 // ============================================================================
 
-function App(): React.JSX.Element {
+export function App(): React.JSX.Element {
   const [currentView, setCurrentView] = useState<ViewType>('tables')
   const { isDark, toggleTheme, colorScheme, setColorScheme } = useTheme()
   const selectTable = useTableStore((s) => s.selectTable)
 
-  const [isBooting, setIsBooting] = useState(true)
+  const [isBooting, setIsBooting] = useState<boolean>(true)
   const [isPending, startTransition] = useTransition()
   const { prefetchAll } = useInventoryPrefetch()
 
@@ -213,8 +214,6 @@ function App(): React.JSX.Element {
     startTransition(() => setCurrentView(view))
   }, [])
 
-  // App.tsx içindeki ilgili kısmı şu şekilde güncelleyebilirsin:
-
   const renderActiveView = (): React.JSX.Element | null => {
     switch (currentView) {
       case 'tables':
@@ -235,7 +234,6 @@ function App(): React.JSX.Element {
     }
   }
 
-  // Early Return
   if (isBooting) return <BootLoader />
 
   return (
@@ -249,7 +247,7 @@ function App(): React.JSX.Element {
           <nav className={STYLES.navContainer}>
             <NavButton
               active={currentView === 'tables' || currentView === 'order'}
-              onClick={() => changeView('tables')}
+              onClick={(): void => changeView('tables')}
               icon={LayoutGrid}
               label="MASALAR"
             />
@@ -258,7 +256,7 @@ function App(): React.JSX.Element {
           <div className="pb-4">
             <NavButton
               active={currentView === 'settings'}
-              onClick={() => changeView('settings')}
+              onClick={(): void => changeView('settings')}
               icon={Settings}
               label="AYARLAR"
             />

@@ -106,4 +106,40 @@ export function registerTableHandlers(): void {
     },
     'Masa silinemedi. Lütfen önce masadaki işlemleri kontrol edin.'
   )
+
+  // 5. TRANSFER
+  createRawHandler(
+    IPC_CHANNELS.TABLES_TRANSFER,
+    tableSchemas.transfer,
+    async (data) => {
+      const { sourceId, targetId } = data
+      const order = await prisma.order.findFirst({
+        where: { tableId: sourceId, status: 'OPEN' }
+      })
+      if (!order) throw new Error('Kaynak masada açık adisyon bulunamadı.')
+      const { orderService } = await import('../../services/OrderService')
+      return orderService.transferTable(order.id, targetId)
+    },
+    'Masa aktarma işlemi başarısız.'
+  )
+
+  // 6. MERGE
+  createRawHandler(
+    IPC_CHANNELS.TABLES_MERGE,
+    tableSchemas.merge,
+    async (data) => {
+      const { sourceId, targetId } = data
+      const [sourceOrder, targetOrder] = await Promise.all([
+        prisma.order.findFirst({ where: { tableId: sourceId, status: 'OPEN' } }),
+        prisma.order.findFirst({ where: { tableId: targetId, status: 'OPEN' } })
+      ])
+
+      if (!sourceOrder) throw new Error('Kaynak masada açık adisyon bulunamadı.')
+      if (!targetOrder) throw new Error('Hedef masada açık adisyon bulunamadı.')
+
+      const { orderService } = await import('../../services/OrderService')
+      return orderService.mergeTables(sourceOrder.id, targetOrder.id)
+    },
+    'Masa birleştirme işlemi başarısız.'
+  )
 }

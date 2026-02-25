@@ -21,5 +21,13 @@ export const tableService = {
   async delete(id: string): Promise<void> {
     const result = await api.tables.delete(id)
     if (!result.success) throw new Error(result.error)
+  },
+  async transfer(sourceId: string, targetId: string): Promise<void> {
+    const result = await api.tables.transfer(sourceId, targetId)
+    if (!result.success) throw new Error(result.error)
+  },
+  async merge(sourceId: string, targetId: string): Promise<void> {
+    const result = await api.tables.merge(sourceId, targetId)
+    if (!result.success) throw new Error(result.error)
   }
 }

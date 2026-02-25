@@ -33,7 +33,9 @@ export const responseSchema = <T extends z.ZodTypeAny>(
 
 export const tableSchemas = {
   create: z.object({ name: nameSchema.max(50) }),
-  delete: z.object({ id: cuidSchema })
+  delete: z.object({ id: cuidSchema }),
+  transfer: z.object({ sourceId: cuidSchema, targetId: cuidSchema }),
+  merge: z.object({ sourceId: cuidSchema, targetId: cuidSchema })
 }
 
 // DRY: Kategori temel şemasını oluşturup Create ve Update için paylaştırıyoruz

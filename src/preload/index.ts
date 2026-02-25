@@ -44,7 +44,11 @@ const api = {
     create: (name: string): Promise<ApiResponse<Table>> =>
       invoke<Table>(IPC_CHANNELS.TABLES_CREATE, { name }),
     delete: (id: string): Promise<ApiResponse<null>> =>
-      invoke<null>(IPC_CHANNELS.TABLES_DELETE, { id })
+      invoke<null>(IPC_CHANNELS.TABLES_DELETE, { id }),
+    transfer: (sourceId: string, targetId: string): Promise<ApiResponse<Order>> =>
+      invoke<Order>(IPC_CHANNELS.TABLES_TRANSFER, { sourceId, targetId }),
+    merge: (sourceId: string, targetId: string): Promise<ApiResponse<Order>> =>
+      invoke<Order>(IPC_CHANNELS.TABLES_MERGE, { sourceId, targetId })
   },
 
   // --- Categories ---
@@ -150,7 +154,7 @@ const api = {
     getExtendedStats: (): Promise<ApiResponse<ExtendedDashboardStats>> =>
       invoke<ExtendedDashboardStats>(IPC_CHANNELS.DASHBOARD_GET_EXTENDED_STATS),
     getRevenueTrend: (days: number = 7): Promise<ApiResponse<RevenueTrendItem[]>> =>
-      invoke<RevenueTrendItem[]>(IPC_CHANNELS.DASHBOARD_GET_REVENUE_TREND, days),
+      invoke<RevenueTrendItem[]>(IPC_CHANNELS.DASHBOARD_GET_REVENUE_TREND, { days }),
     getBundle: (): Promise<ApiResponse<DashboardBundle>> =>
       invoke<DashboardBundle>(IPC_CHANNELS.DASHBOARD_GET_BUNDLE)
   },
@@ -178,13 +182,13 @@ const api = {
   // --- Z-Report ---
   zReport: {
     generate: (actualCash?: number): Promise<ApiResponse<DailySummary>> =>
-      invoke<DailySummary>(IPC_CHANNELS.ZREPORT_GENERATE, actualCash),
-    getHistory: (
-      limit: number,
-      startDate?: string,
+      invoke<DailySummary>(IPC_CHANNELS.ZREPORT_GENERATE, { actualCash }),
+    getHistory: (options?: {
+      limit?: number
+      startDate?: string
       endDate?: string
-    ): Promise<ApiResponse<DailySummary[]>> =>
-      invoke<DailySummary[]>(IPC_CHANNELS.ZREPORT_GET_HISTORY, limit, startDate, endDate)
+    }): Promise<ApiResponse<DailySummary[]>> =>
+      invoke<DailySummary[]>(IPC_CHANNELS.ZREPORT_GET_HISTORY, options ?? {})
   },
 
   // --- Logs ---
@@ -319,7 +323,7 @@ const api = {
   },
   reports: {
     getMonthly: (limit: number = 12): Promise<ApiResponse<MonthlyReport[]>> =>
-      invoke<MonthlyReport[]>(IPC_CHANNELS.REPORTS_GET_MONTHLY, limit)
+      invoke<MonthlyReport[]>(IPC_CHANNELS.REPORTS_GET_MONTHLY, { limit })
   },
   window: {
     minimize: (): void => send(IPC_CHANNELS.WINDOW_MINIMIZE),

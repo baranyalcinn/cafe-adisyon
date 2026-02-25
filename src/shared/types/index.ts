@@ -258,6 +258,8 @@ export const IPC_CHANNELS = {
   TABLES_CREATE: 'tables:create',
   TABLES_DELETE: 'tables:delete',
   TABLES_GET_WITH_STATUS: 'tables:getWithStatus',
+  TABLES_TRANSFER: 'tables:transfer',
+  TABLES_MERGE: 'tables:merge',
 
   // Products
   PRODUCTS_GET_ALL: 'products:getAll',

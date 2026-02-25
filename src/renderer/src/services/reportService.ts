@@ -17,10 +17,10 @@ export const reportService = {
     }): Promise<DailySummary[]> {
       const limit = options?.limit ?? 30
       // Serialize dates to strings to ensure safe IPC transmission
-      const startDateStr = options?.startDate?.toISOString()
-      const endDateStr = options?.endDate?.toISOString()
+      const startDate = options?.startDate?.toISOString()
+      const endDate = options?.endDate?.toISOString()
 
-      const result = await api.zReport.getHistory(limit, startDateStr, endDateStr)
+      const result = await api.zReport.getHistory({ limit, startDate, endDate })
       if (!result.success) throw new Error(result.error)
       return result.data
     }
