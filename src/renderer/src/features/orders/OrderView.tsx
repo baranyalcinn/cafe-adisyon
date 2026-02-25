@@ -104,7 +104,6 @@ interface OrderSidebarProps {
   activeCategory: string | null
   setActiveCategory: (val: string | null) => void
   categories: Category[]
-  favoriteProducts: Product[]
   favoriteProductsFiltered: Product[]
   isLocked: boolean
   onAddToCart: (product: Product) => void
@@ -377,6 +376,12 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
     localStorage.setItem('orderViewMode', viewMode)
   }, [viewMode])
 
+  // --- isPaymentOpen Ref (Keyboard listener bunu dep olarak almaz, boşuna sök/tak olmaz)
+  const isPaymentOpenRef = useRef(isPaymentOpen)
+  useEffect(() => {
+    isPaymentOpenRef.current = isPaymentOpen
+  }, [isPaymentOpen])
+
   // --- Keyboard Shortcuts ---
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
@@ -390,12 +395,17 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
       const isInInput =
         activeEl instanceof HTMLInputElement || activeEl instanceof HTMLTextAreaElement
 
-      if (e.key === 'Escape' && !isPaymentOpen && !isInInput) {
+      if (e.key === 'Escape' && !isPaymentOpenRef.current && !isInInput) {
         onBack()
       }
 
       // Bağımlılığı kırmak için ref kullanıyoruz
-      if (e.key === ' ' && !isPaymentOpen && !isInInput && orderItemsLengthRef.current > 0) {
+      if (
+        e.key === ' ' &&
+        !isPaymentOpenRef.current &&
+        !isInInput &&
+        orderItemsLengthRef.current > 0
+      ) {
         e.preventDefault()
         setIsPaymentOpen(true)
       }
@@ -403,7 +413,7 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [onBack, isPaymentOpen]) // order bağımlılığı kalktı, gereksiz sök/tak önlendi
+  }, [onBack]) // isPaymentOpen bağımlılığı kalktı, gereksiz sök/tak tamamen önlendi
 
   // --- Product Filtering & Sorting ---
   const resetVisibleLimit = useCallback((): void => setVisibleLimit(INITIAL_VISIBLE_LIMIT), [])
@@ -506,7 +516,6 @@ export function OrderView({ onBack }: OrderViewProps): React.JSX.Element {
         activeCategory={activeCategory}
         setActiveCategory={setActiveCategory}
         categories={categories}
-        favoriteProducts={favoriteProducts}
         favoriteProductsFiltered={favoriteProductsFiltered}
         isLocked={isLocked}
         onAddToCart={handleAddToCart}

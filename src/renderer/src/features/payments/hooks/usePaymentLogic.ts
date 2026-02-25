@@ -4,7 +4,7 @@ import { soundManager } from '@/lib/sound'
 import { useTableStore } from '@/store/useTableStore'
 import { toast } from '@/store/useToastStore'
 import { toCents, toLira } from '@shared/utils/currency'
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import React, { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 
 // ============================================================================
 // Types
@@ -45,7 +45,7 @@ export type Action =
   | { type: 'SET_HOVER_PAYMENT'; method: PaymentMethod | null }
 
 // ============================================================================
-// Utils
+// Utils (Pure Functions)
 // ============================================================================
 
 function parseMoneyToCents(input: string): number {
@@ -155,28 +155,10 @@ function reducer(state: State, action: Action): State {
 }
 
 // ============================================================================
-// Hook
+// Hook Return Type Definition
 // ============================================================================
 
-interface UsePaymentLogicProps {
-  order: Order | null | undefined
-  onProcessPayment: (
-    amount: number,
-    method: PaymentMethod,
-    options?: { skipLog?: boolean; itemsToMarkPaid?: { id: string; quantity: number }[] }
-  ) => Promise<unknown>
-  onClose: () => void
-  onPaymentComplete?: () => void
-  open: boolean
-}
-
-export function usePaymentLogic({
-  order,
-  onProcessPayment,
-  onClose,
-  onPaymentComplete,
-  open
-}: UsePaymentLogicProps): {
+export interface PaymentLogicReturn {
   state: State
   dispatch: React.Dispatch<Action>
   totals: {
@@ -209,7 +191,31 @@ export function usePaymentLogic({
     setHoveredPaymentMethod: (method: PaymentMethod | null) => void
     handleClose: () => void
   }
-} {
+}
+
+// ============================================================================
+// Main Hook
+// ============================================================================
+
+interface UsePaymentLogicProps {
+  order: Order | null | undefined
+  onProcessPayment: (
+    amount: number,
+    method: PaymentMethod,
+    options?: { skipLog?: boolean; itemsToMarkPaid?: { id: string; quantity: number }[] }
+  ) => Promise<unknown>
+  onClose: () => void
+  onPaymentComplete?: () => void
+  open: boolean
+}
+
+export function usePaymentLogic({
+  order,
+  onProcessPayment,
+  onClose,
+  onPaymentComplete,
+  open
+}: UsePaymentLogicProps): PaymentLogicReturn {
   const clearSelection = useTableStore((s) => s.clearSelection)
   const [state, dispatch] = useReducer(reducer, initialState)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -275,33 +281,47 @@ export function usePaymentLogic({
 
   // --- Callbacks ---
 
-  const handleTenderedChange = useCallback((raw: string) => {
+  const handleTenderedChange = useCallback((raw: string): void => {
     const normalized = normalizeTenderedInput(raw)
     if (normalized === '' && raw !== '') return
     dispatch({ type: 'SET_TENDERED_INPUT', value: normalized })
   }, [])
 
   const appendTendered = useCallback(
-    (chunk: string) => {
+    (chunk: string): void => {
       handleTenderedChange(state.tenderedInput + chunk)
     },
     [state.tenderedInput, handleTenderedChange]
   )
 
-  const backspaceTendered = useCallback(() => {
+  const backspaceTendered = useCallback((): void => {
     handleTenderedChange(state.tenderedInput.slice(0, -1))
   }, [state.tenderedInput, handleTenderedChange])
 
-  const clearTendered = useCallback(() => {
+  const clearTendered = useCallback((): void => {
     dispatch({ type: 'CLEAR_TENDERED' })
   }, [])
 
-  const handleSetExact = useCallback(() => {
+  const handleSetExact = useCallback((): void => {
     dispatch({ type: 'SET_TENDERED_INPUT', value: centsToInputString(effectivePayment) })
   }, [effectivePayment])
 
+  const setHoveredPaymentMethod = useCallback((method: PaymentMethod | null): void => {
+    dispatch({ type: 'SET_HOVER_PAYMENT', method })
+  }, [])
+
+  const handleClose = useCallback((): void => {
+    if (state.view === 'SUCCESS') {
+      if (timerRef.current) clearTimeout(timerRef.current)
+      if (onPaymentComplete) onPaymentComplete()
+      else clearSelection()
+    }
+    dispatch({ type: 'RESET_TRANSIENT' })
+    onClose()
+  }, [state.view, onPaymentComplete, clearSelection, onClose])
+
   const handlePayment = useCallback(
-    async (method: PaymentMethod) => {
+    async (method: PaymentMethod): Promise<void> => {
       if (state.processingMethod !== null) return
 
       let actualAmount = effectivePayment
@@ -320,10 +340,7 @@ export function usePaymentLogic({
         const finalChange = method === 'CASH' ? currentChange : 0
         if (actualAmount > 0 || isItemsModeWithSelection) {
           const itemsToPay = isItemsModeWithSelection
-            ? Object.entries(state.selectedQuantities).map(([id, quantity]) => ({
-                id,
-                quantity
-              }))
+            ? Object.entries(state.selectedQuantities).map(([id, quantity]) => ({ id, quantity }))
             : undefined
 
           await onProcessPayment(actualAmount, method, {
@@ -373,22 +390,13 @@ export function usePaymentLogic({
       selectedTotal,
       currentChange,
       remainingAmount,
+      state.processingMethod, // Eklendi: Dependency dizisindeki eksik tamamlandı
       onProcessPayment,
       onClose,
       onPaymentComplete,
       clearSelection
     ]
   )
-
-  const handleClose = useCallback(() => {
-    if (state.view === 'SUCCESS') {
-      if (timerRef.current) clearTimeout(timerRef.current)
-      if (onPaymentComplete) onPaymentComplete()
-      else clearSelection()
-    }
-    dispatch({ type: 'RESET_TRANSIENT' })
-    onClose()
-  }, [state.view, onPaymentComplete, clearSelection, onClose])
 
   // --- Effects ---
 
@@ -408,23 +416,51 @@ export function usePaymentLogic({
     }
   }, [state.paymentMode, state.splitBaseAmount, remainingAmount])
 
-  return {
-    state,
-    dispatch,
-    totals: { total, paidAmount, remainingAmount, effectivePayment, tendered, currentChange },
-    split,
-    items: { unpaidItems, selectedTotal, isAllItemsSelected },
-    flags: { canCashPay, canCardPay, processing: !!state.processingMethod },
-    actions: {
-      setTenderedInput: handleTenderedChange,
+  // ============================================================================
+  // Memoized Return Object (Re-render Optimization)
+  // ============================================================================
+
+  return useMemo<PaymentLogicReturn>(
+    () => ({
+      state,
+      dispatch,
+      totals: { total, paidAmount, remainingAmount, effectivePayment, tendered, currentChange },
+      split,
+      items: { unpaidItems, selectedTotal, isAllItemsSelected },
+      flags: { canCashPay, canCardPay, processing: !!state.processingMethod },
+      actions: {
+        setTenderedInput: handleTenderedChange,
+        appendTendered,
+        backspaceTendered,
+        clearTendered,
+        handleSetExact,
+        handlePayment,
+        setHoveredPaymentMethod,
+        handleClose
+      }
+    }),
+    [
+      state,
+      total,
+      paidAmount,
+      remainingAmount,
+      effectivePayment,
+      tendered,
+      currentChange,
+      split,
+      unpaidItems,
+      selectedTotal,
+      isAllItemsSelected,
+      canCashPay,
+      canCardPay,
+      handleTenderedChange,
       appendTendered,
       backspaceTendered,
       clearTendered,
       handleSetExact,
       handlePayment,
-      setHoveredPaymentMethod: (method: PaymentMethod | null) =>
-        dispatch({ type: 'SET_HOVER_PAYMENT', method }),
+      setHoveredPaymentMethod,
       handleClose
-    }
-  }
+    ]
+  )
 }

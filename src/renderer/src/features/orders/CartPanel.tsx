@@ -16,7 +16,7 @@ import {
   Trash2,
   Wallet
 } from 'lucide-react'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { CartPaidItem } from './components/CartPaidItem'
 import { CartUnpaidItem } from './components/CartUnpaidItem'
 
@@ -205,6 +205,12 @@ export const CartPanel = React.memo(function CartPanel({
   const hasItems = unpaidItems.length > 0 || paidItems.length > 0
   const hasPaidItems = paidItems.length > 0
 
+  // Stable reference: CartFooter memo'nun faydalanabilmesi için useCallback ile sabit referans
+  const handlePaymentClick = useCallback((): void => {
+    playClick()
+    onPaymentClick()
+  }, [playClick, onPaymentClick])
+
   return (
     <div className={STYLES.container}>
       {/* Header */}
@@ -291,10 +297,7 @@ export const CartPanel = React.memo(function CartPanel({
           total={total}
           paidAmount={paidAmount}
           remainingAmount={remainingAmount}
-          onPaymentClick={() => {
-            playClick()
-            onPaymentClick()
-          }}
+          onPaymentClick={handlePaymentClick}
         />
       )}
 
@@ -319,7 +322,8 @@ export const CartPanel = React.memo(function CartPanel({
 // Sub-Components (Memoized for performance)
 // ============================================================================
 
-const EmptyCartState = function EmptyCartState(): React.JSX.Element {
+// Sabit bileşen: props yok, hiç re-render olmamalı
+const EmptyCartState = memo(function EmptyCartState(): React.JSX.Element {
   return (
     <div className={STYLES.emptyState}>
       <div className={STYLES.emptyIconBg}>
@@ -331,7 +335,7 @@ const EmptyCartState = function EmptyCartState(): React.JSX.Element {
       </p>
     </div>
   )
-}
+})
 
 interface CartFooterProps {
   total: number
@@ -340,7 +344,7 @@ interface CartFooterProps {
   onPaymentClick: () => void
 }
 
-const CartFooter = function CartFooter({
+const CartFooter = memo(function CartFooter({
   total,
   paidAmount,
   remainingAmount,
@@ -389,7 +393,7 @@ const CartFooter = function CartFooter({
       </div>
     </div>
   )
-}
+})
 
 interface DeleteOrderDialogProps {
   open: boolean
