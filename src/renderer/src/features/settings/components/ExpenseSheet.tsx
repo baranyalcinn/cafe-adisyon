@@ -44,7 +44,8 @@ const STYLES = {
   inputWrap: 'relative group',
   iconWrapBase:
     'absolute left-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-md flex items-center justify-center transition-colors',
-  inputBase: 'pl-12 h-12 font-bold bg-muted/20 border-transparent transition-all rounded-lg w-full',
+  inputBase:
+    'relative pl-12 h-12 font-bold bg-muted/20 border-transparent transition-all rounded-lg w-full',
   amountInput:
     'text-xl font-black focus:border-rose-500/20 focus:ring-rose-500/20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none',
   submitBtn:
@@ -192,7 +193,7 @@ export function ExpenseSheet({
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   autoFocus={!isEditMode}
-                  className={cn(STYLES.inputBase, STYLES.amountInput)}
+                  className={cn(STYLES.inputBase, STYLES.amountInput, 'pl-12')}
                 />
               </div>
             </div>

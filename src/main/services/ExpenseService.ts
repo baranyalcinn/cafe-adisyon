@@ -16,7 +16,7 @@ export class ExpenseService {
         data: {
           ...data,
           paymentMethod: data.paymentMethod || 'CASH',
-          amount: Math.round(data.amount * 100) // Convert to cents
+          amount: Math.round(data.amount) // Already in cents from frontend
         }
       })
 
@@ -42,7 +42,7 @@ export class ExpenseService {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const updateData: any = { ...data }
       if (data.amount !== undefined) {
-        updateData.amount = Math.round(data.amount * 100) // Convert to cents
+        updateData.amount = Math.round(data.amount) // Already in cents from frontend
       }
 
       const expense = await prisma.expense.update({

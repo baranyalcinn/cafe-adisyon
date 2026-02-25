@@ -25,7 +25,7 @@ interface PaymentActionsProps {
 
 const STYLES = {
   base: cn(
-    'h-14 w-full rounded-xl justify-center gap-2 text-base font-bold tracking-wide',
+    'h-[52px] w-full rounded-xl justify-center gap-2 text-base font-bold tracking-wide',
     'transition-colors active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed'
   ),
   cash: 'bg-primary text-primary-foreground hover:bg-primary/95 shadow-sm border border-primary/20',

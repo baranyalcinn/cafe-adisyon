@@ -174,9 +174,9 @@ const STYLES = {
   menuContainer:
     'h-full flex flex-col overflow-auto p-4 md:p-6 animate-in fade-in slide-in-from-bottom-2 duration-300',
   menuBtnBase:
-    'group relative flex h-full min-h-[208px] flex-col items-start text-left rounded-2xl border p-6 border-zinc-200/70 dark:border-zinc-800/80 bg-white/85 dark:bg-zinc-900/80 backdrop-blur-xl shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-[1px] hover:border-primary/25 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25',
+    'group relative flex h-full min-h-[212px] flex-col items-start text-left rounded-2xl border p-6 md:p-6.5 border-zinc-200/70 dark:border-zinc-800/80 bg-white/85 dark:bg-zinc-900/80 backdrop-blur-xl shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-primary/40 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25',
   menuIconBg:
-    'mb-4 rounded-xl p-3.5 border border-transparent transition-all bg-zinc-100/70 dark:bg-zinc-800/50 group-hover:bg-white dark:group-hover:bg-zinc-900 group-hover:border-zinc-200/70 dark:group-hover:border-zinc-700/70',
+    'mb-4.5 rounded-xl p-3.5 border border-transparent transition-all bg-zinc-100/70 dark:bg-zinc-800/50 group-hover:bg-white dark:group-hover:bg-zinc-900 group-hover:border-zinc-200/70 dark:group-hover:border-zinc-700/70 group-hover:shadow-indigo-500/10 dark:group-hover:shadow-indigo-500/5',
   detailContainer: 'h-full flex flex-col animate-in fade-in slide-in-from-right-2 duration-300',
   detailHeader:
     'sticky top-0 z-10 h-14 md:h-16 flex items-center px-4 md:px-6 border-b border-zinc-200/70 dark:border-zinc-800/80 bg-white/85 dark:bg-zinc-900/80 backdrop-blur-xl',
@@ -282,10 +282,10 @@ function SettingsMenu({
       <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col">
         <div className="mb-5 md:mb-6 flex items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-foreground">
+            <h1 className="text-3xl md:text-3xl font-black tracking-tighter text-foreground">
               Ayarlar
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-[15px] text-muted-foreground mt-1.5 font-medium">
               Sistem ve uygulama ayarlarını yönetin
             </p>
           </div>
@@ -310,13 +310,13 @@ function SettingsMenu({
               className={STYLES.menuBtnBase}
             >
               <div className={cn(STYLES.menuIconBg, item.color, item.chipBg)}>
-                <item.icon className="h-6 w-6" />
+                <item.icon className="h-6.5 w-6.5" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-[17px] font-semibold tracking-tight text-foreground leading-tight">
+                <h3 className="text-[19px] font-black tracking-tight text-foreground leading-tight">
                   {item.label}
                 </h3>
-                <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground line-clamp-3">
+                <p className="mt-2 text-[15px] leading-relaxed text-muted-foreground font-medium opacity-80 group-hover:opacity-100 transition-opacity">
                   {item.description}
                 </p>
               </div>
@@ -442,8 +442,8 @@ export function SettingsView({
       <header className={STYLES.detailHeader}>
         <div className="flex items-center gap-3 md:gap-4 min-w-0">
           <Button variant="ghost" size="sm" onClick={handleBack} className={STYLES.backBtn}>
-            <ArrowLeft className="w-4 h-4 text-zinc-500 group-hover:text-foreground transition-transform group-hover:-translate-x-0.5" />
-            <span className="ml-1.5 hidden sm:inline text-xs font-medium text-zinc-500 group-hover:text-foreground">
+            <ArrowLeft className="w-5 h-5 text-zinc-500 group-hover:text-foreground transition-transform group-hover:-translate-x-0.5" />
+            <span className="ml-2 hidden sm:inline text-sm font-bold text-zinc-500 group-hover:text-foreground">
               Geri
             </span>
           </Button>

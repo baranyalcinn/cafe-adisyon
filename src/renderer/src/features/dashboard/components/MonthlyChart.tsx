@@ -48,10 +48,10 @@ interface MonthlyTooltipProps {
 // ============================================================================
 
 const STYLES = {
-  card: 'bg-card border border-border/50 rounded-[2rem] p-8 shadow-sm',
+  card: 'bg-card border-2 border-zinc-200 dark:border-zinc-800 rounded-[2rem] p-8 shadow-sm',
   headerWrapper: 'flex items-center justify-between mb-10',
   title: 'text-xl font-black text-foreground',
-  subtitle: 'text-sm text-muted-foreground/60 font-medium tracking-wide',
+  subtitle: 'text-sm text-zinc-800 dark:text-zinc-200 font-bold tracking-wide',
   chartWrapper: 'h-[400px] w-full mt-4',
 
   // Empty State
@@ -61,7 +61,7 @@ const STYLES = {
   // Tooltip
   tooltipCard: 'bg-card border border-border shadow-2xl rounded-2xl p-5 min-w-[200px] space-y-4',
   tooltipTitle:
-    'text-[10px] font-black text-muted-foreground/60 tracking-[0.25em] border-b border-border pb-2 mb-2',
+    'text-[10px] font-black text-zinc-800 dark:text-zinc-200 tracking-[0.25em] border-b border-border pb-2 mb-2',
   tooltipRow: 'flex items-center justify-between gap-6',
   tooltipValue: 'text-sm font-black tabular-nums tracking-tighter shadow-sm',
   marginBadge: 'text-xs font-black tabular-nums tracking-tight px-2 py-0.5 rounded-md'
@@ -109,7 +109,7 @@ const MonthlyTooltip = memo(
                   className="w-2.5 h-2.5 rounded-full"
                   style={{ backgroundColor: entry.color || entry.fill }}
                 />
-                <span className="text-[11px] font-black text-muted-foreground tracking-widest uppercase">
+                <span className="text-[11px] font-black text-foreground tracking-widest uppercase">
                   {entry.name}
                 </span>
               </div>
@@ -131,7 +131,7 @@ const MonthlyTooltip = memo(
 
         {revenue > 0 && (
           <div className="pt-3 border-t border-border flex items-center justify-between">
-            <span className="text-[10px] font-black text-muted-foreground/40 tracking-widest uppercase">
+            <span className="text-[10px] font-black text-zinc-700 dark:text-zinc-300 tracking-widest uppercase">
               KÂR MARJI
             </span>
             <span
@@ -182,7 +182,6 @@ export const MonthlyPerformanceChart = memo((): React.JSX.Element => {
             <Calendar className="w-6 h-6 text-foreground/70 drop-shadow-sm" />
             <div>
               <h3 className={STYLES.title}>Aylık Performans</h3>
-              <p className={STYLES.subtitle}>Gelir, gider ve kârlılık analizi (Yıllık Görünüm)</p>
             </div>
           </div>
         </div>
@@ -196,7 +195,7 @@ export const MonthlyPerformanceChart = memo((): React.JSX.Element => {
               >
                 <defs>
                   <linearGradient id="colorProfit" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.6} />
                     <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                   </linearGradient>
                 </defs>
@@ -205,24 +204,26 @@ export const MonthlyPerformanceChart = memo((): React.JSX.Element => {
                   strokeDasharray="3 3"
                   vertical={false}
                   stroke="var(--color-border)"
-                  opacity={0.3}
+                  opacity={0.7}
                 />
 
                 <XAxis
                   dataKey="month"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: 'currentColor', fontSize: 11, fontWeight: 800 }}
+                  tick={{ fill: 'currentColor', fontSize: 13, fontWeight: 800 }}
                   dy={15}
+                  padding={{ left: 20, right: 20 }}
                 />
 
                 <YAxis
                   yAxisId="left"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: 'currentColor', fontSize: 11, fontWeight: 800 }}
+                  tick={{ fill: 'currentColor', fontSize: 13, fontWeight: 800 }}
+                  tickMargin={12}
                   tickFormatter={(val) => formatCurrency(val)}
-                  width={90}
+                  width={100}
                 />
 
                 <Tooltip content={<MonthlyTooltip />} isAnimationActive={false} />
@@ -260,8 +261,10 @@ export const MonthlyPerformanceChart = memo((): React.JSX.Element => {
             </ResponsiveContainer>
           ) : (
             <div className={STYLES.emptyWrapper}>
-              <Calendar className="w-10 h-10 text-muted-foreground/30 animate-pulse" />
-              <p className={STYLES.emptyText}>Henüz aylık rapor verisi oluşmadı.</p>
+              <Calendar className="w-10 h-10 text-zinc-200 dark:text-zinc-800 animate-pulse" />
+              <p className="text-zinc-500 font-bold italic tracking-wide">
+                Henüz aylık rapor verisi oluşmadı.
+              </p>
             </div>
           )}
         </div>

@@ -14,6 +14,7 @@ interface ResultBannerProps {
   effectivePayment: number
   currentChange: number
   hoveredMethod?: PaymentMethod | null
+  className?: string
 }
 
 type BannerStatus = 'blocked' | 'change' | 'partial' | 'exact' | 'hover' | 'idle'
@@ -199,7 +200,8 @@ export function ResultBanner({
   tendered,
   effectivePayment,
   currentChange,
-  hoveredMethod
+  hoveredMethod,
+  className
 }: ResultBannerProps): React.JSX.Element {
   // useMemo'ya gerek yok, çünkü bileşen (memo sayesinde) sadece bu proplar değiştiğinde çalışır
   const methodKey = getMethodKey(hoveredMethod)
@@ -212,10 +214,11 @@ export function ResultBanner({
   return (
     <div
       className={cn(
-        'relative w-full overflow-hidden rounded-2xl border backdrop-blur-sm',
-        'shadow-[0_8px_24px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.24)]',
+        'relative overflow-hidden rounded-2xl border backdrop-blur-sm',
+        'shadow-[0_4px_16px_rgba(0,0,0,0.04)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.3)]',
         'transition-all duration-300',
-        config.wrap
+        config.wrap,
+        className
       )}
       role="status"
       aria-live="polite"

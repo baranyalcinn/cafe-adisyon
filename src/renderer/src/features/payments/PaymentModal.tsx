@@ -159,8 +159,8 @@ export function PaymentModal({
             tabIndex={-1}
           />
 
-          {/* Result Banner */}
-          <div className="w-full max-w-[640px] h-[72px] mb-2 px-1 flex items-center mx-auto">
+          {/* Controls & Result Banner */}
+          <div className="mt-auto p-6 pt-0 pb-7 flex flex-col gap-3 w-full max-w-[560px] mx-auto">
             <ResultBanner
               itemsPartialBlocked={
                 state.paymentMode === 'items' &&
@@ -171,11 +171,9 @@ export function PaymentModal({
               effectivePayment={totals.effectivePayment}
               currentChange={totals.currentChange}
               hoveredMethod={state.hoveredPaymentMethod}
+              className="mb-6"
             />
-          </div>
 
-          {/* Controls */}
-          <div className="mt-auto p-8 pt-0 flex flex-col gap-4 w-full max-w-[560px] mx-auto">
             <Numpad
               onAppend={actions.appendTendered}
               onBackspace={actions.backspaceTendered}

@@ -44,7 +44,7 @@ const QUICK_CASH_STYLES: Record<QuickCashColor, string> = {
 }
 
 const COMMON_KEY_BASE = cn(
-  'h-[68px] rounded-xl border bg-background text-2xl font-black',
+  'h-[60px] rounded-xl border bg-background text-2xl font-black',
   'border-border/50 shadow-sm transition-all active:scale-[0.95]',
   'hover:bg-zinc-700 hover:text-white dark:hover:bg-zinc-600 hover:border-zinc-600 hover:shadow-md'
 )

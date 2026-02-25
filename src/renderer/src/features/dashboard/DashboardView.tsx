@@ -44,7 +44,7 @@ const MonthlyPerformanceChart = React.lazy(
 
 const STYLES = {
   container: 'h-full flex flex-col overflow-hidden text-foreground',
-  scrollArea: 'flex-1 overflow-y-auto px-8 pb-12 space-y-10 bg-background custom-scrollbar',
+  scrollArea: 'flex-1 overflow-y-auto px-8 pb-16 space-y-10 bg-background custom-scrollbar',
 
   // Header Actions
   refreshBtn:
@@ -54,26 +54,39 @@ const STYLES = {
 
   // Title Section
   titleSection: 'flex flex-col gap-1 pt-8 container-fade-in',
-  titleWrap: 'flex items-center gap-3',
-  title: 'text-4xl font-black tracking-tighter text-foreground',
-  titleDivider: 'h-6 w-[2px] bg-zinc-100 dark:bg-zinc-800 mt-1',
-  subtitle: 'text-primary font-black tracking-[0.3em] text-[12px] mt-2 uppercase',
+  titleWrap: 'flex items-end gap-4',
+  title: 'text-4xl font-black tracking-tighter text-foreground leading-none',
+  titleDivider: 'h-5 w-[2px] bg-border mb-0.5',
+  subtitle: 'text-primary font-black tracking-[0.3em] text-[12px] uppercase',
+  dateLabel: 'text-s font-bold text-foreground tracking-wider ml-auto mb-0.5',
+
+  // Section Headers
+  sectionWrap: 'flex items-center gap-4',
+  sectionLabel:
+    'text-[10px] font-black uppercase tracking-[0.3em] text-zinc-800 dark:text-zinc-200 whitespace-nowrap',
+  sectionLine: 'flex-1 h-px bg-border/60',
 
   // Grid Layouts
-  chartsGrid: 'grid grid-cols-1 lg:grid-cols-2 gap-8',
+  chartsGrid: 'grid grid-cols-1 lg:grid-cols-2 gap-6',
 
   // Fallback
-  chartFallback: 'w-full h-[400px] flex items-center justify-center'
+  chartFallback: 'w-full h-[340px] flex items-center justify-center'
 } as const
 
 // ============================================================================
 // Sub-Components
 // ============================================================================
 
-// 5 kez tekrar edilen Suspense fallback için tekil bileşen (DRY Prensibi)
 const ChartFallback = (): React.JSX.Element => (
   <div className={STYLES.chartFallback}>
-    <RefreshCw className="w-8 h-8 text-muted-foreground/30 animate-spin" />
+    <RefreshCw className="w-6 h-6 text-zinc-400 dark:text-zinc-600 animate-spin" />
+  </div>
+)
+
+const SectionHeader = ({ label }: { label: string }): React.JSX.Element => (
+  <div className={STYLES.sectionWrap}>
+    <span className={STYLES.sectionLabel}>{label}</span>
+    <div className={STYLES.sectionLine} />
   </div>
 )
 
@@ -85,7 +98,7 @@ const DashboardErrorState = ({ onRetry }: { onRetry: () => void }): React.JSX.El
       </div>
       <div className="space-y-2">
         <h2 className="text-2xl font-black text-foreground">Veri Yüklenemedi</h2>
-        <p className="text-muted-foreground font-medium max-w-md">
+        <p className="text-foreground font-semibold max-w-md">
           Dashboard verileri alınırken bir sorun oluştu. Lütfen tekrar deneyin.
         </p>
       </div>
@@ -107,7 +120,6 @@ function DashboardContent(): React.JSX.Element {
   const [headerTarget, setHeaderTarget] = useState<HTMLElement | null>(null)
 
   useEffect(() => {
-    // Element mount olana kadar denemeye devam et (React routing için güvenli)
     const interval = setInterval(() => {
       const el = document.getElementById('settings-header-actions')
       if (el) {
@@ -118,7 +130,13 @@ function DashboardContent(): React.JSX.Element {
     return () => clearInterval(interval)
   }, [])
 
-  // Erken Çıkışlar (Early Returns)
+  // Current date formatted in Turkish
+  const currentDate = new Date().toLocaleDateString('tr-TR', {
+    day: 'numeric',
+    month: 'long',
+    weekday: 'long'
+  })
+
   if (isLoading) return <DashboardSkeleton />
   if (isError) return <DashboardErrorState onRetry={refetchAll} />
 
@@ -157,21 +175,26 @@ function DashboardContent(): React.JSX.Element {
             <h1 className={STYLES.title}>Panel</h1>
             <div className={STYLES.titleDivider} />
             <span className={STYLES.subtitle}>Dashboard</span>
+            <span className={STYLES.dateLabel}>{currentDate}</span>
           </div>
         </div>
 
-        {/* Dashboard Components */}
+        {/* KPI Cards */}
         <KPICards />
 
+        {/* Weekly Trend */}
+        <SectionHeader label="Satış Analizi" />
         <React.Suspense fallback={<ChartFallback />}>
           <WeeklyTrendChart />
         </React.Suspense>
 
+        {/* Hourly Activity */}
         <React.Suspense fallback={<ChartFallback />}>
           <HourlyActivityChart />
         </React.Suspense>
 
         {/* 2-Column Charts */}
+        <SectionHeader label="Kategori ve Ürünler" />
         <div className={STYLES.chartsGrid}>
           <React.Suspense fallback={<ChartFallback />}>
             <CategoryRevenueChart />
@@ -182,6 +205,8 @@ function DashboardContent(): React.JSX.Element {
           </React.Suspense>
         </div>
 
+        {/* Monthly */}
+        <SectionHeader label="Aylık Performans" />
         <React.Suspense fallback={<ChartFallback />}>
           <MonthlyPerformanceChart />
         </React.Suspense>

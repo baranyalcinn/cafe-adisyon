@@ -16,9 +16,9 @@ const api = window.api
 // ============================================================================
 
 const STYLES = {
-  layout: 'h-full flex flex-row overflow-hidden bg-muted/10 dark:bg-background/40',
+  layout: 'h-full flex flex-row overflow-hidden bg-white dark:bg-zinc-950',
   mainArea: 'flex-1 flex flex-col min-w-0',
-  contentPad: 'flex-1 overflow-hidden px-6 py-6 lg:px-10 lg:py-8',
+  contentPad: 'flex-1 overflow-hidden px-6 pt-1 pb-6 lg:px-10 lg:pt-2 lg:pb-8',
   tableWrapper: 'h-full max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700',
 
   headerActions: 'flex items-center gap-3 animate-in fade-in slide-in-from-right-4 duration-500',

@@ -87,7 +87,7 @@ function ProductCardComponent({
         <div className={STYLES.iconBox}>
           {getCategoryIcon(
             product.category?.icon,
-            'w-5 h-5 text-foreground/50 group-hover:text-primary transition-colors'
+            'w-5 h-5 opacity-70 group-hover:opacity-100 transition-opacity'
           )}
         </div>
       )}
@@ -117,7 +117,7 @@ function ProductCardComponent({
         <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
         {getCategoryIcon(
           product.category?.icon,
-          'w-10 h-10 text-foreground/40 group-hover:text-primary/70 transition-all duration-500 group-hover:scale-110 drop-shadow-sm'
+          'w-10 h-10 opacity-60 group-hover:opacity-100 transition-all duration-500 group-hover:scale-110 drop-shadow-sm'
         )}
       </div>
 

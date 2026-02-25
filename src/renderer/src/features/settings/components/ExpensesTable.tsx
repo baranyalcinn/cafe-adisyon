@@ -172,7 +172,7 @@ export function ExpensesTable({
     <div className="flex-1 h-full min-h-0">
       <div className="h-full overflow-y-auto custom-scrollbar">
         <Table className="table-fixed w-full">
-          <TableHeader className="sticky top-0 bg-zinc-50/80 dark:bg-zinc-950/80 backdrop-blur-sm z-10 border-b-2 border-zinc-200 dark:border-zinc-800">
+          <TableHeader className="sticky top-0 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md z-30 border-b-2 border-zinc-200 dark:border-zinc-800">
             <TableRow className="hover:bg-transparent border-0">
               <TableHead className="w-[180px] pl-6">
                 <SortButton label="Tarih" sortKey="createdAt" />
@@ -283,7 +283,7 @@ export function ExpensesTable({
                             onChange={(e) =>
                               setEditForm((prev) => ({ ...prev, amount: e.target.value }))
                             }
-                            placeholder="0.00"
+                            placeholder="0"
                             className="h-9 text-right font-bold bg-background/50"
                           />
                         </TableCell>

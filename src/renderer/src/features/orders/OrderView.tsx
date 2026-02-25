@@ -230,9 +230,7 @@ const OrderSidebar = ({
                       <div
                         className={cn(
                           'w-9 h-9 flex items-center justify-center rounded-xl transition-all duration-300',
-                          isActive
-                            ? 'bg-primary/10 text-primary'
-                            : 'bg-muted/40 group-hover/cat:bg-muted/60'
+                          isActive ? 'bg-muted/60' : 'bg-muted/40 group-hover/cat:bg-muted/60'
                         )}
                       >
                         {getCategoryIcon(category.icon, 'w-5 h-5')}

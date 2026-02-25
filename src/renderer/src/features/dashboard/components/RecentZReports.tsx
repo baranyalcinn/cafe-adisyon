@@ -52,17 +52,18 @@ const YEAR_OPTIONS = Array.from({ length: Math.max(1, CURRENT_YEAR - START_YEAR 
 
 const STYLES = {
   container: 'animate-in fade-in slide-in-from-bottom-4 duration-500 delay-[1000ms] fill-mode-both',
-  card: 'bg-card border border-border/50 rounded-[2rem] p-8 shadow-sm text-foreground',
+  card: 'bg-card border-2 border-zinc-200 dark:border-zinc-800 rounded-[2rem] p-8 shadow-sm text-foreground',
   headerBox: 'flex items-center justify-between mb-10',
   title: 'text-xl font-black text-foreground',
-  subtitle: 'text-sm text-muted-foreground/60 font-medium',
+  subtitle: 'text-sm text-zinc-800 dark:text-zinc-200 font-bold',
 
   selectTrigger:
     'h-9 bg-background border-border/50 text-[10px] font-black tracking-widest rounded-xl',
 
-  tableWrapper: 'rounded-3xl border border-border/40 overflow-hidden bg-background',
-  tableHead: 'text-[10px] font-black text-muted-foreground/60 tracking-widest',
-  tableRow: 'border-border/50 hover:bg-muted/10 cursor-pointer h-16 group',
+  tableWrapper:
+    'rounded-3xl border-2 border-zinc-100 dark:border-zinc-900 overflow-hidden bg-background',
+  tableHead: 'text-[10px] font-black text-zinc-800 dark:text-zinc-200 tracking-widest',
+  tableRow: 'border-zinc-100 dark:border-zinc-900 hover:bg-muted/10 cursor-pointer h-16 group',
 
   dialogContent:
     'sm:max-w-[500px] p-0 overflow-hidden border-border bg-card shadow-2xl rounded-[2.5rem] [&>button]:hidden',
@@ -96,7 +97,7 @@ const ReportDetailDialog = ({
           <div className={STYLES.dialogHeader}>
             <div>
               <h2 className="text-2xl font-black tracking-tight">Rapor Detayı</h2>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium mt-1">
+              <div className="flex items-center gap-2 text-sm text-foreground font-semibold mt-1">
                 <Calendar className="w-4 h-4 opacity-50" />
                 <span>
                   {new Date(report.date).toLocaleDateString('tr-TR', {
@@ -134,7 +135,7 @@ const ReportDetailDialog = ({
 
             {/* Payment Breakdown */}
             <div className="space-y-4">
-              <h4 className="text-[11px] font-black text-muted-foreground/40 tracking-[0.2em] px-1 uppercase">
+              <h4 className="text-[11px] font-black text-zinc-800 dark:text-zinc-200 tracking-[0.2em] px-1 uppercase">
                 Ödeme Kanalları
               </h4>
               <div className="border border-border rounded-3xl overflow-hidden divide-y divide-border">
@@ -198,7 +199,6 @@ export function RecentZReports(): React.JSX.Element {
               <History className="w-6 h-6 text-foreground/70 drop-shadow-sm" />
               <div>
                 <h3 className={STYLES.title}>Z-Raporu Geçmişi</h3>
-                <p className={STYLES.subtitle}>Önceki gün sonu özetleri</p>
               </div>
             </div>
 
@@ -273,7 +273,7 @@ export function RecentZReports(): React.JSX.Element {
                     <TableCell className="text-right font-black tabular-nums text-foreground">
                       {formatCurrency(report.totalRevenue)}
                     </TableCell>
-                    <TableCell className="text-right font-bold tabular-nums text-muted-foreground/60 pr-10">
+                    <TableCell className="text-right font-black tabular-nums text-zinc-900 dark:text-zinc-100 pr-10">
                       <div className="flex items-center justify-end gap-3">
                         {report.orderCount}
                         <ChevronRight className="w-4 h-4 text-muted-foreground/20 group-hover:text-primary transition-all group-hover:translate-x-1" />
