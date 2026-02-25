@@ -6,6 +6,11 @@ import { resolve } from 'path'
 
 export default defineConfig({
   main: {
+    resolve: {
+      alias: {
+        '@shared': resolve('src/shared')
+      }
+    },
     plugins: [],
     build: {
       sourcemap: false,
@@ -37,6 +42,11 @@ export default defineConfig({
     }
   },
   preload: {
+    resolve: {
+      alias: {
+        '@shared': resolve('src/shared')
+      }
+    },
     plugins: [],
     build: {
       sourcemap: false,
@@ -50,7 +60,8 @@ export default defineConfig({
     resolve: {
       alias: {
         '@renderer': resolve('src/renderer/src'),
-        '@': resolve('src/renderer/src')
+        '@': resolve('src/renderer/src'),
+        '@shared': resolve('src/shared')
       }
     },
     plugins: [react(), tailwindcss()],
@@ -69,7 +80,6 @@ export default defineConfig({
                 id.includes('react') ||
                 id.includes('react-dom') ||
                 id.includes('react-router') ||
-                id.includes('framer-motion') ||
                 id.includes('@tanstack') ||
                 id.includes('lucide') ||
                 id.includes('@radix-ui') ||

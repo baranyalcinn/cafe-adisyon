@@ -30,16 +30,23 @@ export function registerReportingHandlers(): void {
   )
 
   // 2. DASHBOARD BUNDLE (Orchestration)
-  // Karmaşık işlemi de createSimpleHandler içine alarak standart hata yönetimine (try-catch, loglama) dahil ediyoruz.
   createSimpleHandler(
     IPC_CHANNELS.DASHBOARD_GET_BUNDLE,
     async () => {
+      // Promise.all kullanarak tekrar deneyelim ama hata fırlatmasını önleyelim
       const [statsResult, trendResult, monthlyResult] = await Promise.all([
-        reportingService.getExtendedDashboardStats(),
-        reportingService.getRevenueTrend(7),
-        reportingService.getMonthlyReports(12)
+        reportingService
+          .getExtendedDashboardStats()
+          .catch((err) => ({ success: false as const, error: String(err) })),
+        reportingService
+          .getRevenueTrend(7)
+          .catch((err) => ({ success: false as const, error: String(err) })),
+        reportingService
+          .getMonthlyReports(12)
+          .catch((err) => ({ success: false as const, error: String(err) }))
       ])
 
+      // En azından baz istatistiklerin olması gerekir
       if (!statsResult.success) {
         return { success: false, error: statsResult.error || 'Dashboard verisi alınamadı.' }
       }
@@ -50,6 +57,21 @@ export function registerReportingHandlers(): void {
           stats: statsResult.data,
           revenueTrend: trendResult.success ? trendResult.data : [],
           monthlyReports: monthlyResult.success ? monthlyResult.data : []
+        }
+      }
+
+      return {
+        success: true,
+        data: {
+          stats: statsResult.value.data,
+          revenueTrend:
+            trendResult.status === 'fulfilled' && trendResult.value.success
+              ? trendResult.value.data
+              : [],
+          monthlyReports:
+            monthlyResult.status === 'fulfilled' && monthlyResult.value.success
+              ? monthlyResult.value.data
+              : []
         }
       }
     },

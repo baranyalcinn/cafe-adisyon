@@ -1,10 +1,30 @@
 import { cn } from '@/lib/utils'
+import * as React from 'react'
+import { memo } from 'react'
 
-function Skeleton({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>): React.JSX.Element {
-  return <div className={cn('animate-pulse rounded-md bg-muted/50', className)} {...props} />
-}
+/** * Skeleton bileşeni için temel stiller.
+ * animate-pulse: Klasik yavaşça yanıp sönme efekti.
+ * bg-muted/50: Uygulamanın genel renk paletiyle uyumlu hafif gri ton.
+ */
+const SKELETON_BASE_STYLE = 'animate-pulse rounded-md bg-muted/50'
 
-export { Skeleton }
+const Skeleton = React.forwardRef<React.ComponentRef<'div'>, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref): React.JSX.Element => {
+    return (
+      <div
+        ref={ref}
+        data-slot="skeleton"
+        className={cn(SKELETON_BASE_STYLE, className)}
+        {...props}
+      />
+    )
+  }
+)
+
+// DevTools ve Hata ayıklama için isim ataması
+Skeleton.displayName = 'Skeleton'
+
+// Performans için memo ile sarmalanmış hali
+const MemoizedSkeleton = memo(Skeleton)
+
+export { MemoizedSkeleton as Skeleton }

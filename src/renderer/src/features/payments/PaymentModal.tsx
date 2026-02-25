@@ -11,6 +11,7 @@ import { Numpad } from './components/Numpad'
 import { PaymentActions } from './components/PaymentActions'
 import { PaymentDisplay } from './components/PaymentDisplay'
 import { PaymentSummary } from './components/PaymentSummary'
+import { ResultBanner } from './components/ResultBanner'
 import { SuccessView } from './components/SuccessView'
 
 interface PaymentModalProps {
@@ -73,7 +74,7 @@ export function PaymentModal({
       actions.clearTendered()
     } else if (key === 'Enter') {
       e.preventDefault()
-      if (flags.canCashPay && state.tenderedInput.trim() !== '') {
+      if (flags.canCashPay) {
         void actions.handlePayment('CASH')
       }
     }
@@ -147,6 +148,7 @@ export function PaymentModal({
             tenderedInput={state.tenderedInput}
             onClear={actions.clearTendered}
             onFocus={() => tenderedInputRef.current?.focus()}
+            hoveredMethod={state.hoveredPaymentMethod}
           />
 
           <input
@@ -157,16 +159,33 @@ export function PaymentModal({
             tabIndex={-1}
           />
 
-          <div className="flex-1 flex flex-col px-8 pb-8">
-            <div className="flex-1 mb-6 flex items-center justify-center">
-              <Numpad
-                onAppend={actions.appendTendered}
-                onBackspace={actions.backspaceTendered}
-                onQuickCash={actions.setTenderedInput}
-                onSetExact={actions.handleSetExact}
-                effectivePayment={totals.effectivePayment}
-              />
-            </div>
+          {/* Result Banner */}
+          <div className="w-full max-w-[640px] h-[72px] mb-2 px-1 flex items-center mx-auto">
+            <ResultBanner
+              itemsPartialBlocked={
+                state.paymentMode === 'items' &&
+                totals.tendered > 0 &&
+                totals.tendered < totals.effectivePayment
+              }
+              tendered={totals.tendered}
+              effectivePayment={totals.effectivePayment}
+              currentChange={totals.currentChange}
+              hoveredMethod={state.hoveredPaymentMethod}
+            />
+          </div>
+
+          {/* Controls */}
+          <div className="mt-auto p-8 pt-0 flex flex-col gap-4 w-full max-w-[560px] mx-auto">
+            <Numpad
+              onAppend={actions.appendTendered}
+              onBackspace={actions.backspaceTendered}
+              onQuickCash={actions.setTenderedInput}
+              onSetExact={actions.handleSetExact}
+              effectivePayment={totals.effectivePayment}
+              partialPaymentsBlocked={
+                state.paymentMode === 'items' && Object.keys(state.selectedQuantities).length > 0
+              }
+            />
 
             <PaymentActions
               canCashPay={flags.canCashPay}

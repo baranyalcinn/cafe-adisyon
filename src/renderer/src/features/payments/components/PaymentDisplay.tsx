@@ -1,6 +1,6 @@
-// src/renderer/src/features/payments/components/PaymentDisplay.tsx
 import { PremiumAmount } from '@/components/PremiumAmount'
-import { cn } from '@/lib/utils'
+import { type PaymentMethod } from '@/lib/api'
+import { cn, formatCurrency } from '@/lib/utils'
 import { RotateCcw } from 'lucide-react'
 
 interface PaymentDisplayProps {
@@ -8,14 +8,18 @@ interface PaymentDisplayProps {
   tenderedInput: string
   onClear: () => void
   onFocus: () => void
+  hoveredMethod?: PaymentMethod | null
 }
 
 export function PaymentDisplay({
   effectivePayment,
   tenderedInput,
   onClear,
-  onFocus
+  onFocus,
+  hoveredMethod
 }: PaymentDisplayProps): React.JSX.Element {
+  const isHovering = !!hoveredMethod && !tenderedInput
+
   return (
     <div className="px-8 pt-4 pb-2 flex flex-col items-center">
       <div className="flex gap-4 w-full max-w-[640px] mb-8">
@@ -39,7 +43,7 @@ export function PaymentDisplay({
               <button
                 onClick={onClear}
                 className="flex h-11 items-center gap-2 rounded-xl border border-transparent px-4 transition-all text-foreground/80 hover:text-destructive hover:border-destructive/30 hover:bg-destructive/5 active:scale-[0.99]"
-                title="Sıfırla (Delete)"
+                title="Sıfırla (Backspace/Delete)"
               >
                 <RotateCcw className="w-4 h-4" />
               </button>
@@ -53,10 +57,14 @@ export function PaymentDisplay({
               <span
                 className={cn(
                   'font-sans tabular-nums tracking-tight transition-all duration-300 text-3xl font-bold',
-                  tenderedInput ? 'text-teal-600 dark:text-teal-500' : 'text-foreground/20'
+                  tenderedInput
+                    ? 'text-teal-600 dark:text-teal-500'
+                    : isHovering
+                      ? 'text-foreground/80 scale-105 inline-block origin-right'
+                      : 'text-foreground/20'
                 )}
               >
-                {tenderedInput || '0.00'}
+                {tenderedInput || (isHovering ? formatCurrency(effectivePayment) : '0 ₺')}
               </span>
             </button>
           </div>

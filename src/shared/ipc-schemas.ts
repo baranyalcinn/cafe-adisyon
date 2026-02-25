@@ -155,7 +155,11 @@ export const adminSchemas = {
 
 export const reportSchemas = {
   getMonthly: z.object({ limit: z.number().int().optional().default(12) }),
-  zReportHistory: z.object({ limit: z.number().int().optional().default(30) }),
+  zReportHistory: z.object({
+    limit: z.number().int().optional().default(30),
+    startDate: z.union([z.string(), z.date()]).optional(),
+    endDate: z.union([z.string(), z.date()]).optional()
+  }),
   zReportGenerate: z.object({ actualCash: z.number().int().nonnegative().optional() })
 }
 

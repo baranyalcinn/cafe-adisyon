@@ -45,8 +45,8 @@ const QUICK_CASH_STYLES: Record<QuickCashColor, string> = {
 }
 
 const COMMON_KEY_BASE = cn(
-  'h-14 rounded-xl border bg-background text-2xl font-semibold',
-  'border-border/50 shadow-sm transition-all active:scale-[0.98]',
+  'h-[68px] rounded-xl border bg-background text-2xl font-black',
+  'border-border/50 shadow-sm transition-all active:scale-[0.95]',
   'hover:bg-zinc-700 hover:text-white dark:hover:bg-zinc-600 hover:border-zinc-600 hover:shadow-md'
 )
 
@@ -75,7 +75,7 @@ export const Numpad = memo(function Numpad({
   return (
     <div className="flex gap-3">
       {/* NUMPAD GRID */}
-      <div className="flex-1 grid grid-cols-3 gap-2">
+      <div className="flex-1 grid grid-cols-3 gap-2.5">
         {NUMPAD_KEYS.map((n) => (
           <Button
             key={n}
