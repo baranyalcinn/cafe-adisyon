@@ -319,7 +319,7 @@ export const CartPanel = React.memo(function CartPanel({
 // Sub-Components (Memoized for performance)
 // ============================================================================
 
-const EmptyCartState = React.memo(function EmptyCartState() {
+const EmptyCartState = function EmptyCartState(): React.JSX.Element {
   return (
     <div className={STYLES.emptyState}>
       <div className={STYLES.emptyIconBg}>
@@ -331,7 +331,7 @@ const EmptyCartState = React.memo(function EmptyCartState() {
       </p>
     </div>
   )
-})
+}
 
 interface CartFooterProps {
   total: number
@@ -340,12 +340,12 @@ interface CartFooterProps {
   onPaymentClick: () => void
 }
 
-const CartFooter = React.memo(function CartFooter({
+const CartFooter = function CartFooter({
   total,
   paidAmount,
   remainingAmount,
   onPaymentClick
-}: CartFooterProps) {
+}: CartFooterProps): React.JSX.Element {
   return (
     <div className="shrink-0 px-5 py-4 bg-background/85 backdrop-blur-xl border-t border-border/10 z-20 rounded-t-[2rem] shadow-[0_-16px_40px_-12px_rgba(0,0,0,0.08)] dark:shadow-[0_-16px_40px_-12px_rgba(0,0,0,0.35)]">
       <div className="space-y-4">
@@ -389,7 +389,7 @@ const CartFooter = React.memo(function CartFooter({
       </div>
     </div>
   )
-})
+}
 
 interface DeleteOrderDialogProps {
   open: boolean
@@ -398,12 +398,12 @@ interface DeleteOrderDialogProps {
   onCancel: () => void
 }
 
-const DeleteOrderDialog = React.memo(function DeleteOrderDialog({
+const DeleteOrderDialog = function DeleteOrderDialog({
   open,
   onOpenChange,
   onConfirm,
   onCancel
-}: DeleteOrderDialogProps) {
+}: DeleteOrderDialogProps): React.JSX.Element {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -445,4 +445,4 @@ const DeleteOrderDialog = React.memo(function DeleteOrderDialog({
       </DialogContent>
     </Dialog>
   )
-})
+}

@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
 import * as React from 'react'
-import { memo, useEffect } from 'react'
+import { useEffect } from 'react'
 import { FallbackProps } from 'react-error-boundary'
 
 // ============================================================================
@@ -32,21 +32,18 @@ const STYLES = {
 // ============================================================================
 
 /** Arka plandaki dekoratif ışıklandırma efektleri */
-const BackgroundAmbience = memo(
-  (): React.JSX.Element => (
-    <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-      <div className="absolute top-[20%] left-[20%] w-[40vw] h-[40vw] bg-destructive/5 rounded-full blur-[120px] animate-pulse duration-[4000ms]" />
-      <div className="absolute bottom-[20%] right-[20%] w-[30vw] h-[30vw] bg-primary/5 rounded-full blur-[100px]" />
-    </div>
-  )
+const BackgroundAmbience = (): React.JSX.Element => (
+  <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+    <div className="absolute top-[20%] left-[20%] w-[40vw] h-[40vw] bg-destructive/5 rounded-full blur-[120px] animate-pulse duration-[4000ms]" />
+    <div className="absolute bottom-[20%] right-[20%] w-[30vw] h-[30vw] bg-primary/5 rounded-full blur-[100px]" />
+  </div>
 )
-BackgroundAmbience.displayName = 'BackgroundAmbience'
 
 /** Geliştiriciler için hata detay kutusu */
-const ErrorDetailBox = ({ error }: { error: any }): React.JSX.Element | null => {
+const ErrorDetailBox = ({ error }: { error: Error | string }): React.JSX.Element | null => {
   if (process.env.NODE_ENV !== 'development') return null
 
-  const message = (error as Error)?.message || String(error)
+  const message = typeof error === 'string' ? error : error.message
 
   return (
     <div className={STYLES.errorBox}>
@@ -84,7 +81,7 @@ export function ErrorFallback({ error, resetErrorBoundary }: FallbackProps): Rea
         </p>
 
         {/* Error Details (Only Dev Mode) */}
-        <ErrorDetailBox error={error} />
+        <ErrorDetailBox error={error as Error | string} />
 
         {/* Action */}
         <Button onClick={resetErrorBoundary} size="lg" className={STYLES.refreshBtn}>

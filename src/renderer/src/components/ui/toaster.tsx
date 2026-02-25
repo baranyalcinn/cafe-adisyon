@@ -4,7 +4,6 @@ import { cn } from '@/lib/utils'
 import { useToastStore } from '@/store/useToastStore'
 import { AlertCircle, AlertTriangle, CheckCircle, Info, LucideIcon, X } from 'lucide-react'
 import * as React from 'react'
-import { memo } from 'react'
 
 // ============================================================================
 // Types & Interfaces
@@ -68,35 +67,37 @@ const STYLES = {
  * Tek bir bildirim kartı.
  * 'memo' kullanılarak listenin geri kalanı değiştiğinde gereksiz render önlenir.
  */
-const ToastItem = memo(
-  ({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string) => void }): React.JSX.Element => {
-    const variant = toast.variant || 'default'
-    const { icon: Icon, styles } = VARIANT_CONFIG[variant]
+const ToastItem = ({
+  toast,
+  onDismiss
+}: {
+  toast: Toast
+  onDismiss: (id: string) => void
+}): React.JSX.Element => {
+  const variant = toast.variant || 'default'
+  const { icon: Icon, styles } = VARIANT_CONFIG[variant]
 
-    return (
-      <div className={cn(STYLES.toastBase, styles)}>
-        <Icon className={cn('w-5 h-5 shrink-0', variant === 'default' && 'text-blue-500')} />
+  return (
+    <div className={cn(STYLES.toastBase, styles)}>
+      <Icon className={cn('w-5 h-5 shrink-0', variant === 'default' && 'text-blue-500')} />
 
-        <div className={STYLES.content}>
-          {toast.title && <h4 className={STYLES.title}>{toast.title}</h4>}
-          {toast.description && <div className={STYLES.description}>{toast.description}</div>}
-          {toast.action && <div className="mt-2 text-sm">{toast.action}</div>}
-        </div>
-
-        <button
-          type="button"
-          onClick={() => onDismiss(toast.id)}
-          className={STYLES.closeBtn}
-          aria-label="Bildirimi Kapat"
-        >
-          <X className="w-4 h-4" />
-        </button>
+      <div className={STYLES.content}>
+        {toast.title && <h4 className={STYLES.title}>{toast.title}</h4>}
+        {toast.description && <div className={STYLES.description}>{toast.description}</div>}
+        {toast.action && <div className="mt-2 text-sm">{toast.action}</div>}
       </div>
-    )
-  }
-)
 
-ToastItem.displayName = 'ToastItem'
+      <button
+        type="button"
+        onClick={() => onDismiss(toast.id)}
+        className={STYLES.closeBtn}
+        aria-label="Bildirimi Kapat"
+      >
+        <X className="w-4 h-4" />
+      </button>
+    </div>
+  )
+}
 
 // ============================================================================
 // Main Component

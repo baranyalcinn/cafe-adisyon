@@ -1,5 +1,4 @@
 import { Banknote, CreditCard, Loader2 } from 'lucide-react'
-import { memo, useCallback } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { type PaymentMethod } from '@/lib/api'
@@ -38,7 +37,7 @@ const STYLES = {
 // Component
 // ============================================================================
 
-export const PaymentActions = memo(function PaymentActions({
+export function PaymentActions({
   canCashPay,
   canCardPay,
   processingMethod,
@@ -47,14 +46,11 @@ export const PaymentActions = memo(function PaymentActions({
   itemsPartialBlocked,
   tendered,
   effectivePayment
-}: PaymentActionsProps) {
+}: PaymentActionsProps): React.JSX.Element {
   // Hover ve Focus olaylarını yöneten tek ve stabil fonksiyon
-  const handleHover = useCallback(
-    (method: PaymentMethod | null) => {
-      if (onHoverChange) onHoverChange(method)
-    },
-    [onHoverChange]
-  )
+  const handleHover = (method: PaymentMethod | null): void => {
+    if (onHoverChange) onHoverChange(method)
+  }
 
   // Buton varyasyonlarını dinamik olarak haritalıyoruz
   const BUTTONS = [
@@ -112,4 +108,4 @@ export const PaymentActions = memo(function PaymentActions({
       })}
     </div>
   )
-})
+}

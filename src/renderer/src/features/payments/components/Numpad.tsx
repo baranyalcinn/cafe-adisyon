@@ -1,5 +1,4 @@
 import { Delete } from 'lucide-react'
-import { memo, useCallback } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -57,20 +56,17 @@ const ACTION_BUTTON_BASE =
 // Component
 // ============================================================================
 
-export const Numpad = memo(function Numpad({
+export function Numpad({
   onAppend,
   onBackspace,
   onQuickCash,
   onSetExact,
   partialPaymentsBlocked = false,
   effectivePayment = 0
-}: NumpadProps) {
-  const handleNumKey = useCallback(
-    (n: (typeof NUMPAD_KEYS)[number]) => {
-      onAppend(n.toString())
-    },
-    [onAppend]
-  )
+}: NumpadProps): React.JSX.Element {
+  const handleNumKey = (n: (typeof NUMPAD_KEYS)[number]): void => {
+    onAppend(n.toString())
+  }
 
   return (
     <div className="flex gap-3">
@@ -139,4 +135,4 @@ export const Numpad = memo(function Numpad({
       </div>
     </div>
   )
-})
+}

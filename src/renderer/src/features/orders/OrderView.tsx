@@ -103,7 +103,7 @@ interface OrderSidebarProps {
   searchInputRef: React.RefObject<HTMLInputElement | null>
 }
 
-const OrderSidebar = React.memo(function OrderSidebar({
+const OrderSidebar = ({
   onBack,
   searchQuery,
   setSearchQuery,
@@ -117,7 +117,7 @@ const OrderSidebar = React.memo(function OrderSidebar({
   playTabChange,
   resetVisibleLimit,
   searchInputRef
-}: OrderSidebarProps) {
+}: OrderSidebarProps): React.JSX.Element => {
   const handleClearSearch = useCallback(() => {
     setSearchQuery('')
     searchInputRef.current?.focus()
@@ -272,7 +272,7 @@ const OrderSidebar = React.memo(function OrderSidebar({
       </div>
     </div>
   )
-})
+}
 
 // ============================================================================
 // Main Component

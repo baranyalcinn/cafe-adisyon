@@ -1,6 +1,8 @@
+'use client'
+
 import { cn, formatCurrency } from '@/lib/utils'
 import { Calendar } from 'lucide-react'
-import React from 'react'
+import React, { memo, useMemo } from 'react'
 import {
   Bar,
   CartesianGrid,
@@ -13,15 +15,65 @@ import {
 } from 'recharts'
 import { useDashboardContext } from '../context/DashboardContext'
 
-/* --- ANIMATION WRAPPERS --- */
-function ChartContainer({
-  children,
-  delayUrl
-}: {
-  children: React.ReactNode
-  delayUrl?: string
-}): React.JSX.Element {
-  return (
+// ============================================================================
+// Types
+// ============================================================================
+
+interface ChartDataPoint {
+  month: string
+  fullMonth: string
+  revenue: number
+  profit: number
+  expenses: number
+}
+
+// Recharts Tooltip Payload Tipi
+interface TooltipPayload {
+  dataKey: string
+  name: string
+  value: number
+  color?: string
+  fill?: string
+  payload: ChartDataPoint
+}
+
+interface MonthlyTooltipProps {
+  active?: boolean
+  payload?: TooltipPayload[]
+  label?: string
+}
+
+// ============================================================================
+// Styles
+// ============================================================================
+
+const STYLES = {
+  card: 'bg-card border border-border/50 rounded-[2rem] p-8 shadow-sm',
+  headerWrapper: 'flex items-center justify-between mb-10',
+  title: 'text-xl font-black text-foreground',
+  subtitle: 'text-sm text-muted-foreground/60 font-medium tracking-wide',
+  chartWrapper: 'h-[400px] w-full mt-4',
+
+  // Empty State
+  emptyWrapper: 'h-full flex flex-col items-center justify-center space-y-4',
+  emptyText: 'text-muted-foreground/40 italic font-medium tracking-wide',
+
+  // Tooltip
+  tooltipCard: 'bg-card border border-border shadow-2xl rounded-2xl p-5 min-w-[200px] space-y-4',
+  tooltipTitle:
+    'text-[10px] font-black text-muted-foreground/60 tracking-[0.25em] border-b border-border pb-2 mb-2',
+  tooltipRow: 'flex items-center justify-between gap-6',
+  tooltipValue: 'text-sm font-black tabular-nums tracking-tighter shadow-sm',
+  marginBadge: 'text-xs font-black tabular-nums tracking-tight px-2 py-0.5 rounded-md'
+} as const
+
+// ============================================================================
+// Sub-Components
+// ============================================================================
+
+/** Animasyonlu Sarmalayıcı */
+const ChartContainer = memo(
+  ({ children, delayUrl }: { children: React.ReactNode; delayUrl?: string }): React.JSX.Element => (
     <div
       className={cn(
         'animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both',
@@ -31,53 +83,47 @@ function ChartContainer({
       {children}
     </div>
   )
-}
+)
+ChartContainer.displayName = 'ChartContainer'
 
-function MonthlyTooltip({
-  active,
-  payload,
-  label
-}: {
-  active?: boolean
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  payload?: any
-  label?: string
-}): React.JSX.Element | null {
-  if (active && payload && payload.length) {
-    const revenue = (payload.find((p) => p.dataKey === 'revenue')?.value as number) || 0
-    const profit = (payload.find((p) => p.dataKey === 'profit')?.value as number) || 0
+/** Recharts için Özel Tooltip */
+const MonthlyTooltip = memo(
+  ({ active, payload, label }: MonthlyTooltipProps): React.JSX.Element | null => {
+    if (!active || !payload || !payload.length) return null
+
+    const revenue = payload.find((p) => p.dataKey === 'revenue')?.value || 0
+    const profit = payload.find((p) => p.dataKey === 'profit')?.value || 0
     const margin = revenue > 0 ? (profit / revenue) * 100 : 0
 
     return (
-      <div className="bg-card border border-border shadow-2xl rounded-2xl p-5 min-w-[200px] space-y-4">
-        <p className="text-[10px] font-black text-muted-foreground/60 tracking-[0.25em]  border-b border-border pb-2 mb-2">
+      <div className={STYLES.tooltipCard}>
+        <p className={STYLES.tooltipTitle}>
           {(label || '').toLocaleUpperCase('tr-TR')} PERFORMANSI
         </p>
+
         <div className="space-y-3">
           {payload.map((entry, index) => (
-            <div key={index} className="flex items-center justify-between gap-6">
+            <div key={index} className={STYLES.tooltipRow}>
               <div className="flex items-center gap-3">
                 <div
                   className="w-2.5 h-2.5 rounded-full"
-                  style={{
-                    backgroundColor: entry.color || entry.fill
-                  }}
+                  style={{ backgroundColor: entry.color || entry.fill }}
                 />
-                <span className="text-[11px] font-black text-muted-foreground tracking-widest ">
+                <span className="text-[11px] font-black text-muted-foreground tracking-widest uppercase">
                   {entry.name}
                 </span>
               </div>
               <span
                 className={cn(
-                  'text-sm font-black tabular-nums tracking-tighter shadow-sm',
+                  STYLES.tooltipValue,
                   entry.dataKey === 'profit'
-                    ? (entry.value as number) >= 0
+                    ? entry.value >= 0
                       ? 'text-emerald-500'
                       : 'text-rose-500'
                     : 'text-foreground'
                 )}
               >
-                {formatCurrency(entry.value as number)}
+                {formatCurrency(entry.value)}
               </span>
             </div>
           ))}
@@ -85,12 +131,12 @@ function MonthlyTooltip({
 
         {revenue > 0 && (
           <div className="pt-3 border-t border-border flex items-center justify-between">
-            <span className="text-[10px] font-black text-muted-foreground/40  tracking-widest">
+            <span className="text-[10px] font-black text-muted-foreground/40 tracking-widest uppercase">
               KÂR MARJI
             </span>
             <span
               className={cn(
-                'text-xs font-black tabular-nums tracking-tight px-2 py-0.5 rounded-md',
+                STYLES.marginBadge,
                 margin >= 0 ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
               )}
             >
@@ -101,15 +147,22 @@ function MonthlyTooltip({
       </div>
     )
   }
-  return null
-}
+)
+MonthlyTooltip.displayName = 'MonthlyTooltip'
 
-export function MonthlyPerformanceChart(): React.JSX.Element {
+// ============================================================================
+// Main Component
+// ============================================================================
+
+export const MonthlyPerformanceChart = memo((): React.JSX.Element => {
   const { monthlyReports } = useDashboardContext()
-  const monthlyData = React.useMemo(() => {
+
+  // Veri Seti Hesaplaması: API'den gelen ham veriyi grafiğe uygun hale getirir.
+  // Bu işlem nispeten ağır olduğu için useMemo burada kesinlikle kalmalıdır.
+  const monthlyData = useMemo(() => {
     return [...monthlyReports]
       .sort((a, b) => new Date(a.monthDate).getTime() - new Date(b.monthDate).getTime())
-      .map((report) => {
+      .map((report): ChartDataPoint => {
         const date = new Date(report.monthDate)
         return {
           month: date.toLocaleDateString('tr-TR', { month: 'short' }),
@@ -123,19 +176,18 @@ export function MonthlyPerformanceChart(): React.JSX.Element {
 
   return (
     <ChartContainer delayUrl="delay-[900ms]">
-      <div className="bg-card border border-border/50 rounded-[2rem] p-8 shadow-sm">
-        <div className="flex items-center justify-between mb-10">
+      <div className={STYLES.card}>
+        <div className={STYLES.headerWrapper}>
           <div className="flex items-center gap-4">
             <Calendar className="w-6 h-6 text-foreground/70 drop-shadow-sm" />
             <div>
-              <h3 className="text-xl font-black text-foreground">Aylık Performans</h3>
-              <p className="text-sm text-muted-foreground/60 font-medium tracking-wide">
-                Gelir, gider ve kârlılık analizi (Yıllık Görünüm)
-              </p>
+              <h3 className={STYLES.title}>Aylık Performans</h3>
+              <p className={STYLES.subtitle}>Gelir, gider ve kârlılık analizi (Yıllık Görünüm)</p>
             </div>
           </div>
         </div>
-        <div className="h-[400px] w-full mt-4">
+
+        <div className={STYLES.chartWrapper}>
           {monthlyData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%" debounce={50} minWidth={0}>
               <ComposedChart
@@ -148,12 +200,14 @@ export function MonthlyPerformanceChart(): React.JSX.Element {
                     <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                   </linearGradient>
                 </defs>
+
                 <CartesianGrid
                   strokeDasharray="3 3"
                   vertical={false}
                   stroke="var(--color-border)"
                   opacity={0.3}
                 />
+
                 <XAxis
                   dataKey="month"
                   axisLine={false}
@@ -161,6 +215,7 @@ export function MonthlyPerformanceChart(): React.JSX.Element {
                   tick={{ fill: 'currentColor', fontSize: 11, fontWeight: 800 }}
                   dy={15}
                 />
+
                 <YAxis
                   yAxisId="left"
                   axisLine={false}
@@ -169,7 +224,9 @@ export function MonthlyPerformanceChart(): React.JSX.Element {
                   tickFormatter={(val) => formatCurrency(val)}
                   width={90}
                 />
+
                 <Tooltip content={<MonthlyTooltip />} isAnimationActive={false} />
+
                 <Bar
                   yAxisId="left"
                   dataKey="revenue"
@@ -202,15 +259,14 @@ export function MonthlyPerformanceChart(): React.JSX.Element {
               </ComposedChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-full flex flex-col items-center justify-center space-y-4">
+            <div className={STYLES.emptyWrapper}>
               <Calendar className="w-10 h-10 text-muted-foreground/30 animate-pulse" />
-              <p className="text-muted-foreground/40 italic font-medium tracking-wide">
-                Henüz aylık rapor verisi oluşmadı.
-              </p>
+              <p className={STYLES.emptyText}>Henüz aylık rapor verisi oluşmadı.</p>
             </div>
           )}
         </div>
       </div>
     </ChartContainer>
   )
-}
+})
+MonthlyPerformanceChart.displayName = 'MonthlyPerformanceChart'

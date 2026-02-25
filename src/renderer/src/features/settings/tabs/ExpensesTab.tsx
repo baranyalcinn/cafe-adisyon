@@ -1,7 +1,9 @@
+'use client'
+
 import { Button } from '@/components/ui/button'
 import type { Expense } from '@shared/types'
 import { Plus } from 'lucide-react'
-import React, { memo, useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ExpenseSheet } from '../components/ExpenseSheet'
 import { ExpensesTable } from '../components/ExpensesTable'
@@ -9,38 +11,52 @@ import { RevenueSidebar } from '../components/RevenueSidebar'
 
 const api = window.api
 
-// ==========================================
-// PORTAL AKSİYONLARI (Header Butonları)
-// ==========================================
-const ExpensesHeaderActions = memo(({ onAdd }: { onAdd: () => void }) => {
-  return (
-    <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-4 duration-500">
-      <Button
-        onClick={onAdd}
-        className="gap-2 font-black px-5 rounded-xl h-10 bg-zinc-950 dark:bg-zinc-50 text-white dark:text-black hover:bg-zinc-900 dark:hover:bg-white active:scale-95 transition-all text-xs tracking-tight shadow-sm"
-      >
-        <Plus className="w-4 h-4" strokeWidth={3} />
-        Gider Ekle
-      </Button>
-    </div>
-  )
-})
+// ============================================================================
+// Styles
+// ============================================================================
+
+const STYLES = {
+  layout: 'h-full flex flex-row overflow-hidden bg-muted/10 dark:bg-background/40',
+  mainArea: 'flex-1 flex flex-col min-w-0',
+  contentPad: 'flex-1 overflow-hidden px-6 py-6 lg:px-10 lg:py-8',
+  tableWrapper: 'h-full max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700',
+
+  headerActions: 'flex items-center gap-3 animate-in fade-in slide-in-from-right-4 duration-500',
+  addBtn:
+    'gap-2 font-black px-5 rounded-xl h-10 bg-zinc-950 dark:bg-zinc-50 text-white dark:text-black hover:bg-zinc-900 dark:hover:bg-white active:scale-95 transition-all text-xs tracking-tight shadow-sm'
+} as const
+
+// ============================================================================
+// Sub-Components
+// ============================================================================
+
+/**
+ * PORTAL AKSİYONLARI (Header Butonları)
+ * Not: Parent tarafından tetiklenen fonksiyonlar sürekli yenilendiği için
+ * burada 'memo' kullanmak gereksiz bir RAM yüküydü. Doğal haline bırakıldı.
+ */
+const ExpensesHeaderActions = ({ onAdd }: { onAdd: () => void }): React.JSX.Element => (
+  <div className={STYLES.headerActions}>
+    <Button onClick={onAdd} className={STYLES.addBtn}>
+      <Plus className="w-4 h-4" strokeWidth={3} />
+      Gider Ekle
+    </Button>
+  </div>
+)
+
+// ============================================================================
+// Main Component
+// ============================================================================
 
 export function ExpensesTab(): React.JSX.Element {
+  // State Tanımlamaları
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null)
   const [headerTarget, setHeaderTarget] = useState<HTMLElement | null>(null)
 
-  // Filtreleme State'i
-  const [filters, setFilters] = useState({
-    search: '',
-    category: 'all',
-    dateRange: 'month'
-  })
-
-  // İstatistik State'i
+  const [filters, setFilters] = useState({ search: '', category: 'all', dateRange: 'month' })
   const [stats, setStats] = useState<{
     todayTotal: number
     monthTotal: number
@@ -48,7 +64,7 @@ export function ExpensesTab(): React.JSX.Element {
   }>({ todayTotal: 0, monthTotal: 0 })
 
   // ==========================================
-  // VERİ YÜKLEME FONKSİYONLARI
+  // API FONKSİYONLARI (Sabitlenmiş)
   // ==========================================
 
   const loadStats = useCallback(async () => {
@@ -76,7 +92,6 @@ export function ExpensesTab(): React.JSX.Element {
     }
   }, [])
 
-  // Sayfa açılışında verileri çek
   useEffect(() => {
     loadExpenses()
     loadStats()
@@ -84,7 +99,7 @@ export function ExpensesTab(): React.JSX.Element {
   }, [loadExpenses, loadStats])
 
   // ==========================================
-  // İŞLEM YÖNETİCİLERİ (Güncelleme sonrası Statları da yeniler)
+  // İŞLEM YÖNETİCİLERİ (Callbacks)
   // ==========================================
 
   const handleUpdate = useCallback(
@@ -117,27 +132,37 @@ export function ExpensesTab(): React.JSX.Element {
     [loadStats]
   )
 
-  const handleSheetSubmit = async (data: Partial<Expense>): Promise<void> => {
-    try {
-      if (selectedExpense) {
-        await handleUpdate(selectedExpense.id, data)
-      } else {
-        const result = await api.expenses.create({
-          description: data.description!,
-          amount: data.amount!,
-          category: data.category,
-          paymentMethod: data.paymentMethod
-        })
-        if (result.success) {
-          await loadExpenses()
-          await loadStats()
+  // SheetSubmit fonksiyonu artık useCallback ile koruma altında
+  const handleSheetSubmit = useCallback(
+    async (data: Partial<Expense>): Promise<void> => {
+      try {
+        if (selectedExpense) {
+          await handleUpdate(selectedExpense.id, data)
+        } else {
+          const result = await api.expenses.create({
+            description: data.description!,
+            amount: data.amount!,
+            category: data.category,
+            paymentMethod: data.paymentMethod
+          })
+          if (result.success) {
+            await loadExpenses()
+            await loadStats()
+          }
         }
+        setIsSheetOpen(false)
+      } catch (error) {
+        console.error('Submit failed:', error)
       }
-      setIsSheetOpen(false)
-    } catch (error) {
-      console.error('Submit failed:', error)
-    }
-  }
+    },
+    [selectedExpense, handleUpdate, loadExpenses, loadStats]
+  )
+
+  // Portal fonksiyonu sabitlendi
+  const handleOpenAddSheet = useCallback(() => {
+    setSelectedExpense(null)
+    setIsSheetOpen(true)
+  }, [])
 
   // ==========================================
   // FİLTRELEME MANTIĞI
@@ -155,29 +180,28 @@ export function ExpensesTab(): React.JSX.Element {
       const date = new Date(e.createdAt)
       const now = new Date()
       let matchesDate = true
-      if (filters.dateRange === 'today') matchesDate = date.toDateString() === now.toDateString()
-      else if (filters.dateRange === 'week')
+
+      if (filters.dateRange === 'today') {
+        matchesDate = date.toDateString() === now.toDateString()
+      } else if (filters.dateRange === 'week') {
         matchesDate = date >= new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-      else if (filters.dateRange === 'month')
+      } else if (filters.dateRange === 'month') {
         matchesDate = date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()
+      }
 
       return matchesSearch && matchesCategory && matchesDate
     })
   }, [expenses, filters])
 
+  // ==========================================
+  // RENDER
+  // ==========================================
+
   return (
-    <div className="h-full flex flex-row overflow-hidden bg-muted/10 dark:bg-background/40">
+    <div className={STYLES.layout}>
       {/* Header Actions via Portal */}
       {headerTarget &&
-        createPortal(
-          <ExpensesHeaderActions
-            onAdd={() => {
-              setSelectedExpense(null)
-              setIsSheetOpen(true)
-            }}
-          />,
-          headerTarget
-        )}
+        createPortal(<ExpensesHeaderActions onAdd={handleOpenAddSheet} />, headerTarget)}
 
       {/* Sol Sidebar (Filtreler ve Özetler) */}
       <RevenueSidebar
@@ -188,9 +212,9 @@ export function ExpensesTab(): React.JSX.Element {
       />
 
       {/* Ana İçerik Alanı */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <div className="flex-1 overflow-hidden px-6 py-6 lg:px-10 lg:py-8">
-          <div className="h-full max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className={STYLES.mainArea}>
+        <div className={STYLES.contentPad}>
+          <div className={STYLES.tableWrapper}>
             <ExpensesTable
               data={filteredExpenses}
               onUpdate={handleUpdate}

@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { Minus, Square, X } from 'lucide-react'
-import React, { memo, useCallback } from 'react'
+import React, { useCallback } from 'react'
 
 // ============================================================================
 // Styles
@@ -29,27 +29,29 @@ interface WindowButtonProps {
   isClose?: boolean
 }
 
-const WindowButton = memo(
-  ({ onClick, icon: Icon, label, isClose }: WindowButtonProps): React.JSX.Element => (
-    <Button
-      variant="ghost"
-      size="icon"
-      onClick={onClick}
-      aria-label={label}
-      title={label}
-      className={cn(STYLES.btnBase, isClose ? STYLES.btnClose : STYLES.btnStandard)}
-    >
-      <Icon className={cn(isClose ? 'w-3.5 h-3.5' : 'w-3 h-3')} />
-    </Button>
-  )
+const WindowButton = ({
+  onClick,
+  icon: Icon,
+  label,
+  isClose
+}: WindowButtonProps): React.JSX.Element => (
+  <Button
+    variant="ghost"
+    size="icon"
+    onClick={onClick}
+    aria-label={label}
+    title={label}
+    className={cn(STYLES.btnBase, isClose ? STYLES.btnClose : STYLES.btnStandard)}
+  >
+    <Icon className={cn(isClose ? 'w-3.5 h-3.5' : 'w-3 h-3')} />
+  </Button>
 )
-WindowButton.displayName = 'WindowButton'
 
 // ============================================================================
 // Main Component
 // ============================================================================
 
-export const TitleBar = memo((): React.JSX.Element => {
+export const TitleBar = (): React.JSX.Element => {
   // Handlers - useCallback ile sabitlendi
   const handleMinimize = useCallback((): void => {
     window.api.window.minimize()
@@ -78,6 +80,4 @@ export const TitleBar = memo((): React.JSX.Element => {
       </div>
     </div>
   )
-})
-
-TitleBar.displayName = 'TitleBar'
+}

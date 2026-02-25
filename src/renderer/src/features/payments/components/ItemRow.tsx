@@ -1,5 +1,4 @@
 import { Minus, Plus } from 'lucide-react'
-import { memo, useCallback } from 'react'
 
 import { cn, formatCurrency } from '@/lib/utils'
 
@@ -41,29 +40,26 @@ const STYLES = {
 // Component
 // ============================================================================
 
-export const ItemRow = memo(function ItemRow({ item, selected, onQtyChange }: ItemRowProps) {
+export function ItemRow({ item, selected, onQtyChange }: ItemRowProps) {
   const isSelected = selected > 0
   const totalLine = item.unitPrice * selected
 
   // Satır tıklaması ile "Artır" butonu birebir aynı işi yaptığı için tek fonksiyonda birleştirdik
-  const handleInc = useCallback(() => {
+  const handleInc = () => {
     onQtyChange(item.id, Math.min(selected + 1, item.quantity))
-  }, [item.id, item.quantity, selected, onQtyChange])
+  }
 
-  const handleDec = useCallback(() => {
+  const handleDec = () => {
     onQtyChange(item.id, Math.max(selected - 1, 0))
-  }, [item.id, selected, onQtyChange])
+  }
 
   // Klavye erişilebilirliği (Enter veya Boşluk tuşu ile seçme/artırma)
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault()
-        handleInc()
-      }
-    },
-    [handleInc]
-  )
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      handleInc()
+    }
+  }
 
   return (
     <div
@@ -157,4 +153,4 @@ export const ItemRow = memo(function ItemRow({ item, selected, onQtyChange }: It
       </div>
     </div>
   )
-})
+}

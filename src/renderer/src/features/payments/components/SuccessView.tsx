@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import * as VisuallyHidden from '@radix-ui/react-visually-hidden'
 import { CheckCircle } from 'lucide-react'
-import { memo, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { PremiumAmount } from '@/components/PremiumAmount'
 import { cn } from '@/lib/utils'
@@ -42,12 +42,12 @@ const STYLES = {
 // Component
 // ============================================================================
 
-export const SuccessView = memo(function SuccessView({
+export function SuccessView({
   open,
   finalChange,
   onOpenChange,
   autoCloseMs = 4500
-}: SuccessViewProps) {
+}: SuccessViewProps): React.JSX.Element {
   const [progress, setProgress] = useState(0)
 
   const rafRef = useRef<number | null>(null)
@@ -160,4 +160,4 @@ export const SuccessView = memo(function SuccessView({
       </DialogContent>
     </Dialog>
   )
-})
+}

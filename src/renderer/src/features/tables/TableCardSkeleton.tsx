@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import React, { memo } from 'react'
+import React from 'react'
 
 // ============================================================================
 // Styles (Centralized)
@@ -20,7 +20,7 @@ const STYLES = {
 // Main Component
 // ============================================================================
 
-export const TableCardSkeleton = memo((): React.JSX.Element => {
+export const TableCardSkeleton = (): React.JSX.Element => {
   return (
     <Card className={STYLES.card}>
       {/* Header Placeholder */}
@@ -47,6 +47,4 @@ export const TableCardSkeleton = memo((): React.JSX.Element => {
       <div className={STYLES.shineEffect} />
     </Card>
   )
-})
-
-TableCardSkeleton.displayName = 'TableCardSkeleton'
+}

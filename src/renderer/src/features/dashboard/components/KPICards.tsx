@@ -10,7 +10,7 @@ import {
   Users,
   Wallet
 } from 'lucide-react'
-import React, { memo, useMemo } from 'react'
+import React, { useMemo } from 'react'
 import { useDashboardContext } from '../context/DashboardContext'
 
 // ============================================================================
@@ -44,28 +44,25 @@ interface KPICardProps {
   delay: number
 }
 
-const KPICard = memo(
-  ({
-    label,
-    value,
-    icon: Icon,
-    color,
-    hoverBorder,
-    valueColor,
-    badge,
-    delay
-  }: KPICardProps): React.JSX.Element => (
-    <div className={cn(STYLES.cardBase, hoverBorder)} style={{ animationDelay: `${delay}ms` }}>
-      <div className={STYLES.iconHeader}>
-        <Icon className={cn(STYLES.icon, color)} />
-        {badge}
-      </div>
-      <div className={cn(STYLES.value, valueColor || 'text-foreground')}>{value}</div>
-      <span className={STYLES.label}>{label}</span>
+const KPICard = ({
+  label,
+  value,
+  icon: Icon,
+  color,
+  hoverBorder,
+  valueColor,
+  badge,
+  delay
+}: KPICardProps): React.JSX.Element => (
+  <div className={cn(STYLES.cardBase, hoverBorder)} style={{ animationDelay: `${delay}ms` }}>
+    <div className={STYLES.iconHeader}>
+      <Icon className={cn(STYLES.icon, color)} />
+      {badge}
     </div>
-  )
+    <div className={cn(STYLES.value, valueColor || 'text-foreground')}>{value}</div>
+    <span className={STYLES.label}>{label}</span>
+  </div>
 )
-KPICard.displayName = 'KPICard'
 
 // ============================================================================
 // Main Component

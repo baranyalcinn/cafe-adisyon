@@ -1,5 +1,4 @@
 import { Banknote, CheckCircle2, Coins, CreditCard, ShieldAlert, Sparkles, Zap } from 'lucide-react'
-import { memo } from 'react'
 
 import { PremiumAmount } from '@/components/PremiumAmount'
 import { type PaymentMethod } from '@/lib/api'
@@ -195,13 +194,13 @@ const buildConfig = (
 // Component
 // ============================================================================
 
-export const ResultBanner = memo(function ResultBanner({
+export function ResultBanner({
   itemsPartialBlocked,
   tendered,
   effectivePayment,
   currentChange,
-  hoveredMethod = null
-}: ResultBannerProps) {
+  hoveredMethod
+}: ResultBannerProps): React.JSX.Element {
   // useMemo'ya gerek yok, çünkü bileşen (memo sayesinde) sadece bu proplar değiştiğinde çalışır
   const methodKey = getMethodKey(hoveredMethod)
   const status = resolveStatus(itemsPartialBlocked, tendered, effectivePayment, hoveredMethod)
@@ -278,4 +277,4 @@ export const ResultBanner = memo(function ResultBanner({
       </div>
     </div>
   )
-})
+}

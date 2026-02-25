@@ -1,6 +1,5 @@
 import { cn } from '@/lib/utils'
 import * as React from 'react'
-import { memo } from 'react'
 
 /** * Skeleton bileşeni için temel stiller.
  * animate-pulse: Klasik yavaşça yanıp sönme efekti.
@@ -21,10 +20,6 @@ const Skeleton = React.forwardRef<React.ComponentRef<'div'>, React.HTMLAttribute
   }
 )
 
-// DevTools ve Hata ayıklama için isim ataması
 Skeleton.displayName = 'Skeleton'
 
-// Performans için memo ile sarmalanmış hali
-const MemoizedSkeleton = memo(Skeleton)
-
-export { MemoizedSkeleton as Skeleton }
+export { Skeleton }
