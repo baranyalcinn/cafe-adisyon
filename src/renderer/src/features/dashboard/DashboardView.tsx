@@ -17,9 +17,9 @@ import { DashboardProvider, useDashboardContext } from './context/DashboardConte
 // Lazy Loaded Charts
 // ============================================================================
 
-const CategoryPieChart = React.lazy(
+const CategoryRevenueChart = React.lazy(
   (): Promise<{ default: React.ComponentType }> =>
-    import('./components/Charts').then((m) => ({ default: m.CategoryPieChart }))
+    import('./components/Charts').then((m) => ({ default: m.CategoryRevenueChart }))
 )
 const HourlyActivityChart = React.lazy(
   (): Promise<{ default: React.ComponentType }> =>
@@ -174,7 +174,7 @@ function DashboardContent(): React.JSX.Element {
         {/* 2-Column Charts */}
         <div className={STYLES.chartsGrid}>
           <React.Suspense fallback={<ChartFallback />}>
-            <CategoryPieChart />
+            <CategoryRevenueChart />
           </React.Suspense>
 
           <React.Suspense fallback={<ChartFallback />}>
