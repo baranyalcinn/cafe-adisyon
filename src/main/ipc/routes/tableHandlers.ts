@@ -3,21 +3,37 @@ import { IPC_CHANNELS } from '../../../shared/types'
 import { prisma } from '../../db/prisma'
 import { createRawHandler, createSimpleRawHandler } from '../utils/ipcWrapper'
 
+// ============================================================================
+// Pure Helpers
+// ============================================================================
+
+/**
+ * Masaları isme göre "Doğal Sıralama" ile sıralar.
+ * Normal ASCII sıralamasında "Masa 10", "Masa 2"den önce gelir.
+ * numeric: true sayesinde "Masa 2", "Masa 10"dan önce gelir.
+ */
+const sortTablesNaturally = <T extends { name: string }>(tables: T[]): T[] => {
+  return tables.sort((a, b) =>
+    a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
+  )
+}
+
+// ============================================================================
+// Handlers
+// ============================================================================
+
 export function registerTableHandlers(): void {
-  // GET ALL
+  // 1. GET ALL
   createSimpleRawHandler(
     IPC_CHANNELS.TABLES_GET_ALL,
     async () => {
       const tables = await prisma.table.findMany()
-      tables.sort((a, b) =>
-        a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
-      )
-      return tables
+      return sortTablesNaturally(tables)
     },
-    'Masalar getirilirken hata oluştu'
+    'Masalar getirilirken hata oluştu.'
   )
 
-  // GET WITH STATUS
+  // 2. GET WITH STATUS
   createSimpleRawHandler(
     IPC_CHANNELS.TABLES_GET_WITH_STATUS,
     async () => {
@@ -29,43 +45,36 @@ export function registerTableHandlers(): void {
         })
       ])
 
-      const openOrderMap = new Map<string, boolean>()
-      for (const order of openOrders) {
-        if (order.tableId) {
-          openOrderMap.set(order.tableId, order.isLocked)
-        }
-      }
-
-      tables.sort((a, b) =>
-        a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
+      // Açık siparişi olan masaların kilit durumlarını Map'e al (O(1) erişim hızı için)
+      const openOrderMap = new Map(
+        openOrders.filter((o) => o.tableId).map((o) => [o.tableId as string, o.isLocked])
       )
 
-      return tables.map((table) => {
-        const hasOpen = openOrderMap.has(table.id)
+      const sortedTables = sortTablesNaturally(tables)
+
+      return sortedTables.map((table) => {
+        const isLocked = openOrderMap.get(table.id)
         return {
           ...table,
-          hasOpenOrder: hasOpen,
-          isLocked: hasOpen ? openOrderMap.get(table.id) || false : false,
-          orders: undefined
+          hasOpenOrder: isLocked !== undefined,
+          isLocked: isLocked ?? false,
+          orders: undefined // Prisma'nın fazladan include verisini frontend'e sızdırmasını önler
         }
       })
     },
-    'Masa durumları getirilirken hata oluştu'
+    'Masa durumları getirilirken hata oluştu.'
   )
 
-  // CREATE
+  // 3. CREATE
   createRawHandler(
     IPC_CHANNELS.TABLES_CREATE,
     tableSchemas.create,
-    async (data) => {
-      return await prisma.table.create({
-        data: { name: data.name }
-      })
-    },
-    'Masa oluşturulamadı. Bu isimde masa zaten var olabilir.'
+    // Veritabanı işlemi doğrudan return edilebilir (async/await yazım kirliliğinden kurtulur)
+    (data) => prisma.table.create({ data: { name: data.name } }),
+    'Masa oluşturulamadı. Bu isimde masa zaten mevcut olabilir.'
   )
 
-  // DELETE
+  // 4. DELETE
   createRawHandler(
     IPC_CHANNELS.TABLES_DELETE,
     tableSchemas.delete,
@@ -79,21 +88,22 @@ export function registerTableHandlers(): void {
         const orderIds = orders.map((o) => o.id)
 
         if (orderIds.length > 0) {
-          await tx.transaction.deleteMany({
-            where: { orderId: { in: orderIds } }
-          })
-          await tx.orderItem.deleteMany({
-            where: { orderId: { in: orderIds } }
-          })
-          await tx.order.deleteMany({
-            where: { id: { in: orderIds } }
-          })
+          // Alt ilişkileri paralel silerek SQLite I/O performansını artır
+          await Promise.all([
+            tx.transaction.deleteMany({ where: { orderId: { in: orderIds } } }),
+            tx.orderItem.deleteMany({ where: { orderId: { in: orderIds } } })
+          ])
+
+          // Bağımlılıklar silindikten sonra ana kayıtları sil
+          await tx.order.deleteMany({ where: { id: { in: orderIds } } })
         }
 
+        // En son masanın kendisini sil
         await tx.table.delete({ where: { id: data.id } })
       })
+
       return null
     },
-    'Masa silinemedi.'
+    'Masa silinemedi. Lütfen önce masadaki işlemleri kontrol edin.'
   )
 }
