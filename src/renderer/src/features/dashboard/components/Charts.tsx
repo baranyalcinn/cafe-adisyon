@@ -234,11 +234,8 @@ export const CategoryRevenueChart = memo(function CategoryRevenueChart(): React.
       <div className="flex-1 min-h-[300px] w-full mt-3 mb-2 flex flex-col gap-3 px-1">
         {/* Summary Header */}
         {hasData && (
-          <div className="flex items-center justify-between pb-2 mb-0.5 border-b border-zinc-100 dark:border-zinc-800">
-            <span className="text-[10px] font-black text-foreground/40 uppercase tracking-[0.25em]">
-              Kategori
-            </span>
-            <span className="text-[11px] font-black text-foreground/50 tabular-nums">
+          <div className="flex items-center justify-end pb-2 mb-0.5 border-b border-zinc-100 dark:border-zinc-800">
+            <span className="text-[13px] font-black text-foreground/90 tabular-nums">
               Toplam {formatCurrency(totalRevenue)}
             </span>
           </div>
@@ -254,7 +251,7 @@ export const CategoryRevenueChart = memo(function CategoryRevenueChart(): React.
                 {/* Row: rank + color bar + name/qty + percent + amount */}
                 <div className="flex items-center gap-2.5">
                   {/* Rank */}
-                  <span className="text-[11px] font-black tabular-nums w-4 text-right text-foreground/20 shrink-0">
+                  <span className="text-[11px] font-black tabular-nums w-4 text-right text-foreground/40 shrink-0">
                     {index + 1}
                   </span>
                   {/* Vertical Color Bar */}
@@ -270,13 +267,13 @@ export const CategoryRevenueChart = memo(function CategoryRevenueChart(): React.
                     >
                       {category.name}
                     </span>
-                    <span className="text-[10.5px] font-bold text-foreground/40 leading-tight">
+                    <span className="text-[10.5px] font-bold text-foreground/60 leading-tight">
                       {category.quantity} adet
                     </span>
                   </div>
                   {/* Percent + Amount */}
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-[11px] font-black text-foreground/35 tabular-nums">
+                    <span className="text-[11px] font-black text-foreground/50 tabular-nums">
                       %{percentage.toFixed(0)}
                     </span>
                     <span className="text-[13px] font-black text-foreground tabular-nums min-w-[58px] text-right">
