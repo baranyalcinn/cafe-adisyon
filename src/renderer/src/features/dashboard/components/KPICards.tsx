@@ -54,9 +54,6 @@ const CARD_BASE_CLASSES =
   'hover:border-zinc-300 dark:hover:border-zinc-700 bg-card overflow-hidden group ' +
   'hover:-translate-y-1'
 
-const BADGE_BASE_CLASSES =
-  'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider'
-
 /**
  * Renk / stil token'ları: tek yerden yönet.
  */
@@ -163,28 +160,28 @@ const KPICard = React.memo(function KPICard({
       {/* Subtle corner glow */}
       <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full bg-primary/5 blur-2xl pointer-events-none" />
 
-      <div className="flex items-start justify-between mb-4">
-        <div
-          className={cn(
-            'w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm',
-            iconBg
-          )}
-        >
-          <Icon
+      <div className="flex items-start justify-between mb-2">
+        <div className="flex items-center gap-3">
+          <div
             className={cn(
-              'h-5 w-5 transition-transform duration-300 group-hover:scale-110',
-              iconColor
+              'w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm',
+              iconBg
             )}
-          />
+          >
+            <Icon
+              className={cn(
+                'h-5 w-5 transition-transform duration-300 group-hover:scale-110',
+                iconColor
+              )}
+            />
+          </div>
+          <div className="text-[16px] font-black text-foreground/95 tracking-widest">{label}</div>
         </div>
-        {badge}
+        {badge && <div className="mt-1.5">{badge}</div>}
       </div>
 
-      <div className="text-[2.25rem] font-black tabular-nums tracking-tight text-foreground leading-none">
+      <div className="text-[2.25rem] font-black tabular-nums tracking-tight text-foreground leading-none mt-3.5">
         {value}
-      </div>
-      <div className="mt-2 text-sm font-black text-foreground tracking-widest uppercase">
-        {label}
       </div>
 
       {/* Bottom accent line */}
@@ -534,17 +531,6 @@ const HeroRevenueCard = React.memo(function HeroRevenueCard({
 // Badge Components
 // ============================================================================
 
-const PendingBadge = React.memo(function PendingBadge({ count }: { count: number }) {
-  return (
-    <span className={cn(BADGE_BASE_CLASSES, KPI_COLORS.orders.badgePending)}>
-      <span
-        className={cn('h-1.5 w-1.5 rounded-full animate-pulse', KPI_COLORS.orders.pendingDot)}
-      />
-      {count} açık
-    </span>
-  )
-})
-
 // ============================================================================
 // Main Component
 // ============================================================================
@@ -566,24 +552,18 @@ export function KPICards(): React.JSX.Element {
     }
   }, [stats])
 
-  const pendingBadge = useMemo(
-    () => (metrics.pending > 0 ? <PendingBadge count={metrics.pending} /> : undefined),
-    [metrics.pending]
-  )
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-5">
       <HeroRevenueCard value={formatCurrency(metrics.revenue)} delay={100} />
 
       <KPICard
-        label="Siparişler"
+        label="Sipariş"
         value={String(metrics.orders)}
         icon={ShoppingBag}
         iconBg={KPI_COLORS.orders.iconBg}
         iconColor={KPI_COLORS.orders.icon}
         accentColor={KPI_COLORS.orders.accent}
         delay={150}
-        badge={pendingBadge}
         className="lg:col-span-2"
       />
 

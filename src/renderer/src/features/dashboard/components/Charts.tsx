@@ -1,5 +1,4 @@
 'use client'
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { getCategoryColor } from '@/features/orders/order-icons'
 import { cn, formatCurrency } from '@/lib/utils'
@@ -12,34 +11,17 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Cell,
-  Pie,
-  PieChart,
   ResponsiveContainer,
-  Sector,
   XAxis,
   YAxis
 } from 'recharts'
 import { useDashboardContext } from '../context/DashboardContext'
-
-const PieAny: any = Pie
 
 const CHART_COLORS = {
   revenue: '#4F46E5', // indigo-600
   hourly: '#059669', // emerald-600
   product: '#7C3AED' // violet-600
 } as const
-
-const PIE_COLORS = [
-  '#4F46E5', // Indigo
-  '#059669', // Emerald
-  '#D97706', // Amber
-  '#7C3AED', // Violet
-  '#DC2626', // Red
-  '#2563EB', // Blue
-  '#0891B2', // Cyan
-  '#71717A' // Zinc
-]
 
 // Chart margins (stable objects)
 const AREA_CHART_MARGIN = { left: 20, right: 20, top: 10, bottom: 5 }
@@ -72,35 +54,6 @@ const formatWeekday = (str: string): string => {
   } catch {
     return str
   }
-}
-
-// Active Shape for Donut Chart (Premium 2025 Feel)
-const renderActiveShape = (props: any): React.JSX.Element => {
-  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props
-  return (
-    <g>
-      <Sector
-        cx={cx}
-        cy={cy}
-        innerRadius={innerRadius}
-        outerRadius={outerRadius + 6}
-        startAngle={startAngle}
-        endAngle={endAngle}
-        fill={fill}
-        className="transition-all duration-300"
-      />
-      <Sector
-        cx={cx}
-        cy={cy}
-        startAngle={startAngle}
-        endAngle={endAngle}
-        innerRadius={outerRadius + 8}
-        outerRadius={outerRadius + 10}
-        fill={fill}
-        opacity={0.3}
-      />
-    </g>
-  )
 }
 
 // ============================================================================
@@ -251,7 +204,6 @@ export const WeeklyTrendChart = memo(function WeeklyTrendChart(): React.JSX.Elem
 
 export const CategoryRevenueChart = memo(function CategoryRevenueChart(): React.JSX.Element {
   const { stats } = useDashboardContext()
-  const [activeIndex, setActiveIndex] = React.useState<number | undefined>(undefined)
 
   const chartData = useMemo(() => {
     if (!stats?.categoryBreakdown) return []
@@ -271,15 +223,6 @@ export const CategoryRevenueChart = memo(function CategoryRevenueChart(): React.
     [chartData]
   )
   const hasData = chartData.length > 0
-  const topCategories = chartData.slice(0, 6)
-
-  const onPieEnter = (_: any, index: number): void => {
-    setActiveIndex(index)
-  }
-
-  const onPieLeave = (): void => {
-    setActiveIndex(undefined)
-  }
 
   return (
     <ChartCard
@@ -288,95 +231,73 @@ export const CategoryRevenueChart = memo(function CategoryRevenueChart(): React.
       delay="delay-[500ms]"
       accentColor="bg-indigo-600"
     >
-      <div className="flex-1 min-h-[300px] w-full pt-2">
+      <div className="flex-1 min-h-[300px] w-full mt-3 mb-2 flex flex-col gap-3 px-1">
+        {/* Summary Header */}
+        {hasData && (
+          <div className="flex items-center justify-between pb-2 mb-0.5 border-b border-zinc-100 dark:border-zinc-800">
+            <span className="text-[10px] font-black text-foreground/40 uppercase tracking-[0.25em]">
+              Kategori
+            </span>
+            <span className="text-[11px] font-black text-foreground/50 tabular-nums">
+              Toplam {formatCurrency(totalRevenue)}
+            </span>
+          </div>
+        )}
         {hasData ? (
-          <div className="flex h-full items-center">
-            {/* Left: Pie Chart */}
-            <div className="w-[45%] h-full relative group/pie">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <PieAny
-                    activeIndex={activeIndex}
-                    activeShape={renderActiveShape}
-                    data={chartData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={65}
-                    outerRadius={95}
-                    paddingAngle={5}
-                    dataKey="value"
-                    onMouseEnter={onPieEnter}
-                    onMouseLeave={onPieLeave}
-                    isAnimationActive={true}
-                    animationDuration={800}
-                    stroke="none"
-                  >
-                    {chartData.map((entry: any, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={entry.color || PIE_COLORS[index % PIE_COLORS.length]}
-                        className="outline-none"
-                      />
-                    ))}
-                  </PieAny>
-                </PieChart>
-              </ResponsiveContainer>
-
-              {/* Central text indicator */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none pb-2">
-                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest blur-[0.2px]">
-                  Toplam
-                </span>
-                <span className="text-sm font-black text-foreground tabular-nums tracking-tight">
-                  {formatCurrency(totalRevenue).replace('₺', '')}
-                  <span className="ml-0.5 text-[10px] font-bold text-foreground/60">₺</span>
-                </span>
-              </div>
-            </div>
-
-            {/* Right: Custom Legend */}
-            <div className="w-[55%] flex flex-col justify-center pl-6 gap-3">
-              {topCategories.map((category, index) => (
-                <div
-                  key={category.name}
-                  className={cn(
-                    'flex items-center justify-between group cursor-pointer transition-all duration-300',
-                    activeIndex === index ? 'translate-x-1.5' : 'opacity-80 hover:opacity-100'
-                  )}
-                  onMouseEnter={() => setActiveIndex(index)}
-                  onMouseLeave={() => setActiveIndex(undefined)}
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={cn(
-                        'w-2.5 h-2.5 rounded-full shadow-sm transition-transform duration-300',
-                        activeIndex === index ? 'scale-125' : ''
-                      )}
-                      style={{
-                        backgroundColor: category.color || PIE_COLORS[index % PIE_COLORS.length]
-                      }}
-                    />
+          chartData.map((category, index) => {
+            const percentage = totalRevenue > 0 ? (category.value / totalRevenue) * 100 : 0
+            return (
+              <div
+                key={category.name}
+                className="flex flex-col gap-1.5 group hover:translate-x-0.5 transition-transform duration-200"
+              >
+                {/* Row: rank + color bar + name/qty + percent + amount */}
+                <div className="flex items-center gap-2.5">
+                  {/* Rank */}
+                  <span className="text-[11px] font-black tabular-nums w-4 text-right text-foreground/20 shrink-0">
+                    {index + 1}
+                  </span>
+                  {/* Vertical Color Bar */}
+                  <div
+                    className="w-[3px] h-9 rounded-full shrink-0"
+                    style={{ backgroundColor: category.color }}
+                  />
+                  {/* Name + Quantity */}
+                  <div className="flex-1 min-w-0 flex flex-col gap-0">
                     <span
-                      className={cn(
-                        'text-sm font-black transition-colors truncate max-w-[120px]',
-                        activeIndex === index ? 'text-primary' : 'text-foreground/70'
-                      )}
+                      className="text-[13px] font-black text-foreground truncate leading-tight"
+                      title={category.name}
                     >
                       {category.name}
                     </span>
+                    <span className="text-[10.5px] font-bold text-foreground/40 leading-tight">
+                      {category.quantity} adet
+                    </span>
                   </div>
-                  <span className="text-sm font-black tabular-nums text-foreground">
-                    {formatCurrency(category.value)}
-                  </span>
+                  {/* Percent + Amount */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[11px] font-black text-foreground/35 tabular-nums">
+                      %{percentage.toFixed(0)}
+                    </span>
+                    <span className="text-[13px] font-black text-foreground tabular-nums min-w-[58px] text-right">
+                      {formatCurrency(category.value)}
+                    </span>
+                  </div>
                 </div>
-              ))}
-              {chartData.length > 6 && (
-                <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pt-2.5 mt-1 border-t border-zinc-100 dark:border-zinc-800/50">
-                  + {chartData.length - 6} Diğer Kategori
+                {/* Progress Bar with Glow */}
+                <div className="ml-8 h-2 bg-zinc-100 dark:bg-zinc-800/60 rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-1000 ease-out"
+                    style={{
+                      width: `${percentage}%`,
+                      backgroundColor: category.color,
+                      boxShadow: `0 0 8px 2px ${category.color}4D`
+                    }}
+                  />
                 </div>
-              )}
-            </div>
-          </div>
+              </div>
+            )
+          })
         ) : (
           <div className={EMPTY_STATE}>
             <PieChartIcon className="w-10 h-10 text-zinc-200 dark:text-zinc-800" />
