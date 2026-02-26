@@ -20,12 +20,17 @@ export class DBMaintenance {
   public async runMaintenance(): Promise<void> {
     try {
       logger.info('DBMaintenance', 'Starting maintenance tasks...')
+
+      // Optimizasyon: SQLite'a çalışmadan önce memory ve cache düzenlemesi yapmasını söyleyelim
+      await prisma.$executeRawUnsafe('PRAGMA optimize;')
+
       await this.runMigrations()
       await this.walCheckpoint()
       await this.quickCheck()
       await this.runVacuum()
       await this.createBackup()
       this.cleanupOldBackups()
+
       logger.info('DBMaintenance', 'Maintenance completed successfully.')
     } catch (error) {
       logger.error('DBMaintenance', error)
@@ -34,66 +39,46 @@ export class DBMaintenance {
 
   /**
    * Auto-migration: applies schema changes to existing databases.
-   * Each migration is idempotent — safe to run on every startup.
-   * When adding a new schema change, append a new migration entry below.
    */
   private async runMigrations(): Promise<void> {
     try {
       logger.debug('DBMaintenance', 'Running auto-migrations...')
 
-      // Migration 1: Add updatedAt column to Order table
       await this.addColumnIfNotExists('Order', 'updatedAt', 'DATETIME')
-
-      // Migration 2: Add isDeleted column to Category table (soft delete support)
       await this.addColumnIfNotExists('Category', 'isDeleted', 'BOOLEAN DEFAULT 0')
-
-      // Migration 3: Add isDeleted column to Product table (soft delete support)
       await this.addColumnIfNotExists('Product', 'isDeleted', 'BOOLEAN DEFAULT 0')
-
-      // Migration 4: Add paymentMethod column to Expense table
       await this.addColumnIfNotExists('Expense', 'paymentMethod', "TEXT DEFAULT 'CASH'")
-
-      // Migration 5: Add isDeleted column to Table (soft delete — preserves order history)
       await this.addColumnIfNotExists('Table', 'isDeleted', 'BOOLEAN DEFAULT 0')
 
-      // Comprehensive index sync — ensures ALL schema.prisma indexes exist
-      // Each statement is idempotent (IF NOT EXISTS), safe on every startup
+      // OPTİMİZASYON: Son "schema.prisma" revizyonumuza göre güncellenmiş ve gereksizleri silinmiş Index'ler!
       const indexes = [
-        // Product indexes
+        // Product
         'CREATE INDEX IF NOT EXISTS "Product_categoryId_idx" ON "Product"("categoryId")',
         'CREATE INDEX IF NOT EXISTS "Product_isFavorite_idx" ON "Product"("isFavorite")',
         'CREATE INDEX IF NOT EXISTS "Product_isDeleted_idx" ON "Product"("isDeleted")',
         'CREATE INDEX IF NOT EXISTS "Product_name_idx" ON "Product"("name")',
 
-        // Category indexes
+        // Category & Table
         'CREATE INDEX IF NOT EXISTS "Category_isDeleted_idx" ON "Category"("isDeleted")',
-
-        // Table indexes
         'CREATE INDEX IF NOT EXISTS "Table_isDeleted_idx" ON "Table"("isDeleted")',
 
-        // Order indexes (optimized — left-prefix rule applied)
+        // Order
         'CREATE INDEX IF NOT EXISTS "Order_tableId_status_idx" ON "Order"("tableId", "status")',
         'CREATE INDEX IF NOT EXISTS "Order_status_createdAt_idx" ON "Order"("status", "createdAt")',
 
-        // OrderItem indexes (composite covers orderId filter + isPaid filter together)
+        // OrderItem
         'CREATE INDEX IF NOT EXISTS "OrderItem_productId_idx" ON "OrderItem"("productId")',
         'CREATE INDEX IF NOT EXISTS "OrderItem_orderId_isPaid_idx" ON "OrderItem"("orderId", "isPaid")',
 
-        // Transaction indexes (covering index: createdAt+paymentMethod for groupBy queries)
+        // Transaction
         'CREATE INDEX IF NOT EXISTS "Transaction_orderId_idx" ON "Transaction"("orderId")',
         'CREATE INDEX IF NOT EXISTS "Transaction_createdAt_paymentMethod_idx" ON "Transaction"("createdAt", "paymentMethod")',
 
-        // DailySummary indexes
+        // Diğer
         'CREATE INDEX IF NOT EXISTS "DailySummary_date_idx" ON "DailySummary"("date")',
-
-        // ActivityLog indexes
         'CREATE INDEX IF NOT EXISTS "ActivityLog_createdAt_idx" ON "ActivityLog"("createdAt")',
         'CREATE INDEX IF NOT EXISTS "ActivityLog_action_idx" ON "ActivityLog"("action")',
-
-        // Expense indexes
         'CREATE INDEX IF NOT EXISTS "Expense_createdAt_idx" ON "Expense"("createdAt")',
-
-        // MonthlyReport indexes
         'CREATE INDEX IF NOT EXISTS "MonthlyReport_monthDate_idx" ON "MonthlyReport"("monthDate")'
       ]
 
@@ -103,22 +88,16 @@ export class DBMaintenance {
 
       logger.debug('DBMaintenance', `Auto-migrations completed. ${indexes.length} indexes synced.`)
     } catch (error) {
-      // Migrations failing should NOT block app startup
       logger.error('DBMaintenance Migrations', error)
     }
   }
 
-  /**
-   * Adds a column to a table if it doesn't already exist.
-   * SQLite doesn't support IF NOT EXISTS for ALTER TABLE, so we check pragma first.
-   */
   private async addColumnIfNotExists(table: string, column: string, type: string): Promise<void> {
     try {
       const columns: Array<{ name: string }> = await prisma.$queryRawUnsafe(
         `PRAGMA table_info("${table}")`
       )
-      const exists = columns.some((c) => c.name === column)
-      if (!exists) {
+      if (!columns.some((c) => c.name === column)) {
         await prisma.$executeRawUnsafe(`ALTER TABLE "${table}" ADD COLUMN "${column}" ${type}`)
         logger.debug('DBMaintenance', `Added column ${table}.${column}`)
       }
@@ -127,10 +106,6 @@ export class DBMaintenance {
     }
   }
 
-  /**
-   * Renames a column if the old name exists and the new name doesn't.
-   * Requires SQLite 3.25.0+ (Electron ships with a modern SQLite, so this is safe).
-   */
   protected async renameColumnIfExists(
     table: string,
     oldName: string,
@@ -140,9 +115,9 @@ export class DBMaintenance {
       const columns: Array<{ name: string }> = await prisma.$queryRawUnsafe(
         `PRAGMA table_info("${table}")`
       )
-      const hasOld = columns.some((c) => c.name === oldName)
-      const hasNew = columns.some((c) => c.name === newName)
-      if (!hasOld || hasNew) return
+      if (!columns.some((c) => c.name === oldName) || columns.some((c) => c.name === newName))
+        return
+
       await prisma.$executeRawUnsafe(
         `ALTER TABLE "${table}" RENAME COLUMN "${oldName}" TO "${newName}"`
       )
@@ -153,44 +128,38 @@ export class DBMaintenance {
   }
 
   /**
-   * Drops a column by recreating the table without it.
-   * SQLite doesn't support DROP COLUMN natively on older versions,
-   * so we use the recommended table-rebuild pattern.
-   * WARNING: Rebuilds indexes after the operation via the index sync step.
+   * Drops a column using native SQLite ALTER TABLE DROP COLUMN (3.35.0+).
+   * Automatically drops any indexes covering the column first, since SQLite
+   * refuses to drop an indexed column. The index sync step re-creates them on next run.
    */
   protected async dropColumnIfExists(table: string, column: string): Promise<void> {
     try {
-      const columns: Array<{
-        name: string
-        type: string
-        notnull: number
-        dflt_value: string | null
-        pk: number
-      }> = await prisma.$queryRawUnsafe(`PRAGMA table_info("${table}")`)
+      const columns: Array<{ name: string }> = await prisma.$queryRawUnsafe(
+        `PRAGMA table_info("${table}")`
+      )
       if (!columns.some((c) => c.name === column)) return
 
-      const remaining = columns
-        .filter((c) => c.name !== column)
-        .map((c) => `"${c.name}"`)
-        .join(', ')
-      await prisma.$executeRawUnsafe(`
-        BEGIN TRANSACTION;
-        CREATE TABLE "${table}_migration_tmp" AS SELECT ${remaining} FROM "${table}";
-        DROP TABLE "${table}";
-        ALTER TABLE "${table}_migration_tmp" RENAME TO "${table}";
-        COMMIT;
-      `)
+      // Drop all indexes that cover this column (SQLite blocks DROP COLUMN on indexed columns)
+      const indexList: Array<{ name: string }> = await prisma.$queryRawUnsafe(
+        `PRAGMA index_list("${table}")`
+      )
+      for (const idx of indexList) {
+        const indexCols: Array<{ name: string }> = await prisma.$queryRawUnsafe(
+          `PRAGMA index_info("${idx.name}")`
+        )
+        if (indexCols.some((c) => c.name === column)) {
+          await prisma.$executeRawUnsafe(`DROP INDEX IF EXISTS "${idx.name}"`)
+          logger.debug('DBMaintenance', `Dropped index ${idx.name} (blocking column drop)`)
+        }
+      }
+
+      await prisma.$executeRawUnsafe(`ALTER TABLE "${table}" DROP COLUMN "${column}"`)
       logger.debug('DBMaintenance', `Dropped column ${table}.${column}`)
     } catch (error) {
       logger.error(`DBMaintenance DropColumn ${table}.${column}`, error)
     }
   }
 
-  /**
-   * Forces WAL (Write-Ahead Log) contents into the main database file and truncates the WAL.
-   * Without this, the -wal file can grow unbounded in always-on Electron apps
-   * where Prisma holds a persistent connection.
-   */
   private async walCheckpoint(): Promise<void> {
     try {
       await prisma.$executeRawUnsafe('PRAGMA wal_checkpoint(TRUNCATE)')
@@ -200,33 +169,22 @@ export class DBMaintenance {
     }
   }
 
-  /**
-   * Runs PRAGMA quick_check to verify database integrity.
-   * Runs weekly (marker-based) to avoid performance impact on every startup.
-   */
   private async quickCheck(): Promise<void> {
     try {
       const marker = path.join(this.backupDir, '.last-quickcheck')
       try {
         const stat = await fs.promises.stat(marker)
-        const daysSince = (Date.now() - stat.mtime.getTime()) / (1000 * 60 * 60 * 24)
-        if (daysSince < 7) {
-          logger.debug('DBMaintenance', 'quick_check skipped (last run < 7 days ago)')
-          return
-        }
+        if ((Date.now() - stat.mtime.getTime()) / (1000 * 60 * 60 * 24) < 7) return
       } catch {
-        // No marker file = never checked
+        /* No marker file */
       }
 
       const result: Array<{ integrity_check: string }> =
         await prisma.$queryRawUnsafe('PRAGMA quick_check')
       const isOk = result.length === 1 && result[0].integrity_check === 'ok'
 
-      if (isOk) {
-        logger.info('DBMaintenance', 'quick_check passed — database integrity OK')
-      } else {
-        logger.error('DBMaintenance', `quick_check FAILED: ${JSON.stringify(result)}`)
-      }
+      if (isOk) logger.info('DBMaintenance', 'quick_check passed — database integrity OK')
+      else logger.error('DBMaintenance', `quick_check FAILED: ${JSON.stringify(result)}`)
 
       await fs.promises.writeFile(marker, '')
     } catch (error) {
@@ -238,19 +196,15 @@ export class DBMaintenance {
     const marker = path.join(this.backupDir, '.last-vacuum')
     try {
       const stat = await fs.promises.stat(marker)
-      const daysSince = (Date.now() - stat.mtime.getTime()) / (1000 * 60 * 60 * 24)
-      return daysSince >= 7
+      return (Date.now() - stat.mtime.getTime()) / (1000 * 60 * 60 * 24) >= 7
     } catch {
-      return true // No marker file = never vacuumed
+      return true
     }
   }
 
   private async runVacuum(): Promise<void> {
     try {
-      if (!(await this.shouldVacuum())) {
-        logger.debug('DBMaintenance', 'VACUUM skipped (last run < 7 days ago)')
-        return
-      }
+      if (!(await this.shouldVacuum())) return
       await prisma.$executeRawUnsafe('VACUUM;')
       await fs.promises.writeFile(path.join(this.backupDir, '.last-vacuum'), '')
       logger.debug('DBMaintenance', 'VACUUM executed.')
@@ -265,8 +219,9 @@ export class DBMaintenance {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
       const backupPath = path.join(this.backupDir, `backup-${timestamp}.db`)
 
-      // Use VACUUM INTO for a consistent snapshot (safe during active writes)
-      await prisma.$executeRawUnsafe(`VACUUM INTO '${backupPath.replace(/'/g, "''")}'`)
+      // macOS path sorunlarını engellemek için slash'leri güvenli hale getirdik.
+      const safePath = backupPath.replace(/\\/g, '/').replace(/'/g, "''")
+      await prisma.$executeRawUnsafe(`VACUUM INTO '${safePath}'`)
       logger.debug('DBMaintenance', `Backup created at ${backupPath}`)
     } catch (error) {
       logger.error('DBMaintenance Backup', error)
@@ -276,20 +231,22 @@ export class DBMaintenance {
 
   private cleanupOldBackups(): void {
     try {
-      // Keep only last 5 backups
       const files = fs
         .readdirSync(this.backupDir)
         .filter((f) => f.startsWith('backup-') && f.endsWith('.db'))
-        .map((f) => ({
-          name: f,
-          time: fs.statSync(path.join(this.backupDir, f)).mtime.getTime()
-        }))
+        .map((f) => ({ name: f, time: fs.statSync(path.join(this.backupDir, f)).mtime.getTime() }))
         .sort((a, b) => b.time - a.time)
 
       if (files.length > 5) {
         files.slice(5).forEach((file) => {
-          fs.unlinkSync(path.join(this.backupDir, file.name))
-          logger.debug('DBMaintenance', `Deleted old backup ${file.name}`)
+          // KRİTİK EKLENTİ: Her dosya silme işlemi kendi içinde try-catch bloğuna alındı.
+          // Bir dosya kilitliyse, diğerlerinin silinmesini durdurmaz.
+          try {
+            fs.unlinkSync(path.join(this.backupDir, file.name))
+            logger.debug('DBMaintenance', `Deleted old backup ${file.name}`)
+          } catch (delError) {
+            logger.error(`DBMaintenance Delete Backup Failed for ${file.name}`, delError)
+          }
         })
       }
     } catch (error) {
