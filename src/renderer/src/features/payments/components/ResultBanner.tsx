@@ -3,6 +3,7 @@ import { Banknote, CheckCircle2, Coins, CreditCard, ShieldAlert, Sparkles, Zap }
 import { PremiumAmount } from '@/components/PremiumAmount'
 import { type PaymentMethod } from '@/lib/api'
 import { cn } from '@/lib/utils'
+import { memo } from 'react'
 
 // ============================================================================
 // Types
@@ -195,7 +196,7 @@ const buildConfig = (
 // Component
 // ============================================================================
 
-export function ResultBanner({
+export const ResultBanner = memo(function ResultBanner({
   itemsPartialBlocked,
   tendered,
   effectivePayment,
@@ -280,4 +281,6 @@ export function ResultBanner({
       </div>
     </div>
   )
-}
+})
+
+ResultBanner.displayName = 'ResultBanner'

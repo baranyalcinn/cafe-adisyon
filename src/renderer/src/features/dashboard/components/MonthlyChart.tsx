@@ -21,6 +21,7 @@ import { useDashboardContext } from '../context/DashboardContext'
 
 interface ChartDataPoint {
   month: string
+  monthName: string
   fullMonth: string
   revenue: number
   profit: number
@@ -61,7 +62,7 @@ const STYLES = {
   // Tooltip
   tooltipCard: 'bg-card border border-border shadow-2xl rounded-2xl p-5 min-w-[200px] space-y-4',
   tooltipTitle:
-    'text-[10px] font-black text-zinc-800 dark:text-zinc-200 tracking-[0.25em] border-b border-border pb-2 mb-2',
+    'text-[14px] font-black text-foreground tracking-widest border-b-2 border-primary/20 pb-2 mb-2',
   tooltipRow: 'flex items-center justify-between gap-6',
   tooltipValue: 'text-sm font-black tabular-nums tracking-tighter shadow-sm',
   marginBadge: 'text-xs font-black tabular-nums tracking-tight px-2 py-0.5 rounded-md'
@@ -91,15 +92,14 @@ const MonthlyTooltip = memo(
   ({ active, payload, label }: MonthlyTooltipProps): React.JSX.Element | null => {
     if (!active || !payload || !payload.length) return null
 
+    const monthName = payload[0]?.payload?.monthName || label || ''
     const revenue = payload.find((p) => p.dataKey === 'revenue')?.value || 0
     const profit = payload.find((p) => p.dataKey === 'profit')?.value || 0
     const margin = revenue > 0 ? (profit / revenue) * 100 : 0
 
     return (
       <div className={STYLES.tooltipCard}>
-        <p className={STYLES.tooltipTitle}>
-          {(label || '').toLocaleUpperCase('tr-TR')} PERFORMANSI
-        </p>
+        <p className={STYLES.tooltipTitle}>{monthName.toLocaleUpperCase('tr-TR')}</p>
 
         <div className="space-y-3">
           {payload.map((entry, index) => (
@@ -109,7 +109,7 @@ const MonthlyTooltip = memo(
                   className="w-2.5 h-2.5 rounded-full"
                   style={{ backgroundColor: entry.color || entry.fill }}
                 />
-                <span className="text-[11px] font-black text-foreground tracking-widest uppercase">
+                <span className="text-[14px] font-black text-foreground tracking-widest">
                   {entry.name}
                 </span>
               </div>
@@ -166,6 +166,7 @@ export const MonthlyPerformanceChart = memo((): React.JSX.Element => {
         const date = new Date(report.monthDate)
         return {
           month: date.toLocaleDateString('tr-TR', { month: 'short' }),
+          monthName: date.toLocaleDateString('tr-TR', { month: 'long' }),
           fullMonth: date.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' }),
           revenue: report.totalRevenue,
           profit: report.netProfit,

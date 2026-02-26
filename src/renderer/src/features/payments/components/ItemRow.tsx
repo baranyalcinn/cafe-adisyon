@@ -1,5 +1,5 @@
 import { Minus, Plus } from 'lucide-react'
-import React from 'react'
+import React, { memo, useCallback } from 'react'
 
 import { cn, formatCurrency } from '@/lib/utils'
 
@@ -41,18 +41,18 @@ const STYLES = {
 // Component
 // ============================================================================
 
-export function ItemRow({ item, selected, onQtyChange }: ItemRowProps): React.JSX.Element {
+function ItemRowComponent({ item, selected, onQtyChange }: ItemRowProps): React.JSX.Element {
   const isSelected = selected > 0
   const totalLine = item.unitPrice * selected
 
-  // Satır tıklaması ile "Artır" butonu birebir aynı işi yaptığı için tek fonksiyonda birleştirdik
-  const handleInc = (): void => {
+  // useCallback: Her render'da yeni referans oluşmasını engeller
+  const handleInc = useCallback((): void => {
     onQtyChange(item.id, Math.min(selected + 1, item.quantity))
-  }
+  }, [onQtyChange, item.id, item.quantity, selected])
 
-  const handleDec = (): void => {
+  const handleDec = useCallback((): void => {
     onQtyChange(item.id, Math.max(selected - 1, 0))
-  }
+  }, [onQtyChange, item.id, selected])
 
   // Klavye erişilebilirliği (Enter veya Boşluk tuşu ile seçme/artırma)
   const handleKeyDown = (e: React.KeyboardEvent): void => {
@@ -155,3 +155,21 @@ export function ItemRow({ item, selected, onQtyChange }: ItemRowProps): React.JS
     </div>
   )
 }
+
+// ============================================================================
+// Memoization — kritik kazanim
+// ============================================================================
+
+/**
+ * ItemRow sadece ilgili item'in seçim miktarı veya ürün verisi değiştiğinde re-render eder.
+ * "Ürün Seç" modunda bir satıra tıklandığında, diğer tüm satırların yeniden çizilmesi önlenir.
+ */
+export const ItemRow = memo(ItemRowComponent, (prev, next) => {
+  return (
+    prev.selected === next.selected &&
+    prev.item.id === next.item.id &&
+    prev.item.quantity === next.item.quantity &&
+    prev.item.unitPrice === next.item.unitPrice &&
+    prev.onQtyChange === next.onQtyChange
+  )
+})

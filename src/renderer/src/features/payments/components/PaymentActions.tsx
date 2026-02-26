@@ -3,6 +3,7 @@ import { Banknote, CreditCard, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { type PaymentMethod } from '@/lib/api'
 import { cn } from '@/lib/utils'
+import { memo } from 'react'
 
 // ============================================================================
 // Types
@@ -37,7 +38,7 @@ const STYLES = {
 // Component
 // ============================================================================
 
-export function PaymentActions({
+export const PaymentActions = memo(function PaymentActions({
   canCashPay,
   canCardPay,
   processingMethod,
@@ -108,4 +109,6 @@ export function PaymentActions({
       })}
     </div>
   )
-}
+})
+
+PaymentActions.displayName = 'PaymentActions'

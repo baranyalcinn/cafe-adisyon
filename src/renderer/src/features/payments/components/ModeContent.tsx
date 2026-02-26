@@ -4,7 +4,7 @@ import { PremiumAmount } from '@/components/PremiumAmount'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { Banknote, Minus, Plus } from 'lucide-react'
-import React from 'react'
+import React, { memo } from 'react'
 import { PaymentMode } from '../hooks/usePaymentLogic'
 import { ItemRow, type PaymentItem } from './ItemRow'
 
@@ -75,174 +75,180 @@ const STYLES = {
 // Internal Sub-Components
 // ============================================================================
 
-/** TAM ÖDEME GÖRÜNÜMÜ */
-const FullModeView = (): React.JSX.Element => (
-  <div className={STYLES.fullContainer}>
-    <div className={STYLES.fullIconBox}>
-      <Banknote className="w-8 h-8 text-primary/70" />
+/** TAM ÖDEME GÖRÜNÜMÜ — props yok, hiç re-render olmamalı */
+const FullModeView = memo(function FullModeView(): React.JSX.Element {
+  return (
+    <div className={STYLES.fullContainer}>
+      <div className={STYLES.fullIconBox}>
+        <Banknote className="w-8 h-8 text-primary/70" />
+      </div>
+      <div className="space-y-1">
+        <p className="text-[19px] font-bold text-foreground">Hızlı Hesap Kapama</p>
+        <p className="text-[14px] font-medium text-muted-foreground">Tüm bakiyeye odaklanıldı</p>
+      </div>
     </div>
-    <div className="space-y-1">
-      <p className="text-[19px] font-bold text-foreground">Hızlı Hesap Kapama</p>
-      <p className="text-[14px] font-medium text-muted-foreground">Tüm bakiyeye odaklanıldı</p>
-    </div>
-  </div>
-)
+  )
+})
 
-/** EŞİT BÖLME GÖRÜNÜMÜ */
-const SplitModeView = ({
+/** EŞİT BÖLME GÖRÜNÜMÜ — split veya callback değişince render eder */
+const SplitModeView = memo(function SplitModeView({
   split,
   onSplitChange,
   onSplitIndexChange,
   onNextSplit
-}: SplitModeViewProps): React.JSX.Element => (
-  <div className={STYLES.splitWrapper}>
-    {/* Kişi Sayısı & Hızlı Seçim */}
-    <div className={STYLES.splitHeaderCard}>
-      <div className="flex items-center justify-between gap-6">
-        <div className="flex flex-col gap-1.5">
-          <span className="text-[11px] font-black text-muted-foreground uppercase tracking-widest px-1">
-            Kişi Sayısı
-          </span>
-          <div className={STYLES.counterBox}>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="w-8 h-8 rounded-lg"
-              onClick={() => onSplitChange(Math.max(2, split.n - 1))}
-            >
-              <Minus className="w-3.5 h-3.5" />
-            </Button>
-            <div className="w-10 text-center">
-              <span className="text-base font-black tabular-nums">{split.n}</span>
+}: SplitModeViewProps): React.JSX.Element {
+  return (
+    <div className={STYLES.splitWrapper}>
+      {/* Kişi Sayısı & Hızlı Seçim */}
+      <div className={STYLES.splitHeaderCard}>
+        <div className="flex items-center justify-between gap-6">
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[11px] font-black text-muted-foreground uppercase tracking-widest px-1">
+              Kişi Sayısı
+            </span>
+            <div className={STYLES.counterBox}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="w-8 h-8 rounded-lg"
+                onClick={() => onSplitChange(Math.max(2, split.n - 1))}
+              >
+                <Minus className="w-3.5 h-3.5" />
+              </Button>
+              <div className="w-10 text-center">
+                <span className="text-base font-black tabular-nums">{split.n}</span>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="w-8 h-8 rounded-lg"
+                onClick={() => onSplitChange(Math.min(20, split.n + 1))}
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </Button>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="w-8 h-8 rounded-lg"
-              onClick={() => onSplitChange(Math.min(20, split.n + 1))}
-            >
-              <Plus className="w-3.5 h-3.5" />
-            </Button>
+          </div>
+
+          <div className="h-10 w-[1px] bg-border/40 mt-5" />
+
+          <div className="flex flex-col gap-1.5 flex-1">
+            <span className="text-[11px] font-black text-muted-foreground uppercase tracking-widest text-right px-1">
+              Hızlı Seçim
+            </span>
+            <div className="flex items-center justify-end gap-1.5">
+              {SPLIT_QUICK_OPTIONS.map((n) => (
+                <button
+                  key={n}
+                  onClick={() => onSplitChange(n)}
+                  className={cn(
+                    STYLES.quickBtn,
+                    split.n === n
+                      ? 'bg-primary text-primary-foreground shadow-lg scale-105'
+                      : 'bg-background border border-border/40 text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
+      </div>
 
-        <div className="h-10 w-[1px] bg-border/40 mt-5" />
-
-        <div className="flex flex-col gap-1.5 flex-1">
-          <span className="text-[11px] font-black text-muted-foreground uppercase tracking-widest text-right px-1">
-            Hızlı Seçim
-          </span>
-          <div className="flex items-center justify-end gap-1.5">
-            {SPLIT_QUICK_OPTIONS.map((n) => (
-              <button
-                key={n}
-                onClick={() => onSplitChange(n)}
+      {/* Ödenecek Pay Bilgisi */}
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col items-center gap-2">
+          <div className="flex items-center justify-center gap-1.5">
+            {Array.from({ length: split.n }).map((_, i) => (
+              <div
+                key={i}
                 className={cn(
-                  STYLES.quickBtn,
-                  split.n === n
-                    ? 'bg-primary text-primary-foreground shadow-lg scale-105'
-                    : 'bg-background border border-border/40 text-muted-foreground hover:text-foreground'
+                  STYLES.indicatorDots,
+                  i === split.idx ? 'w-5 bg-primary' : 'w-1.5 bg-foreground/20'
                 )}
-              >
-                {n}
-              </button>
+              />
             ))}
           </div>
-        </div>
-      </div>
-    </div>
-
-    {/* Ödenecek Pay Bilgisi */}
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-col items-center gap-2">
-        <div className="flex items-center justify-center gap-1.5">
-          {Array.from({ length: split.n }).map((_, i) => (
-            <div
-              key={i}
-              className={cn(
-                STYLES.indicatorDots,
-                i === split.idx ? 'w-5 bg-primary' : 'w-1.5 bg-foreground/20'
-              )}
-            />
-          ))}
-        </div>
-        <span className="text-[11px] font-black text-foreground tracking-widest uppercase">
-          {split.idx + 1}. Kişi Payı
-        </span>
-      </div>
-
-      <div className={STYLES.amountCard}>
-        <div className="mb-6">
-          <PremiumAmount amount={split.share} size="3xl" color="primary" />
+          <span className="text-[11px] font-black text-foreground tracking-widest uppercase">
+            {split.idx + 1}. Kişi Payı
+          </span>
         </div>
 
-        {split.remainder > 0 && split.idx < split.remainder && (
-          <div className="absolute top-2 right-2">
-            <div className={STYLES.roundingBadge}>+0.01 Yuvarlama</div>
+        <div className={STYLES.amountCard}>
+          <div className="mb-6">
+            <PremiumAmount amount={split.share} size="3xl" color="primary" />
           </div>
-        )}
 
-        <div className="w-full grid grid-cols-2 gap-3">
-          <Button
-            variant="outline"
-            className="h-11 rounded-2xl font-bold text-[12px]"
-            onClick={() => onSplitIndexChange(0)}
-          >
-            Sıfırla
-          </Button>
-          <Button
-            className="h-11 rounded-2xl font-black text-[12px] tracking-widest uppercase"
-            onClick={onNextSplit}
-            disabled={split.idx >= split.n - 1}
-          >
-            {split.idx >= split.n - 1 ? 'Bitti' : 'Sonraki Kişi'}
-          </Button>
+          {split.remainder > 0 && split.idx < split.remainder && (
+            <div className="absolute top-2 right-2">
+              <div className={STYLES.roundingBadge}>+0.01 Yuvarlama</div>
+            </div>
+          )}
+
+          <div className="w-full grid grid-cols-2 gap-3">
+            <Button
+              variant="outline"
+              className="h-11 rounded-2xl font-bold text-[12px]"
+              onClick={() => onSplitIndexChange(0)}
+            >
+              Sıfırla
+            </Button>
+            <Button
+              className="h-11 rounded-2xl font-black text-[12px] tracking-widest uppercase"
+              onClick={onNextSplit}
+              disabled={split.idx >= split.n - 1}
+            >
+              {split.idx >= split.n - 1 ? 'Bitti' : 'Sonraki Kişi'}
+            </Button>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-)
+  )
+})
 
-/** ÜRÜN SEÇİM GÖRÜNÜMÜ */
-const ItemModeView = ({
+/** ÜRÜN SEÇİM GÖRÜNÜMÜ — sadece seçili item değiştiğinde re-render eder (ItemRow memo ile birlikte çalışır) */
+const ItemModeView = memo(function ItemModeView({
   items,
   onSelectAll,
   onItemQtyChange
-}: ItemModeViewProps): React.JSX.Element => (
-  <div className={STYLES.itemListContainer}>
-    <div className={STYLES.listHeader}>
-      <span className={STYLES.sectionTitle}>Ürün Listesi</span>
-      <button
-        onClick={onSelectAll}
-        className={cn(
-          'text-[12px] font-black uppercase tracking-widest transition-colors',
-          items.isAllItemsSelected
-            ? 'text-destructive hover:text-destructive/80'
-            : 'text-primary hover:text-primary/80'
-        )}
-      >
-        {items.isAllItemsSelected ? 'İptal Et' : 'Tümünü Seç'}
-      </button>
-    </div>
+}: ItemModeViewProps): React.JSX.Element {
+  return (
+    <div className={STYLES.itemListContainer}>
+      <div className={STYLES.listHeader}>
+        <span className={STYLES.sectionTitle}>Ürün Listesi</span>
+        <button
+          onClick={onSelectAll}
+          className={cn(
+            'text-[12px] font-black uppercase tracking-widest transition-colors',
+            items.isAllItemsSelected
+              ? 'text-destructive hover:text-destructive/80'
+              : 'text-primary hover:text-primary/80'
+          )}
+        >
+          {items.isAllItemsSelected ? 'İptal Et' : 'Tümünü Seç'}
+        </button>
+      </div>
 
-    <div className={STYLES.scrollArea}>
-      {items.unpaidItems.map((item: PaymentItem) => (
-        <ItemRow
-          key={item.id}
-          item={item}
-          selected={items.selectedQuantities[item.id] || 0}
-          onQtyChange={onItemQtyChange}
-        />
-      ))}
+      <div className={STYLES.scrollArea}>
+        {items.unpaidItems.map((item: PaymentItem) => (
+          <ItemRow
+            key={item.id}
+            item={item}
+            selected={items.selectedQuantities[item.id] || 0}
+            onQtyChange={onItemQtyChange}
+          />
+        ))}
+      </div>
     </div>
-  </div>
-)
+  )
+})
 
 // ============================================================================
 // Main Export Component
 // ============================================================================
 
-export function ModeContent({
+export const ModeContent = memo(function ModeContent({
   mode,
   split,
   items,
@@ -267,4 +273,6 @@ export function ModeContent({
 
   // Default: Item-based selection mode
   return <ItemModeView items={items} onSelectAll={onSelectAll} onItemQtyChange={onItemQtyChange} />
-}
+})
+
+ModeContent.displayName = 'ModeContent'

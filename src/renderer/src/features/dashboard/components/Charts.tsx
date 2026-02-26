@@ -44,16 +44,14 @@ const PIE_COLORS = [
 // Chart margins (stable objects)
 const AREA_CHART_MARGIN = { left: 20, right: 20, top: 10, bottom: 5 }
 const BAR_CHART_MARGIN = { left: 20, right: 20, top: 10, bottom: 5 }
-const VERTICAL_BAR_MARGIN = { left: 20, right: 40, top: 10, bottom: 10 }
 
 // Tick styles (stable objects - larger for better legibility)
 const XAXIS_TICK = { fill: 'currentColor', fontSize: 13, fontWeight: 800 }
 const YAXIS_TICK = { fill: 'currentColor', fontSize: 13, fontWeight: 800 }
 const HOUR_TICK = { fill: 'currentColor', fontSize: 12, fontWeight: 800 }
-const PRODUCT_TICK = { fill: 'currentColor', fontSize: 12, fontWeight: 800 }
 
 const CARD_BASE =
-  'bg-card border-2 border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm transition-all duration-300 ' +
+  'h-full flex flex-col bg-card border-2 border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm transition-all duration-300 ' +
   'hover:shadow-md hover:border-zinc-300 dark:hover:border-zinc-700 text-foreground'
 const HEADER_WRAP = 'flex items-center gap-3 mb-6'
 const TITLE = 'text-base font-black text-foreground tracking-tight'
@@ -63,7 +61,6 @@ const EMPTY_STATE = 'h-full flex flex-col items-center justify-center gap-3'
 
 // Bar radius (stable arrays)
 const BAR_RADIUS_TOP: [number, number, number, number] = [6, 6, 0, 0]
-const BAR_RADIUS_RIGHT: [number, number, number, number] = [0, 6, 6, 0]
 
 // ============================================================================
 // Utility Functions (Stable references)
@@ -128,21 +125,6 @@ const HourlyGradients = memo(function HourlyGradients(): React.JSX.Element {
       <linearGradient id="hourlyBarGrad" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stopColor={CHART_COLORS.hourly} stopOpacity={1} />
         <stop offset="100%" stopColor={CHART_COLORS.hourly} stopOpacity={0.8} />
-      </linearGradient>
-    </defs>
-  )
-})
-
-const ProductGradients = memo(function ProductGradients(): React.JSX.Element {
-  return (
-    <defs>
-      <linearGradient id="productBarGrad" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0%" stopColor={CHART_COLORS.product} stopOpacity={1} />
-        <stop offset="100%" stopColor={CHART_COLORS.product} stopOpacity={0.9} />
-      </linearGradient>
-      <linearGradient id="categoryBarGrad" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0%" stopColor={CHART_COLORS.revenue} stopOpacity={1} />
-        <stop offset="100%" stopColor={CHART_COLORS.revenue} stopOpacity={0.9} />
       </linearGradient>
     </defs>
   )
@@ -306,7 +288,7 @@ export const CategoryRevenueChart = memo(function CategoryRevenueChart(): React.
       delay="delay-[500ms]"
       accentColor="bg-indigo-600"
     >
-      <div className="h-[300px] w-full pt-2">
+      <div className="flex-1 min-h-[300px] w-full pt-2">
         {hasData ? (
           <div className="flex h-full items-center">
             {/* Left: Pie Chart */}
@@ -492,6 +474,10 @@ export const TopProductsChart = memo(function TopProductsChart(): React.JSX.Elem
   const { stats } = useDashboardContext()
   const data = useMemo(() => stats?.topProducts || [], [stats?.topProducts])
   const hasData = data.length > 0
+  const maxQuantity = useMemo(
+    () => (hasData ? Math.max(...data.map((d) => d.quantity)) : 0),
+    [data, hasData]
+  )
 
   return (
     <ChartCard
@@ -500,29 +486,35 @@ export const TopProductsChart = memo(function TopProductsChart(): React.JSX.Elem
       delay="delay-[800ms]"
       accentColor="bg-violet-600"
     >
-      <div className="h-[300px] w-full">
+      <div className="flex-1 min-h-[300px] w-full mt-5 mb-2 flex flex-col justify-center gap-3.5 px-2">
         {hasData ? (
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} layout="vertical" margin={VERTICAL_BAR_MARGIN}>
-              <ProductGradients />
-              <XAxis type="number" hide />
-              <YAxis
-                type="category"
-                dataKey="productName"
-                axisLine={false}
-                tickLine={false}
-                width={120}
-                tick={PRODUCT_TICK}
-              />
-              <Bar
-                dataKey="quantity"
-                fill="url(#productBarGrad)"
-                radius={BAR_RADIUS_RIGHT}
-                barSize={14}
-                isAnimationActive={false}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+          data.map((item, i) => {
+            const percentage = Math.max((item.quantity / maxQuantity) * 100, 2)
+            return (
+              <div key={item.productName || i} className="flex items-center gap-4 group">
+                {/* Left Side: Quantity & Name */}
+                <div className="flex items-center gap-2 w-[45%] shrink-0">
+                  <span className="text-xs font-black text-violet-600 w-6 text-right">
+                    {item.quantity}x
+                  </span>
+                  <span
+                    className="text-[13px] font-black text-foreground truncate"
+                    title={item.productName}
+                  >
+                    {item.productName}
+                  </span>
+                </div>
+
+                {/* Right Side: Track & Fill */}
+                <div className="flex-1 h-3.5 bg-zinc-100 dark:bg-zinc-800/50 rounded-full overflow-hidden relative">
+                  <div
+                    className="absolute left-0 top-0 bottom-0 bg-violet-600 rounded-full transition-all duration-1000 ease-out"
+                    style={{ width: `${percentage}%` }}
+                  />
+                </div>
+              </div>
+            )
+          })
         ) : (
           <div className={EMPTY_STATE}>
             <TrendingUp className="w-10 h-10 opacity-15" />

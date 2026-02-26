@@ -300,6 +300,20 @@ textarea,
 * {
   @apply border-border;
   box-sizing: border-box;
+
+  /* Electron / Chromium: Fare tıklamalarında görünen varsayılan turuncu outline'ı kaldır.
+     (Grafik, kart, SVG gibi non-interactive elemanlarda beliriyor)
+     `:focus-visible` ile klavye navigasyonu için outline korunuyor. */
+  outline: none;
+
+  /* Dokunmatik ekranlarda mavi/gri tap flash'ı engelle */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Sadece klavye ile tab'landığında görünür outline yeniden aktif olsun (erişilebilirlik) */
+:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
 }
 
 @layer base {
