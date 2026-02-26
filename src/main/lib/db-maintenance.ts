@@ -53,6 +53,9 @@ export class DBMaintenance {
       // Migration 4: Add paymentMethod column to Expense table
       await this.addColumnIfNotExists('Expense', 'paymentMethod', "TEXT DEFAULT 'CASH'")
 
+      // Migration 5: Add isDeleted column to Table (soft delete — preserves order history)
+      await this.addColumnIfNotExists('Table', 'isDeleted', 'BOOLEAN DEFAULT 0')
+
       // Comprehensive index sync — ensures ALL schema.prisma indexes exist
       // Each statement is idempotent (IF NOT EXISTS), safe on every startup
       const indexes = [
@@ -65,20 +68,20 @@ export class DBMaintenance {
         // Category indexes
         'CREATE INDEX IF NOT EXISTS "Category_isDeleted_idx" ON "Category"("isDeleted")',
 
-        // Order indexes
+        // Table indexes
+        'CREATE INDEX IF NOT EXISTS "Table_isDeleted_idx" ON "Table"("isDeleted")',
+
+        // Order indexes (optimized — left-prefix rule applied)
         'CREATE INDEX IF NOT EXISTS "Order_tableId_status_idx" ON "Order"("tableId", "status")',
-        'CREATE INDEX IF NOT EXISTS "Order_status_idx" ON "Order"("status")',
-        'CREATE INDEX IF NOT EXISTS "Order_createdAt_idx" ON "Order"("createdAt")',
+        'CREATE INDEX IF NOT EXISTS "Order_status_createdAt_idx" ON "Order"("status", "createdAt")',
 
-        // OrderItem indexes
-        'CREATE INDEX IF NOT EXISTS "OrderItem_orderId_idx" ON "OrderItem"("orderId")',
+        // OrderItem indexes (composite covers orderId filter + isPaid filter together)
         'CREATE INDEX IF NOT EXISTS "OrderItem_productId_idx" ON "OrderItem"("productId")',
-        'CREATE INDEX IF NOT EXISTS "OrderItem_isPaid_idx" ON "OrderItem"("isPaid")',
+        'CREATE INDEX IF NOT EXISTS "OrderItem_orderId_isPaid_idx" ON "OrderItem"("orderId", "isPaid")',
 
-        // Transaction indexes
+        // Transaction indexes (covering index: createdAt+paymentMethod for groupBy queries)
         'CREATE INDEX IF NOT EXISTS "Transaction_orderId_idx" ON "Transaction"("orderId")',
-        'CREATE INDEX IF NOT EXISTS "Transaction_createdAt_idx" ON "Transaction"("createdAt")',
-        'CREATE INDEX IF NOT EXISTS "Transaction_paymentMethod_idx" ON "Transaction"("paymentMethod")',
+        'CREATE INDEX IF NOT EXISTS "Transaction_createdAt_paymentMethod_idx" ON "Transaction"("createdAt", "paymentMethod")',
 
         // DailySummary indexes
         'CREATE INDEX IF NOT EXISTS "DailySummary_date_idx" ON "DailySummary"("date")',
@@ -121,6 +124,65 @@ export class DBMaintenance {
       }
     } catch (error) {
       logger.error(`DBMaintenance AddColumn ${table}.${column}`, error)
+    }
+  }
+
+  /**
+   * Renames a column if the old name exists and the new name doesn't.
+   * Requires SQLite 3.25.0+ (Electron ships with a modern SQLite, so this is safe).
+   */
+  protected async renameColumnIfExists(
+    table: string,
+    oldName: string,
+    newName: string
+  ): Promise<void> {
+    try {
+      const columns: Array<{ name: string }> = await prisma.$queryRawUnsafe(
+        `PRAGMA table_info("${table}")`
+      )
+      const hasOld = columns.some((c) => c.name === oldName)
+      const hasNew = columns.some((c) => c.name === newName)
+      if (!hasOld || hasNew) return
+      await prisma.$executeRawUnsafe(
+        `ALTER TABLE "${table}" RENAME COLUMN "${oldName}" TO "${newName}"`
+      )
+      logger.debug('DBMaintenance', `Renamed column ${table}.${oldName} → ${newName}`)
+    } catch (error) {
+      logger.error(`DBMaintenance RenameColumn ${table}.${oldName}→${newName}`, error)
+    }
+  }
+
+  /**
+   * Drops a column by recreating the table without it.
+   * SQLite doesn't support DROP COLUMN natively on older versions,
+   * so we use the recommended table-rebuild pattern.
+   * WARNING: Rebuilds indexes after the operation via the index sync step.
+   */
+  protected async dropColumnIfExists(table: string, column: string): Promise<void> {
+    try {
+      const columns: Array<{
+        name: string
+        type: string
+        notnull: number
+        dflt_value: string | null
+        pk: number
+      }> = await prisma.$queryRawUnsafe(`PRAGMA table_info("${table}")`)
+      if (!columns.some((c) => c.name === column)) return
+
+      const remaining = columns
+        .filter((c) => c.name !== column)
+        .map((c) => `"${c.name}"`)
+        .join(', ')
+      await prisma.$executeRawUnsafe(`
+        BEGIN TRANSACTION;
+        CREATE TABLE "${table}_migration_tmp" AS SELECT ${remaining} FROM "${table}";
+        DROP TABLE "${table}";
+        ALTER TABLE "${table}_migration_tmp" RENAME TO "${table}";
+        COMMIT;
+      `)
+      logger.debug('DBMaintenance', `Dropped column ${table}.${column}`)
+    } catch (error) {
+      logger.error(`DBMaintenance DropColumn ${table}.${column}`, error)
     }
   }
 

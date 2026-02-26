@@ -15,6 +15,7 @@ model Product {
   categoryId String
   isFavorite Boolean     @default(false)
   isDeleted  Boolean     @default(false)
+
   orderItems OrderItem[]
   category   Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
@@ -25,19 +26,24 @@ model Product {
 }
 
 model Category {
-  id       String    @id @default(cuid())
-  name     String
-  icon     String    @default("utensils")
-  products Product[]
-  isDeleted Boolean  @default(false)
+  id        String    @id @default(cuid())
+  name      String
+  icon      String    @default("utensils")
+  isDeleted Boolean   @default(false)
+
+  products  Product[]
 
   @@index([isDeleted])
 }
 
 model Table {
-  id     String  @id @default(cuid())
-  name   String  @unique
-  orders Order[]
+  id        String  @id @default(cuid())
+  name      String  @unique
+  isDeleted Boolean @default(false) // Geçmiş adisyonları koruyarak masa silme imkânı
+
+  orders    Order[]
+
+  @@index([isDeleted])
 }
 
 model Order {
@@ -48,16 +54,14 @@ model Order {
   isLocked    Boolean       @default(false)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime?     @updatedAt
+
   table       Table         @relation(fields: [tableId], references: [id])
   items       OrderItem[]
   payments    Transaction[]
 
-  @@index([tableId])
-  @@index([tableId, createdAt])
+  // Left-prefix kuralı: [tableId, status] hem tableId hem de tableId+status sorgularını kapsar.
   @@index([tableId, status])
   @@index([status, createdAt])
-  @@index([status])
-  @@index([createdAt])
 }
 
 model OrderItem {
@@ -67,12 +71,12 @@ model OrderItem {
   quantity  Int
   unitPrice Int
   isPaid    Boolean @default(false)
+
   product   Product @relation(fields: [productId], references: [id])
   order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
-  @@index([orderId])
   @@index([productId])
-  @@index([isPaid])
+  @@index([orderId, isPaid]) // Adisyon içindeki ödenmemiş/ödenmiş ürünleri filtreler
 }
 
 model Transaction {
@@ -81,11 +85,11 @@ model Transaction {
   amount        Int
   paymentMethod String
   createdAt     DateTime @default(now())
+
   order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([orderId])
-  @@index([createdAt])
-  @@index([paymentMethod])
+  @@index([createdAt, paymentMethod]) // Covering index — groupBy + date range sorgularını hızlandırır
 }
 
 model DailySummary {
@@ -125,12 +129,12 @@ model AppSettings {
 }
 
 model Expense {
-  id          String   @id @default(cuid())
-  description String
-  amount      Int
-  category    String?
+  id            String   @id @default(cuid())
+  description   String
+  amount        Int
+  category      String?
   paymentMethod String   @default("CASH") // CASH, CARD
-  createdAt   DateTime @default(now())
+  createdAt     DateTime @default(now())
 
   @@index([createdAt])
 }
