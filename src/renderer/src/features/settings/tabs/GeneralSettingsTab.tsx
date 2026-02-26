@@ -451,7 +451,7 @@ export function GeneralSettingsTab({
                       })}
                     </div>
 
-                    <span className="text-xs font-medium text-primary bg-primary/10 px-2.5 py-1 rounded-lg border border-primary/15">
+                    <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded-lg border border-primary/15 min-w-[72px] text-center inline-block">
                       {selectedSchemeName}
                     </span>
                   </div>

@@ -174,7 +174,7 @@ const STYLES = {
   menuContainer:
     'h-full flex flex-col overflow-auto p-4 md:p-6 animate-in fade-in slide-in-from-bottom-2 duration-300',
   menuBtnBase:
-    'group relative flex h-full min-h-[212px] flex-col items-start text-left rounded-2xl border p-6 md:p-6.5 border-zinc-200/70 dark:border-zinc-800/80 bg-white/85 dark:bg-zinc-900/80 backdrop-blur-xl shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-primary/40 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25',
+    'group relative flex h-full min-h-[212px] flex-col items-start text-left rounded-2xl border p-5 xl:p-6.5 border-zinc-200/70 dark:border-zinc-800/80 bg-white/85 dark:bg-zinc-900/80 backdrop-blur-xl shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-primary/40 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25',
   menuIconBg:
     'mb-4.5 rounded-xl p-3.5 border border-transparent transition-all bg-zinc-100/70 dark:bg-zinc-800/50 group-hover:bg-white dark:group-hover:bg-zinc-900 group-hover:border-zinc-200/70 dark:group-hover:border-zinc-700/70 group-hover:shadow-indigo-500/10 dark:group-hover:shadow-indigo-500/5',
   detailContainer: 'h-full flex flex-col animate-in fade-in slide-in-from-right-2 duration-300',
@@ -298,7 +298,7 @@ function SettingsMenu({
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 auto-rows-fr">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5 auto-rows-fr">
           {MENU_ITEMS.map((item) => (
             <button
               key={item.id}
@@ -313,10 +313,10 @@ function SettingsMenu({
                 <item.icon className="h-6.5 w-6.5" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-[19px] font-black tracking-tight text-foreground leading-tight">
+                <h3 className="text-[17px] xl:text-[19px] font-black tracking-tight text-foreground leading-tight">
                   {item.label}
                 </h3>
-                <p className="mt-2 text-[15px] leading-relaxed text-muted-foreground font-medium opacity-80 group-hover:opacity-100 transition-opacity">
+                <p className="mt-1.5 xl:mt-2 text-[14px] xl:text-[15px] leading-relaxed text-muted-foreground font-medium opacity-80 group-hover:opacity-100 transition-opacity">
                   {item.description}
                 </p>
               </div>
