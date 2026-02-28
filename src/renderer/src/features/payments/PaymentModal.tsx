@@ -1,6 +1,6 @@
 // src/renderer/src/features/payments/PaymentModal.tsx
 import { Dialog, DialogContent } from '@/components/ui/dialog'
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect } from 'react'
 
 import { type Order, type PaymentMethod } from '@/lib/api'
 import { cn } from '@/lib/utils'
@@ -43,42 +43,42 @@ export function PaymentModal({
     open
   })
 
-  const tenderedInputRef = useRef<HTMLInputElement | null>(null)
+  // Global keydown listener — captures keys regardless of which element is focused.
+  // This is the correct approach for modal keyboard capture; no hidden input needed.
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent): void => {
+      // Ignore events from real input/textarea elements (e.g. dialog close button)
+      const target = e.target as HTMLElement
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return
 
-  // focus management
-  useEffect(() => {
-    if (!open) return
-    if (state.view === 'SUCCESS') return
-
-    const t = setTimeout(() => {
-      tenderedInputRef.current?.focus()
-    }, 50)
-    return () => clearTimeout(t)
-  }, [open, state.paymentMode, state.selectedQuantities, state.splitIndex, state.view])
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
-    if (state.view === 'SUCCESS') return
-
-    const key = e.key
-    if (/^[0-9]$/.test(key)) {
-      e.preventDefault()
-      actions.appendTendered(key)
-    } else if (key === '.' || key === ',') {
-      e.preventDefault()
-      if (!state.tenderedInput.includes('.')) actions.appendTendered('.')
-    } else if (key === 'Backspace') {
-      e.preventDefault()
-      actions.backspaceTendered()
-    } else if (key === 'Delete') {
-      e.preventDefault()
-      actions.clearTendered()
-    } else if (key === 'Enter') {
-      e.preventDefault()
-      if (flags.canCashPay) {
-        void actions.handlePayment('CASH')
+      const key = e.key
+      if (/^[0-9]$/.test(key)) {
+        e.preventDefault()
+        actions.appendTendered(key)
+      } else if (key === '.' || key === ',') {
+        e.preventDefault()
+        if (!state.tenderedInput.includes('.')) actions.appendTendered('.')
+      } else if (key === 'Backspace') {
+        e.preventDefault()
+        actions.backspaceTendered()
+      } else if (key === 'Delete') {
+        e.preventDefault()
+        actions.clearTendered()
+      } else if (key === 'Enter') {
+        e.preventDefault()
+        if (flags.canCashPay) {
+          void actions.handlePayment('CASH')
+        }
       }
-    }
-  }
+    },
+    [state.tenderedInput, flags.canCashPay, actions]
+  )
+
+  useEffect(() => {
+    if (!open || state.view === 'SUCCESS') return
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [open, state.view, handleKeyDown])
 
   if (state.view === 'SUCCESS') {
     return (
@@ -147,16 +147,7 @@ export function PaymentModal({
             effectivePayment={totals.effectivePayment}
             tenderedInput={state.tenderedInput}
             onClear={actions.clearTendered}
-            onFocus={() => tenderedInputRef.current?.focus()}
             hoveredMethod={state.hoveredPaymentMethod}
-          />
-
-          <input
-            ref={tenderedInputRef}
-            className="sr-only"
-            onKeyDown={handleKeyDown}
-            readOnly
-            tabIndex={-1}
           />
 
           {/* Controls & Result Banner */}

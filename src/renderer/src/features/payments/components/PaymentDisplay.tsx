@@ -7,7 +7,6 @@ interface PaymentDisplayProps {
   effectivePayment: number
   tenderedInput: string
   onClear: () => void
-  onFocus: () => void
   hoveredMethod?: PaymentMethod | null
 }
 
@@ -15,7 +14,6 @@ export function PaymentDisplay({
   effectivePayment,
   tenderedInput,
   onClear,
-  onFocus,
   hoveredMethod
 }: PaymentDisplayProps): React.JSX.Element {
   const isHovering = !!hoveredMethod && !tenderedInput
@@ -49,10 +47,7 @@ export function PaymentDisplay({
               </button>
             </div>
 
-            <button
-              className="mt-2 w-full text-right rounded-xl px-2 py-2 hover:bg-muted/30 transition active:scale-[0.99] group/display"
-              onClick={onFocus}
-            >
+            <button className="mt-2 w-full text-right rounded-xl px-2 py-2 hover:bg-muted/30 transition active:scale-[0.99] group/display">
               <PremiumAmount
                 amount={tenderedInput ? parseFloat(tenderedInput) * 100 : effectivePayment}
                 size="2xl"
