@@ -65,7 +65,6 @@ nsis:
   artifactName: ${productName}-Setup-${version}.${ext}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
-  compression: lzma
 
 extraResources:
   - from: resources
