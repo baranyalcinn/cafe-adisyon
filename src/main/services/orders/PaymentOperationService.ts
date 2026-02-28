@@ -127,11 +127,11 @@ export class PaymentOperationService {
           }
         }
 
-        const updatedOrder = await tx.order.update({
+        const updatedOrder = await tx.order.findUnique({
           where: { id: orderId },
-          data: {},
           select: ORDER_SELECT
         })
+        if (!updatedOrder) throw new Error('Sipariş bulunamadı.')
         return {
           order: formatOrder(updatedOrder as OrderWithRelations) as Order,
           completed: false,

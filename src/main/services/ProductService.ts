@@ -2,7 +2,6 @@ import { Prisma } from '../../generated/prisma/client'
 import { ApiResponse, Category, Product } from '../../shared/types'
 import { prisma } from '../db/prisma'
 import { logger } from '../lib/logger'
-import { toPlain } from '../lib/toPlain'
 import { logService } from './LogService'
 
 // ============================================================================
@@ -29,13 +28,10 @@ export class ProductService {
   // Helpers
   // ============================================================================
 
-  /**
-   * Prisma verisini düz JS objesine çeviren ve kod tekrarını önleyen yardımcı fonksiyon.
-   */
   private formatProductList(
     products: Prisma.ProductGetPayload<{ select: typeof PRODUCT_SELECT }>[]
   ): Product[] {
-    return toPlain<Product[]>(products)
+    return products as unknown as Product[]
   }
 
   // ============================================================================
@@ -60,7 +56,7 @@ export class ProductService {
       const categories = await prisma.category.findMany({
         where: { isDeleted: false }
       })
-      return { success: true, data: toPlain<Category[]>(categories) }
+      return { success: true, data: categories as unknown as Category[] }
     } catch (error) {
       logger.error('ProductService.getCategories', error) // Eksik loglama eklendi
       return { success: false, error: 'Kategoriler alınamadı.' }
@@ -120,7 +116,7 @@ export class ProductService {
         select: PRODUCT_SELECT // Frontend'in category bilgisine ihtiyacı var!
       })
       await logService.createLog('CREATE_PRODUCT', 'Product', `Yeni ürün eklendi: ${product.name}`)
-      return { success: true, data: toPlain<Product>(product) }
+      return { success: true, data: product as unknown as Product }
     } catch (error) {
       logger.error('ProductService.createProduct', error)
       return { success: false, error: 'Ürün oluşturulamadı.' }
@@ -135,7 +131,7 @@ export class ProductService {
         select: PRODUCT_SELECT // Frontend'in güncel category bilgisine ihtiyacı var!
       })
       await logService.createLog('UPDATE_PRODUCT', 'Product', `Ürün güncellendi: ${product.name}`)
-      return { success: true, data: toPlain<Product>(product) }
+      return { success: true, data: product as unknown as Product }
     } catch (error) {
       logger.error('ProductService.updateProduct', error)
       return { success: false, error: 'Ürün güncellenemedi.' }

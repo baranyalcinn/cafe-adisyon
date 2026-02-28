@@ -244,7 +244,7 @@ export class ReportingService {
           where: { createdAt: { gte: baseStats.today } },
           _sum: { amount: true }
         }),
-        prisma.$queryRaw<{ hour: string; revenue: number | bigint; count: number | bigint }[]>`
+        prisma.$queryRaw<{ hour: string; revenue: number; count: number }[]>`
           SELECT strftime('%H', "createdAt", 'localtime') as hour, SUM("totalAmount") as revenue, COUNT(id) as count
           FROM "Order" WHERE "status" = 'CLOSED' AND "createdAt" >= ${baseStats.today.toISOString()} GROUP BY hour
         `

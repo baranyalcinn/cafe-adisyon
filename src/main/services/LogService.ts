@@ -3,7 +3,6 @@ import { Prisma } from '../../generated/prisma/client'
 import { ActivityLog, ApiResponse } from '../../shared/types'
 import { prisma } from '../db/prisma'
 import { logger } from '../lib/logger'
-import { toPlain } from '../lib/toPlain'
 
 const SYSTEM_ACTIONS = [
   'GENERATE_ZREPORT',
@@ -68,7 +67,7 @@ export class LogService {
         skip: safeOffset
       })
 
-      return { success: true, data: toPlain<ActivityLog[]>(logs) }
+      return { success: true, data: logs as unknown as ActivityLog[] }
     } catch (error) {
       logger.error('LogService.getRecentLogs', error)
       return { success: false, error: 'İşlem geçmişi alınamadı.' }

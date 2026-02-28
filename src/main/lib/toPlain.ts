@@ -1,10 +1,9 @@
 ﻿/**
- * Prisma'nın $extends wrapper tiplerinden kurtulmak için tipi sadece cast eder.
- * Gerçek serileştirme işlemini Electron'un IPC katmanına (Structured Clone) bırakır.
- * Bu yöntem JSON.stringify'dan çok daha hızlıdır ve bellek sıçraması yapmaz.
+ * Prisma Proxy zincirlerini Electron IPC'den önce düzleştirir.
+ * Electron'un SCA'sı ile aynı algoritmayı kullanır: Date/Map/Set korunur,
+ * prototype chain temizlenir. Harici bağımlılık gerektirmez.
  */
 export function toPlain<T>(data: unknown): T {
   if (data === null || data === undefined) return data as T
-  // Prisma proxy nesnelerini düzleştirir (Electron Structured Clone darboğazını çözer)
-  return JSON.parse(JSON.stringify(data)) as T
+  return structuredClone(data) as T
 }

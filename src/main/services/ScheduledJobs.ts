@@ -83,9 +83,7 @@ class ScheduledJobs {
     const isDev = process.env.NODE_ENV === 'development'
     const baseDir = isDev ? process.cwd() : app.getPath('userData')
     const backupDir = path.join(baseDir, 'backups')
-    if (!fs.existsSync(backupDir)) {
-      fs.mkdirSync(backupDir, { recursive: true })
-    }
+    fs.mkdirSync(backupDir, { recursive: true })
     return path.join(backupDir, '.last-archive')
   }
 
