@@ -273,9 +273,9 @@ export const ResultBanner = memo(function ResultBanner({
         ) : (
           <div className="shrink-0 flex items-center gap-2 rounded-full border border-border/40 bg-background/60 px-2.5 py-1.5">
             <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/80">
-              Hazır
+              Bekliyor
             </span>
-            <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50" />
+            <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50 animate-pulse" />
           </div>
         )}
       </div>

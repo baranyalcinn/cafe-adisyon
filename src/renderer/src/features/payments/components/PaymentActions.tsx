@@ -27,10 +27,10 @@ interface PaymentActionsProps {
 const STYLES = {
   base: cn(
     'h-[52px] w-full rounded-xl justify-center gap-2 text-base font-bold tracking-wide',
-    'transition-colors active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed'
+    'transition-all duration-150 active:scale-[0.98] hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100'
   ),
-  cash: 'bg-primary text-primary-foreground hover:bg-primary/95 shadow-sm border border-primary/20',
-  card: 'bg-zinc-800 text-white hover:bg-zinc-900 dark:bg-zinc-900 dark:hover:bg-black shadow-md border border-zinc-700 dark:border-zinc-800',
+  cash: 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm hover:shadow-md hover:shadow-primary/25 border border-primary/20',
+  card: 'bg-zinc-800 text-white hover:bg-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800 shadow-md hover:shadow-lg border border-zinc-700 dark:border-zinc-800',
   processingDim: 'opacity-50 grayscale pointer-events-none'
 } as const
 

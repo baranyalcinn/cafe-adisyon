@@ -34,7 +34,7 @@ const STYLES = {
 
   // Header
   headerBox: 'flex items-center justify-between mb-2',
-  headerInner: 'flex items-baseline gap-3',
+  headerInner: 'flex items-center gap-3',
   title: 'text-[22px] font-semibold tracking-tight text-foreground',
   tableInfo: 'flex items-center gap-2 text-foreground/80',
   divider: 'text-[14px] font-bold opacity-30',
@@ -82,8 +82,16 @@ export const PaymentSummary = memo(
           <div className={STYLES.headerInner}>
             <DialogTitle className={STYLES.title}>Hesap Özeti</DialogTitle>
             <div className={STYLES.tableInfo}>
-              <span className={STYLES.divider}>|</span>
-              <span className={STYLES.tableName}>{tableName}</span>
+              <span className="h-1.5 w-1.5 rounded-full bg-primary/40" />
+              <span
+                className={cn(
+                  'text-[13px] font-black tracking-tight',
+                  'bg-primary/8 dark:bg-primary/12 text-primary',
+                  'border border-primary/15 rounded-lg px-2.5 py-0.5'
+                )}
+              >
+                {tableName}
+              </span>
             </div>
           </div>
         </div>
