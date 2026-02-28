@@ -39,7 +39,7 @@ export function PaymentDisplay({
                   'repeating-linear-gradient(0deg,transparent,transparent 24px,white 24px,white 25px),repeating-linear-gradient(90deg,transparent,transparent 24px,white 24px,white 25px)'
               }}
             />
-            <span className="relative text-[10px] font-bold text-white/60 tracking-[0.2em] uppercase mb-2 select-none">
+            <span className="relative text-[10px] font-bold text-white/80 tracking-[0.2em] uppercase mb-2 select-none">
               Toplam Tutar
             </span>
             <PremiumAmount

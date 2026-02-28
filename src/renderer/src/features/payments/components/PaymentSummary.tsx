@@ -3,7 +3,7 @@
 import { PremiumAmount } from '@/components/PremiumAmount'
 import { DialogTitle } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
-import { Banknote, ListChecks, LucideIcon, Users } from 'lucide-react'
+import { Banknote, ChevronRight, ListChecks, LucideIcon, Users } from 'lucide-react'
 import React, { memo } from 'react'
 import { PaymentMode } from '../hooks/usePaymentLogic'
 
@@ -82,7 +82,7 @@ export const PaymentSummary = memo(
           <div className={STYLES.headerInner}>
             <DialogTitle className={STYLES.title}>Hesap Özeti</DialogTitle>
             <div className={STYLES.tableInfo}>
-              <span className="h-1.5 w-1.5 rounded-full bg-primary/40" />
+              <ChevronRight className="w-4 h-4 text-foreground/50" strokeWidth={2} />
               <span
                 className={cn(
                   'text-[13px] font-black tracking-tight',
