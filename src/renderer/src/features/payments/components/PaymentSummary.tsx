@@ -83,13 +83,7 @@ export const PaymentSummary = memo(
             <DialogTitle className={STYLES.title}>Hesap Özeti</DialogTitle>
             <div className={STYLES.tableInfo}>
               <ChevronRight className="w-4 h-4 text-foreground/50" strokeWidth={2} />
-              <span
-                className={cn(
-                  'text-[13px] font-black tracking-tight',
-                  'bg-primary/8 dark:bg-primary/12 text-primary',
-                  'border border-primary/15 rounded-lg px-2.5 py-0.5'
-                )}
-              >
+              <span className="text-[14px] font-extrabold tracking-tight text-foreground/60">
                 {tableName}
               </span>
             </div>
