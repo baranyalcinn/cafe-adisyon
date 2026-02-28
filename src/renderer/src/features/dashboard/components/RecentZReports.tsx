@@ -10,7 +10,7 @@ import {
   SelectValue
 } from '@/components/ui/select'
 import type { DailySummary } from '@/lib/api'
-import { cn, formatCurrency, formatLira } from '@/lib/utils'
+import { cn, formatCurrency } from '@/lib/utils'
 import * as VisuallyHidden from '@radix-ui/react-visually-hidden'
 import { Banknote, Calendar, CreditCard, History, ReceiptText } from 'lucide-react'
 import React, { useRef, useState } from 'react'
@@ -207,49 +207,55 @@ const ReportGridCell = ({
 }): React.JSX.Element => {
   const isToday = new Date().toDateString() === date.toDateString()
   const day = date.getDate()
+  const weekday = date.toLocaleDateString('tr-TR', { weekday: 'long' })
 
   return (
     <button
       onClick={() => report && onClick(report)}
       disabled={!report}
       className={cn(
-        'group relative flex flex-col items-center justify-between p-2 aspect-square rounded-2xl transition-all duration-300',
+        'group relative flex flex-col items-center justify-between p-3 aspect-square rounded-2xl transition-all duration-300',
         'border-2 border-transparent',
         report
-          ? 'bg-background shadow-sm hover:shadow-md hover:border-primary/20 hover:-translate-y-0.5 cursor-pointer ring-1 ring-zinc-100 dark:ring-zinc-800'
-          : 'bg-muted/10 opacity-40 grayscale cursor-default border-dashed border-zinc-200 dark:border-zinc-800/50'
+          ? 'bg-background shadow-md hover:shadow-xl hover:border-primary/30 hover:-translate-y-1 cursor-pointer ring-1 ring-zinc-100 dark:ring-zinc-800'
+          : 'bg-muted/5 opacity-40 grayscale cursor-default border-dashed border-zinc-200 dark:border-zinc-800/50'
       )}
     >
-      {/* Day Number */}
-      <div className="flex items-center justify-between w-full">
-        <span
-          className={cn(
-            'text-[10px] font-black tabular-nums tracking-tighter',
-            isToday
-              ? 'text-primary'
-              : 'text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-200'
-          )}
-        >
-          {day}
+      {/* Day & Weekday */}
+      <div className="flex flex-col items-start w-full leading-none gap-0.5">
+        <div className="flex items-center justify-between w-full">
+          <span
+            className={cn(
+              'text-[14px] font-black tabular-nums tracking-tight',
+              isToday
+                ? 'text-primary'
+                : 'text-zinc-800 dark:text-zinc-100 group-hover:text-primary transition-colors'
+            )}
+          >
+            {day}
+          </span>
+          {report && <div className="w-1.5 h-1.5 rounded-full bg-primary" />}
+        </div>
+        <span className="text-[11px] font-bold text-zinc-800 dark:text-zinc-200 tracking-tight truncate w-full text-left opacity-90">
+          {weekday}
         </span>
-        {report && <div className="w-1 h-1 rounded-full bg-primary/40 animate-pulse" />}
       </div>
 
       {/* Revenue or Placeholder */}
-      <div className="flex-1 flex items-center justify-center w-full">
+      <div className="flex-1 flex items-center justify-center w-full mt-1">
         {report ? (
           <div className="flex flex-col items-center">
             <span className="text-[13px] font-black tabular-nums tracking-tighter text-foreground leading-tight">
-              {formatLira(report.totalRevenue)}
+              {formatCurrency(report.totalRevenue)}
             </span>
           </div>
         ) : (
-          <div className="w-1 h-1 rounded-full bg-zinc-200 dark:bg-zinc-800" />
+          <div className="w-1.5 h-1.5 rounded-full bg-zinc-200 dark:bg-zinc-800/50" />
         )}
       </div>
 
       {isToday && !report && (
-        <div className="absolute top-0 right-0 w-1.5 h-1.5 bg-primary/20 rounded-full" />
+        <div className="absolute top-2 right-2 w-1.5 h-1.5 bg-primary/30 rounded-full" />
       )}
     </button>
   )
@@ -348,7 +354,7 @@ export function RecentZReports(): React.JSX.Element {
 
           {/* Grid View: Fixed territory for exactly 31 items */}
           <div className="px-8 pb-8">
-            <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-7 lg:grid-cols-8 xl:grid-cols-10 gap-2.5 min-h-[380px]">
+            <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-7 lg:grid-cols-8 xl:grid-cols-10 gap-2.5">
               {gridData.map(({ date, report }) => (
                 <ReportGridCell
                   key={date.toISOString()}
@@ -357,15 +363,6 @@ export function RecentZReports(): React.JSX.Element {
                   onClick={setSelectedReport}
                 />
               ))}
-
-              {/* Pad with empty disabled slots to maintain "Fixed Territory" if month has < 31 days */}
-              {gridData.length < 31 &&
-                Array.from({ length: 31 - gridData.length }).map((_, i) => (
-                  <div
-                    key={`empty-${i}`}
-                    className="bg-zinc-50/20 dark:bg-zinc-900/10 rounded-2xl aspect-square border border-zinc-100/30 dark:border-zinc-800/10"
-                  />
-                ))}
             </div>
 
             {gridData.length === 0 && (
