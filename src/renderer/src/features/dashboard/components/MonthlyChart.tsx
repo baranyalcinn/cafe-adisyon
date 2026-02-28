@@ -69,6 +69,21 @@ const STYLES = {
 } as const
 
 // ============================================================================
+// Constants & Cached Formatters (Performance Optimization)
+// ============================================================================
+
+// Recharts prop sabitlemesi: Her render'da yeni obje üretilmesini önler
+const CHART_MARGIN = { top: 20, right: 20, bottom: 20, left: 20 }
+
+// Tick formatter referans sabitlemesi
+const formatYAxisTick = (val: number): string => formatCurrency(val).split(',')[0]
+
+// JavaScript motorunu yormamak için DateTime formatlayıcıları dışarıda 1 kez oluşturulur.
+const formatterShortMonth = new Intl.DateTimeFormat('tr-TR', { month: 'short' })
+const formatterLongMonth = new Intl.DateTimeFormat('tr-TR', { month: 'long' })
+const formatterFullMonth = new Intl.DateTimeFormat('tr-TR', { month: 'long', year: 'numeric' })
+
+// ============================================================================
 // Sub-Components
 // ============================================================================
 
@@ -159,17 +174,16 @@ MonthlyTooltip.displayName = 'MonthlyTooltip'
 export const MonthlyPerformanceChart = memo((): React.JSX.Element => {
   const { monthlyReports } = useDashboardContext()
 
-  // Veri Seti Hesaplaması: API'den gelen ham veriyi grafiğe uygun hale getirir.
-  // Bu işlem nispeten ağır olduğu için useMemo burada kesinlikle kalmalıdır.
+  // Veri Seti Hesaplaması: Cached Intl nesneleri ile çok daha hızlı çalışır.
   const monthlyData = useMemo(() => {
     return [...monthlyReports]
       .sort((a, b) => new Date(a.monthDate).getTime() - new Date(b.monthDate).getTime())
       .map((report): ChartDataPoint => {
         const date = new Date(report.monthDate)
         return {
-          month: date.toLocaleDateString('tr-TR', { month: 'short' }),
-          monthName: date.toLocaleDateString('tr-TR', { month: 'long' }),
-          fullMonth: date.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' }),
+          month: formatterShortMonth.format(date),
+          monthName: formatterLongMonth.format(date),
+          fullMonth: formatterFullMonth.format(date),
           revenue: report.totalRevenue,
           profit: report.netProfit,
           expenses: report.totalExpenses
@@ -194,7 +208,7 @@ export const MonthlyPerformanceChart = memo((): React.JSX.Element => {
             <ResponsiveContainer width="100%" height="100%" debounce={50} minWidth={0}>
               <ComposedChart
                 data={monthlyData}
-                margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+                margin={CHART_MARGIN} // Sabit referans kullanıldı
               >
                 <defs>
                   <linearGradient id="colorProfit" x1="0" y1="0" x2="0" y2="1">
@@ -225,7 +239,7 @@ export const MonthlyPerformanceChart = memo((): React.JSX.Element => {
                   tickLine={false}
                   tick={{ fill: 'currentColor', fontSize: 13, fontWeight: 800 }}
                   tickMargin={12}
-                  tickFormatter={(val) => formatCurrency(val).split(',')[0]}
+                  tickFormatter={formatYAxisTick} // Sabit referans kullanıldı
                   width={100}
                 />
 

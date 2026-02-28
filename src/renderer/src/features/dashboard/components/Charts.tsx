@@ -24,14 +24,26 @@ const CHART_COLORS = {
   product: '#7C3AED' // violet-600
 } as const
 
-// Chart margins (stable objects)
+// ============================================================================
+// Stable References & Constants (Hoisting to prevent re-renders)
+// ============================================================================
+
+const EMPTY_ARRAY: never[] = [] // Boş state'ler için sabit bellek referansı
+
 const AREA_CHART_MARGIN = { left: 20, right: 20, top: 10, bottom: 5 }
 const BAR_CHART_MARGIN = { left: 20, right: 20, top: 10, bottom: 5 }
 
-// Tick styles (stable objects - larger for better legibility)
 const XAXIS_TICK = { fill: 'currentColor', fontSize: 13, fontWeight: 800 }
 const YAXIS_TICK = { fill: 'currentColor', fontSize: 13, fontWeight: 800 }
 const HOUR_TICK = { fill: 'currentColor', fontSize: 12, fontWeight: 800 }
+
+// Recharts inline obje referanslarını sabitleme (Re-render kalkanı)
+const XAXIS_PADDING = { left: 25, right: 25 }
+const HOURLY_XAXIS_PADDING = { left: 15, right: 15 }
+const AREA_CURSOR = { stroke: 'var(--color-border)', strokeWidth: 2, strokeDasharray: '4 4' }
+const AREA_ACTIVE_DOT = { r: 6, fill: CHART_COLORS.revenue, strokeWidth: 3, stroke: '#fff' }
+
+const BAR_RADIUS_TOP: [number, number, number, number] = [6, 6, 0, 0]
 
 const CARD_BASE =
   'h-full flex flex-col bg-card border-2 border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm transition-all duration-300 ' +
@@ -42,16 +54,16 @@ const SUBTITLE =
   'text-[10px] text-zinc-800 dark:text-zinc-200 font-bold tracking-[0.2em] uppercase mt-0.5'
 const EMPTY_STATE = 'h-full flex flex-col items-center justify-center gap-3'
 
-// Bar radius (stable arrays)
-const BAR_RADIUS_TOP: [number, number, number, number] = [6, 6, 0, 0]
+// ============================================================================
+// Cached Formatters (JS Engine Optimization)
+// ============================================================================
 
-// ============================================================================
-// Utility Functions (Stable references)
-// ============================================================================
+const formatterWeekday = new Intl.DateTimeFormat('tr-TR', { weekday: 'short' })
+const formatterFullDate = new Intl.DateTimeFormat('tr-TR', { day: 'numeric', weekday: 'long' })
 
 const formatWeekday = (str: string): string => {
   try {
-    return parseISO(str).toLocaleDateString('tr-TR', { weekday: 'short' })
+    return formatterWeekday.format(parseISO(str))
   } catch {
     return str
   }
@@ -59,7 +71,7 @@ const formatWeekday = (str: string): string => {
 
 const formatFullDate = (str: string): string => {
   try {
-    return parseISO(str).toLocaleDateString('tr-TR', { day: 'numeric', weekday: 'long' })
+    return formatterFullDate.format(parseISO(str))
   } catch {
     return str
   }
@@ -191,7 +203,7 @@ export const WeeklyTrendChart = memo(function WeeklyTrendChart(): React.JSX.Elem
               <RevenueGradients />
               <Tooltip
                 content={<RevenueTooltip />}
-                cursor={{ stroke: 'var(--color-border)', strokeWidth: 2, strokeDasharray: '4 4' }}
+                cursor={AREA_CURSOR}
                 isAnimationActive={false}
               />
               <CartesianGrid
@@ -205,7 +217,7 @@ export const WeeklyTrendChart = memo(function WeeklyTrendChart(): React.JSX.Elem
                 axisLine={false}
                 tickLine={false}
                 dy={10}
-                padding={{ left: 25, right: 25 }}
+                padding={XAXIS_PADDING}
                 tick={XAXIS_TICK}
                 tickFormatter={formatWeekday}
               />
@@ -225,7 +237,7 @@ export const WeeklyTrendChart = memo(function WeeklyTrendChart(): React.JSX.Elem
                 fill="url(#revAreaGrad)"
                 isAnimationActive={false}
                 dot={false}
-                activeDot={{ r: 6, fill: CHART_COLORS.revenue, strokeWidth: 3, stroke: '#fff' }}
+                activeDot={AREA_ACTIVE_DOT}
               />
             </AreaChart>
           </ResponsiveContainer>
@@ -250,7 +262,7 @@ export const CategoryRevenueChart = memo(function CategoryRevenueChart(): React.
   const { stats } = useDashboardContext()
 
   const chartData = useMemo(() => {
-    if (!stats?.categoryBreakdown) return []
+    if (!stats?.categoryBreakdown) return EMPTY_ARRAY
     return [...stats.categoryBreakdown]
       .sort((a, b) => (b.revenue || 0) - (a.revenue || 0))
       .slice(0, 8)
@@ -355,8 +367,8 @@ export const CategoryRevenueChart = memo(function CategoryRevenueChart(): React.
 export const HourlyActivityChart = memo(function HourlyActivityChart(): React.JSX.Element {
   const { stats } = useDashboardContext()
   const data = useMemo(() => {
-    const rawData = stats?.hourlyActivity || []
-    if (rawData.length === 0) return []
+    const rawData = stats?.hourlyActivity || EMPTY_ARRAY
+    if (rawData.length === 0) return EMPTY_ARRAY
 
     // Dynamic cropping: find first and last hours with data
     let firstIdx = -1
@@ -403,7 +415,7 @@ export const HourlyActivityChart = memo(function HourlyActivityChart(): React.JS
                 axisLine={false}
                 tickLine={false}
                 tick={HOUR_TICK}
-                padding={{ left: 15, right: 15 }}
+                padding={HOURLY_XAXIS_PADDING}
               />
               <YAxis
                 axisLine={false}
@@ -434,7 +446,7 @@ export const HourlyActivityChart = memo(function HourlyActivityChart(): React.JS
 
 export const TopProductsChart = memo(function TopProductsChart(): React.JSX.Element {
   const { stats } = useDashboardContext()
-  const data = useMemo(() => stats?.topProducts || [], [stats?.topProducts])
+  const data = useMemo(() => stats?.topProducts || EMPTY_ARRAY, [stats?.topProducts])
   const hasData = data.length > 0
   const maxQuantity = useMemo(
     () => (hasData ? Math.max(...data.map((d) => d.quantity)) : 0),

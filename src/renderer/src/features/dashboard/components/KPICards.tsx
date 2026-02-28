@@ -5,10 +5,11 @@ import {
   Activity,
   ArrowDownRight,
   Banknote,
+  CheckCircle2,
   CreditCard,
   type LucideIcon,
   PieChart,
-  ShoppingBag,
+  Receipt,
   TrendingUp,
   Wallet
 } from 'lucide-react'
@@ -18,18 +19,6 @@ import { useDashboardContext } from '../context/DashboardContext'
 // ============================================================================
 // Types
 // ============================================================================
-
-interface KPICardProps {
-  label: string
-  value: string
-  icon: LucideIcon
-  iconBg: string
-  iconColor: string
-  accentColor: string
-  delay: number
-  badge?: React.ReactNode
-  className?: string
-}
 
 interface FinancialMetrics {
   revenue: number
@@ -59,7 +48,7 @@ const CARD_BASE_CLASSES =
  */
 const KPI_COLORS = {
   revenue: {
-    card: 'border-zinc-500/20 bg-gradient-to-br from-zinc-800 via-zinc-900 to-zinc-950',
+    card: 'border-white/10 bg-gradient-to-br from-zinc-700 via-zinc-800 to-zinc-900',
     iconWrap: 'bg-white/10 backdrop-blur-md border border-white/10 shadow-inner',
     icon: 'text-zinc-100',
     value: 'text-white',
@@ -74,7 +63,17 @@ const KPI_COLORS = {
     icon: 'text-blue-600 dark:text-blue-400',
     accent: 'bg-blue-500',
     badgePending: 'bg-amber-500/10 text-amber-600 border border-amber-500/20',
-    pendingDot: 'bg-amber-500'
+    pendingDot: 'bg-amber-500',
+    completed: {
+      text: 'text-emerald-600 dark:text-emerald-400',
+      border: 'border-emerald-500/20',
+      bg: 'bg-emerald-500/5 hover:bg-emerald-500/10'
+    },
+    aov: {
+      text: 'text-blue-600 dark:text-blue-400',
+      border: 'border-blue-500/20',
+      bg: 'bg-blue-500/5 hover:bg-blue-500/10'
+    }
   },
   financial: {
     iconBg: 'bg-primary/10',
@@ -142,55 +141,101 @@ function useStagger(delay: number): { animationDelay: string; animationDuration:
 // Sub-Components
 // ============================================================================
 
-const KPICard = React.memo(function KPICard({
-  label,
-  value,
-  icon: Icon,
-  iconBg,
-  iconColor,
-  accentColor,
-  delay,
-  badge,
-  className
-}: KPICardProps) {
+const DailyOverviewCard = React.memo(function DailyOverviewCard({
+  metrics,
+  delay
+}: {
+  metrics: { total: number; pending: number; revenue: number }
+  delay: number
+}) {
+  const { total, pending, revenue } = metrics
+  const completed = Math.max(0, total - pending)
+  const aov = total > 0 ? revenue / total : 0
+
   const animationStyle = useStagger(delay)
 
   return (
-    <div className={cn(CARD_BASE_CLASSES, className)} style={animationStyle}>
-      {/* Subtle corner glow */}
-      <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full bg-primary/5 blur-2xl pointer-events-none" />
-
-      <div className="flex items-start justify-between mb-2">
-        <div className="flex items-center gap-3">
-          <div
-            className={cn(
-              'w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm',
-              iconBg
-            )}
-          >
-            <Icon
+    <div
+      className={cn(CARD_BASE_CLASSES, 'lg:col-span-6 flex flex-col p-5', KPI_COLORS.revenue.card)}
+      style={animationStyle}
+    >
+      <div className="relative z-10 flex flex-col lg:grid lg:grid-cols-12 gap-x-8 h-full">
+        {/* Left Column: Header + Revenue */}
+        <div className="lg:col-span-7 flex flex-col pt-1 h-full">
+          {/* Header Row */}
+          <div className="flex items-center gap-3 mb-6">
+            <div
               className={cn(
-                'h-5 w-5 transition-transform duration-300 group-hover:scale-110',
-                iconColor
+                'w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm transition-transform group-hover:scale-105',
+                KPI_COLORS.revenue.iconWrap
               )}
-            />
+            >
+              <TrendingUp className={cn('h-5 w-5', KPI_COLORS.revenue.icon)} />
+            </div>
+            <div className={cn('text-[16px] font-black tracking-widest', KPI_COLORS.revenue.label)}>
+              Bugünün Özeti
+            </div>
           </div>
-          <div className="text-[16px] font-black text-foreground/95 tracking-widest">{label}</div>
+
+          {/* Revenue Section */}
+          <div className="flex flex-col flex-1 justify-center">
+            <div
+              className={cn(
+                'text-6xl lg:text-[5rem] font-black tabular-nums tracking-tight leading-none',
+                KPI_COLORS.revenue.value
+              )}
+            >
+              {formatCurrency(revenue).replace(',00', '')}
+            </div>
+          </div>
         </div>
-        {badge && <div className="mt-1.5">{badge}</div>}
-      </div>
 
-      <div className="text-[2.25rem] font-black tabular-nums tracking-tight text-foreground leading-none mt-3.5">
-        {value}
-      </div>
+        {/* Right Column: Sub-metrics Stack (Starts from the very top) */}
+        <div className="lg:col-span-5 flex flex-col gap-2.5 mt-2 lg:mt-0">
+          {/* Total Orders */}
+          <div className="flex items-center justify-between rounded-xl border px-3.5 py-2.5 bg-white/5 border-white/10 hover:bg-white/10 transition-colors">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                <Activity className="h-4 w-4 text-blue-400" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm font-bold text-white/90">Toplam Sipariş</span>
+                {pending > 0 && (
+                  <div className="flex items-center gap-1 text-[10px] font-black uppercase tracking-tight text-rose-400">
+                    <span className="w-1 h-1 rounded-full bg-rose-400" />
+                    {pending} Açık Masa
+                  </div>
+                )}
+              </div>
+            </div>
+            <span className="text-2xl font-black tabular-nums text-white">{total}</span>
+          </div>
 
-      {/* Bottom accent line */}
-      <div
-        className={cn(
-          'absolute bottom-0 left-0 right-0 h-[3px] rounded-b-2xl opacity-60',
-          accentColor
-        )}
-      />
+          {/* AOV */}
+          <div className="flex items-center justify-between rounded-xl border px-3.5 py-2.5 bg-white/5 border-white/10 hover:bg-white/10 transition-colors">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
+                <Receipt className="h-4 w-4 text-indigo-400" />
+              </div>
+              <span className="text-sm font-bold text-white/90">Sepet Ortalaması</span>
+            </div>
+            <span className="text-xl font-black tabular-nums text-white">
+              {formatCurrency(aov).replace(',00', '')}
+            </span>
+          </div>
+
+          {/* Completed Orders */}
+          <div className="flex items-center justify-between rounded-xl border px-3.5 py-2.5 bg-white/5 border-white/10 hover:bg-white/10 transition-colors">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+              </div>
+              <span className="text-sm font-bold text-white/90">Tamamlanan Sipariş</span>
+            </div>
+            <span className="text-xl font-black tabular-nums text-white">{completed}</span>
+          </div>
+        </div>
+      </div>
     </div>
   )
 })
@@ -270,9 +315,6 @@ const FinancialCard = React.memo(function FinancialCard({
 
   return (
     <div className={cn(CARD_BASE_CLASSES, 'lg:col-span-3')} style={animationStyle}>
-      {/* Subtle corner glow */}
-      <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full bg-primary/5 blur-2xl pointer-events-none" />
-
       {/* Bottom accent line */}
       <div
         className={cn(
@@ -363,9 +405,6 @@ const PaymentCard = React.memo(function PaymentCard({
 
   return (
     <div className={cn(CARD_BASE_CLASSES, 'lg:col-span-3')} style={animationStyle}>
-      {/* Subtle corner glow */}
-      <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full bg-violet-500/5 blur-2xl pointer-events-none" />
-
       {/* Bottom accent line */}
       <div
         className={cn(
@@ -467,66 +506,6 @@ const PaymentCard = React.memo(function PaymentCard({
   )
 })
 
-const HeroRevenueCard = React.memo(function HeroRevenueCard({
-  value,
-  delay
-}: {
-  value: string
-  delay: number
-}) {
-  const animationStyle = useStagger(delay)
-
-  return (
-    <div
-      className={cn(CARD_BASE_CLASSES, 'lg:col-span-4 min-h-[180px]', KPI_COLORS.revenue.card)}
-      style={animationStyle}
-    >
-      {/* Decorative circles — CSS only, no external requests */}
-      <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-white/5 pointer-events-none" />
-      <div className="absolute -bottom-16 -right-4 w-40 h-40 rounded-full bg-white/[0.04] pointer-events-none" />
-      <div className="absolute top-1/2 -left-10 w-32 h-32 rounded-full bg-zinc-200/10 blur-xl pointer-events-none" />
-
-      <div className="relative z-10 flex flex-col h-full text-white">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-auto">
-          <div className="flex items-center gap-3">
-            <div
-              className={cn(
-                'w-11 h-11 rounded-2xl flex items-center justify-center shadow-lg',
-                KPI_COLORS.revenue.iconWrap
-              )}
-            >
-              <TrendingUp className={cn('h-5 w-5', KPI_COLORS.revenue.icon)} />
-            </div>
-            <div className="flex flex-col gap-0.5">
-              <span
-                className={cn(
-                  'text-m font-black tracking-widest text-white',
-                  KPI_COLORS.revenue.label
-                )}
-              >
-                Bugünkü Ciro
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Value */}
-        <div className="mt-6">
-          <div
-            className={cn(
-              'text-6xl lg:text-7xl font-black tabular-nums tracking-tighter leading-none drop-shadow-sm',
-              KPI_COLORS.revenue.value
-            )}
-          >
-            {value}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-})
-
 // ============================================================================
 // Badge Components
 // ============================================================================
@@ -554,17 +533,9 @@ export function KPICards(): React.JSX.Element {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-5">
-      <HeroRevenueCard value={formatCurrency(metrics.revenue)} delay={100} />
-
-      <KPICard
-        label="Sipariş"
-        value={String(metrics.orders)}
-        icon={ShoppingBag}
-        iconBg={KPI_COLORS.orders.iconBg}
-        iconColor={KPI_COLORS.orders.icon}
-        accentColor={KPI_COLORS.orders.accent}
-        delay={150}
-        className="lg:col-span-2"
+      <DailyOverviewCard
+        metrics={{ total: metrics.orders, pending: metrics.pending, revenue: metrics.revenue }}
+        delay={100}
       />
 
       <FinancialCard

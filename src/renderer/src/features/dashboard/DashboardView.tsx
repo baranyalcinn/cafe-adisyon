@@ -44,7 +44,7 @@ const MonthlyPerformanceChart = React.lazy(
 
 const STYLES = {
   container: 'h-full flex flex-col overflow-hidden text-foreground',
-  scrollArea: 'flex-1 overflow-y-auto px-8 pb-16 space-y-10 bg-background custom-scrollbar',
+  scrollArea: 'flex-1 overflow-y-auto px-8 pb-12 space-y-6 bg-background custom-scrollbar',
 
   // Header Actions
   refreshBtn:
@@ -53,9 +53,9 @@ const STYLES = {
     'gap-2 h-10 px-5 rounded-xl font-black bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-500/10 active:scale-95 transition-all text-[10px] tracking-[0.2em]',
 
   // Title Section
-  titleSection: 'flex flex-col gap-1 pt-8 container-fade-in',
+  titleSection: 'flex flex-col gap-1 pt-6 container-fade-in',
   titleWrap: 'flex items-end gap-4',
-  title: 'text-4xl font-black tracking-tighter text-foreground leading-none',
+  title: 'text-3xl font-black tracking-tighter text-foreground leading-none',
   titleDivider: 'h-5 w-[2px] bg-border mb-0.5',
   subtitle: 'text-primary font-black tracking-[0.3em] text-[12px] uppercase',
   dateLabel: 'text-s font-bold text-foreground tracking-wider ml-auto mb-0.5',
