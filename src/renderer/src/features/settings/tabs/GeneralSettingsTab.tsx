@@ -33,6 +33,7 @@ import {
   CheckCircle2,
   KeyRound,
   Loader2,
+  type LucideIcon,
   Moon,
   Palette,
   RefreshCw,
@@ -43,12 +44,16 @@ import {
   VolumeX,
   Wrench
 } from 'lucide-react'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
 import { PinInput } from '../components/PinInput'
 import { SettingRow } from '../components/SettingRow'
 import { UpdateStatusArea } from '../components/UpdateStatusArea'
+
+// ============================================================================
+// Constants
+// ============================================================================
 
 const COLOR_SCHEMES: { id: ColorScheme; name: string; color: string; darkColor: string }[] = [
   { id: 'sage', name: 'Sage', color: 'oklch(0.55 0.12 165)', darkColor: 'oklch(0.7 0.1 165)' },
@@ -65,23 +70,6 @@ const PREDEFINED_QUESTIONS = [
   'En sevdiğiniz yemek?',
   'Doğduğunuz şehir?'
 ]
-
-interface GeneralSettingsTabProps {
-  isDark: boolean
-  onThemeToggle: () => void
-  colorScheme: ColorScheme
-  onColorSchemeChange: (scheme: ColorScheme) => void
-  activeView: string | null
-}
-
-type UpdateStatus =
-  | 'idle'
-  | 'checking'
-  | 'available'
-  | 'not-available'
-  | 'downloading'
-  | 'downloaded'
-  | 'error'
 
 const ui = {
   container: 'w-full h-full overflow-y-auto px-4 xl:px-6 pt-4 pb-8',
@@ -121,13 +109,27 @@ const ui = {
   btnOutline: 'h-10 rounded-xl text-sm font-semibold border'
 } as const
 
-function SummaryCard(props: {
-  icon: React.ReactNode
+// ============================================================================
+// Sub-Components (Memoized)
+// ============================================================================
+
+// KRİTİK OPTİMİZASYON: icon prop'u artık ReactNode değil, LucideIcon referansıdır.
+// Bu, klavyede her tuşa basıldığında bu bileşenin gereksiz yere render edilmesini kökten çözer.
+interface SummaryCardProps {
+  icon: LucideIcon
   kicker: string
   title: string
   iconClassName?: string
   titleClassName?: string
-}): React.JSX.Element {
+}
+
+const SummaryCard = memo(function SummaryCard({
+  icon: Icon,
+  kicker,
+  title,
+  iconClassName,
+  titleClassName
+}: SummaryCardProps): React.JSX.Element {
   return (
     <Card
       className={cn(
@@ -137,16 +139,82 @@ function SummaryCard(props: {
       )}
     >
       <div className="p-3.5 flex items-center gap-3">
-        <div className={cn(ui.summaryIconBox, props.iconClassName)}>{props.icon}</div>
-
+        <div className={cn(ui.summaryIconBox, iconClassName)}>
+          <Icon className="w-4 h-4" />
+        </div>
         <div className="min-w-0">
-          <p className={ui.summaryKicker}>{props.kicker}</p>
-          <p className={cn(ui.summaryTitle, props.titleClassName)}>{props.title}</p>
+          <p className={ui.summaryKicker}>{kicker}</p>
+          <p className={cn(ui.summaryTitle, titleClassName)}>{title}</p>
         </div>
       </div>
     </Card>
   )
+})
+
+// Renk seçici bölümü dışarı alınarak state değişikliklerinden (Input yazma vb.) yalıtıldı.
+const ColorSchemeSelector = memo(function ColorSchemeSelector({
+  colorScheme,
+  isDark,
+  onSchemeChange
+}: {
+  colorScheme: ColorScheme
+  isDark: boolean
+  onSchemeChange: (scheme: ColorScheme) => void
+}): React.JSX.Element {
+  return (
+    <div className="flex items-center gap-1.5">
+      {COLOR_SCHEMES.map((scheme) => {
+        const selected = colorScheme === scheme.id
+        return (
+          <button
+            key={scheme.id}
+            type="button"
+            onClick={() => onSchemeChange(scheme.id)}
+            title={scheme.name}
+            className={cn(
+              'relative w-9 h-9 rounded-lg flex items-center justify-center transition-all',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
+              selected
+                ? 'bg-white dark:bg-zinc-900 ring-1 ring-zinc-300/70 dark:ring-zinc-700 shadow-sm'
+                : 'hover:bg-white/70 dark:hover:bg-zinc-900/50'
+            )}
+          >
+            <span
+              className={cn(
+                'block w-4.5 h-4.5 rounded-full transition-transform',
+                selected ? 'scale-110' : ''
+              )}
+              style={{
+                backgroundColor: isDark ? scheme.darkColor : scheme.color
+              }}
+            />
+          </button>
+        )
+      })}
+    </div>
+  )
+})
+
+// ============================================================================
+// Main Component
+// ============================================================================
+
+interface GeneralSettingsTabProps {
+  isDark: boolean
+  onThemeToggle: () => void
+  colorScheme: ColorScheme
+  onColorSchemeChange: (scheme: ColorScheme) => void
+  activeView: string | null
 }
+
+type UpdateStatus =
+  | 'idle'
+  | 'checking'
+  | 'available'
+  | 'not-available'
+  | 'downloading'
+  | 'downloaded'
+  | 'error'
 
 export function GeneralSettingsTab({
   isDark,
@@ -179,7 +247,6 @@ export function GeneralSettingsTab({
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null)
   const [downloadProgress, setDownloadProgress] = useState(0)
 
-  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false)
   const [isCheckingSystem, setIsCheckingSystem] = useState(false)
   const [isChangingPin, setIsChangingPin] = useState(false)
   const [isSavingRecovery, setIsSavingRecovery] = useState(false)
@@ -199,6 +266,104 @@ export function GeneralSettingsTab({
     () => securityQuestion.trim().length > 0 && securityAnswer.trim().length > 0,
     [securityAnswer, securityQuestion]
   )
+
+  // --- Handlers (Memoized to prevent cascading re-renders) ---
+
+  const handleNewPinChange = useCallback((v: string) => {
+    setNewPin(v)
+    setPinChangeError(null)
+  }, [])
+
+  const handleConfirmPinChange = useCallback((v: string) => {
+    setConfirmPin(v)
+    setPinChangeError(null)
+  }, [])
+
+  const handleQuestionValChange = useCallback((val: string) => {
+    setSelectedQuestionVal(val)
+    setSecurityQuestion(val !== 'custom' ? val : '')
+  }, [])
+
+  const handleSecurityQuestionChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSecurityQuestion(e.target.value)
+  }, [])
+
+  const handleSecurityAnswerChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSecurityAnswer(e.target.value)
+  }, [])
+
+  const handleThemeLight = useCallback(() => {
+    if (isDark) onThemeToggle()
+  }, [isDark, onThemeToggle])
+
+  const handleThemeDark = useCallback(() => {
+    if (!isDark) onThemeToggle()
+  }, [isDark, onThemeToggle])
+
+  const handleChangePin = useCallback((): void => {
+    if (newPin !== '' && (newPin.length !== 4 || newPin !== confirmPin)) {
+      setPinChangeError(newPin !== confirmPin ? 'PIN kodları eşleşmiyor' : 'PIN 4 haneli olmalıdır')
+      return
+    }
+    setShowChangePinModal(true)
+  }, [confirmPin, newPin])
+
+  const handleSystemCheck = useCallback(async () => {
+    setIsCheckingSystem(true)
+    const loadingId = toast.loading('Sistem kontrolü başlatıldı...')
+    try {
+      await Promise.all([refetchTables(), refetchProducts(), refetchCategories()])
+      toast.success('Sistem kontrolü tamamlandı', { id: loadingId })
+    } catch {
+      toast.error('Sistem kontrolü sırasında hata oluştu', { id: loadingId })
+    } finally {
+      setIsCheckingSystem(false)
+    }
+  }, [refetchCategories, refetchProducts, refetchTables])
+
+  const handleDemoLoad = useCallback(() => {
+    setShowDemoPinModal(true)
+  }, [])
+
+  const handleSeedDatabase = useCallback(async () => {
+    setIsSeeding(true)
+    try {
+      await cafeApi.seed.database()
+      await Promise.all([refetchTables(), refetchProducts(), refetchCategories()])
+      setShowSeedConfirmDialog(false)
+      toast.success('Demo verisi yüklendi')
+    } catch {
+      toast.error('Demo yükleme başarısız')
+    } finally {
+      setIsSeeding(false)
+    }
+  }, [refetchCategories, refetchProducts, refetchTables])
+
+  const handleSeedConfirm = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault()
+      void handleSeedDatabase()
+    },
+    [handleSeedDatabase]
+  )
+
+  const handleManualUpdateCheck = useCallback(async (): Promise<void> => {
+    setUpdateStatus('checking')
+    try {
+      const result = await cafeApi.system.checkUpdate()
+      if (!result.available) {
+        setUpdateStatus('not-available')
+        toast.success('Güncelleme kontrolü tamamlandı', {
+          description: 'Yeni sürüm bulunamadı.'
+        })
+      }
+    } catch {
+      setUpdateStatus('error')
+      toast.error('Güncelleme kontrolü başarısız')
+    }
+  }, [])
+
+  // --- Effects ---
 
   useEffect(() => {
     let mounted = true
@@ -264,85 +429,19 @@ export function GeneralSettingsTab({
     }
   }, [activeView])
 
-  const handleManualUpdateCheck = useCallback(async (): Promise<void> => {
-    setUpdateStatus('checking')
-    setIsCheckingUpdate(true)
-    try {
-      const result = await cafeApi.system.checkUpdate()
-      if (!result.available) {
-        setUpdateStatus('not-available')
-        toast.success('Güncelleme kontrolü tamamlandı', {
-          description: 'Yeni sürüm bulunamadı.'
-        })
-      }
-    } catch {
-      setUpdateStatus('error')
-      toast.error('Güncelleme kontrolü başarısız')
-    } finally {
-      setIsCheckingUpdate(false)
-    }
-  }, [])
-
-  const handleThemeLight = useCallback(() => {
-    if (isDark) onThemeToggle()
-  }, [isDark, onThemeToggle])
-
-  const handleThemeDark = useCallback(() => {
-    if (!isDark) onThemeToggle()
-  }, [isDark, onThemeToggle])
-
-  const handleChangePin = useCallback((): void => {
-    if (newPin !== '' && (newPin.length !== 4 || newPin !== confirmPin)) {
-      setPinChangeError(newPin !== confirmPin ? 'PIN kodları eşleşmiyor' : 'PIN 4 haneli olmalıdır')
-      return
-    }
-    setShowChangePinModal(true)
-  }, [confirmPin, newPin])
-
-  const handleSystemCheck = useCallback(async () => {
-    setIsCheckingSystem(true)
-    const loadingId = toast.loading('Sistem kontrolü başlatıldı...')
-    try {
-      await Promise.all([refetchTables(), refetchProducts(), refetchCategories()])
-      toast.success('Sistem kontrolü tamamlandı', { id: loadingId })
-    } catch {
-      toast.error('Sistem kontrolü sırasında hata oluştu', { id: loadingId })
-    } finally {
-      setIsCheckingSystem(false)
-    }
-  }, [refetchCategories, refetchProducts, refetchTables])
-
-  const handleDemoLoad = useCallback(() => {
-    setShowDemoPinModal(true)
-  }, [])
-
-  const handleSeedDatabase = useCallback(async () => {
-    setIsSeeding(true)
-    try {
-      await cafeApi.seed.database()
-      await Promise.all([refetchTables(), refetchProducts(), refetchCategories()])
-      setShowSeedConfirmDialog(false)
-      toast.success('Demo verisi yüklendi')
-    } catch {
-      toast.error('Demo yükleme başarısız')
-    } finally {
-      setIsSeeding(false)
-    }
-  }, [refetchCategories, refetchProducts, refetchTables])
-
   return (
     <div className={cn(ui.container, ui.vspace)}>
       {/* ÜST ÖZET */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
         <SummaryCard
-          icon={<Palette className="w-4 h-4" />}
+          icon={Palette}
           kicker="Tema"
           title={`${isDark ? 'Karanlık' : 'Aydınlık'} · ${selectedSchemeName}`}
           iconClassName="bg-primary/10 text-primary"
         />
 
         <SummaryCard
-          icon={soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+          icon={soundEnabled ? Volume2 : VolumeX}
           kicker="Ses"
           title={soundEnabled ? 'Açık' : 'Kapalı'}
           iconClassName={
@@ -353,14 +452,14 @@ export function GeneralSettingsTab({
         />
 
         <SummaryCard
-          icon={<ArrowUpCircle className="w-4 h-4" />}
+          icon={ArrowUpCircle}
           kicker="Sürüm"
           title={appVersion}
           iconClassName="bg-blue-500/10 text-blue-600 dark:text-blue-400"
         />
 
         <SummaryCard
-          icon={<ShieldCheck className="w-4 h-4" />}
+          icon={ShieldCheck}
           kicker="Güvenlik"
           title="Aktif"
           titleClassName="text-emerald-600 dark:text-emerald-400"
@@ -420,36 +519,12 @@ export function GeneralSettingsTab({
               <SettingRow label="Renk Teması">
                 <div className="w-full rounded-xl border border-zinc-200/70 dark:border-zinc-800/80 bg-zinc-50/70 dark:bg-zinc-950/20 p-2.5">
                   <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5">
-                      {COLOR_SCHEMES.map((scheme) => {
-                        const selected = colorScheme === scheme.id
-                        return (
-                          <button
-                            key={scheme.id}
-                            type="button"
-                            onClick={() => onColorSchemeChange(scheme.id)}
-                            title={scheme.name}
-                            className={cn(
-                              'relative w-9 h-9 rounded-lg flex items-center justify-center transition-all',
-                              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
-                              selected
-                                ? 'bg-white dark:bg-zinc-900 ring-1 ring-zinc-300/70 dark:ring-zinc-700 shadow-sm'
-                                : 'hover:bg-white/70 dark:hover:bg-zinc-900/50'
-                            )}
-                          >
-                            <span
-                              className={cn(
-                                'block w-4.5 h-4.5 rounded-full transition-transform',
-                                selected ? 'scale-110' : ''
-                              )}
-                              style={{
-                                backgroundColor: isDark ? scheme.darkColor : scheme.color
-                              }}
-                            />
-                          </button>
-                        )
-                      })}
-                    </div>
+                    {/* Memoize edilmiş renk seçici */}
+                    <ColorSchemeSelector
+                      colorScheme={colorScheme}
+                      isDark={isDark}
+                      onSchemeChange={onColorSchemeChange}
+                    />
 
                     <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded-lg border border-primary/15 min-w-[72px] text-center inline-block">
                       {selectedSchemeName}
@@ -506,13 +581,6 @@ export function GeneralSettingsTab({
                 info={updateInfo}
                 onCheck={handleManualUpdateCheck}
               />
-
-              {isCheckingUpdate && (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  Güncelleme kontrol ediliyor…
-                </div>
-              )}
             </div>
           </Card>
 
@@ -616,22 +684,8 @@ export function GeneralSettingsTab({
 
                 <div className="p-4 space-y-3.5">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <PinInput
-                      label="YENİ PIN"
-                      value={newPin}
-                      onChange={(v) => {
-                        setNewPin(v)
-                        setPinChangeError(null)
-                      }}
-                    />
-                    <PinInput
-                      label="TEKRAR"
-                      value={confirmPin}
-                      onChange={(v) => {
-                        setConfirmPin(v)
-                        setPinChangeError(null)
-                      }}
-                    />
+                    <PinInput label="YENİ PIN" value={newPin} onChange={handleNewPinChange} />
+                    <PinInput label="TEKRAR" value={confirmPin} onChange={handleConfirmPinChange} />
                   </div>
 
                   {pinChangeError && (
@@ -657,13 +711,7 @@ export function GeneralSettingsTab({
                 </div>
 
                 <div className="p-4 space-y-3">
-                  <Select
-                    value={selectedQuestionVal}
-                    onValueChange={(val) => {
-                      setSelectedQuestionVal(val)
-                      setSecurityQuestion(val !== 'custom' ? val : '')
-                    }}
-                  >
+                  <Select value={selectedQuestionVal} onValueChange={handleQuestionValChange}>
                     <SelectTrigger
                       className={cn(
                         'w-full rounded-xl border-zinc-200/70 dark:border-zinc-700/70 bg-white/80 dark:bg-zinc-900/70 px-3',
@@ -692,7 +740,7 @@ export function GeneralSettingsTab({
                   {selectedQuestionVal === 'custom' && (
                     <Input
                       value={securityQuestion}
-                      onChange={(e) => setSecurityQuestion(e.target.value)}
+                      onChange={handleSecurityQuestionChange}
                       placeholder="Sorunuzu yazın"
                       className={cn(
                         'rounded-xl bg-white/80 dark:bg-zinc-900/70 border-zinc-200/70 dark:border-zinc-700/70 px-3',
@@ -704,7 +752,7 @@ export function GeneralSettingsTab({
 
                   <Input
                     value={securityAnswer}
-                    onChange={(e) => setSecurityAnswer(e.target.value)}
+                    onChange={handleSecurityAnswerChange}
                     placeholder="Cevabınızı yazın"
                     className={cn(
                       'rounded-xl bg-white/80 dark:bg-zinc-900/70 border-zinc-200/70 dark:border-zinc-700/70 px-3',
@@ -799,10 +847,7 @@ export function GeneralSettingsTab({
 
             <AlertDialogAction asChild>
               <Button
-                onClick={(e) => {
-                  e.preventDefault()
-                  void handleSeedDatabase()
-                }}
+                onClick={handleSeedConfirm}
                 disabled={isSeeding}
                 variant="destructive"
                 className="rounded-xl"

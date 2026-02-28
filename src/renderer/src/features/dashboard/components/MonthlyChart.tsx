@@ -124,7 +124,7 @@ const MonthlyTooltip = memo(
                   className="w-2.5 h-2.5 rounded-full"
                   style={{ backgroundColor: entry.color || entry.fill }}
                 />
-                <span className="text-[14px] font-black text-foreground tracking-widest">
+                <span className="text-[12px] font-black text-foreground tracking-widest">
                   {entry.name}
                 </span>
               </div>

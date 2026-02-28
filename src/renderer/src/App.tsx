@@ -271,7 +271,13 @@ export function App(): React.JSX.Element {
         </main>
       </div>
 
-      <Toaster position="top-right" richColors closeButton theme={isDark ? 'dark' : 'light'} />
+      <Toaster
+        position="bottom-right"
+        expand={false}
+        richColors={false}
+        closeButton
+        theme={isDark ? 'dark' : 'light'}
+      />
       <UpdateNotifier />
     </div>
   )

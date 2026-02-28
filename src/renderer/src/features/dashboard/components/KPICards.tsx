@@ -17,22 +17,7 @@ import React, { useMemo } from 'react'
 import { useDashboardContext } from '../context/DashboardContext'
 
 // ============================================================================
-// Types
-// ============================================================================
-
-interface FinancialMetrics {
-  revenue: number
-  expenses: number
-  profit: number
-}
-
-interface PaymentMetrics {
-  cash: number
-  card: number
-}
-
-// ============================================================================
-// Constants (Module level - never recreates)
+// Constants & Pure Helpers (Module level - never recreates)
 // ============================================================================
 
 const ANIMATION_DURATION = 500
@@ -43,9 +28,6 @@ const CARD_BASE_CLASSES =
   'hover:border-zinc-300 dark:hover:border-zinc-700 bg-card overflow-hidden group ' +
   'hover:-translate-y-1'
 
-/**
- * Renk / stil token'ları: tek yerden yönet.
- */
 const KPI_COLORS = {
   revenue: {
     card: 'border-white/10 bg-gradient-to-br from-zinc-700 via-zinc-800 to-zinc-900',
@@ -123,36 +105,34 @@ const KPI_COLORS = {
   }
 } as const
 
-// ============================================================================
-// Helpers
-// ============================================================================
-
-function useStagger(delay: number): { animationDelay: string; animationDuration: string } {
-  return useMemo(
-    () => ({
-      animationDelay: `${delay}ms`,
-      animationDuration: `${ANIMATION_DURATION}ms`
-    }),
-    [delay]
-  )
-}
+// Saf fonksiyon: Hook olmaktan çıkarıldı, gereksiz render döngüsü kaldırıldı
+const getStaggerStyle = (delay: number): React.CSSProperties => ({
+  animationDelay: `${delay}ms`,
+  animationDuration: `${ANIMATION_DURATION}ms`
+})
 
 // ============================================================================
 // Sub-Components
 // ============================================================================
 
-const DailyOverviewCard = React.memo(function DailyOverviewCard({
-  metrics,
-  delay
-}: {
-  metrics: { total: number; pending: number; revenue: number }
+// KRİTİK OPTİMİZASYON: Obje yerine sadece primitif proplar (number) alarak React.memo'nun %100 çalışmasını sağlar
+interface DailyOverviewProps {
+  total: number
+  pending: number
+  revenue: number
   delay: number
-}) {
-  const { total, pending, revenue } = metrics
+}
+
+const DailyOverviewCard = React.memo(function DailyOverviewCard({
+  total,
+  pending,
+  revenue,
+  delay
+}: DailyOverviewProps): React.JSX.Element {
   const completed = Math.max(0, total - pending)
   const aov = total > 0 ? revenue / total : 0
 
-  const animationStyle = useStagger(delay)
+  const animationStyle = useMemo(() => getStaggerStyle(delay), [delay])
 
   return (
     <div
@@ -190,7 +170,7 @@ const DailyOverviewCard = React.memo(function DailyOverviewCard({
           </div>
         </div>
 
-        {/* Right Column: Sub-metrics Stack (Starts from the very top) */}
+        {/* Right Column: Sub-metrics Stack */}
         <div className="lg:col-span-5 flex flex-col gap-2.5 mt-2 lg:mt-0">
           {/* Total Orders */}
           <div className="flex items-center justify-between rounded-xl border px-3.5 py-2.5 bg-white/5 border-white/10 hover:bg-white/10 transition-colors">
@@ -250,7 +230,7 @@ const ProgressBar = React.memo(function ProgressBar({
   right: number
   leftColor: string
   rightColor: string
-}) {
+}): React.JSX.Element {
   const leftPct = Math.min(Math.max(left, 0), 100)
   const rightPct = Math.min(Math.max(right, 0), 100 - leftPct)
 
@@ -279,7 +259,7 @@ const MetricRow = React.memo(function MetricRow({
   colorClass: string
   borderColor: string
   bgClass: string
-}) {
+}): React.JSX.Element {
   return (
     <div
       className={cn(
@@ -297,25 +277,28 @@ const MetricRow = React.memo(function MetricRow({
   )
 })
 
-const FinancialCard = React.memo(function FinancialCard({
-  metrics,
-  delay
-}: {
-  metrics: FinancialMetrics
+interface FinancialCardProps {
+  revenue: number
+  expenses: number
+  profit: number
   delay: number
-}) {
-  const { revenue, expenses, profit } = metrics
-  const isLoss = profit < 0
+}
 
+const FinancialCard = React.memo(function FinancialCard({
+  revenue,
+  expenses,
+  profit,
+  delay
+}: FinancialCardProps): React.JSX.Element {
+  const isLoss = profit < 0
   const profitMarginPct = revenue > 0 ? (profit / revenue) * 100 : 0
   const expensePct = revenue > 0 ? Math.min((expenses / revenue) * 100, 100) : 0
 
-  const animationStyle = useStagger(delay)
+  const animationStyle = useMemo(() => getStaggerStyle(delay), [delay])
   const profitTheme = isLoss ? KPI_COLORS.financial.profitLoss : KPI_COLORS.financial.profitOk
 
   return (
     <div className={cn(CARD_BASE_CLASSES, 'lg:col-span-3')} style={animationStyle}>
-      {/* Bottom accent line */}
       <div
         className={cn(
           'absolute bottom-0 left-0 right-0 h-[3px] rounded-b-2xl opacity-60',
@@ -388,24 +371,25 @@ const FinancialCard = React.memo(function FinancialCard({
   )
 })
 
-const PaymentCard = React.memo(function PaymentCard({
-  metrics,
-  delay
-}: {
-  metrics: PaymentMetrics
+interface PaymentCardProps {
+  cash: number
+  card: number
   delay: number
-}) {
-  const { cash, card } = metrics
-  const total = cash + card
+}
 
+const PaymentCard = React.memo(function PaymentCard({
+  cash,
+  card,
+  delay
+}: PaymentCardProps): React.JSX.Element {
+  const total = cash + card
   const cashPct = total > 0 ? (cash / total) * 100 : 0
   const cardPct = total > 0 ? (card / total) * 100 : 0
 
-  const animationStyle = useStagger(delay)
+  const animationStyle = useMemo(() => getStaggerStyle(delay), [delay])
 
   return (
     <div className={cn(CARD_BASE_CLASSES, 'lg:col-span-3')} style={animationStyle}>
-      {/* Bottom accent line */}
       <div
         className={cn(
           'absolute bottom-0 left-0 right-0 h-[3px] rounded-b-2xl opacity-60',
@@ -507,10 +491,6 @@ const PaymentCard = React.memo(function PaymentCard({
 })
 
 // ============================================================================
-// Badge Components
-// ============================================================================
-
-// ============================================================================
 // Main Component
 // ============================================================================
 
@@ -533,17 +513,22 @@ export function KPICards(): React.JSX.Element {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-5">
+      {/* KRİTİK DEĞİŞİKLİK: Primitif proplar (sayılar) tek tek geçirildi. */}
       <DailyOverviewCard
-        metrics={{ total: metrics.orders, pending: metrics.pending, revenue: metrics.revenue }}
+        total={metrics.orders}
+        pending={metrics.pending}
+        revenue={metrics.revenue}
         delay={100}
       />
 
       <FinancialCard
-        metrics={{ revenue: metrics.revenue, expenses: metrics.expenses, profit: metrics.profit }}
+        revenue={metrics.revenue}
+        expenses={metrics.expenses}
+        profit={metrics.profit}
         delay={200}
       />
 
-      <PaymentCard metrics={{ cash: metrics.cash, card: metrics.card }} delay={250} />
+      <PaymentCard cash={metrics.cash} card={metrics.card} delay={250} />
     </div>
   )
 }

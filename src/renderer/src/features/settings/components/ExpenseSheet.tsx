@@ -231,23 +231,44 @@ export function ExpenseSheet({
                 value={paymentMethod}
                 onValueChange={(value) => setPaymentMethod(value as 'CASH' | 'CARD')}
               >
-                <SelectTrigger className={cn(STYLES.inputBase, 'focus:border-blue-500/20 group')}>
+                <SelectTrigger
+                  className={cn(
+                    STYLES.inputBase,
+                    'group transition-all duration-300 [&>span_svg]:hidden',
+                    paymentMethod === 'CASH'
+                      ? 'focus:border-emerald-500/20'
+                      : 'focus:border-blue-500/20'
+                  )}
+                >
                   <div
                     className={cn(
                       STYLES.iconWrapBase,
-                      'bg-muted/50 group-focus-within:bg-blue-500/10'
+                      'bg-muted/50 transition-colors duration-300',
+                      paymentMethod === 'CASH'
+                        ? 'group-focus-within:bg-emerald-500/10'
+                        : 'group-focus-within:bg-blue-500/10'
                     )}
                   >
-                    <CreditCard className="w-3.5 h-3.5 text-muted-foreground group-focus-within:text-blue-500 transition-colors" />
+                    {paymentMethod === 'CASH' ? (
+                      <Banknote className="w-3.5 h-3.5 text-emerald-500 transition-all animate-in zoom-in-50 duration-300" />
+                    ) : (
+                      <CreditCard className="w-3.5 h-3.5 text-blue-500 transition-all animate-in zoom-in-50 duration-300" />
+                    )}
                   </div>
                   <SelectValue placeholder="Ödeme Türü Seçin" />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border-white/10 bg-background/95 backdrop-blur-md">
-                  <SelectItem value="CASH" className="rounded-lg">
-                    Nakit
+                  <SelectItem value="CASH" className="rounded-lg group/item">
+                    <div className="flex items-center gap-2">
+                      <Banknote className="w-3.5 h-3.5 text-emerald-500 opacity-50 group-hover/item:opacity-100 transition-opacity" />
+                      Nakit
+                    </div>
                   </SelectItem>
-                  <SelectItem value="CARD" className="rounded-lg">
-                    Kart
+                  <SelectItem value="CARD" className="rounded-lg group/item">
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="w-3.5 h-3.5 text-blue-500 opacity-50 group-hover/item:opacity-100 transition-opacity" />
+                      Kart
+                    </div>
                   </SelectItem>
                 </SelectContent>
               </Select>
