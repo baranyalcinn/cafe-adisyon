@@ -120,10 +120,12 @@ const MonthlyTooltip = memo(
                     ? entry.value >= 0
                       ? 'text-emerald-500'
                       : 'text-rose-500'
-                    : 'text-foreground'
+                    : entry.dataKey === 'expenses'
+                      ? 'text-rose-500'
+                      : 'text-foreground'
                 )}
               >
-                {formatCurrency(entry.value)}
+                {formatCurrency(entry.value).split(',')[0]}
               </span>
             </div>
           ))}
@@ -223,7 +225,7 @@ export const MonthlyPerformanceChart = memo((): React.JSX.Element => {
                   tickLine={false}
                   tick={{ fill: 'currentColor', fontSize: 13, fontWeight: 800 }}
                   tickMargin={12}
-                  tickFormatter={(val) => formatCurrency(val)}
+                  tickFormatter={(val) => formatCurrency(val).split(',')[0]}
                   width={100}
                 />
 

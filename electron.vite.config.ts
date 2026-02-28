@@ -15,28 +15,14 @@ export default defineConfig({
     build: {
       sourcemap: false,
       target: 'node24', // Electron 40 uses Node 24
-      externalizeDeps: {
-        exclude: [
-          '@electron-toolkit/utils',
-          'zod',
-          'date-fns',
-          'zustand',
-          'clsx',
-          'tailwind-merge',
-          'class-variance-authority',
-          // --- PRISMA & ADAPTER BUNDLING ---
-          '@prisma/client',
-          '@prisma/client-runtime-utils',
-          '@prisma/driver-adapter-utils',
-          '@prisma/adapter-better-sqlite3',
-          'js-base64'
-        ]
-      },
+      // build.externalizeDeps: true → package.json'daki tüm "dependencies"'i otomatik external yapar.
+      // Prisma, adapter ve diğer runtime deps böylece bundle'a girmez, node_modules'tan yüklenir.
+      externalizeDeps: true,
       commonjsOptions: {
         ignoreDynamicRequires: true
       },
       rollupOptions: {
-        // Native modüller (C++) Vite tarafından paketlenemez, external kalmalıdır!
+        // Sadece native .node modüller ve electron burada açıkça belirtilir
         external: ['bufferutil', 'utf-8-validate', 'detect-libc', 'electron', 'better-sqlite3']
       }
     }
@@ -51,8 +37,10 @@ export default defineConfig({
     build: {
       sourcemap: false,
       target: 'node24',
-      externalizeDeps: {
-        exclude: ['@electron-toolkit/preload']
+      externalizeDeps: true,
+      rollupOptions: {
+        // electron devDependencies'de olduğundan externalizeDeps kapsamaz — açıkça belirt
+        external: ['electron']
       }
     }
   },
@@ -67,27 +55,33 @@ export default defineConfig({
     plugins: [react(), tailwindcss()],
     build: {
       sourcemap: false,
-      target: 'chrome144', // Electron 40 uses Chrome ~134+
+      target: 'chrome144', // Electron 40 = Chromium 144.0.7559.x (electronjs.org/releases)
       modulePreload: {
         polyfill: false
       },
-      cssCodeSplit: false,
+      cssCodeSplit: true,
       rollupOptions: {
         output: {
           manualChunks(id): string | void {
-            if (id.includes('node_modules')) {
-              if (
-                id.includes('react') ||
-                id.includes('react-dom') ||
-                id.includes('react-router') ||
-                id.includes('@tanstack') ||
-                id.includes('lucide') ||
-                id.includes('@radix-ui') ||
-                id.includes('clsx') ||
-                id.includes('tailwind-merge')
-              ) {
-                return 'vendor-core'
-              }
+            if (!id.includes('node_modules')) return
+
+            // Grafik kütüphaneleri — ağır, ayrı chunk'ta lazy parse edilsin
+            if (id.includes('recharts') || id.includes('/d3-')) return 'vendor-charts'
+
+            // UI primitives — sık değişmez, cache'de kalır
+            if (id.includes('@radix-ui') || id.includes('lucide')) return 'vendor-ui'
+
+            // React ekosistemi + state/query — kritik core
+            // /react/ path segmenti kullan: preact, @react-aria gibi false positive'leri engeller
+            if (
+              id.includes('/react/') ||
+              id.includes('/react-dom/') ||
+              id.includes('react-router') ||
+              id.includes('@tanstack') ||
+              id.includes('clsx') ||
+              id.includes('tailwind-merge')
+            ) {
+              return 'vendor-core'
             }
           }
         }

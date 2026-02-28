@@ -12,6 +12,7 @@ import {
   BarChart,
   CartesianGrid,
   ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis
 } from 'recharts'
@@ -56,6 +57,14 @@ const formatWeekday = (str: string): string => {
   }
 }
 
+const formatFullDate = (str: string): string => {
+  try {
+    return parseISO(str).toLocaleDateString('tr-TR', { day: 'numeric', weekday: 'long' })
+  } catch {
+    return str
+  }
+}
+
 // ============================================================================
 // SVG Gradient Defs (reusable)
 // ============================================================================
@@ -83,8 +92,38 @@ const HourlyGradients = memo(function HourlyGradients(): React.JSX.Element {
   )
 })
 
-// Tooltip Components (Removed for minimalist design)
+// Tooltip Components
 // ============================================================================
+
+interface RevenueTooltipProps {
+  active?: boolean
+  payload?: { value: number; payload: Record<string, unknown> }[]
+  label?: string
+}
+
+const RevenueTooltip = memo(function RevenueTooltip({
+  active,
+  payload,
+  label
+}: RevenueTooltipProps) {
+  if (!active || !payload || !payload.length) return null
+  return (
+    <div className="bg-card border border-border shadow-2xl rounded-2xl p-5 min-w-[180px] space-y-3 pointer-events-none">
+      <p className="text-[14px] font-black text-foreground tracking-widest border-b-2 border-indigo-500/20 pb-2 mb-2">
+        {formatFullDate(label || '')}
+      </p>
+      <div className="flex items-center justify-between gap-6">
+        <div className="flex items-center gap-3">
+          <div className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
+          <span className="text-[14px] font-black text-foreground tracking-widest">Ciro</span>
+        </div>
+        <span className="text-sm font-black tabular-nums tracking-tighter shadow-sm text-indigo-500">
+          {formatCurrency(payload[0].value)}
+        </span>
+      </div>
+    </div>
+  )
+})
 
 // ============================================================================
 // Shared Chart Card Component
@@ -140,7 +179,7 @@ export const WeeklyTrendChart = memo(function WeeklyTrendChart(): React.JSX.Elem
 
   return (
     <ChartCard
-      title="Ciro Trendi"
+      title="Son 7 Gün Ciro"
       icon={TrendingUp}
       delay="delay-[400ms]"
       accentColor="bg-indigo-600"
@@ -150,6 +189,11 @@ export const WeeklyTrendChart = memo(function WeeklyTrendChart(): React.JSX.Elem
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={revenueTrend} margin={AREA_CHART_MARGIN}>
               <RevenueGradients />
+              <Tooltip
+                content={<RevenueTooltip />}
+                cursor={{ stroke: 'var(--color-border)', strokeWidth: 2, strokeDasharray: '4 4' }}
+                isAnimationActive={false}
+              />
               <CartesianGrid
                 strokeDasharray="3 3"
                 vertical={false}

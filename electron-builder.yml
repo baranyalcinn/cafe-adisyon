@@ -15,6 +15,11 @@ directories:
 
 compression: maximum
 asar: true
+
+# Sadece gerekli dil dosyalarını paketle (~80 MB kazanç)
+electronLanguages:
+  - en-US
+  - tr
 files:
   - out/**/*
   - package.json
@@ -27,6 +32,7 @@ files:
   - '!**/LICENSE'
   - '!**/CHANGELOG.md'
   - '!.git'
+  - '!gitignore'
   - '!.github'
   - '!.vscode'
   - '!src'
@@ -34,9 +40,9 @@ files:
   - '!prisma/*.db-*'
 
 # ASAR dışında tutulması gereken native modüller
+# **/*.node tüm .node binary'leri yakalar — better-sqlite3'ün JS dosyaları ASAR'da kalabilir
 asarUnpack:
   - '**/*.node'
-  - 'node_modules/better-sqlite3/**/*'
   - 'node_modules/.prisma/**/*'
   - 'node_modules/bufferutil/**/*'
   - 'node_modules/utf-8-validate/**/*'
@@ -59,11 +65,13 @@ nsis:
   artifactName: ${productName}-Setup-${version}.${ext}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
+  compression: lzma
 
 extraResources:
   - from: resources
     to: resources
-  - from: prisma/dev.db
+  # Temiz kurulum için şablon DB (dev.db yerine — test verisi kullanıcıya gitmesin)
+  - from: prisma/template.db
     to: initial.db
   - from: prisma/schema.prisma
     to: schema.prisma

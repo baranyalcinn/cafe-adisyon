@@ -1,4 +1,7 @@
-import { formatCurrency as sharedFormatCurrency } from '@shared/utils/currency'
+import {
+  formatCurrency as sharedFormatCurrency,
+  formatLira as sharedFormatLira
+} from '@shared/utils/currency'
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 
@@ -7,3 +10,4 @@ export function cn(...inputs: ClassValue[]): string {
 }
 
 export const formatCurrency = sharedFormatCurrency
+export const formatLira = sharedFormatLira

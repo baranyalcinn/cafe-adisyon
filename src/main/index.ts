@@ -7,6 +7,7 @@ import { registerAllHandlers } from './ipc'
 import { dbMaintenance } from './lib/db-maintenance'
 import { electronLog, logger } from './lib/logger'
 import { orderService } from './services/OrderService'
+import { reportingService } from './services/ReportingService'
 
 // ============================================================================
 // Global Configuration & State
@@ -274,8 +275,7 @@ function setupSystemMonitors(): void {
 async function initializeDatabaseTasks(): Promise<void> {
   await dbMaintenance.runMaintenance()
   try {
-    const { ReportingService } = await import('./services/ReportingService')
-    await new ReportingService().mergeDuplicateMonthlyReports()
+    await reportingService.mergeDuplicateMonthlyReports()
   } catch (e) {
     logger.error('App', 'Failed to merge duplicate monthly reports: ' + (e as Error).message)
   }

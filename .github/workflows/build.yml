@@ -29,38 +29,32 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
+          cache: npm
 
-      - name: Temiz Kurulum
+      # npm ci: package-lock.json'dan birebil, deterministik kurulum (npm install'dan daha hızlı ve güvenilir)
+      - name: Bağımlılıkları Kur (Deterministik)
+        run: npm ci
+
+      - name: Temiz Şablon DB Oluştur
         run: |
-          # 1. Eski kilit dosyasını sil (Temiz sayfa)
-          if (Test-Path package-lock.json) { Remove-Item package-lock.json }
-          # 2. Node Modules varsa sil
-          if (Test-Path node_modules) { Remove-Item node_modules -Recurse -Force -ErrorAction SilentlyContinue }
-          # 3. Bağımlılıkları Yükle
-          npm install --legacy-peer-deps
-      - name: Prisma Generate
-        run: npx prisma generate
-
-      - name: Native Rebuild
-        run: npm run rebuild --if-present
+          # Prisma schema var, client generate gerekmeden şema DB'ye push edilebilir
+          if (Test-Path prisma/template.db) { Remove-Item prisma/template.db }
+          $env:DATABASE_URL = "file:./prisma/template.db"
+          npx prisma db push --skip-generate
 
       - name: TypeScript Build
         run: npm run build
 
-      # STEP 1: Install electron-builder globally BEFORE surgery
-      # This ensures the build tool is completely independent of local node_modules
-      - name: Install Electron Builder Globally
-        run: npm install -g electron-builder@latest
+      # Native modülleri (better-sqlite3 vb.) Electron sürümüne göre rebuild et
+      - name: Native Deps Rebuild
+        run: npx electron-builder install-app-deps
 
-      # STEP 2: Prune node_modules to keep ONLY runtime native deps
-      # Handled automatically by electron-builder's install-app-deps and normal npm pruning
-      # STEP 3: Run electron-builder from GLOBAL installation
       - name: Windows EXE Oluştur
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_OPTIONS: '--max-old-space-size=8192'
           DEBUG: electron-builder
-        run: electron-builder --win --publish never
+        run: npx electron-builder --win --publish never
 
       - name: Build Sonucunu Yükle
         uses: actions/upload-artifact@v4

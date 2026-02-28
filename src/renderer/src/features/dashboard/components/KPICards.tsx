@@ -59,9 +59,9 @@ const CARD_BASE_CLASSES =
  */
 const KPI_COLORS = {
   revenue: {
-    card: 'border-indigo-500/20 bg-gradient-to-br from-indigo-600 via-indigo-700 to-indigo-900',
-    iconWrap: 'bg-white/15 backdrop-blur-md border border-white/10 shadow-inner',
-    icon: 'text-white',
+    card: 'border-zinc-500/20 bg-gradient-to-br from-zinc-800 via-zinc-900 to-zinc-950',
+    iconWrap: 'bg-white/10 backdrop-blur-md border border-white/10 shadow-inner',
+    icon: 'text-zinc-100',
     value: 'text-white',
     label: 'text-white font-bold',
     subLabel: 'text-zinc-100 font-bold',
@@ -484,7 +484,7 @@ const HeroRevenueCard = React.memo(function HeroRevenueCard({
       {/* Decorative circles — CSS only, no external requests */}
       <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-white/5 pointer-events-none" />
       <div className="absolute -bottom-16 -right-4 w-40 h-40 rounded-full bg-white/[0.04] pointer-events-none" />
-      <div className="absolute top-1/2 -left-10 w-32 h-32 rounded-full bg-indigo-400/10 blur-xl pointer-events-none" />
+      <div className="absolute top-1/2 -left-10 w-32 h-32 rounded-full bg-zinc-200/10 blur-xl pointer-events-none" />
 
       <div className="relative z-10 flex flex-col h-full text-white">
         {/* Header */}
