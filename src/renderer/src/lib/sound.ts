@@ -224,12 +224,12 @@ class SoundManager {
   }
 
   public playSuccess(): void {
-    // KLASİK & SEVİLEN RİTİM — (Do-Mi-Sol) 100ms aralıklı yükseliş
-    // Bu ritim kullanıcı tarafından en çok beğenilen ve hatırlanan versiyon.
+    // KLASİK + TRİUMPHANT FİNAL — (Do-Mi-Sol ... DO)
+    // "dı dı dı ... dııııı" ritmi
     this.ensureContext()
     const vol = 0.08
 
-    const ding = (f: number, delay: number, duration: number): void => {
+    const ding = (f: number, delay: number, duration: number, release?: number): void => {
       this.playOscTone({
         freq: f,
         type: 'sine',
@@ -237,17 +237,21 @@ class SoundManager {
         vol: vol,
         delay: delay,
         attack: 0.015,
-        release: duration * 0.8
+        release: release ?? duration * 0.8
       })
     }
 
     // Dokunsal geribildirim (Hafif temas tıkı)
     this.playTick({ vol: 0.02 })
 
-    // O sevdiğiniz klasik 3 tonlu yükseliş
-    ding(523.25, 0.0, 0.6) // C5
-    ding(659.25, 0.12, 0.6) // E5
-    ding(783.99, 0.24, 0.8) // G5
+    // 1-2-3: Hızlı yükseliş (Klasik ritim)
+    ding(523.25, 0.0, 0.4) // C5
+    ding(659.25, 0.12, 0.4) // E5
+    ding(783.99, 0.24, 0.5) // G5
+
+    // 4: Duraksama ve UZUN FİNAL (C6)
+    // 0.24s + 0.1s (gap) = 0.34s -> 0.4s delay ile "duraksama" hissi
+    ding(1046.5, 0.4, 1.5, 1.2) // C6 (Uzun ve ferah bitiş)
   }
 
   public playError(): void {
