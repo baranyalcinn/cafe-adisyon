@@ -37,10 +37,10 @@ jobs:
 
       - name: Temiz Şablon DB Oluştur
         run: |
-          # prisma.config.ts varken DATABASE_URL env değişkeni ignore edilir.
-          # --url flag'i ile config'i bypass edip doğrudan template.db hedeflenir.
+          # Prisma v7: --url ve --skip-generate kaldırıldı.
+          # prisma.config.ci.ts ile template.db hedeflenir, prisma generate otomatik çalışmaz.
           if (Test-Path prisma/template.db) { Remove-Item prisma/template.db }
-          npx prisma db push --url "file:./prisma/template.db" --skip-generate --accept-data-loss
+          npx prisma db push --config prisma.config.ci.ts --accept-data-loss
 
       - name: TypeScript Build
         run: npm run build

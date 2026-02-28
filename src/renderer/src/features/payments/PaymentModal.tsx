@@ -99,12 +99,12 @@ export function PaymentModal({
       <DialogContent
         className={cn(
           'sm:max-w-5xl p-0 gap-0 overflow-hidden h-[680px] flex flex-col md:flex-row',
-          'rounded-2xl border border-border/40 shadow-lg bg-background',
+          'rounded-3xl border border-border/30 shadow-2xl bg-background',
           '[&>button]:hidden outline-none'
         )}
       >
         {/* LEFT PANEL */}
-        <div className="w-[480px] flex flex-col border-r border-border/40 bg-background h-full">
+        <div className="w-[480px] flex flex-col border-r border-border/20 bg-muted/[0.03] h-full">
           <PaymentSummary
             remainingAmount={totals.remainingAmount}
             paidAmount={totals.paidAmount}
@@ -142,7 +142,7 @@ export function PaymentModal({
         </div>
 
         {/* RIGHT PANEL */}
-        <div className="flex-1 flex flex-col bg-muted/5 relative h-full overflow-hidden">
+        <div className="flex-1 flex flex-col bg-muted/[0.08] relative h-full overflow-hidden">
           <PaymentDisplay
             effectivePayment={totals.effectivePayment}
             tenderedInput={state.tenderedInput}

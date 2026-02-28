@@ -20,25 +20,27 @@ export function PaymentDisplay({
   const hasInput = !!tenderedInput
 
   return (
-    <div className="px-8 pt-4 pb-2 flex flex-col items-center">
+    <div className="px-8 pt-5 pb-2 flex flex-col items-center">
       <div className="flex gap-4 w-full max-w-[640px] mb-8">
         {/* ── Total Amount Card ─────────────────────────────────── */}
         <div className="flex-[1.6]">
           <div
             className={cn(
-              'relative h-full rounded-2xl px-6 py-5 flex flex-col items-center justify-center overflow-hidden',
-              'bg-gradient-to-br from-primary/90 to-primary shadow-md shadow-primary/20',
-              'border border-primary/30'
+              'relative h-full rounded-3xl px-6 py-6 flex flex-col items-center justify-center overflow-hidden',
+              'bg-gradient-to-br from-primary via-primary/95 to-primary/85',
+              'shadow-lg shadow-primary/25 border border-primary/20'
             )}
           >
-            {/* subtle grid texture */}
+            {/* grid texture */}
             <div
-              className="absolute inset-0 opacity-[0.04]"
+              className="absolute inset-0 opacity-[0.06]"
               style={{
                 backgroundImage:
                   'repeating-linear-gradient(0deg,transparent,transparent 24px,white 24px,white 25px),repeating-linear-gradient(90deg,transparent,transparent 24px,white 24px,white 25px)'
               }}
             />
+            {/* radial glow */}
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_20%,rgba(255,255,255,0.12),transparent_60%)]" />
             <span className="relative text-[10px] font-bold text-white/80 tracking-[0.2em] uppercase mb-2 select-none">
               Toplam Tutar
             </span>
@@ -55,11 +57,11 @@ export function PaymentDisplay({
         <div className="flex-1">
           <div
             className={cn(
-              'h-full rounded-2xl border px-6 py-4 flex flex-col justify-between',
+              'h-full rounded-3xl border px-6 py-4 flex flex-col justify-between',
               'transition-all duration-300',
               hasInput
-                ? 'border-teal-500/50 bg-teal-500/5 shadow-sm shadow-teal-500/10'
-                : 'border-border/40 bg-background shadow-sm'
+                ? 'border-teal-500/40 bg-teal-500/5 shadow-sm shadow-teal-500/10 ring-2 ring-teal-500/10'
+                : 'border-border/30 bg-card shadow-sm'
             )}
           >
             {/* Header row */}
@@ -73,7 +75,7 @@ export function PaymentDisplay({
                 Alınacak
               </span>
 
-              {/* Clear button — only visible when there's input */}
+              {/* Clear button */}
               <button
                 onClick={onClear}
                 className={cn(
@@ -89,7 +91,7 @@ export function PaymentDisplay({
               </button>
             </div>
 
-            {/* Amount display with blinking cursor */}
+            {/* Amount display */}
             <div className="mt-2 flex items-baseline justify-end gap-1 px-1 py-1 select-none">
               <PremiumAmount
                 amount={
@@ -107,7 +109,7 @@ export function PaymentDisplay({
                   isHovering && !hasInput && 'opacity-80 scale-105 origin-right'
                 )}
               />
-              {/* Blinking cursor indicator — shows the input is live */}
+              {/* Blinking cursor */}
               <span
                 className={cn(
                   'w-[2px] h-7 rounded-full mb-0.5 transition-opacity duration-300',

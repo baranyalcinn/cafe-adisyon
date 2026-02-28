@@ -44,14 +44,14 @@ const QUICK_CASH_STYLES: Record<QuickCashColor, string> = {
 }
 
 const COMMON_KEY_BASE = cn(
-  'h-[60px] rounded-xl border bg-background text-2xl font-black',
-  'border-border/50 shadow-sm transition-all duration-100',
+  'h-[58px] rounded-xl border bg-card text-2xl font-black',
+  'border-border/40 shadow-sm transition-all duration-100',
   'hover:scale-[1.04] hover:bg-zinc-700 hover:text-white dark:hover:bg-zinc-600 hover:border-zinc-600 hover:shadow-md',
-  'active:scale-[0.93]'
+  'active:scale-[0.90] active:bg-zinc-800 active:text-white active:border-zinc-800'
 )
 
 const ACTION_BUTTON_BASE =
-  'flex-1 rounded-xl text-sm font-bold shadow-sm transition active:scale-[0.99]'
+  'flex-1 min-h-[56px] rounded-xl text-sm font-bold shadow-sm transition active:scale-[0.97]'
 
 // ============================================================================
 // Component

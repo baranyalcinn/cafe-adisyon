@@ -215,8 +215,8 @@ export const ResultBanner = memo(function ResultBanner({
   return (
     <div
       className={cn(
-        'relative overflow-hidden rounded-2xl border backdrop-blur-sm h-[76px] flex items-center',
-        'shadow-[0_4px_16px_rgba(0,0,0,0.04)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.3)]',
+        'relative overflow-hidden rounded-2xl border backdrop-blur-md h-[72px] flex items-center',
+        'shadow-[0_4px_20px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.35)]',
         'transition-all duration-300',
         config.wrap,
         className
@@ -224,12 +224,12 @@ export const ResultBanner = memo(function ResultBanner({
       role="status"
       aria-live="polite"
     >
-      {/* Left accent stripe */}
-      <div className={cn('absolute left-0 top-0 bottom-0 w-1', config.stripe)} />
+      {/* Left accent stripe — slim & modern */}
+      <div className={cn('absolute left-0 top-0 bottom-0 w-[3px]', config.stripe)} />
 
       {/* Soft glow */}
-      <div className="pointer-events-none absolute inset-0 opacity-50">
-        <div className="absolute -left-10 top-1/2 h-20 w-20 -translate-y-1/2 rounded-full bg-white/20 blur-2xl dark:bg-white/5" />
+      <div className="pointer-events-none absolute inset-0 opacity-60">
+        <div className="absolute -left-8 top-1/2 h-24 w-24 -translate-y-1/2 rounded-full bg-white/20 blur-3xl dark:bg-white/5" />
       </div>
 
       <div className="relative w-full flex items-center justify-between gap-4 px-4 sm:px-5">
@@ -262,9 +262,9 @@ export const ResultBanner = memo(function ResultBanner({
           <div className="shrink-0">
             <div
               className={cn(
-                'rounded-xl border px-3 py-2 sm:px-4',
-                'bg-background/85 dark:bg-background/30',
-                'border-border/50 shadow-sm'
+                'rounded-2xl border px-3 py-2 sm:px-4',
+                'bg-background/90 dark:bg-background/30',
+                'border-border/40 shadow-sm'
               )}
             >
               <PremiumAmount amount={config.amount} size="2xl" color={config.amountColor} />

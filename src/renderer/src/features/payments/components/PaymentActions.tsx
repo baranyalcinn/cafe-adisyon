@@ -26,11 +26,23 @@ interface PaymentActionsProps {
 
 const STYLES = {
   base: cn(
-    'h-[52px] w-full rounded-xl justify-center gap-2 text-base font-bold tracking-wide',
-    'transition-all duration-150 active:scale-[0.98] hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100'
+    'relative h-[56px] w-full rounded-2xl justify-center gap-2.5 text-[15px] font-bold tracking-wide overflow-hidden',
+    'transition-all duration-150 active:scale-[0.97] hover:scale-[1.02]',
+    'disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:shadow-none'
   ),
-  cash: 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm hover:shadow-md hover:shadow-primary/25 border border-primary/20',
-  card: 'bg-zinc-800 text-white hover:bg-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800 shadow-md hover:shadow-lg border border-zinc-700 dark:border-zinc-800',
+  cash: [
+    'bg-gradient-to-br from-primary to-primary/85',
+    'text-primary-foreground',
+    'shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30',
+    'border border-primary/30'
+  ].join(' '),
+  card: [
+    'bg-gradient-to-br from-zinc-700 to-zinc-900',
+    'dark:from-zinc-800 dark:to-zinc-950',
+    'text-white',
+    'shadow-md shadow-black/20 hover:shadow-lg hover:shadow-black/30',
+    'border border-white/10'
+  ].join(' '),
   processingDim: 'opacity-50 grayscale pointer-events-none'
 } as const
 
@@ -93,6 +105,8 @@ export const PaymentActions = memo(function PaymentActions({
             disabled={!canPay || processingMethod !== null}
             title={title}
           >
+            {/* inner light overlay for depth */}
+            <span className="absolute inset-0 rounded-2xl bg-white/5 pointer-events-none" />
             {isProcessingThis ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -100,7 +114,7 @@ export const PaymentActions = memo(function PaymentActions({
               </>
             ) : (
               <>
-                <Icon className={cn('w-6 h-6', iconClass)} strokeWidth={2.75} />
+                <Icon className={cn('w-5 h-5', iconClass)} strokeWidth={2.5} />
                 <span>{label}</span>
               </>
             )}
