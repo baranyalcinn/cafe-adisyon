@@ -1,6 +1,7 @@
 import { Delete } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import { soundManager } from '@/lib/sound'
 import { cn } from '@/lib/utils'
 
 // ============================================================================
@@ -46,8 +47,8 @@ const QUICK_CASH_STYLES: Record<QuickCashColor, string> = {
 const COMMON_KEY_BASE = cn(
   'h-[58px] rounded-xl border bg-card text-2xl font-black',
   'border-border/40 shadow-sm transition-all duration-100',
-  'hover:scale-[1.04] hover:bg-zinc-700 hover:text-white dark:hover:bg-zinc-600 hover:border-zinc-600 hover:shadow-md',
-  'active:scale-[0.90] active:bg-zinc-800 active:text-white active:border-zinc-800'
+  'hover:scale-[1.02] hover:bg-zinc-700 hover:text-white dark:hover:bg-zinc-600 hover:border-zinc-600 hover:shadow-md',
+  'active:scale-[0.96] active:bg-zinc-800 active:text-white active:border-zinc-800'
 )
 
 const ACTION_BUTTON_BASE =
@@ -66,6 +67,7 @@ export function Numpad({
   effectivePayment = 0
 }: NumpadProps): React.JSX.Element {
   const handleNumKey = (n: (typeof NUMPAD_KEYS)[number]): void => {
+    soundManager.playNumpad()
     onAppend(n.toString())
   }
 
@@ -92,7 +94,10 @@ export function Numpad({
             'text-destructive border-destructive/50 bg-destructive/20',
             'hover:bg-red-500 dark:hover:bg-red-600 dark:hover:border-red-500'
           )}
-          onClick={onBackspace}
+          onClick={() => {
+            soundManager.playNumpad()
+            onBackspace()
+          }}
           aria-label="Sil"
         >
           <Delete className="!w-7 !h-7 -translate-x-0.5" strokeWidth={2.25} />
@@ -110,7 +115,10 @@ export function Numpad({
               key={val}
               variant="outline"
               className={cn(ACTION_BUTTON_BASE, QUICK_CASH_STYLES[color])}
-              onClick={() => onQuickCash(val.toString())}
+              onClick={() => {
+                soundManager.playNumpad()
+                onQuickCash(val.toString())
+              }}
               disabled={isInsufficient}
               title={isInsufficient ? 'Ürün seç modunda tutar yetersiz' : undefined}
             >
@@ -128,7 +136,10 @@ export function Numpad({
             'text-[11px] tracking-wider text-success-foreground',
             'hover:bg-success hover:text-white'
           )}
-          onClick={onSetExact}
+          onClick={() => {
+            soundManager.playNumpad()
+            onSetExact()
+          }}
           title="Tamamı"
         >
           TAMAMI

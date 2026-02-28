@@ -112,7 +112,9 @@ export function SuccessView({
 
             <div className="space-y-1">
               <h3 className="text-lg font-semibold text-foreground">Ödeme Başarılı</h3>
-              <p className="text-sm text-foreground/80">İşlem onaylandı, masa hazır.</p>
+              <p className="text-sm text-foreground/80">
+                {hasChange ? 'İşlem onaylandı.' : 'Masa temizlendi, yeni siparişe hazır.'}
+              </p>
             </div>
 
             {/* Body */}
@@ -136,8 +138,8 @@ export function SuccessView({
                 </div>
               ) : (
                 <div className={STYLES.successBox}>
-                  <CheckCircle className="h-5 w-5 text-success" />
-                  <span className="text-sm font-semibold text-success">Tam ödeme alındı</span>
+                  <CheckCircle className="h-5 w-5 text-success animate-in zoom-in spin-in-90 duration-500" />
+                  <span className="text-sm font-semibold text-success">Masa Kapatıldı</span>
                 </div>
               )}
             </div>

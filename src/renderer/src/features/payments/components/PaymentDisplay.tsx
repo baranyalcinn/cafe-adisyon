@@ -1,5 +1,6 @@
 import { PremiumAmount } from '@/components/PremiumAmount'
 import { type PaymentMethod } from '@/lib/api'
+import { soundManager } from '@/lib/sound'
 import { cn } from '@/lib/utils'
 import { RotateCcw } from 'lucide-react'
 
@@ -41,14 +42,21 @@ export function PaymentDisplay({
             />
             {/* radial glow */}
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_20%,rgba(255,255,255,0.12),transparent_60%)]" />
+            <div
+              className={cn(
+                'absolute inset-0 bg-white/5 opacity-0 transition-opacity duration-300',
+                'animate-in fade-in'
+              )}
+            />
             <span className="relative text-[10px] font-bold text-white/80 tracking-[0.2em] uppercase mb-2 select-none">
               Toplam Tutar
             </span>
             <PremiumAmount
+              key={effectivePayment}
               amount={effectivePayment}
               size="4xl"
               color="foreground"
-              className="relative [&_span]:!text-white"
+              className="relative [&_span]:!text-white animate-in zoom-in-95 duration-300"
             />
           </div>
         </div>
@@ -77,7 +85,10 @@ export function PaymentDisplay({
 
               {/* Clear button */}
               <button
-                onClick={onClear}
+                onClick={() => {
+                  soundManager.playClick()
+                  onClear()
+                }}
                 className={cn(
                   'flex h-8 items-center gap-1.5 rounded-lg border border-transparent px-2.5',
                   'text-xs font-medium transition-all duration-200',
@@ -94,6 +105,7 @@ export function PaymentDisplay({
             {/* Amount display */}
             <div className="mt-2 flex items-baseline justify-end gap-1 px-1 py-1 select-none">
               <PremiumAmount
+                key={tenderedInput}
                 amount={
                   tenderedInput
                     ? parseFloat(tenderedInput) * 100
@@ -106,7 +118,8 @@ export function PaymentDisplay({
                 className={cn(
                   'transition-all duration-300',
                   !hasInput && !isHovering && 'opacity-25',
-                  isHovering && !hasInput && 'opacity-80 scale-105 origin-right'
+                  isHovering && !hasInput && 'opacity-80 scale-105 origin-right',
+                  hasInput && 'animate-in zoom-in-95 duration-200'
                 )}
               />
               {/* Blinking cursor */}

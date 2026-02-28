@@ -352,7 +352,7 @@ export function usePaymentLogic({
         const newRemaining = remainingAmount - actualAmount
         const shouldClose = newRemaining <= 1
 
-        soundManager.playSuccess()
+        soundManager.playPaymentSuccess()
         dispatch({ type: 'CLEAR_TENDERED' })
         dispatch({ type: 'CLEAR_SELECTED' })
 
@@ -373,6 +373,7 @@ export function usePaymentLogic({
         dispatch({ type: 'SET_PROCESSING', method: null })
       } catch (error) {
         console.error('Payment failed:', error)
+        soundManager.playError()
         toast({
           title: 'Ödeme başarısız',
           description: 'Lütfen tekrar deneyin.',

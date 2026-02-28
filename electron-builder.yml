@@ -39,6 +39,16 @@ files:
   - '!prisma/*.db'
   - '!prisma/*.db-*'
 
+  # Native Module Build Cleanup (Size Optimization)
+  - '!**/node_modules/better-sqlite3/deps/**'
+  - '!**/node_modules/better-sqlite3/src/**'
+  - '!**/node_modules/**/*.c'
+  - '!**/node_modules/**/*.h'
+  - '!**/node_modules/**/build/Release/*.obj'
+  - '!**/node_modules/**/build/Release/*.iobj'
+  - '!**/node_modules/**/build/Release/*.pdb'
+  - '!**/node_modules/**/build/Release/*.lib'
+
 # ASAR dışında tutulması gereken native modüller
 # **/*.node tüm .node binary'leri yakalar — better-sqlite3'ün JS dosyaları ASAR'da kalabilir
 asarUnpack:
