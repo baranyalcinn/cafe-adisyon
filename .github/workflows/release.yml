@@ -37,10 +37,10 @@ jobs:
 
       - name: Temiz Şablon DB Oluştur
         run: |
-          # Prisma schema var, client generate gerekmeden şema DB'ye push edilebilir
+          # prisma.config.ts varken DATABASE_URL env değişkeni ignore edilir.
+          # --url flag'i ile config'i bypass edip doğrudan template.db hedeflenir.
           if (Test-Path prisma/template.db) { Remove-Item prisma/template.db }
-          $env:DATABASE_URL = "file:./prisma/template.db"
-          npx prisma db push --skip-generate
+          npx prisma db push --url "file:./prisma/template.db" --skip-generate --accept-data-loss
 
       - name: TypeScript Build
         run: npm run build
