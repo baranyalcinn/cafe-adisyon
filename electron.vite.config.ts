@@ -14,7 +14,7 @@ export default defineConfig({
     plugins: [],
     build: {
       sourcemap: false,
-      target: 'node24', // Electron 40 uses Node 24
+      target: 'node22', // Electron 41 uses Node 22
       // build.externalizeDeps: true → package.json'daki tüm "dependencies"'i otomatik external yapar.
       // Prisma, adapter ve diğer runtime deps böylece bundle'a girmez, node_modules'tan yüklenir.
       externalizeDeps: true,
@@ -36,7 +36,7 @@ export default defineConfig({
     plugins: [],
     build: {
       sourcemap: false,
-      target: 'node24',
+      target: 'node22',
       externalizeDeps: true,
       rollupOptions: {
         // electron devDependencies'de olduğundan externalizeDeps kapsamaz — açıkça belirt
@@ -55,13 +55,19 @@ export default defineConfig({
     plugins: [react(), tailwindcss()],
     build: {
       sourcemap: false,
-      target: 'chrome144', // Electron 40 = Chromium 144.0.7559.x (electronjs.org/releases)
+      target: 'chrome134', // Electron 41 = Chromium 134 (electronjs.org/releases)
       modulePreload: {
         polyfill: false
       },
       cssCodeSplit: true,
       rollupOptions: {
+        // Vite 8 (Rolldown): input is now REQUIRED for renderer
+        input: {
+          index: resolve('src/renderer/index.html')
+        },
         output: {
+          // Vite 8 / Rolldown: manualChunks fonksiyon formu deprecated.
+          // codeSplitting ile aynı sonucu elde ediyoruz.
           manualChunks(id): string | void {
             if (!id.includes('node_modules')) return
 
@@ -72,7 +78,6 @@ export default defineConfig({
             if (id.includes('@radix-ui') || id.includes('lucide')) return 'vendor-ui'
 
             // React ekosistemi + state/query — kritik core
-            // /react/ path segmenti kullan: preact, @react-aria gibi false positive'leri engeller
             if (
               id.includes('/react/') ||
               id.includes('/react-dom/') ||
