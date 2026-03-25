@@ -55,7 +55,7 @@ export default defineConfig({
     plugins: [react(), tailwindcss()],
     build: {
       sourcemap: false,
-      target: 'chrome134', // Electron 41 = Chromium 134
+      target: 'chrome146', // Electron 41 = Chromium 146 (March 2026)
       modulePreload: {
         polyfill: false
       },
