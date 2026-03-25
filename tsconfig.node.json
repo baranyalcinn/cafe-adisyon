@@ -11,9 +11,8 @@
   "compilerOptions": {
     "composite": true,
     "moduleResolution": "bundler",
-    "baseUrl": ".",
     "paths": {
-      "@shared/*": ["src/shared/*"]
+      "@shared/*": ["./src/shared/*"]
     },
     "types": [
       "electron-vite/node"
