@@ -14,7 +14,7 @@ export default defineConfig({
     plugins: [],
     build: {
       sourcemap: false,
-      target: 'node22', // Electron 40 uses Node 22
+      target: 'node24', // Electron 41 uses Node 24
       // build.externalizeDeps: true → package.json'daki tüm "dependencies"'i otomatik external yapar.
       // Prisma, adapter ve diğer runtime deps böylece bundle'a girmez, node_modules'tan yüklenir.
       externalizeDeps: true,
@@ -36,7 +36,7 @@ export default defineConfig({
     plugins: [],
     build: {
       sourcemap: false,
-      target: 'node22', // Electron 40 uses Node 22
+      target: 'node24', // Electron 41 uses Node 24
       externalizeDeps: true,
       rollupOptions: {
         // electron devDependencies'de olduğundan externalizeDeps kapsamaz — açıkça belirt
@@ -55,7 +55,7 @@ export default defineConfig({
     plugins: [react(), tailwindcss()],
     build: {
       sourcemap: false,
-      target: 'chrome132', // Electron 40 = Chromium 132
+      target: 'chrome134', // Electron 41 = Chromium 134
       modulePreload: {
         polyfill: false
       },

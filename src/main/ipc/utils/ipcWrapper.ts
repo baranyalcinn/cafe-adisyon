@@ -36,7 +36,7 @@ const safeExecute = async <T>(
  */
 const validatePayload = <T>(
   channel: string,
-  schema: z.ZodSchema<T>,
+  schema: z.ZodType<T>,
   payload: unknown
 ): { success: true; data: T } | { success: false; error: string } => {
   const parsed = schema.safeParse(payload)
@@ -62,7 +62,7 @@ const validatePayload = <T>(
 
 export const createValidatedHandler = <TInput, TOutput>(
   channel: string,
-  schema: z.ZodSchema<TInput>,
+  schema: z.ZodType<TInput>,
   handler: (data: TInput) => Promise<ApiResponse<TOutput>>,
   errorMessage: string
 ): void => {
@@ -92,7 +92,7 @@ export const createSimpleHandler = <TOutput>(
 
 export const createRawHandler = <TInput, TOutput>(
   channel: string,
-  schema: z.ZodSchema<TInput>,
+  schema: z.ZodType<TInput>,
   handler: (data: TInput) => Promise<TOutput>,
   errorMessage: string
 ): void => {

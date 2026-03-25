@@ -5,6 +5,11 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# GitHub Actions runner'larını Node.js 24'e opt-in et
+# Haziran 2026'dan itibaren Node 20 runner'ları deprecated olacak
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     runs-on: windows-latest
@@ -17,7 +22,7 @@ jobs:
       - name: Kodları Çek
         uses: actions/checkout@v4
 
-      # Swap Alanı (8GB) - Extra güvenlik için tutuyoruz
+      # Swap Alanı (8GB) - Electron-builder + Prisma generate için RAM taşmasını önler
       - name: Set Pagefile (Swap)
         uses: al-cheb/configure-pagefile-action@v1.4
         with:
@@ -31,7 +36,10 @@ jobs:
           node-version: 24
           cache: npm
 
-      # npm ci: package-lock.json'dan birebil, deterministik kurulum (npm install'dan daha hızlı ve güvenilir)
+      # npm ci: package-lock.json'dan deterministik kurulum.
+      # postinstall → electron-builder install-app-deps:
+      #   better-sqlite3 için Electron 41 prebuilt binary otomatik indirilir.
+      #   Kaynak derleme gerekmez, ayrı rebuild adımına gerek yok.
       - name: Bağımlılıkları Kur (Deterministik)
         run: npm ci
 
@@ -45,19 +53,11 @@ jobs:
       - name: TypeScript Build
         run: npm run build
 
-      # Native modülleri Electron sürümüne göre yeniden derle
-      # electron-builder install-app-deps yerine @electron/rebuild direkt kullanıyoruz:
-      # → Electron 41'e ait v8 header'larına karşı derleme yapar (PropertyCallbackInfo::This hatası çözülür)
-      # → ELECTRON_VERSION paketten otomatik okunur
-      - name: Native Deps Rebuild
-        run: npx @electron/rebuild --force --module-dir . --which-module better-sqlite3
-
       - name: Windows EXE Oluştur
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_OPTIONS: '--max-old-space-size=8192'
-          DEBUG: electron-builder
-        run: npx electron-builder --win --publish never
+        run: npx electron-builder --win --x64 --publish never
 
       - name: Build Sonucunu Yükle
         uses: actions/upload-artifact@v4

@@ -170,7 +170,7 @@ export const reportSchemas = {
 // ============================================================================
 
 export function validateInput<T>(
-  schema: z.ZodSchema<T>,
+  schema: z.ZodType<T>,
   data: unknown
 ): { success: true; data: T } | { success: false; error: string } {
   const result = schema.safeParse(data)
